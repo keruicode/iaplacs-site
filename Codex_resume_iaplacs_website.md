@@ -83,6 +83,7 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - Removed all color-scale/legend UI and data config from the site. `index.html`, `ningxia/index.html`, and `shangrao/index.html` no longer contain 色标 blocks; `app.js` no longer renders legends; `tools/build_forecast_catalog.py`, `data/current/forecast-runs.json`, and fallback `manifest.json` no longer emit/store `legend` fields.
 - Added a static client-side password gate. All pages start with `body.auth-lock`; `app.js` requires password `123`, then stores `localStorage["iaplacs_access_token"]="iaplacs_access_granted_v1"` so the same browser does not prompt again. This is a lightweight static access gate, not server-grade security.
 - Bumped frontend asset query strings to `styles.css?v=20260710-04` and `app.js?v=20260710-04`.
+- Local code commit for legend removal and static password gate is `3547fb6 Add static access gate and remove legends`.
 
 ## Important Changed Files
 
