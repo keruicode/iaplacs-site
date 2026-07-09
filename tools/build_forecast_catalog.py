@@ -15,35 +15,6 @@ MAPS_DIR = ROOT / "data" / "current" / "maps"
 CATALOG_PATH = ROOT / "data" / "current" / "forecast-runs.json"
 BJT = timezone(timedelta(hours=8))
 MAX_RUNS = int(os.environ.get("IAPLACS_MAX_RUNS", "8"))
-PRECIP_LEGEND = {
-    "gradient": (
-        "linear-gradient(90deg, "
-        "#f7fbff 0 12.5%, #d6ecff 12.5% 25%, "
-        "#8fc9ff 25% 37.5%, #3f8fc5 37.5% 50%, "
-        "#31a354 50% 62.5%, #fdd049 62.5% 75%, "
-        "#f46d43 75% 87.5%, #7a0177 87.5% 100%)"
-    ),
-    "ticks": ["0", "0.1", "1", "5", "10", "25", "50", "100+"],
-}
-TEMP_LEGEND = {
-    "gradient": (
-        "linear-gradient(90deg, "
-        "#313695 0 14.3%, #4575b4 14.3% 28.6%, "
-        "#74add1 28.6% 42.9%, #ffffbf 42.9% 57.2%, "
-        "#fdae61 57.2% 71.5%, #f46d43 71.5% 85.8%, "
-        "#a50026 85.8% 100%)"
-    ),
-    "ticks": ["-20", "-10", "0", "10", "20", "30", "40"],
-}
-WIND_LEGEND = {
-    "gradient": (
-        "linear-gradient(90deg, "
-        "#f7fbff 0 16.7%, #d0e5f2 16.7% 33.4%, "
-        "#74a9cf 33.4% 50.1%, #2b8cbe 50.1% 66.8%, "
-        "#045a8d 66.8% 83.5%, #54278f 83.5% 100%)"
-    ),
-    "ticks": ["0", "2", "5", "8", "12", "17", "25+"],
-}
 
 
 RUN_DIR_RE = re.compile(r"^wrf_montage_(\d{8}_\d{2})$")
@@ -113,7 +84,6 @@ def build_airport_runs() -> list[dict]:
             unit="mm",
             color="#0f68c8",
             description="机场周边降水落区和强度样例产品，用于后续接入机场短临保障数据。",
-            legend=PRECIP_LEGEND,
             metrics=[
                 {"label": "产品状态", "value": "样例接入"},
                 {"label": "图像数量", "value": "2"},
@@ -131,7 +101,6 @@ def build_airport_runs() -> list[dict]:
             unit="degC",
             color="#b73b3b",
             description="近地面气温分布样例产品，用于识别机场周边冷暖区和边界层温度变化。",
-            legend=TEMP_LEGEND,
             metrics=[
                 {"label": "区域最高", "value": "36.2 degC"},
                 {"label": "区域最低", "value": "17.4 degC"},
@@ -149,7 +118,6 @@ def build_airport_runs() -> list[dict]:
             unit="m/s",
             color="#2c5f9e",
             description="近地面风速和风向样例产品，用于展示机场风场保障产品入口。",
-            legend=WIND_LEGEND,
             metrics=[
                 {"label": "最大风速", "value": "15.8 m/s"},
                 {"label": "主导风向", "value": "SE"},
@@ -183,7 +151,6 @@ def build_airport_product(
     unit: str,
     color: str,
     description: str,
-    legend: dict,
     metrics: list[dict],
     frames: list[tuple[str, int, str, str, str]],
 ) -> dict:
@@ -209,7 +176,6 @@ def build_airport_product(
         "unit": unit,
         "color": color,
         "description": description,
-        "legend": legend,
         "metrics": metrics,
         "frames": built_frames,
     }
@@ -320,7 +286,6 @@ def build_ningxia_product(run_id: str, frames: list[dict], generated_at: str) ->
         "unit": "mm",
         "color": "#0f68c8",
         "description": "WORK_nx 生成的宁夏区域降水预报图集，按起报时次自动归档。",
-        "legend": PRECIP_LEGEND,
         "metrics": [
             {"label": "起报时次", "value": run_id.replace("_", " ") + " UTC"},
             {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},
@@ -338,7 +303,6 @@ def build_wrf_product(run_id: str, frames: list[dict]) -> dict:
         "unit": "mm",
         "color": "#0f68c8",
         "description": f"上饶服务起报时次 {run_id}，包含总览图和分段细节图。",
-        "legend": PRECIP_LEGEND,
         "metrics": [
             {"label": "起报时次", "value": run_id.replace("_", " ") + " BJT"},
             {"label": "图像数量", "value": str(len(frames))},

@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-10 02:08 CST
+Last updated: 2026-07-10 02:19 CST
 
 ## Resume Commands
 
@@ -80,6 +80,9 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - Updated precipitation, temperature, and wind legends to stepped scales: precipitation ticks `0, 0.1, 1, 5, 10, 25, 50, 100+`; temperature ticks `-20, -10, 0, 10, 20, 30, 40`; wind ticks `0, 2, 5, 8, 12, 17, 25+`.
 - Current local preview is running at `http://127.0.0.1:5175/`; `http://127.0.0.1:5174/` is occupied by an older stuck Python listener.
 - Local code commit for the service split is `917c4e3 Split airport Ningxia and Shangrao services`.
+- Removed all color-scale/legend UI and data config from the site. `index.html`, `ningxia/index.html`, and `shangrao/index.html` no longer contain 色标 blocks; `app.js` no longer renders legends; `tools/build_forecast_catalog.py`, `data/current/forecast-runs.json`, and fallback `manifest.json` no longer emit/store `legend` fields.
+- Added a static client-side password gate. All pages start with `body.auth-lock`; `app.js` requires password `123`, then stores `localStorage["iaplacs_access_token"]="iaplacs_access_granted_v1"` so the same browser does not prompt again. This is a lightweight static access gate, not server-grade security.
+- Bumped frontend asset query strings to `styles.css?v=20260710-04` and `app.js?v=20260710-04`.
 
 ## Important Changed Files
 
@@ -414,6 +417,47 @@ Result: `services=airport,main,ningxia,shangrao`; `airport_products=airport_prec
 Result: all three local preview pages returned `HTTP/1.0 200 OK`.
 
 ```bash
+rg -n "色标|legend|legendUnit|legendBar|legendTicks|renderLegend|20260710-03" index.html ningxia/index.html shangrao/index.html app.js styles.css tools/build_forecast_catalog.py data/current/manifest.json data/current/forecast-runs.json
+node --check app.js
+python3 -m py_compile tools/build_forecast_catalog.py
+python3 -m json.tool data/current/forecast-runs.json
+python3 -m json.tool data/current/manifest.json
+```
+
+Result after password/legend cleanup: keyword search returned no matches; JS syntax, Python compile, and both JSON checks passed.
+
+```bash
+/bin/zsh -lc "NO_PROXY=127.0.0.1,localhost curl -s http://127.0.0.1:5175/ | rg -n 'auth-lock|app.js\\?v=20260710-04|styles.css\\?v=20260710-04|色标|legend'"
+/bin/zsh -lc "NO_PROXY=127.0.0.1,localhost curl -s http://127.0.0.1:5175/ningxia/ | rg -n 'auth-lock|app.js\\?v=20260710-04|styles.css\\?v=20260710-04|色标|legend'"
+/bin/zsh -lc "NO_PROXY=127.0.0.1,localhost curl -s http://127.0.0.1:5175/shangrao/ | rg -n 'auth-lock|app.js\\?v=20260710-04|styles.css\\?v=20260710-04|色标|legend'"
+```
+
+Result: all three pages contain `auth-lock`, reference `20260710-04` CSS/JS, and have no `色标`/`legend` matches.
+
+```bash
+node - <<'NODE'
+const fs=require('fs');
+const catalog=JSON.parse(fs.readFileSync('data/current/forecast-runs.json','utf8'));
+const fallback=JSON.parse(fs.readFileSync('data/current/manifest.json','utf8'));
+function countLegend(value){
+  let count=0;
+  function walk(v){
+    if (!v || typeof v !== 'object') return;
+    if (Object.prototype.hasOwnProperty.call(v, 'legend')) count += 1;
+    for (const child of Object.values(v)) walk(child);
+  }
+  walk(value);
+  return count;
+}
+console.log(`catalog_legend=${countLegend(catalog)}`);
+console.log(`manifest_legend=${countLegend(fallback)}`);
+console.log(`services=${Object.keys(catalog.services).join(',')}`);
+NODE
+```
+
+Result: `catalog_legend=0`, `manifest_legend=0`, `services=airport,main,ningxia,shangrao`.
+
+```bash
 dig +short iaplacs.xyz A
 dig +short www.iaplacs.xyz CNAME
 dig +short www.iaplacs.xyz A
@@ -470,6 +514,7 @@ Official references checked during planning:
 - `tools/build_forecast_catalog.py` intentionally uses product file mtimes for `published_at`, not wall-clock time, so repeated server runs do not create false Git changes when images are unchanged.
 - For the WORK_nx/Ningxia forecast, "time" means the image file generation/modification time (`mtime`). Do not substitute the WRF `Times` variable or directory name when deciding the publication time.
 - Keep product ownership separate: homepage `/` is airport service, `/ningxia/` is WORK_nx/NX Ningxia products, and `/shangrao/` is Shangrao products. Do not merge Ningxia products back into the homepage or Shangrao page.
+- The password gate is client-side because the site is on GitHub Pages. It hides the UI and persists access through localStorage, but anyone inspecting static assets can bypass it. Use a real backend, Cloudflare Access, Netlify/Vercel auth, or another edge/access-control layer if real access control becomes necessary.
 - In-app browser verification was attempted but no in-app browser backend was available (`agent.browsers.list()` returned `[]`). Verification was completed via local HTTP checks and image inspection instead.
 - Use atomic publish directories so failed data updates do not break the live site.
 - HTTPS via Certbot usually requires the HTTP site to be reachable on port 80, unless using DNS validation.

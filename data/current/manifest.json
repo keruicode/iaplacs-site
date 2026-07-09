@@ -5,40 +5,27 @@
   },
   "run_time": "2026-07-09T08:00:00+08:00",
   "published_at": "2026-07-09T22:44:07+08:00",
-  "note": "\u673a\u573a\u6c14\u8c61\u670d\u52a1\u6837\u4f8b\u6570\u636e\uff0c\u4fdd\u7559\u964d\u6c34\u30012\u7c73\u6c14\u6e29\u548c10\u7c73\u98ce\u573a\u4ea7\u54c1\u5165\u53e3\u3002",
+  "note": "机场气象服务样例数据，保留降水、2米气温和10米风场产品入口。",
   "products": [
     {
       "id": "airport_precip",
-      "title": "\u673a\u573a\u964d\u6c34\u9884\u62a5",
-      "category": "\u673a\u573a\u670d\u52a1",
+      "title": "机场降水预报",
+      "category": "机场服务",
       "unit": "mm",
       "color": "#0f68c8",
-      "description": "\u673a\u573a\u5468\u8fb9\u964d\u6c34\u843d\u533a\u548c\u5f3a\u5ea6\u6837\u4f8b\u4ea7\u54c1\uff0c\u7528\u4e8e\u540e\u7eed\u63a5\u5165\u673a\u573a\u77ed\u4e34\u4fdd\u969c\u6570\u636e\u3002",
-      "legend": {
-        "gradient": "linear-gradient(90deg, #f7fbff 0 12.5%, #d6ecff 12.5% 25%, #8fc9ff 25% 37.5%, #3f8fc5 37.5% 50%, #31a354 50% 62.5%, #fdd049 62.5% 75%, #f46d43 75% 87.5%, #7a0177 87.5% 100%)",
-        "ticks": [
-          "0",
-          "0.1",
-          "1",
-          "5",
-          "10",
-          "25",
-          "50",
-          "100+"
-        ]
-      },
+      "description": "机场周边降水落区和强度样例产品，用于后续接入机场短临保障数据。",
       "metrics": [
         {
-          "label": "\u4ea7\u54c1\u72b6\u6001",
-          "value": "\u6837\u4f8b\u63a5\u5165"
+          "label": "产品状态",
+          "value": "样例接入"
         },
         {
-          "label": "\u56fe\u50cf\u6570\u91cf",
+          "label": "图像数量",
           "value": "2"
         },
         {
-          "label": "\u670d\u52a1\u5bf9\u8c61",
-          "value": "\u673a\u573a\u4fdd\u969c"
+          "label": "服务对象",
+          "value": "机场保障"
         }
       ],
       "frames": [
@@ -60,35 +47,23 @@
     },
     {
       "id": "temperature_2m",
-      "title": "\u673a\u573a 2\u7c73\u6c14\u6e29",
-      "category": "\u673a\u573a\u670d\u52a1",
+      "title": "机场 2米气温",
+      "category": "机场服务",
       "unit": "degC",
       "color": "#b73b3b",
-      "description": "\u8fd1\u5730\u9762\u6c14\u6e29\u5206\u5e03\uff0c\u7528\u4e8e\u8bc6\u522b\u6696\u533a\u548c\u51b7\u7a7a\u6c14\u8fb9\u754c\u3002",
-      "legend": {
-        "gradient": "linear-gradient(90deg, #313695 0 14.3%, #4575b4 14.3% 28.6%, #74add1 28.6% 42.9%, #ffffbf 42.9% 57.2%, #fdae61 57.2% 71.5%, #f46d43 71.5% 85.8%, #a50026 85.8% 100%)",
-        "ticks": [
-          "-20",
-          "-10",
-          "0",
-          "10",
-          "20",
-          "30",
-          "40"
-        ]
-      },
+      "description": "近地面气温分布，用于识别暖区和冷空气边界。",
       "metrics": [
         {
-          "label": "\u533a\u57df\u6700\u9ad8",
+          "label": "区域最高",
           "value": "36.2 degC"
         },
         {
-          "label": "\u533a\u57df\u6700\u4f4e",
+          "label": "区域最低",
           "value": "17.4 degC"
         },
         {
-          "label": "\u4ea7\u54c1\u72b6\u6001",
-          "value": "\u6837\u4f8b"
+          "label": "产品状态",
+          "value": "样例"
         }
       ],
       "frames": [
@@ -108,35 +83,23 @@
     },
     {
       "id": "wind_10m",
-      "title": "\u673a\u573a 10\u7c73\u98ce\u573a",
-      "category": "\u673a\u573a\u670d\u52a1",
+      "title": "机场 10米风场",
+      "category": "机场服务",
       "unit": "m/s",
       "color": "#2c5f9e",
-      "description": "\u8fd1\u5730\u9762\u98ce\u901f\u548c\u98ce\u5411\u6837\u4f8b\uff0c\u7528\u4e8e\u5c55\u793a\u77e2\u91cf\u4ea7\u54c1\u5165\u53e3\u3002",
-      "legend": {
-        "gradient": "linear-gradient(90deg, #f7fbff 0 16.7%, #d0e5f2 16.7% 33.4%, #74a9cf 33.4% 50.1%, #2b8cbe 50.1% 66.8%, #045a8d 66.8% 83.5%, #54278f 83.5% 100%)",
-        "ticks": [
-          "0",
-          "2",
-          "5",
-          "8",
-          "12",
-          "17",
-          "25+"
-        ]
-      },
+      "description": "近地面风速和风向样例，用于展示矢量产品入口。",
       "metrics": [
         {
-          "label": "\u6700\u5927\u98ce\u901f",
+          "label": "最大风速",
           "value": "15.8 m/s"
         },
         {
-          "label": "\u4e3b\u5bfc\u98ce\u5411",
+          "label": "主导风向",
           "value": "SE"
         },
         {
-          "label": "\u4ea7\u54c1\u72b6\u6001",
-          "value": "\u6837\u4f8b"
+          "label": "产品状态",
+          "value": "样例"
         }
       ],
       "frames": [

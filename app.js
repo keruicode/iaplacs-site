@@ -1,4 +1,7 @@
 const DEFAULT_REFRESH_MS = 5 * 60 * 1000;
+const ACCESS_PASSWORD = "123";
+const ACCESS_TOKEN_KEY = "iaplacs_access_token";
+const ACCESS_TOKEN_VALUE = "iaplacs_access_granted_v1";
 
 const pageConfig = {
   service: document.body.dataset.service || "airport",
@@ -35,9 +38,6 @@ const els = {
   nextLead: document.querySelector("#nextLead"),
   imageLink: document.querySelector("#imageLink"),
   metricGrid: document.querySelector("#metricGrid"),
-  legendUnit: document.querySelector("#legendUnit"),
-  legendBar: document.querySelector("#legendBar"),
-  legendTicks: document.querySelector("#legendTicks"),
   productNote: document.querySelector("#productNote"),
 };
 
@@ -189,7 +189,6 @@ function render() {
   renderProducts();
   renderLeads();
   renderMetrics(product);
-  renderLegend(product);
   renderProductNote(run, product, frame);
   updateControls(product);
 
@@ -301,20 +300,6 @@ function renderMetrics(product) {
   });
 }
 
-function renderLegend(product) {
-  if (!els.legendUnit || !els.legendBar || !els.legendTicks) return;
-  els.legendUnit.textContent = product.unit || "--";
-  els.legendBar.style.background =
-    product.legend?.gradient ||
-    "linear-gradient(90deg, #e6eef4, #7fc8e8, #2c7bb6, #36a852, #f6d64a, #ee8a35, #c33f3f)";
-  els.legendTicks.innerHTML = "";
-  (product.legend?.ticks || []).forEach((tick) => {
-    const span = document.createElement("span");
-    span.textContent = tick;
-    els.legendTicks.appendChild(span);
-  });
-}
-
 function renderProductNote(run, product, frame) {
   if (!els.productNote) return;
   const parts = [
@@ -394,4 +379,74 @@ function formatTime(value) {
 els.prevLead?.addEventListener("click", () => stepLead(-1));
 els.nextLead?.addEventListener("click", () => stepLead(1));
 
-init();
+if (ensureAccess()) init();
+
+function ensureAccess() {
+  if (hasAccessToken()) {
+    unlockPage();
+    return true;
+  }
+  renderAccessGate();
+  return false;
+}
+
+function hasAccessToken() {
+  try {
+    return window.localStorage.getItem(ACCESS_TOKEN_KEY) === ACCESS_TOKEN_VALUE;
+  } catch (error) {
+    console.warn("access token unavailable", error);
+    return false;
+  }
+}
+
+function saveAccessToken() {
+  try {
+    window.localStorage.setItem(ACCESS_TOKEN_KEY, ACCESS_TOKEN_VALUE);
+  } catch (error) {
+    console.warn("access token could not be saved", error);
+  }
+}
+
+function unlockPage() {
+  document.body.classList.remove("auth-lock");
+  document.querySelector("#authGate")?.remove();
+}
+
+function renderAccessGate() {
+  const gate = document.createElement("div");
+  gate.id = "authGate";
+  gate.className = "auth-gate";
+  gate.innerHTML = `
+    <form class="auth-card" autocomplete="off">
+      <div>
+        <p class="eyebrow">Access</p>
+        <h2>访问验证</h2>
+        <p class="auth-copy">请输入访问密码继续查看 IAP-LACS 预报服务。</p>
+      </div>
+      <label class="auth-field">
+        <span>密码</span>
+        <input id="accessPassword" type="password" inputmode="numeric" autocomplete="current-password" autofocus />
+      </label>
+      <p id="authError" class="auth-error" aria-live="polite"></p>
+      <button class="auth-submit" type="submit">进入网站</button>
+    </form>
+  `;
+
+  gate.querySelector("form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const input = gate.querySelector("#accessPassword");
+    const error = gate.querySelector("#authError");
+    if (input.value === ACCESS_PASSWORD) {
+      saveAccessToken();
+      unlockPage();
+      init();
+      return;
+    }
+    error.textContent = "密码不正确";
+    input.value = "";
+    input.focus();
+  });
+
+  document.body.appendChild(gate);
+  window.setTimeout(() => gate.querySelector("#accessPassword")?.focus(), 0);
+}
