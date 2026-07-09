@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-10 02:06 CST
+Last updated: 2026-07-10 02:08 CST
 
 ## Resume Commands
 
@@ -79,6 +79,7 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - Restored homepage fallback `manifest.json` to airport sample products and removed the old Beijing station-series fallback.
 - Updated precipitation, temperature, and wind legends to stepped scales: precipitation ticks `0, 0.1, 1, 5, 10, 25, 50, 100+`; temperature ticks `-20, -10, 0, 10, 20, 30, 40`; wind ticks `0, 2, 5, 8, 12, 17, 25+`.
 - Current local preview is running at `http://127.0.0.1:5175/`; `http://127.0.0.1:5174/` is occupied by an older stuck Python listener.
+- Local code commit for the service split is `917c4e3 Split airport Ningxia and Shangrao services`.
 
 ## Important Changed Files
 
