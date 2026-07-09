@@ -14,6 +14,43 @@ The IAP server only needs a scheduled publishing job:
 
 GitHub Pages then serves the updated static files.
 
+## Enable GitHub Pages After Push
+
+Current GitHub repository:
+
+```text
+git@github.com:keruicode/iaplacs-site.git
+```
+
+On GitHub:
+
+1. Open the `keruicode/iaplacs-site` repository.
+2. Go to `Settings` -> `Pages`.
+3. In `Build and deployment`, set `Source` to `Deploy from a branch`.
+4. In `Branch`, select:
+
+```text
+main
+/
+```
+
+5. Click `Save`.
+6. Wait for the deployment. GitHub says Pages changes can take up to about 10 minutes to publish.
+
+The temporary project URL should be:
+
+```text
+https://keruicode.github.io/iaplacs-site/
+```
+
+This repository already has a `CNAME` file containing:
+
+```text
+iaplacs.xyz
+```
+
+If GitHub does not automatically show that custom domain in `Settings` -> `Pages`, enter `iaplacs.xyz` manually after Pages has been enabled.
+
 ## When a Real Server Becomes Necessary
 
 Add a backend server later only if the site needs:

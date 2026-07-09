@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-09 23:05 CST
+Last updated: 2026-07-09 23:15 CST
 
 ## Resume Commands
 
@@ -38,6 +38,8 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - Integrated a real WRF hourly precipitation product sample from `Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-06_18_00.png` by generating `data/current/maps/wrf_precip_20260706_1800_t01_t48.webp` at 2200x2200 and 476 KB. The original 7000x7000 PNG remains in the workspace but is ignored by Git.
 - Local HTTP preview is running at `http://127.0.0.1:5173/` from `python3 -m http.server 5173 --bind 127.0.0.1`.
 - Created local initial commit `30504fe Build initial static forecast site`.
+- User pushed the repository to GitHub. Local remote is `origin git@github.com:keruicode/iaplacs-site.git`; current branch is `main`, tracking `origin/main`.
+- GitHub Pages should be enabled from `Settings -> Pages -> Build and deployment -> Source: Deploy from a branch -> Branch: main -> folder: / (root) -> Save`.
 
 ## Important Changed Files
 
@@ -116,6 +118,7 @@ Official references checked during planning:
 - Alibaba Cloud ICP filing service page.
 - National public security internet filing portal.
 - Certbot Nginx instructions.
+- GitHub Pages quickstart and publishing-source docs.
 
 ## Known Pitfalls
 
@@ -129,6 +132,7 @@ Official references checked during planning:
 - Static hosting can satisfy an MVP forecast-display site if all products are pre-rendered to Web-friendly files such as manifest JSON, images, tiles, and compressed JSON, then uploaded on a schedule. It becomes insufficient only when the site needs authenticated users, server-side computation, heavy querying, or real-time APIs.
 - GitHub Pages official limits as checked on 2026-07-09: source repository recommended limit 1 GB, published site no larger than 1 GB, soft bandwidth limit 100 GB/month, and rate limiting may apply. This is acceptable for a low-traffic image-based MVP but not for heavy public image distribution.
 - GitHub Pages official docs as checked on 2026-07-09: maximum one user/organization Pages site per account and maximum one project Pages site per repository.
+- GitHub Pages publishing source docs say for branch-based publishing, select `Deploy from a branch`, then choose the branch and source folder; for this repository that is `main` and `/`.
 - Do not send raw large NetCDF/GRIB/MICAPS files directly to browsers. Generate Web-friendly manifests, images, tiles, GeoJSON, or compressed JSON.
 - The root raw PNG `Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-06_18_00.png` is 7000x7000 and 5.8 MB, and is intentionally ignored by Git. Use the optimized WebP in `data/current/maps/` for the site.
 - In-app browser verification was attempted but no in-app browser backend was available (`agent.browsers.list()` returned `[]`). Verification was completed via local HTTP checks and image inspection instead.
@@ -137,10 +141,9 @@ Official references checked during planning:
 
 ## Next Recommended Actions
 
-1. Create a GitHub repository, for example `iaplacs-site`.
-2. Add the remote and push branch `main`.
-3. Enable GitHub Pages from the repository's `main` branch/root.
-4. Configure GitHub Pages custom domain `iaplacs.xyz`.
-5. In Aliyun DNS, add GitHub Pages records for `@` and `www`.
-6. Later, create an IAP server publishing script that generates optimized images and `manifest.json`, then commits/pushes updates to the repository.
-7. If image volume grows, keep GitHub Pages for the app and move large map assets to object storage/CDN.
+1. Enable GitHub Pages in `keruicode/iaplacs-site` from the repository's `main` branch/root.
+2. Confirm the temporary URL works: `https://keruicode.github.io/iaplacs-site/`.
+3. Configure GitHub Pages custom domain `iaplacs.xyz`.
+4. In Aliyun DNS, add GitHub Pages records for `@` and `www`.
+5. Later, create an IAP server publishing script that generates optimized images and `manifest.json`, then commits/pushes updates to the repository.
+6. If image volume grows, keep GitHub Pages for the app and move large map assets to object storage/CDN.
