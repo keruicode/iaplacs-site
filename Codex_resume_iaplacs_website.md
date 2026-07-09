@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-10 00:01 CST
+Last updated: 2026-07-10 00:20 CST
 
 ## Resume Commands
 
@@ -36,18 +36,22 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - Clarified GitHub Pages site count: one account can have only one user/organization site such as `<owner>.github.io`, but can have many project sites, one per repository, such as `<owner>.github.io/<repo>/`. Each project site can act as a separate static blog/site.
 - Built the initial static GitHub Pages MVP: `index.html`, `styles.css`, `app.js`, `data/current/manifest.json`, optimized map assets, `.nojekyll`, `CNAME`, README, and deployment notes.
 - Integrated a real WRF hourly precipitation product sample from `Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-06_18_00.png` by generating `data/current/maps/wrf_precip_20260706_1800_t01_t48.webp` at 2200x2200 and 476 KB. The original 7000x7000 PNG remains in the workspace but is ignored by Git.
-- Local HTTP preview is running at `http://127.0.0.1:5173/` from `python3 -m http.server 5173 --bind 127.0.0.1`.
+- Initial local HTTP preview used `http://127.0.0.1:5173/` from `python3 -m http.server 5173 --bind 127.0.0.1`.
 - Created local initial commit `30504fe Build initial static forecast site`.
 - User pushed the repository to GitHub. Local remote is `origin git@github.com:keruicode/iaplacs-site.git`; current branch is `main`, tracking `origin/main`.
 - GitHub Pages should be enabled from `Settings -> Pages -> Build and deployment -> Source: Deploy from a branch -> Branch: main -> folder: / (root) -> Save`.
-- Added LACS branding assets. The user-provided low-resolution `logo_lacs.png` was copied to `assets/brand/logo-lacs-source.png`; a 4x transparent wordmark backup was generated as `assets/brand/logo-lacs-wordmark@4x.png`; an AI-generated technology-style icon was saved as `assets/brand/logo-lacs-tech-icon.png`; favicon assets were generated; and the website header now uses `assets/brand/logo-lacs-lockup@2x.png`, a crisp transparent lockup with exact Chinese/English text.
-- Local preview server is currently running at `http://127.0.0.1:5173/`.
+- Added LACS branding assets. The user-provided low-resolution `logo_lacs.png` was copied to `assets/brand/logo-lacs-source.png`; a 4x transparent wordmark backup was generated as `assets/brand/logo-lacs-wordmark@4x.png`; an AI-generated technology-style icon was saved as `assets/brand/logo-lacs-tech-icon.png`; favicon assets were generated; and the website previously used `assets/brand/logo-lacs-lockup@2x.png`.
+- Current local preview for the Shangrao update is running at `http://127.0.0.1:5174/` from `python3 -m http.server 5174 --bind 127.0.0.1`.
 - GitHub Pages default URL is live at `https://keruicode.github.io/iaplacs-site/` and returned `HTTP/2 200`. The user likely clicked `Remove` for the custom domain; this does not require rebuilding Pages. Re-enter `iaplacs.xyz` in `Settings -> Pages -> Custom domain` and save.
 - GitHub Pages now reports `DNS check unsuccessful / NotServedByPagesError` for `iaplacs.xyz`. DNS diagnosis shows authoritative nameservers `dns13.hichina.com` and `dns14.hichina.com`, but no `A` record for `iaplacs.xyz` and no `CNAME/A` record for `www.iaplacs.xyz`. The fix is to add GitHub Pages DNS records in Aliyun DNS.
 - User is on the Aliyun domain registration details page showing DNS servers, SSL certificate, ESA, and a cloud-server purchase prompt. For the GitHub Pages route, this is not where to buy a server. Keep DNS servers as `dns13.hichina.com` and `dns14.hichina.com`; go to `云解析 DNS` / `解析设置` to add records instead.
 - User shared an Aliyun domain list screenshot. The correct next click is the blue `解析` action on the `iaplacs.xyz` row, not `管理`, not `DNS修改`, and not the cloud-server purchase prompt.
 - User shared the Aliyun `快速添加解析` screenshot. For that dialog, select only `iaplacs.xyz` for the IPv4/A-record batch, enter the four GitHub Pages IPs one per line, and do not select `www.iaplacs.xyz` there. Add `www` separately as a CNAME to `keruicode.github.io`.
 - User added the four A records for `iaplacs.xyz` successfully. Authoritative DNS at `dns13.hichina.com` now returns the four GitHub Pages IPs for `iaplacs.xyz`; `www.iaplacs.xyz` still has no CNAME/A response. Next step is adding `www` as a CNAME.
+- Added the Shangrao service page at `/shangrao/` via `shangrao/index.html`.
+- Reworked the header so the LACS organization name is rendered as real HTML text instead of being embedded in a logo image. Both `index.html` and `shangrao/index.html` now use the blue icon plus typed Chinese/English text.
+- Generated `assets/brand/logo-lacs-blue-icon.png` from the previous icon by replacing the green/teal component with blue tones, and regenerated favicon assets from that blue icon.
+- Created local commit with message `Add Shangrao service page`; check the exact final hash with `git log -1 --oneline`.
 
 ## Important Changed Files
 
@@ -69,6 +73,8 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - `/Users/xiaoxiaotu/_01_IAP/Website/assets/brand/logo-lacs-wordmark@4x.png`
 - `/Users/xiaoxiaotu/_01_IAP/Website/assets/brand/favicon-192.png`
 - `/Users/xiaoxiaotu/_01_IAP/Website/assets/brand/favicon-512.png`
+- `/Users/xiaoxiaotu/_01_IAP/Website/assets/brand/logo-lacs-blue-icon.png`
+- `/Users/xiaoxiaotu/_01_IAP/Website/shangrao/index.html`
 
 ## Verification Commands and Results
 
@@ -136,7 +142,29 @@ Result: `HTTP/1.0 200 OK`, `Content-type: image/png`, `Content-Length: 163935`.
 NO_PROXY=127.0.0.1,localhost curl -s http://127.0.0.1:5173/ | rg -n "logo-lacs-lockup|favicon|IAP-LACS Forecast"
 ```
 
-Result: page references `favicon-192.png`, `favicon-512.png`, and `logo-lacs-lockup@2x.png`.
+Result before the Shangrao update: page references `favicon-192.png`, `favicon-512.png`, and `logo-lacs-lockup@2x.png`.
+
+```bash
+NO_PROXY=127.0.0.1,localhost curl -I http://127.0.0.1:5174/
+NO_PROXY=127.0.0.1,localhost curl -I http://127.0.0.1:5174/shangrao/
+```
+
+Result after the Shangrao update: both returned `HTTP/1.0 200 OK`.
+
+```bash
+rg -n "logo-lacs-blue-icon|brand-title|上饶服务" index.html
+rg -n "上饶专项天气服务|logo-lacs-blue-icon|wrf_precip" shangrao/index.html
+```
+
+Result after the Shangrao update: main page references the blue icon and real header text; Shangrao page references its title, blue icon, and WRF sample image.
+
+```bash
+NO_PROXY=127.0.0.1,localhost curl -I http://127.0.0.1:5174/assets/brand/logo-lacs-blue-icon.png
+NO_PROXY=127.0.0.1,localhost curl -I http://127.0.0.1:5174/styles.css
+NO_PROXY=127.0.0.1,localhost curl -I http://127.0.0.1:5174/data/current/maps/wrf_precip_20260706_1800_t01_t48.webp
+```
+
+Result after the Shangrao update: all returned `HTTP/1.0 200 OK`.
 
 ```bash
 NO_PROXY=github.io,keruicode.github.io curl -I https://keruicode.github.io/iaplacs-site/
@@ -196,6 +224,7 @@ Official references checked during planning:
 - The root raw PNG `Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-06_18_00.png` is 7000x7000 and 5.8 MB, and is intentionally ignored by Git. Use the optimized WebP in `data/current/maps/` for the site.
 - The root user-provided `logo_lacs.png` is ignored by Git after copying it into `assets/brand/logo-lacs-source.png`, so repository assets stay under `assets/brand/`.
 - AI-generated logo text is risky, so the website header lockup uses the AI-generated icon only; Chinese and English text are rendered from exact typed strings to avoid text hallucination.
+- The active header no longer uses the lockup PNG for text. Keep LACS Chinese and English names as HTML text in `index.html` and `shangrao/index.html`.
 - In-app browser verification was attempted but no in-app browser backend was available (`agent.browsers.list()` returned `[]`). Verification was completed via local HTTP checks and image inspection instead.
 - Use atomic publish directories so failed data updates do not break the live site.
 - HTTPS via Certbot usually requires the HTTP site to be reachable on port 80, unless using DNS validation.
@@ -204,7 +233,8 @@ Official references checked during planning:
 
 1. Re-enter `iaplacs.xyz` in GitHub `Settings -> Pages -> Custom domain` and click `Save`.
 2. From the Aliyun domain list, click the blue `解析` action on the `iaplacs.xyz` row.
-3. Add `www` separately as a CNAME to `keruicode.github.io`. In Aliyun quick-add this can be done by choosing `将网站域名解析到另外的目标域名`, selecting only `www.iaplacs.xyz`, and entering `keruicode.github.io`.
+3. Push the Shangrao/blue-logo changes if they are not already pushed.
+4. Add `www` separately as a CNAME to `keruicode.github.io`. In Aliyun quick-add this can be done by choosing `将网站域名解析到另外的目标域名`, selecting only `www.iaplacs.xyz`, and entering `keruicode.github.io`.
 5. After DNS check passes, wait for GitHub certificate provisioning and keep/enforce HTTPS enabled.
 6. Later, create an IAP server publishing script that generates optimized images and `manifest.json`, then commits/pushes updates to the repository.
 7. If image volume grows, keep GitHub Pages for the app and move large map assets to object storage/CDN.

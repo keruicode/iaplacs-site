@@ -16,15 +16,26 @@
     <header class="topbar">
       <div class="brand">
         <img
-          class="brand-logo"
-          src="./assets/brand/logo-lacs-lockup@2x.png"
-          alt="中国科学院大气物理研究所云降水物理与强风暴实验室 LACS"
+          class="brand-icon"
+          src="./assets/brand/logo-lacs-blue-icon.png"
+          alt=""
+          aria-hidden="true"
         />
-        <h1 class="sr-only">IAP-LACS Forecast</h1>
+        <div class="brand-copy">
+          <p class="brand-title">中国科学院大气物理研究所云降水物理与强风暴实验室</p>
+          <p class="brand-subtitle">LABORATORY OF CLOUD-PRECIPITATION PHYSICS AND SEVERE STORMS(LACS), IAP, CAS</p>
+          <h1 class="sr-only">IAP-LACS Forecast</h1>
+        </div>
       </div>
-      <div class="run-state" aria-live="polite">
-        <span class="status-dot"></span>
-        <span id="updateLabel">正在读取数据</span>
+      <div class="topbar-actions">
+        <nav class="site-nav" aria-label="站点导航">
+          <a class="nav-link is-active" href="./">综合预报</a>
+          <a class="nav-link" href="./shangrao/">上饶服务</a>
+        </nav>
+        <div class="run-state" aria-live="polite">
+          <span class="status-dot"></span>
+          <span id="updateLabel">正在读取数据</span>
+        </div>
       </div>
     </header>
 
