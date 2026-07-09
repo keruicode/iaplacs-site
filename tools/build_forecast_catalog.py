@@ -16,6 +16,16 @@ MAPS_DIR = ROOT / "data" / "current" / "maps"
 CATALOG_PATH = ROOT / "data" / "current" / "forecast-runs.json"
 BJT = timezone(timedelta(hours=8))
 MAX_RUNS = int(os.environ.get("IAPLACS_MAX_RUNS", "8"))
+PRECIP_LEGEND = {
+    "gradient": (
+        "linear-gradient(90deg, "
+        "#f7fbff 0 12.5%, #d6ecff 12.5% 25%, "
+        "#8fc9ff 25% 37.5%, #3f8fc5 37.5% 50%, "
+        "#31a354 50% 62.5%, #fdd049 62.5% 75%, "
+        "#f46d43 75% 87.5%, #b2182b 87.5% 100%)"
+    ),
+    "ticks": ["0", "0.1", "2", "5", "10", "25", "50", "100+"],
+}
 
 
 RUN_DIR_RE = re.compile(r"^wrf_montage_(\d{8}_\d{2})$")
@@ -136,10 +146,7 @@ def build_worknx_product(
         "unit": "mm",
         "color": "#0f68c8",
         "description": "WORK_nx 生成的 WRF 全降水逐小时综合预报拼图。",
-        "legend": {
-            "gradient": "linear-gradient(90deg, #e8f2f5, #9ad4ee, #4b93c4, #31a45f, #f2d34c, #e78935, #bd3434)",
-            "ticks": ["0", "10", "25", "50", "100", "150+"],
-        },
+        "legend": PRECIP_LEGEND,
         "metrics": [
             {"label": "起报时次", "value": run_id.replace("_", " ") + " UTC"},
             {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},
@@ -181,10 +188,7 @@ def build_wrf_product(run_id: str, frames: list[dict]) -> dict:
         "unit": "mm",
         "color": "#0f68c8",
         "description": f"起报时次 {run_id}，包含总览图和分段细节图。",
-        "legend": {
-            "gradient": "linear-gradient(90deg, #e8f2f5, #9ad4ee, #4b93c4, #31a45f, #f2d34c, #e78935, #bd3434)",
-            "ticks": ["0", "10", "25", "50", "100", "150+"],
-        },
+        "legend": PRECIP_LEGEND,
         "metrics": [
             {"label": "起报时次", "value": run_id.replace("_", " ") + " BJT"},
             {"label": "图像数量", "value": str(len(frames))},

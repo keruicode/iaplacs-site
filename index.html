@@ -10,7 +10,7 @@
     <title>IAP-LACS Forecast</title>
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/brand/favicon-192.png" />
     <link rel="apple-touch-icon" href="./assets/brand/favicon-512.png" />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=20260710-02" />
   </head>
   <body
     data-service="main"
@@ -81,7 +81,6 @@
             <button id="prevLead" class="icon-button" type="button" title="上一时效" aria-label="上一时效">
               &#8249;
             </button>
-            <button id="playToggle" class="text-button" type="button">播放</button>
             <button id="nextLead" class="icon-button" type="button" title="下一时效" aria-label="下一时效">
               &#8250;
             </button>
@@ -102,7 +101,7 @@
       <aside class="insight-panel" aria-label="产品摘要">
         <div class="panel-heading">
           <p class="eyebrow">Overview</p>
-          <h2>关键指标</h2>
+          <h2>产品状态</h2>
         </div>
 
         <div id="metricGrid" class="metric-grid"></div>
@@ -116,12 +115,12 @@
           <div id="legendTicks" class="legend-ticks"></div>
         </div>
 
-        <div class="station-block">
+        <div class="product-note-block">
           <div class="legend-header">
-            <span>站点序列</span>
-            <span>Beijing</span>
+            <span>产品说明</span>
+            <span>Auto Update</span>
           </div>
-          <svg id="stationChart" viewBox="0 0 320 140" role="img" aria-label="站点时间序列"></svg>
+          <p id="productNote" class="product-note">正在读取产品说明。</p>
         </div>
       </aside>
     </main>
@@ -132,6 +131,6 @@
       <span>iaplacs.xyz</span>
     </footer>
 
-    <script src="./app.js"></script>
+    <script src="./app.js?v=20260710-02"></script>
   </body>
 </html>

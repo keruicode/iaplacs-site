@@ -15,7 +15,6 @@ const state = {
   runIndex: 0,
   productIndex: 0,
   leadIndex: 0,
-  playbackTimer: null,
   refreshTimer: null,
 };
 
@@ -34,13 +33,12 @@ const els = {
   leadTabs: document.querySelector("#leadTabs"),
   prevLead: document.querySelector("#prevLead"),
   nextLead: document.querySelector("#nextLead"),
-  playToggle: document.querySelector("#playToggle"),
   imageLink: document.querySelector("#imageLink"),
   metricGrid: document.querySelector("#metricGrid"),
   legendUnit: document.querySelector("#legendUnit"),
   legendBar: document.querySelector("#legendBar"),
   legendTicks: document.querySelector("#legendTicks"),
-  stationChart: document.querySelector("#stationChart"),
+  productNote: document.querySelector("#productNote"),
 };
 
 async function init() {
@@ -66,7 +64,6 @@ async function loadForecast({ preserveSelection }) {
     state.runIndex = chooseRunIndex(service, previous.runId);
     state.productIndex = chooseProductIndex(currentRun(), previous.productId);
     state.leadIndex = chooseLeadIndex(currentProduct(), previous.frameId);
-    stopPlayback();
     render();
   } catch (error) {
     showError(error);
@@ -75,10 +72,10 @@ async function loadForecast({ preserveSelection }) {
 
 async function fetchForecastData() {
   try {
-    return await fetchJson(pageConfig.manifestUrl);
+    return await fetchJson(withCacheBuster(pageConfig.manifestUrl));
   } catch (error) {
     console.warn(`primary forecast catalog failed: ${pageConfig.manifestUrl}`, error);
-    return fetchJson(pageConfig.fallbackManifestUrl);
+    return fetchJson(withCacheBuster(pageConfig.fallbackManifestUrl));
   }
 }
 
@@ -181,7 +178,8 @@ function render() {
   renderLeads();
   renderMetrics(product);
   renderLegend(product);
-  renderStationChart(run.station_series || state.service.station_series || state.catalog.station_series);
+  renderProductNote(run, product, frame);
+  updateControls(product);
 
   const imageSrc = resolveAssetPath(frame.file);
   setText(els.productTitle, product.title);
@@ -193,6 +191,12 @@ function render() {
   if (els.imageLink) els.imageLink.href = imageSrc;
   setText(els.leadLabel, frame.lead_label);
   setText(els.validTime, frame.valid_label || `有效时间 ${formatTime(frame.valid_time)}`);
+}
+
+function updateControls(product) {
+  const hasMultipleFrames = (product.frames || []).length > 1;
+  if (els.prevLead) els.prevLead.disabled = !hasMultipleFrames;
+  if (els.nextLead) els.nextLead.disabled = !hasMultipleFrames;
 }
 
 function renderEmpty() {
@@ -221,7 +225,6 @@ function renderRuns() {
       state.runIndex = index;
       state.productIndex = 0;
       state.leadIndex = 0;
-      stopPlayback();
       render();
     });
     els.runList.appendChild(button);
@@ -245,7 +248,6 @@ function renderProducts() {
     button.addEventListener("click", () => {
       state.productIndex = index;
       state.leadIndex = 0;
-      stopPlayback();
       render();
     });
     els.productList.appendChild(button);
@@ -301,40 +303,14 @@ function renderLegend(product) {
   });
 }
 
-function renderStationChart(series) {
-  if (!els.stationChart) return;
-  if (!series || !series.points?.length) {
-    els.stationChart.innerHTML = `
-      <text x="24" y="72" fill="#667386" font-size="12">暂无站点序列</text>
-    `;
-    return;
-  }
-
-  const width = 320;
-  const height = 140;
-  const pad = 22;
-  const values = series.points.map((point) => point.value);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = max - min || 1;
-  const path = series.points
-    .map((point, index) => {
-      const denom = Math.max(series.points.length - 1, 1);
-      const x = pad + (index / denom) * (width - pad * 2);
-      const y = height - pad - ((point.value - min) / span) * (height - pad * 2);
-      return `${index === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
-    })
-    .join(" ");
-
-  const area = `${path} L ${width - pad} ${height - pad} L ${pad} ${height - pad} Z`;
-
-  els.stationChart.innerHTML = `
-    <path d="${area}" fill="rgba(15, 104, 200, 0.12)"></path>
-    <path d="${path}" fill="none" stroke="#0f68c8" stroke-width="3"></path>
-    <line x1="${pad}" y1="${height - pad}" x2="${width - pad}" y2="${height - pad}" stroke="#d8e0e6"></line>
-    <text x="${pad}" y="18" fill="#667386" font-size="11">${series.name}</text>
-    <text x="${width - pad}" y="18" text-anchor="end" fill="#667386" font-size="11">${series.unit}</text>
-  `;
+function renderProductNote(run, product, frame) {
+  if (!els.productNote) return;
+  const parts = [
+    product.description,
+    run.summary,
+    frame.valid_label || (frame.valid_time ? `有效时间 ${formatTime(frame.valid_time)}` : ""),
+  ].filter(Boolean);
+  els.productNote.textContent = parts.join(" ");
 }
 
 function currentRun() {
@@ -356,20 +332,13 @@ function stepLead(delta) {
   render();
 }
 
-function togglePlayback() {
-  if (state.playbackTimer) {
-    stopPlayback();
-    return;
-  }
-  setText(els.playToggle, "暂停");
-  state.playbackTimer = window.setInterval(() => stepLead(1), 1800);
-}
-
-function stopPlayback() {
-  if (!state.playbackTimer) return;
-  window.clearInterval(state.playbackTimer);
-  state.playbackTimer = null;
-  setText(els.playToggle, "播放");
+function withCacheBuster(url) {
+  const interval = Number.isFinite(pageConfig.refreshMs) && pageConfig.refreshMs > 0
+    ? pageConfig.refreshMs
+    : DEFAULT_REFRESH_MS;
+  const bucket = Math.floor(Date.now() / interval);
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}v=${bucket}`;
 }
 
 function resolveAssetPath(file) {
@@ -412,6 +381,5 @@ function formatTime(value) {
 
 els.prevLead?.addEventListener("click", () => stepLead(-1));
 els.nextLead?.addEventListener("click", () => stepLead(1));
-els.playToggle?.addEventListener("click", togglePlayback);
 
 init();

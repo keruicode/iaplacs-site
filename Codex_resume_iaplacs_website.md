@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-10 01:44 CST
+Last updated: 2026-07-10 01:51 CST
 
 ## Resume Commands
 
@@ -67,6 +67,10 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - Local UI work was rebased onto remote server commits `60bafcb`, `770acf8`, and `829a334`, resolving the `forecast-runs.json` add/add conflict by rerunning `python3 tools/build_forecast_catalog.py`.
 - Pushed feature commit `f48c2df Add multi-run forecast catalog` to `origin/main`.
 - Deployed online frontend now reads `data/current/forecast-runs.json`; versioned checks confirmed `main_latest=20260709_00` and `shangrao_latest=20260709_02`.
+- User reported `/shangrao/` showing the old `无法读取 manifest.json` state. This was traced to stale cached `app.js`/HTML behavior, so `index.html` and `shangrao/index.html` now load versioned `styles.css?v=20260710-02` and `app.js?v=20260710-02`.
+- Removed the Play button and station-series blocks from homepage and Shangrao page. The right panel now shows product status, precipitation color scale, and product/service notes instead of fake Beijing/Shangrao station charts.
+- Updated `app.js` to cache-bust forecast JSON reads by refresh interval, disable previous/next controls when a product has only one image, and render product notes.
+- Updated precipitation legends in `tools/build_forecast_catalog.py` to a stepped precipitation scale with ticks `0, 0.1, 2, 5, 10, 25, 50, 100+`, then regenerated `data/current/forecast-runs.json`.
 
 ## Important Changed Files
 
@@ -313,6 +317,28 @@ NO_PROXY=github.io,keruicode.github.io,iaplacs.xyz curl --max-time 10 -L -r 0-0 
 ```
 
 Result: homepage and Shangrao dynamic markup found; WRF WebP returned `HTTP/2 200`; WORK_nx range request returned `http=206 size=1`.
+
+```bash
+node --check app.js
+python3 -m py_compile tools/build_forecast_catalog.py
+python3 -m json.tool data/current/forecast-runs.json
+```
+
+Result after cache/UI cleanup: all passed.
+
+```bash
+rg -n "playToggle|播放|站点序列|stationChart|station-block" index.html shangrao/index.html app.js styles.css
+```
+
+Result after cleanup: no matches.
+
+```bash
+NO_PROXY=127.0.0.1,localhost curl -s http://127.0.0.1:5174/shangrao/ | rg -n "app.js\?v=20260710-02|styles.css\?v=20260710-02|productNote|forecast-runs|上饶产品"
+NO_PROXY=127.0.0.1,localhost curl -s http://127.0.0.1:5174/ | rg -n "app.js\?v=20260710-02|styles.css\?v=20260710-02|productNote|forecast-runs|产品状态"
+NO_PROXY=127.0.0.1,localhost curl -s 'http://127.0.0.1:5174/data/current/forecast-runs.json?v=test' -o /tmp/iaplacs_local_forecast_runs.json
+```
+
+Result: local homepage and Shangrao page reference versioned assets and `forecast-runs.json`; local catalog parses with `main_latest=20260709_00`, `shangrao_latest=20260709_02`, and stepped precipitation ticks `['0', '0.1', '2', '5', '10', '25', '50', '100+']`.
 
 ```bash
 dig +short iaplacs.xyz A
