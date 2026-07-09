@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-09 23:15 CST
+Last updated: 2026-07-09 23:22 CST
 
 ## Resume Commands
 
@@ -40,6 +40,8 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - Created local initial commit `30504fe Build initial static forecast site`.
 - User pushed the repository to GitHub. Local remote is `origin git@github.com:keruicode/iaplacs-site.git`; current branch is `main`, tracking `origin/main`.
 - GitHub Pages should be enabled from `Settings -> Pages -> Build and deployment -> Source: Deploy from a branch -> Branch: main -> folder: / (root) -> Save`.
+- Added LACS branding assets. The user-provided low-resolution `logo_lacs.png` was copied to `assets/brand/logo-lacs-source.png`; a 4x transparent wordmark backup was generated as `assets/brand/logo-lacs-wordmark@4x.png`; an AI-generated technology-style icon was saved as `assets/brand/logo-lacs-tech-icon.png`; favicon assets were generated; and the website header now uses `assets/brand/logo-lacs-lockup@2x.png`, a crisp transparent lockup with exact Chinese/English text.
+- Local preview server is currently running at `http://127.0.0.1:5173/`.
 
 ## Important Changed Files
 
@@ -55,6 +57,12 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - `/Users/xiaoxiaotu/_01_IAP/Website/CNAME`
 - `/Users/xiaoxiaotu/_01_IAP/Website/.nojekyll`
 - `/Users/xiaoxiaotu/_01_IAP/Website/.gitignore`
+- `/Users/xiaoxiaotu/_01_IAP/Website/assets/brand/logo-lacs-lockup@2x.png`
+- `/Users/xiaoxiaotu/_01_IAP/Website/assets/brand/logo-lacs-tech-icon.png`
+- `/Users/xiaoxiaotu/_01_IAP/Website/assets/brand/logo-lacs-source.png`
+- `/Users/xiaoxiaotu/_01_IAP/Website/assets/brand/logo-lacs-wordmark@4x.png`
+- `/Users/xiaoxiaotu/_01_IAP/Website/assets/brand/favicon-192.png`
+- `/Users/xiaoxiaotu/_01_IAP/Website/assets/brand/favicon-512.png`
 
 ## Verification Commands and Results
 
@@ -112,6 +120,18 @@ git status --short
 
 Result after initial commit: clean.
 
+```bash
+NO_PROXY=127.0.0.1,localhost curl -I http://127.0.0.1:5173/assets/brand/logo-lacs-lockup@2x.png
+```
+
+Result: `HTTP/1.0 200 OK`, `Content-type: image/png`, `Content-Length: 163935`.
+
+```bash
+NO_PROXY=127.0.0.1,localhost curl -s http://127.0.0.1:5173/ | rg -n "logo-lacs-lockup|favicon|IAP-LACS Forecast"
+```
+
+Result: page references `favicon-192.png`, `favicon-512.png`, and `logo-lacs-lockup@2x.png`.
+
 Official references checked during planning:
 
 - Alibaba Cloud DNS add-record documentation.
@@ -135,15 +155,18 @@ Official references checked during planning:
 - GitHub Pages publishing source docs say for branch-based publishing, select `Deploy from a branch`, then choose the branch and source folder; for this repository that is `main` and `/`.
 - Do not send raw large NetCDF/GRIB/MICAPS files directly to browsers. Generate Web-friendly manifests, images, tiles, GeoJSON, or compressed JSON.
 - The root raw PNG `Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-06_18_00.png` is 7000x7000 and 5.8 MB, and is intentionally ignored by Git. Use the optimized WebP in `data/current/maps/` for the site.
+- The root user-provided `logo_lacs.png` is ignored by Git after copying it into `assets/brand/logo-lacs-source.png`, so repository assets stay under `assets/brand/`.
+- AI-generated logo text is risky, so the website header lockup uses the AI-generated icon only; Chinese and English text are rendered from exact typed strings to avoid text hallucination.
 - In-app browser verification was attempted but no in-app browser backend was available (`agent.browsers.list()` returned `[]`). Verification was completed via local HTTP checks and image inspection instead.
 - Use atomic publish directories so failed data updates do not break the live site.
 - HTTPS via Certbot usually requires the HTTP site to be reachable on port 80, unless using DNS validation.
 
 ## Next Recommended Actions
 
-1. Enable GitHub Pages in `keruicode/iaplacs-site` from the repository's `main` branch/root.
-2. Confirm the temporary URL works: `https://keruicode.github.io/iaplacs-site/`.
-3. Configure GitHub Pages custom domain `iaplacs.xyz`.
-4. In Aliyun DNS, add GitHub Pages records for `@` and `www`.
-5. Later, create an IAP server publishing script that generates optimized images and `manifest.json`, then commits/pushes updates to the repository.
-6. If image volume grows, keep GitHub Pages for the app and move large map assets to object storage/CDN.
+1. Push the LACS logo commit to GitHub if it has not been pushed.
+2. Enable GitHub Pages in `keruicode/iaplacs-site` from the repository's `main` branch/root.
+3. Confirm the temporary URL works: `https://keruicode.github.io/iaplacs-site/`.
+4. Configure GitHub Pages custom domain `iaplacs.xyz`.
+5. In Aliyun DNS, add GitHub Pages records for `@` and `www`.
+6. Later, create an IAP server publishing script that generates optimized images and `manifest.json`, then commits/pushes updates to the repository.
+7. If image volume grows, keep GitHub Pages for the app and move large map assets to object storage/CDN.
