@@ -91,14 +91,14 @@ git push
 
 For production, publish into timestamped release directories and switch `current` only after validation.
 
-For the current WRF montage workflow, the server publishing helper should copy
+For the current Shangrao WRF montage workflow, the server publishing helper should copy
 `*_combined_*_grid.png` files into:
 
 ```text
 data/current/maps/wrf_montage_YYYYMMDD_HH/
 ```
 
-For the current WORK_nx summary workflow, copy the summary image plus its
+For the current Ningxia/WORK_nx workflow, copy the summary image plus its
 `manifest_fragment.json` into:
 
 ```text
@@ -107,3 +107,5 @@ data/current/maps/worknx_summary_YYYYMMDD_HH/
 
 Then run `python3 tools/build_forecast_catalog.py` before `git add`, so the
 website can expose the new 起报时间 automatically after GitHub Pages deploys.
+The generated catalog keeps `/` as the airport service, `/ningxia/` as the
+WORK_nx/NX product page, and `/shangrao/` as the Shangrao product page.

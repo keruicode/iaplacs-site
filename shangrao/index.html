@@ -10,7 +10,7 @@
     <title>上饶专项服务 | IAP-LACS Forecast</title>
     <link rel="icon" type="image/png" sizes="192x192" href="../assets/brand/favicon-192.png" />
     <link rel="apple-touch-icon" href="../assets/brand/favicon-512.png" />
-    <link rel="stylesheet" href="../styles.css?v=20260710-02" />
+    <link rel="stylesheet" href="../styles.css?v=20260710-03" />
   </head>
   <body
     data-service="shangrao"
@@ -34,7 +34,8 @@
       </div>
       <div class="topbar-actions">
         <nav class="site-nav" aria-label="站点导航">
-          <a class="nav-link" href="../">综合预报</a>
+          <a class="nav-link" href="../">机场服务</a>
+          <a class="nav-link" href="../ningxia/">宁夏预报</a>
           <a class="nav-link is-active" href="./">上饶服务</a>
         </nav>
         <div class="run-state" aria-live="polite">
@@ -44,16 +45,20 @@
       </div>
     </header>
 
+    <section class="run-switchbar" aria-label="上饶起报时间">
+      <div class="run-switch-heading">
+        <p class="eyebrow">Initial Time</p>
+        <h2>起报时间</h2>
+        <p>选择上饶专项服务的不同时次产品，新时次提交后会自动出现在这里。</p>
+      </div>
+      <div id="runList" class="run-list run-list-horizontal" aria-label="上饶起报时间"></div>
+    </section>
+
     <main class="workspace service-workspace">
       <section class="control-panel" aria-label="上饶服务控制">
         <div class="panel-heading">
           <p class="eyebrow">Shangrao Service</p>
           <h2>上饶产品</h2>
-        </div>
-
-        <div class="meta-block run-selector-block">
-          <p class="meta-label">起报时间</p>
-          <div id="runList" class="run-list" aria-label="上饶起报时间"></div>
         </div>
 
         <div id="productList" class="product-list"></div>
@@ -133,6 +138,6 @@
       <span>iaplacs.xyz/shangrao</span>
     </footer>
 
-    <script src="../app.js?v=20260710-02"></script>
+    <script src="../app.js?v=20260710-03"></script>
   </body>
 </html>

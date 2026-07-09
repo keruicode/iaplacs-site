@@ -8,7 +8,6 @@ import os
 import re
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from typing import Optional
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,33 +21,69 @@ PRECIP_LEGEND = {
         "#f7fbff 0 12.5%, #d6ecff 12.5% 25%, "
         "#8fc9ff 25% 37.5%, #3f8fc5 37.5% 50%, "
         "#31a354 50% 62.5%, #fdd049 62.5% 75%, "
-        "#f46d43 75% 87.5%, #b2182b 87.5% 100%)"
+        "#f46d43 75% 87.5%, #7a0177 87.5% 100%)"
     ),
-    "ticks": ["0", "0.1", "2", "5", "10", "25", "50", "100+"],
+    "ticks": ["0", "0.1", "1", "5", "10", "25", "50", "100+"],
+}
+TEMP_LEGEND = {
+    "gradient": (
+        "linear-gradient(90deg, "
+        "#313695 0 14.3%, #4575b4 14.3% 28.6%, "
+        "#74add1 28.6% 42.9%, #ffffbf 42.9% 57.2%, "
+        "#fdae61 57.2% 71.5%, #f46d43 71.5% 85.8%, "
+        "#a50026 85.8% 100%)"
+    ),
+    "ticks": ["-20", "-10", "0", "10", "20", "30", "40"],
+}
+WIND_LEGEND = {
+    "gradient": (
+        "linear-gradient(90deg, "
+        "#f7fbff 0 16.7%, #d0e5f2 16.7% 33.4%, "
+        "#74a9cf 33.4% 50.1%, #2b8cbe 50.1% 66.8%, "
+        "#045a8d 66.8% 83.5%, #54278f 83.5% 100%)"
+    ),
+    "ticks": ["0", "2", "5", "8", "12", "17", "25+"],
 }
 
 
 RUN_DIR_RE = re.compile(r"^wrf_montage_(\d{8}_\d{2})$")
 DETAIL_RE = re.compile(r"_combined_detail_p(\d{2})_")
+LEAD_RANGE_RE = re.compile(r"T(\d{2})_T(\d{2})", re.IGNORECASE)
 
 
 def main() -> None:
+    airport_runs = build_airport_runs()
     wrf_runs = build_wrf_runs()
-    worknx_runs = build_worknx_runs()
-    main_runs = merge_runs(worknx_runs + wrf_runs)
+    ningxia_runs = build_ningxia_runs()
     shangrao_runs = wrf_runs
-    catalog_published_at = latest_published_at(main_runs + shangrao_runs)
+    catalog_published_at = latest_published_at(
+        airport_runs + ningxia_runs + shangrao_runs
+    )
     catalog = {
         "schema_version": 1,
         "site": {"name": "IAP-LACS Forecast", "domain": "iaplacs.xyz"},
         "published_at": catalog_published_at,
         "services": {
+            "airport": {
+                "title": "机场气象服务",
+                "subtitle": "Airport weather service",
+                "note": "主页作为机场服务入口，当前保留降水、2米气温和10米风场样例产品；后续可替换为机场实况、短临和专用模式产品。",
+                "latest_run": airport_runs[0]["id"] if airport_runs else None,
+                "runs": airport_runs,
+            },
             "main": {
-                "title": "综合预报",
-                "subtitle": "Multi-run forecast products",
-                "note": "综合预报页面已接入服务器发布的 WORK_nx 综合图和 WRF 拼图目录；后续可继续加入其它模式、雷达或站点产品。",
-                "latest_run": main_runs[0]["id"] if main_runs else None,
-                "runs": main_runs,
+                "title": "机场气象服务",
+                "subtitle": "Airport weather service",
+                "note": "兼容旧入口：主页已调整为机场服务。",
+                "latest_run": airport_runs[0]["id"] if airport_runs else None,
+                "runs": airport_runs,
+            },
+            "ningxia": {
+                "title": "宁夏预报",
+                "subtitle": "Ningxia forecast",
+                "note": "宁夏页面集中展示 WORK_nx 发布的宁夏区域预报图。新起报时次推送到仓库后，会自动出现在顶部起报时间选择区。",
+                "latest_run": ningxia_runs[0]["id"] if ningxia_runs else None,
+                "runs": ningxia_runs,
             },
             "shangrao": {
                 "title": "上饶专项天气服务",
@@ -64,8 +99,120 @@ def main() -> None:
     )
     print(
         f"wrote {CATALOG_PATH.relative_to(ROOT)} "
-        f"with {len(main_runs)} main run(s), {len(shangrao_runs)} shangrao run(s)"
+        f"with {len(airport_runs)} airport run(s), "
+        f"{len(ningxia_runs)} ningxia run(s), {len(shangrao_runs)} shangrao run(s)"
     )
+
+
+def build_airport_runs() -> list[dict]:
+    products = [
+        build_airport_product(
+            product_id="airport_precip",
+            title="机场降水预报",
+            category="机场服务",
+            unit="mm",
+            color="#0f68c8",
+            description="机场周边降水落区和强度样例产品，用于后续接入机场短临保障数据。",
+            legend=PRECIP_LEGEND,
+            metrics=[
+                {"label": "产品状态", "value": "样例接入"},
+                {"label": "图像数量", "value": "2"},
+                {"label": "服务对象", "value": "机场保障"},
+            ],
+            frames=[
+                ("f024", 24, "F024", "2026-07-10T08:00:00+08:00", "precip_f024.svg"),
+                ("f048", 48, "F048", "2026-07-11T08:00:00+08:00", "precip_f048.svg"),
+            ],
+        ),
+        build_airport_product(
+            product_id="airport_temperature",
+            title="机场 2 米气温",
+            category="机场服务",
+            unit="degC",
+            color="#b73b3b",
+            description="近地面气温分布样例产品，用于识别机场周边冷暖区和边界层温度变化。",
+            legend=TEMP_LEGEND,
+            metrics=[
+                {"label": "区域最高", "value": "36.2 degC"},
+                {"label": "区域最低", "value": "17.4 degC"},
+                {"label": "产品状态", "value": "样例接入"},
+            ],
+            frames=[
+                ("f024", 24, "F024", "2026-07-10T08:00:00+08:00", "temp_f024.svg"),
+                ("f048", 48, "F048", "2026-07-11T08:00:00+08:00", "temp_f048.svg"),
+            ],
+        ),
+        build_airport_product(
+            product_id="airport_wind",
+            title="机场 10 米风场",
+            category="机场服务",
+            unit="m/s",
+            color="#2c5f9e",
+            description="近地面风速和风向样例产品，用于展示机场风场保障产品入口。",
+            legend=WIND_LEGEND,
+            metrics=[
+                {"label": "最大风速", "value": "15.8 m/s"},
+                {"label": "主导风向", "value": "SE"},
+                {"label": "产品状态", "value": "样例接入"},
+            ],
+            frames=[
+                ("f024", 24, "F024", "2026-07-10T08:00:00+08:00", "wind_f024.svg"),
+                ("f048", 48, "F048", "2026-07-11T08:00:00+08:00", "wind_f048.svg"),
+            ],
+        ),
+    ]
+    products = [product for product in products if product["frames"]]
+    if not products:
+        return []
+    return [
+        {
+            "id": "airport_20260709_08",
+            "label": "2026-07-09 08:00 BJT",
+            "run_time": "2026-07-09T08:00:00+08:00",
+            "published_at": latest_airport_mtime(products).isoformat(),
+            "summary": "机场服务样例产品，包含降水、气温和风场。",
+            "products": products,
+        }
+    ]
+
+
+def build_airport_product(
+    product_id: str,
+    title: str,
+    category: str,
+    unit: str,
+    color: str,
+    description: str,
+    legend: dict,
+    metrics: list[dict],
+    frames: list[tuple[str, int, str, str, str]],
+) -> dict:
+    built_frames = []
+    for frame_id, lead, lead_label, valid_time, file_name in frames:
+        file_path = MAPS_DIR / file_name
+        if not file_path.exists():
+            continue
+        built_frames.append(
+            {
+                "id": frame_id,
+                "lead": lead,
+                "lead_label": lead_label,
+                "valid_time": valid_time,
+                "file": "./" + file_path.relative_to(ROOT).as_posix(),
+                "bytes": file_path.stat().st_size,
+            }
+        )
+    return {
+        "id": product_id,
+        "title": title,
+        "category": category,
+        "unit": unit,
+        "color": color,
+        "description": description,
+        "legend": legend,
+        "metrics": metrics,
+        "frames": built_frames,
+    }
 
 
 def build_wrf_runs() -> list[dict]:
@@ -99,7 +246,7 @@ def build_wrf_runs() -> list[dict]:
     return runs[:MAX_RUNS]
 
 
-def build_worknx_runs() -> list[dict]:
+def build_ningxia_runs() -> list[dict]:
     runs = []
     if not MAPS_DIR.exists():
         return runs
@@ -111,15 +258,13 @@ def build_worknx_runs() -> list[dict]:
         if not fragment_path.exists():
             continue
         fragment = json.loads(fragment_path.read_text(encoding="utf-8"))
-        file_path = ROOT / fragment["file"].replace("./", "", 1)
-        if not file_path.exists():
+        frames = build_ningxia_frames(run_dir, fragment)
+        if not frames:
             continue
 
         run_id = fragment.get("run_prefix") or run_dir.name.replace("worknx_summary_", "")
         run_time = fragment.get("run_time") or parse_run_time(run_id).isoformat()
         generated_at = fragment.get("generated_at") or latest_mtime(run_dir).isoformat()
-        valid_time = fragment.get("valid_time")
-        byte_count = int(fragment.get("bytes") or file_path.stat().st_size)
 
         runs.append(
             {
@@ -127,8 +272,8 @@ def build_worknx_runs() -> list[dict]:
                 "label": f"{format_run_label(run_time)} BJT",
                 "run_time": run_time,
                 "published_at": generated_at,
-                "summary": "WORK_nx 综合降水预报拼图",
-                "products": [build_worknx_product(run_id, fragment["file"], valid_time, byte_count, generated_at)],
+                "summary": f"宁夏区域预报图集，共 {len(frames)} 张图",
+                "products": [build_ningxia_product(run_id, frames, generated_at)],
             }
         )
 
@@ -136,58 +281,63 @@ def build_worknx_runs() -> list[dict]:
     return runs[:MAX_RUNS]
 
 
-def build_worknx_product(
-    run_id: str, file_name: str, valid_time: Optional[str], byte_count: int, generated_at: str
-) -> dict:
+def build_ningxia_frames(run_dir: Path, fragment: dict) -> list[dict]:
+    image_paths = sorted(
+        path
+        for path in run_dir.iterdir()
+        if path.suffix.lower() in {".png", ".webp", ".jpg", ".jpeg"}
+    )
+    if not image_paths and fragment.get("file"):
+        image_paths = [ROOT / fragment["file"].replace("./", "", 1)]
+
+    frames = []
+    fragment_file = fragment.get("file", "")
+    for path in image_paths:
+        if not path.exists():
+            continue
+        lead_label = lead_label_from_name(path.name)
+        frame = {
+            "id": path.stem.lower().replace("-", "_"),
+            "lead": lead_value_from_label(lead_label),
+            "lead_label": lead_label,
+            "file": "./" + path.relative_to(ROOT).as_posix(),
+            "bytes": path.stat().st_size,
+        }
+        if fragment_file and path == ROOT / fragment_file.replace("./", "", 1):
+            valid_time = fragment.get("valid_time")
+            if valid_time:
+                frame["valid_time"] = valid_time
+        frames.append(frame)
+    frames.sort(key=lambda item: (item.get("lead", 0), item["file"]))
+    return frames
+
+
+def build_ningxia_product(run_id: str, frames: list[dict], generated_at: str) -> dict:
     return {
-        "id": "worknx_precip_summary",
-        "title": "WRF 综合降水预报 T01-T48",
-        "category": "综合预报",
+        "id": "ningxia_precip_series",
+        "title": "宁夏降水预报图集",
+        "category": "宁夏预报",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": "WORK_nx 生成的 WRF 全降水逐小时综合预报拼图。",
+        "description": "WORK_nx 生成的宁夏区域降水预报图集，按起报时次自动归档。",
         "legend": PRECIP_LEGEND,
         "metrics": [
             {"label": "起报时次", "value": run_id.replace("_", " ") + " UTC"},
             {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},
-            {"label": "图像大小", "value": human_size(byte_count)},
+            {"label": "图像数量", "value": str(len(frames))},
         ],
-        "frames": [
-            {
-                "id": "summary_t01_t48",
-                "lead": 48,
-                "lead_label": "T01-T48",
-                "valid_time": valid_time,
-                "file": file_name,
-                "bytes": byte_count,
-            }
-        ],
+        "frames": frames,
     }
-
-
-def merge_runs(runs: list[dict]) -> list[dict]:
-    merged: dict[str, dict] = {}
-    for run in runs:
-        current = merged.get(run["id"])
-        if not current:
-            merged[run["id"]] = run
-            continue
-        current.setdefault("products", []).extend(run.get("products", []))
-        if run.get("published_at", "") > current.get("published_at", ""):
-            current["published_at"] = run["published_at"]
-    ordered = list(merged.values())
-    ordered.sort(key=lambda item: item["run_time"], reverse=True)
-    return ordered[:MAX_RUNS]
 
 
 def build_wrf_product(run_id: str, frames: list[dict]) -> dict:
     return {
         "id": "wrf_rain_montage",
-        "title": "WRF 逐小时降水拼图",
-        "category": "模式预报",
+        "title": "上饶 WRF 逐小时降水拼图",
+        "category": "上饶预报",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": f"起报时次 {run_id}，包含总览图和分段细节图。",
+        "description": f"上饶服务起报时次 {run_id}，包含总览图和分段细节图。",
         "legend": PRECIP_LEGEND,
         "metrics": [
             {"label": "起报时次", "value": run_id.replace("_", " ") + " BJT"},
@@ -260,6 +410,18 @@ def frame_meta(run_id: str, key: str) -> dict:
     }
 
 
+def lead_label_from_name(file_name: str) -> str:
+    match = LEAD_RANGE_RE.search(file_name)
+    if match:
+        return f"T{match.group(1)}-T{match.group(2)}"
+    return Path(file_name).stem
+
+
+def lead_value_from_label(label: str) -> int:
+    match = re.search(r"(\d+)(?!.*\d)", label)
+    return int(match.group(1)) if match else 0
+
+
 def parse_run_time(run_id: str) -> datetime:
     return datetime.strptime(run_id, "%Y%m%d_%H").replace(tzinfo=BJT)
 
@@ -285,6 +447,18 @@ def latest_published_at(runs: list[dict]) -> str:
     if not runs:
         return iso_now()
     return max(run["published_at"] for run in runs)
+
+
+def latest_airport_mtime(products: list[dict]) -> datetime:
+    mtimes = []
+    for product in products:
+        for frame in product.get("frames", []):
+            path = ROOT / frame["file"].replace("./", "", 1)
+            if path.exists():
+                mtimes.append(path.stat().st_mtime)
+    if not mtimes:
+        return datetime.now(tz=BJT)
+    return datetime.fromtimestamp(max(mtimes), tz=BJT)
 
 
 def latest_mtime(path: Path) -> datetime:

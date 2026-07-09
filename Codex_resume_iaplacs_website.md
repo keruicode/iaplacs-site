@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-10 01:55 CST
+Last updated: 2026-07-10 02:06 CST
 
 ## Resume Commands
 
@@ -73,6 +73,12 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - Updated precipitation legends in `tools/build_forecast_catalog.py` to a stepped precipitation scale with ticks `0, 0.1, 2, 5, 10, 25, 50, 100+`, then regenerated `data/current/forecast-runs.json`.
 - Pushed fix commit `e9baec6 Fix Shangrao forecast viewer state` to `origin/main`.
 - Verified deployed `/shangrao/?v=e9baec6`, `app.js?v=20260710-02`, and `forecast-runs.json?v=e9baec6`: Shangrao page references versioned CSS/JS, the JS contains `withCacheBuster`, and the online catalog still reports `main_latest=20260709_00`, `shangrao_latest=20260709_02`.
+- Reworked the site service structure after user feedback: `/` is now `机场气象服务`, `/ningxia/` is the dedicated `宁夏预报` page for WORK_nx/NX products, and `/shangrao/` remains the dedicated Shangrao WRF service page.
+- Added `ningxia/index.html`, updated top navigation across all pages, and moved 起报时间 selection into a horizontal top strip above the main product workspace.
+- Updated `tools/build_forecast_catalog.py` to generate separate `airport`, `ningxia`, and `shangrao` service catalogs. `main` remains as a compatibility alias for `airport`; WORK_nx products no longer appear on the homepage or Shangrao page.
+- Restored homepage fallback `manifest.json` to airport sample products and removed the old Beijing station-series fallback.
+- Updated precipitation, temperature, and wind legends to stepped scales: precipitation ticks `0, 0.1, 1, 5, 10, 25, 50, 100+`; temperature ticks `-20, -10, 0, 10, 20, 30, 40`; wind ticks `0, 2, 5, 8, 12, 17, 25+`.
+- Current local preview is running at `http://127.0.0.1:5175/`; `http://127.0.0.1:5174/` is occupied by an older stuck Python listener.
 
 ## Important Changed Files
 
@@ -98,6 +104,7 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - `/Users/xiaoxiaotu/_01_IAP/Website/assets/brand/favicon-512.png`
 - `/Users/xiaoxiaotu/_01_IAP/Website/assets/brand/logo-lacs-blue-icon.png`
 - `/Users/xiaoxiaotu/_01_IAP/Website/shangrao/index.html`
+- `/Users/xiaoxiaotu/_01_IAP/Website/ningxia/index.html`
 - `/Users/xiaoxiaotu/_01_IAP/Website/tools/build_forecast_catalog.py`
 - Remote GitHub Pages repo, pushed from `server02`:
   - `data/current/maps/wrf_montage_20260709_02/`
@@ -357,6 +364,55 @@ NO_PROXY=github.io,keruicode.github.io,iaplacs.xyz curl -s 'https://iaplacs.xyz/
 Result: online Shangrao HTML references versioned CSS/JS and product notes; online app JS contains `withCacheBuster` and `productNote` with no `playToggle`/`stationChart`; online catalog reports `main_latest=20260709_00`, `shangrao_latest=20260709_02`, and stepped precipitation ticks `['0', '0.1', '2', '5', '10', '25', '50', '100+']`.
 
 ```bash
+python3 tools/build_forecast_catalog.py
+```
+
+Result after airport/Ningxia/Shangrao split: `wrote data/current/forecast-runs.json with 1 airport run(s), 1 ningxia run(s), 1 shangrao run(s)`.
+
+```bash
+node --check app.js
+python3 -m py_compile tools/build_forecast_catalog.py
+python3 -m json.tool data/current/forecast-runs.json
+python3 -m json.tool data/current/manifest.json
+```
+
+Result after service split: all passed.
+
+```bash
+node - <<'NODE'
+const fs=require('fs');
+const cat=JSON.parse(fs.readFileSync('data/current/forecast-runs.json','utf8'));
+const missing=[];
+for (const [svcName, svc] of Object.entries(cat.services || {})) {
+  for (const run of svc.runs || []) {
+    for (const product of run.products || []) {
+      for (const frame of product.frames || []) {
+        const file=frame.file?.replace(/^\.\/?/,'');
+        if (!file || !fs.existsSync(file)) missing.push(`${svcName}/${run.id}/${product.id}: ${frame.file}`);
+      }
+    }
+  }
+}
+console.log(`services=${Object.keys(cat.services).join(',')}`);
+console.log(`airport_products=${cat.services.airport.runs[0].products.map(p=>p.id).join(',')}`);
+console.log(`ningxia_products=${cat.services.ningxia.runs[0].products.map(p=>p.id).join(',')}`);
+console.log(`shangrao_products=${cat.services.shangrao.runs[0].products.map(p=>p.id).join(',')}`);
+console.log(`missing=${JSON.stringify(missing)}`);
+process.exit(missing.length ? 1 : 0);
+NODE
+```
+
+Result: `services=airport,main,ningxia,shangrao`; `airport_products=airport_precip,airport_temperature,airport_wind`; `ningxia_products=ningxia_precip_series`; `shangrao_products=wrf_rain_montage`; `missing=[]`.
+
+```bash
+/bin/zsh -lc "NO_PROXY=127.0.0.1,localhost curl -I http://127.0.0.1:5175/"
+/bin/zsh -lc "NO_PROXY=127.0.0.1,localhost curl -I http://127.0.0.1:5175/ningxia/"
+/bin/zsh -lc "NO_PROXY=127.0.0.1,localhost curl -I http://127.0.0.1:5175/shangrao/"
+```
+
+Result: all three local preview pages returned `HTTP/1.0 200 OK`.
+
+```bash
 dig +short iaplacs.xyz A
 dig +short www.iaplacs.xyz CNAME
 dig +short www.iaplacs.xyz A
@@ -408,10 +464,11 @@ Official references checked during planning:
 - The root raw PNG `Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-06_18_00.png` is 7000x7000 and 5.8 MB, and is intentionally ignored by Git. Use the optimized WebP in `data/current/maps/` for the site.
 - The root user-provided `logo_lacs.png` is ignored by Git after copying it into `assets/brand/logo-lacs-source.png`, so repository assets stay under `assets/brand/`.
 - AI-generated logo text is risky, so the website header lockup uses the AI-generated icon only; Chinese and English text are rendered from exact typed strings to avoid text hallucination.
-- The active header no longer uses the lockup PNG for text. Keep LACS Chinese and English names as HTML text in `index.html` and `shangrao/index.html`.
+- The active header no longer uses the lockup PNG for text. Keep LACS Chinese and English names as HTML text in `index.html`, `ningxia/index.html`, and `shangrao/index.html`.
 - GitHub Pages does not provide reliable directory listing for discovering new image folders. Server-side publishing must update `data/current/forecast-runs.json` whenever it adds a new `wrf_montage_YYYYMMDD_HH` or `worknx_summary_YYYYMMDD_HH` directory.
 - `tools/build_forecast_catalog.py` intentionally uses product file mtimes for `published_at`, not wall-clock time, so repeated server runs do not create false Git changes when images are unchanged.
-- For the WORK_nx comprehensive forecast, "time" means the image file generation/modification time (`mtime`). Do not substitute the WRF `Times` variable or directory name when deciding the publication time.
+- For the WORK_nx/Ningxia forecast, "time" means the image file generation/modification time (`mtime`). Do not substitute the WRF `Times` variable or directory name when deciding the publication time.
+- Keep product ownership separate: homepage `/` is airport service, `/ningxia/` is WORK_nx/NX Ningxia products, and `/shangrao/` is Shangrao products. Do not merge Ningxia products back into the homepage or Shangrao page.
 - In-app browser verification was attempted but no in-app browser backend was available (`agent.browsers.list()` returned `[]`). Verification was completed via local HTTP checks and image inspection instead.
 - Use atomic publish directories so failed data updates do not break the live site.
 - HTTPS via Certbot usually requires the HTTP site to be reachable on port 80, unless using DNS validation.
@@ -420,6 +477,7 @@ Official references checked during planning:
 
 1. Add `www` separately as a CNAME to `keruicode.github.io`. In Aliyun quick-add this can be done by choosing `将网站域名解析到另外的目标域名`, selecting only `www.iaplacs.xyz`, and entering `keruicode.github.io`.
 2. Confirm GitHub Pages HTTPS remains enabled for `iaplacs.xyz` after DNS/certificate provisioning.
-3. Update the server-side publishing helpers on `login02` so every WRF montage or WORK_nx summary publish runs `python3 tools/build_forecast_catalog.py` before `git add`, then stages `data/current/forecast-runs.json` together with the image directory.
-4. Later, extend `tools/build_forecast_catalog.py` with additional product scanners when the server starts publishing more product families beyond WRF rainfall montage and WORK_nx summary.
-5. If image volume grows, keep GitHub Pages for the app and move large map assets to object storage/CDN.
+3. Update the server-side publishing helpers on `login02` so every Shangrao WRF montage or Ningxia/WORK_nx summary publish runs `python3 tools/build_forecast_catalog.py` before `git add`, then stages `data/current/forecast-runs.json` together with the image directory.
+4. Add real airport service products to replace the current airport samples under the homepage service.
+5. Later, extend `tools/build_forecast_catalog.py` with additional product scanners when the server starts publishing more product families beyond WRF rainfall montage and WORK_nx summary.
+6. If image volume grows, keep GitHub Pages for the app and move large map assets to object storage/CDN.

@@ -1,7 +1,7 @@
 const DEFAULT_REFRESH_MS = 5 * 60 * 1000;
 
 const pageConfig = {
-  service: document.body.dataset.service || "main",
+  service: document.body.dataset.service || "airport",
   manifestUrl: document.body.dataset.manifestUrl || "./data/current/forecast-runs.json",
   fallbackManifestUrl:
     document.body.dataset.fallbackManifestUrl || "./data/current/manifest.json",
@@ -104,7 +104,14 @@ function normalizeForecastData(raw) {
     published_at: raw.published_at,
     services: {
       main: {
-        title: raw.site?.name || "综合预报",
+        title: "机场气象服务",
+        note: raw.note,
+        latest_run: legacyRun.id,
+        runs: [legacyRun],
+        station_series: raw.station_series,
+      },
+      airport: {
+        title: "机场气象服务",
         note: raw.note,
         latest_run: legacyRun.id,
         runs: [legacyRun],
@@ -123,7 +130,12 @@ function normalizeForecastData(raw) {
 
 function selectService(catalog) {
   const services = catalog.services || {};
-  return services[pageConfig.service] || services.main || Object.values(services)[0];
+  return (
+    services[pageConfig.service] ||
+    services.airport ||
+    services.main ||
+    Object.values(services)[0]
+  );
 }
 
 function chooseRunIndex(service, previousRunId) {

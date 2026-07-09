@@ -180,7 +180,35 @@ button {
   grid-template-columns: minmax(220px, 280px) minmax(0, 1fr) minmax(240px, 320px);
   gap: 18px;
   padding: 18px;
-  min-height: calc(100vh - 91px);
+  min-height: calc(100vh - 177px);
+}
+
+.run-switchbar {
+  display: grid;
+  grid-template-columns: minmax(190px, 260px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  background: #ffffff;
+}
+
+.run-switch-heading h2,
+.run-switch-heading p {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+.run-switch-heading h2 {
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.run-switch-heading p:last-child {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .control-panel,
@@ -223,6 +251,15 @@ button {
   margin-bottom: 18px;
 }
 
+.run-list-horizontal {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 0;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+
 .run-button {
   display: grid;
   gap: 4px;
@@ -234,6 +271,11 @@ button {
   color: var(--ink);
   text-align: left;
   cursor: pointer;
+}
+
+.run-list-horizontal .run-button {
+  flex: 0 0 clamp(190px, 24vw, 300px);
+  min-height: 58px;
 }
 
 .run-button:hover,
@@ -515,7 +557,7 @@ button {
 }
 
 .service-workspace {
-  min-height: calc(100vh - 91px);
+  min-height: calc(100vh - 177px);
 }
 
 .service-shell {
@@ -728,6 +770,16 @@ button {
 
   .run-state {
     white-space: normal;
+  }
+
+  .run-switchbar {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .run-list-horizontal .run-button {
+    flex-basis: 230px;
   }
 
   .brand {

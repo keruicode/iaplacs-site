@@ -9,6 +9,12 @@ The first version is designed for GitHub Pages:
 - the browser loads `data/current/forecast-runs.json`, with `manifest.json` kept as a fallback;
 - the IAP server can later update files on a schedule and push them here.
 
+Current service routes:
+
+- `/` is the airport weather service entry;
+- `/ningxia/` shows WORK_nx/NX Ningxia forecast products;
+- `/shangrao/` shows Shangrao forecast products.
+
 ## Local Preview
 
 Run from this directory:
@@ -61,6 +67,9 @@ The IAP server should generate or copy a complete new run directory first, valid
 data/current/maps/wrf_montage_YYYYMMDD_HH/
 data/current/maps/worknx_summary_YYYYMMDD_HH/
 ```
+
+`worknx_summary_*` is exposed only on `/ningxia/`; `wrf_montage_*` is exposed
+only on `/shangrao/`. The homepage uses the airport service catalog.
 
 Then run:
 
