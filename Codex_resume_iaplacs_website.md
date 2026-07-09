@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-10 01:36 CST
+Last updated: 2026-07-10 01:44 CST
 
 ## Resume Commands
 
@@ -54,8 +54,8 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - Pushed content commit `830ebe0 Add Shangrao service page` to `origin/main`.
 - Verified the deployed custom-domain pages: `https://iaplacs.xyz/` contains the blue icon, HTML text logo, and Shangrao navigation; `https://iaplacs.xyz/shangrao/` returns the Shangrao service page and WRF sample image references.
 - Copied a newly generated WRF 36-panel montage test from the Huan `login02` workflow into `data/current/maps/wrf_montage_20260709_02/`.
-- Added `tools/build_forecast_catalog.py`, which scans `data/current/maps/wrf_montage_YYYYMMDD_HH/` directories and writes `data/current/forecast-runs.json`.
-- Added `data/current/forecast-runs.json` with the current `20260709_02` WRF montage run. The catalog exposes both `main` and `shangrao` services so homepage and `/shangrao/` can read the same latest server-published run.
+- Added `tools/build_forecast_catalog.py`, which scans `data/current/maps/wrf_montage_YYYYMMDD_HH/` and `data/current/maps/worknx_summary_YYYYMMDD_HH/` directories and writes `data/current/forecast-runs.json`.
+- Added `data/current/forecast-runs.json` with `main` service runs for WORK_nx `20260709_00` and WRF montage `20260709_02`, plus `shangrao` service run for WRF montage `20260709_02`.
 - Reworked `app.js` to support multi-run forecast catalogs, clickable 起报时间, clickable product/image frames, 5-minute no-store refresh, and fallback to the old `manifest.json` if the new catalog is absent.
 - Reworked `/shangrao/` from a static image page into a dynamic forecast viewer using the same app code as the homepage with `data-service="shangrao"`.
 - Updated README and deployment notes so the server publishing flow runs `python3 tools/build_forecast_catalog.py` after copying montage images and before `git add`.
@@ -64,8 +64,9 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - Latest WORK_nx image published by the server script:
   `/data1/elpt_2022_00083/zhoubj/WORK_nx/2026070900/gfs/wrf/Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-09_00_00.png`, with `mtime=2026-07-09T22:44:07+08:00` and size `5779597` bytes.
 - Server-side WORK_nx publishing pushed `770acf8 Update WORK_nx summary 20260709_00`, then follow-up commit `829a334 Update WORK_nx summary 20260709_00` after adding `forecast-runs.json` support.
-- The currently deployed online frontend still reads `data/current/manifest.json` directly. That live manifest now points `precip_24h` to the WORK_nx image and uses `published_at=2026-07-09T22:44:07+08:00`. `data/current/forecast-runs.json` is also generated for the newer local multi-run frontend.
-- The local checkout under `/Users/xiaoxiaotu/_01_IAP/Website` was not pulled after the server-side pushes. It may be behind GitHub and also has local untracked/modified files from the newer UI work; reconcile carefully before pushing local changes.
+- Local UI work was rebased onto remote server commits `60bafcb`, `770acf8`, and `829a334`, resolving the `forecast-runs.json` add/add conflict by rerunning `python3 tools/build_forecast_catalog.py`.
+- Pushed feature commit `f48c2df Add multi-run forecast catalog` to `origin/main`.
+- Deployed online frontend now reads `data/current/forecast-runs.json`; versioned checks confirmed `main_latest=20260709_00` and `shangrao_latest=20260709_02`.
 
 ## Important Changed Files
 
@@ -206,7 +207,15 @@ Result after GitHub Pages deployment: `https://iaplacs.xyz/shangrao/` returned `
 python3 tools/build_forecast_catalog.py
 ```
 
-Result: `wrote data/current/forecast-runs.json with 1 run(s)`.
+Result after WRF-only local catalog: `wrote data/current/forecast-runs.json with 1 run(s)`.
+
+After rebasing the server-side WORK_nx commits:
+
+```bash
+python3 tools/build_forecast_catalog.py
+```
+
+Result: `wrote data/current/forecast-runs.json with 2 main run(s), 1 shangrao run(s)`.
 
 ```bash
 python3 -m json.tool data/current/forecast-runs.json
@@ -276,6 +285,36 @@ curl -L --max-time 20 -I https://iaplacs.xyz/data/current/maps/worknx_summary_20
 Result: `HTTP/2 200`, `content-length: 5779597`.
 
 ```bash
+git push
+```
+
+Result after rebasing remote server commits: pushed `f48c2df Add multi-run forecast catalog` to `origin/main`.
+
+```bash
+NO_PROXY=github.io,keruicode.github.io,iaplacs.xyz curl -s 'https://iaplacs.xyz/data/current/forecast-runs.json?v=f48c2df' -o /tmp/iaplacs_live_forecast_runs.json
+python3 - <<'PY'
+import json
+p='/tmp/iaplacs_live_forecast_runs.json'
+print('bytes', len(open(p,'rb').read()))
+cat=json.load(open(p))
+print('services', list(cat.get('services',{})))
+print('main_latest', cat.get('services',{}).get('main',{}).get('latest_run'))
+print('shangrao_latest', cat.get('services',{}).get('shangrao',{}).get('latest_run'))
+PY
+```
+
+Result: `services ['main', 'shangrao']`, `main_latest 20260709_00`, `shangrao_latest 20260709_02`.
+
+```bash
+NO_PROXY=github.io,keruicode.github.io,iaplacs.xyz curl -s 'https://iaplacs.xyz/?v=f48c2df' | rg -n "forecast-runs|runList|data-service|上饶服务"
+NO_PROXY=github.io,keruicode.github.io,iaplacs.xyz curl -s 'https://iaplacs.xyz/shangrao/?v=f48c2df' | rg -n "forecast-runs|runList|data-service|上饶产品"
+NO_PROXY=github.io,keruicode.github.io,iaplacs.xyz curl -I 'https://iaplacs.xyz/data/current/maps/wrf_montage_20260709_02/20260709_02_combined_detail_p01_4x3_grid.webp?v=f48c2df'
+NO_PROXY=github.io,keruicode.github.io,iaplacs.xyz curl --max-time 10 -L -r 0-0 -o /tmp/iaplacs_worknx_byte.bin -w 'http=%{http_code} size=%{size_download}\n' 'https://iaplacs.xyz/data/current/maps/worknx_summary_20260709_00/Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-09_00_00.png?v=f48c2df'
+```
+
+Result: homepage and Shangrao dynamic markup found; WRF WebP returned `HTTP/2 200`; WORK_nx range request returned `http=206 size=1`.
+
+```bash
 dig +short iaplacs.xyz A
 dig +short www.iaplacs.xyz CNAME
 dig +short www.iaplacs.xyz A
@@ -328,7 +367,7 @@ Official references checked during planning:
 - The root user-provided `logo_lacs.png` is ignored by Git after copying it into `assets/brand/logo-lacs-source.png`, so repository assets stay under `assets/brand/`.
 - AI-generated logo text is risky, so the website header lockup uses the AI-generated icon only; Chinese and English text are rendered from exact typed strings to avoid text hallucination.
 - The active header no longer uses the lockup PNG for text. Keep LACS Chinese and English names as HTML text in `index.html` and `shangrao/index.html`.
-- GitHub Pages does not provide reliable directory listing for discovering new image folders. Server-side publishing must update the JSON entry point used by the deployed frontend. The current online homepage reads `data/current/manifest.json`; the newer local multi-run frontend reads `data/current/forecast-runs.json`, so keep both updated until the frontend and publisher are reconciled.
+- GitHub Pages does not provide reliable directory listing for discovering new image folders. Server-side publishing must update `data/current/forecast-runs.json` whenever it adds a new `wrf_montage_YYYYMMDD_HH` or `worknx_summary_YYYYMMDD_HH` directory.
 - `tools/build_forecast_catalog.py` intentionally uses product file mtimes for `published_at`, not wall-clock time, so repeated server runs do not create false Git changes when images are unchanged.
 - For the WORK_nx comprehensive forecast, "time" means the image file generation/modification time (`mtime`). Do not substitute the WRF `Times` variable or directory name when deciding the publication time.
 - In-app browser verification was attempted but no in-app browser backend was available (`agent.browsers.list()` returned `[]`). Verification was completed via local HTTP checks and image inspection instead.
@@ -339,6 +378,6 @@ Official references checked during planning:
 
 1. Add `www` separately as a CNAME to `keruicode.github.io`. In Aliyun quick-add this can be done by choosing `将网站域名解析到另外的目标域名`, selecting only `www.iaplacs.xyz`, and entering `keruicode.github.io`.
 2. Confirm GitHub Pages HTTPS remains enabled for `iaplacs.xyz` after DNS/certificate provisioning.
-3. Reconcile the local `/Users/xiaoxiaotu/_01_IAP/Website` checkout with the server-side GitHub commits before pushing local UI changes; expect local modified/untracked files and remote commits `60bafcb`, `770acf8`, and `829a334`.
-4. Later, update `publish_wrf_montage_to_github.sh` so WRF montage publishing also updates the currently deployed JSON entry point, not only the image directory.
+3. Update the server-side publishing helpers on `login02` so every WRF montage or WORK_nx summary publish runs `python3 tools/build_forecast_catalog.py` before `git add`, then stages `data/current/forecast-runs.json` together with the image directory.
+4. Later, extend `tools/build_forecast_catalog.py` with additional product scanners when the server starts publishing more product families beyond WRF rainfall montage and WORK_nx summary.
 5. If image volume grows, keep GitHub Pages for the app and move large map assets to object storage/CDN.
