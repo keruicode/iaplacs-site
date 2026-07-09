@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-09 23:55 CST
+Last updated: 2026-07-10 00:01 CST
 
 ## Resume Commands
 
@@ -47,6 +47,7 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - User is on the Aliyun domain registration details page showing DNS servers, SSL certificate, ESA, and a cloud-server purchase prompt. For the GitHub Pages route, this is not where to buy a server. Keep DNS servers as `dns13.hichina.com` and `dns14.hichina.com`; go to `云解析 DNS` / `解析设置` to add records instead.
 - User shared an Aliyun domain list screenshot. The correct next click is the blue `解析` action on the `iaplacs.xyz` row, not `管理`, not `DNS修改`, and not the cloud-server purchase prompt.
 - User shared the Aliyun `快速添加解析` screenshot. For that dialog, select only `iaplacs.xyz` for the IPv4/A-record batch, enter the four GitHub Pages IPs one per line, and do not select `www.iaplacs.xyz` there. Add `www` separately as a CNAME to `keruicode.github.io`.
+- User added the four A records for `iaplacs.xyz` successfully. Authoritative DNS at `dns13.hichina.com` now returns the four GitHub Pages IPs for `iaplacs.xyz`; `www.iaplacs.xyz` still has no CNAME/A response. Next step is adding `www` as a CNAME.
 
 ## Important Changed Files
 
@@ -157,6 +158,19 @@ dig +short iaplacs.xyz NS
 
 Result: `dns13.hichina.com`, `dns14.hichina.com`.
 
+```bash
+dig +short @dns13.hichina.com iaplacs.xyz A
+```
+
+Result: `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`.
+
+```bash
+dig +short @dns13.hichina.com www.iaplacs.xyz CNAME
+dig +short @dns13.hichina.com www.iaplacs.xyz A
+```
+
+Result: empty output.
+
 Official references checked during planning:
 
 - Alibaba Cloud DNS add-record documentation.
@@ -190,8 +204,7 @@ Official references checked during planning:
 
 1. Re-enter `iaplacs.xyz` in GitHub `Settings -> Pages -> Custom domain` and click `Save`.
 2. From the Aliyun domain list, click the blue `解析` action on the `iaplacs.xyz` row.
-3. In the Aliyun quick-add dialog, select only `iaplacs.xyz`, keep IPv4/A-record mode, and enter the four GitHub Pages IPs one per line.
-4. Add `www` separately as a CNAME to `keruicode.github.io`.
+3. Add `www` separately as a CNAME to `keruicode.github.io`. In Aliyun quick-add this can be done by choosing `将网站域名解析到另外的目标域名`, selecting only `www.iaplacs.xyz`, and entering `keruicode.github.io`.
 5. After DNS check passes, wait for GitHub certificate provisioning and keep/enforce HTTPS enabled.
 6. Later, create an IAP server publishing script that generates optimized images and `manifest.json`, then commits/pushes updates to the repository.
 7. If image volume grows, keep GitHub Pages for the app and move large map assets to object storage/CDN.
