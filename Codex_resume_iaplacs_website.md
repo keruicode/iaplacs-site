@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-10 01:51 CST
+Last updated: 2026-07-10 01:55 CST
 
 ## Resume Commands
 
@@ -71,6 +71,8 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - Removed the Play button and station-series blocks from homepage and Shangrao page. The right panel now shows product status, precipitation color scale, and product/service notes instead of fake Beijing/Shangrao station charts.
 - Updated `app.js` to cache-bust forecast JSON reads by refresh interval, disable previous/next controls when a product has only one image, and render product notes.
 - Updated precipitation legends in `tools/build_forecast_catalog.py` to a stepped precipitation scale with ticks `0, 0.1, 2, 5, 10, 25, 50, 100+`, then regenerated `data/current/forecast-runs.json`.
+- Pushed fix commit `e9baec6 Fix Shangrao forecast viewer state` to `origin/main`.
+- Verified deployed `/shangrao/?v=e9baec6`, `app.js?v=20260710-02`, and `forecast-runs.json?v=e9baec6`: Shangrao page references versioned CSS/JS, the JS contains `withCacheBuster`, and the online catalog still reports `main_latest=20260709_00`, `shangrao_latest=20260709_02`.
 
 ## Important Changed Files
 
@@ -339,6 +341,20 @@ NO_PROXY=127.0.0.1,localhost curl -s 'http://127.0.0.1:5174/data/current/forecas
 ```
 
 Result: local homepage and Shangrao page reference versioned assets and `forecast-runs.json`; local catalog parses with `main_latest=20260709_00`, `shangrao_latest=20260709_02`, and stepped precipitation ticks `['0', '0.1', '2', '5', '10', '25', '50', '100+']`.
+
+```bash
+git push
+```
+
+Result: pushed `e9baec6 Fix Shangrao forecast viewer state` to `origin/main`.
+
+```bash
+NO_PROXY=github.io,keruicode.github.io,iaplacs.xyz curl -s 'https://iaplacs.xyz/shangrao/?v=e9baec6' | rg -n "app.js\?v=20260710-02|styles.css\?v=20260710-02|productNote|forecast-runs|上饶产品|播放|站点序列"
+NO_PROXY=github.io,keruicode.github.io,iaplacs.xyz curl -s 'https://iaplacs.xyz/app.js?v=20260710-02' | rg -n "withCacheBuster|productNote|playToggle|stationChart|无法读取预报清单"
+NO_PROXY=github.io,keruicode.github.io,iaplacs.xyz curl -s 'https://iaplacs.xyz/data/current/forecast-runs.json?v=e9baec6' -o /tmp/iaplacs_live_runs_e9baec6.json
+```
+
+Result: online Shangrao HTML references versioned CSS/JS and product notes; online app JS contains `withCacheBuster` and `productNote` with no `playToggle`/`stationChart`; online catalog reports `main_latest=20260709_00`, `shangrao_latest=20260709_02`, and stepped precipitation ticks `['0', '0.1', '2', '5', '10', '25', '50', '100+']`.
 
 ```bash
 dig +short iaplacs.xyz A
