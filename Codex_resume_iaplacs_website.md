@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-10 00:20 CST
+Last updated: 2026-07-10 00:37 CST
 
 ## Resume Commands
 
@@ -51,7 +51,8 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - Added the Shangrao service page at `/shangrao/` via `shangrao/index.html`.
 - Reworked the header so the LACS organization name is rendered as real HTML text instead of being embedded in a logo image. Both `index.html` and `shangrao/index.html` now use the blue icon plus typed Chinese/English text.
 - Generated `assets/brand/logo-lacs-blue-icon.png` from the previous icon by replacing the green/teal component with blue tones, and regenerated favicon assets from that blue icon.
-- Created local commit with message `Add Shangrao service page`; check the exact final hash with `git log -1 --oneline`.
+- Pushed content commit `830ebe0 Add Shangrao service page` to `origin/main`.
+- Verified the deployed custom-domain pages: `https://iaplacs.xyz/` contains the blue icon, HTML text logo, and Shangrao navigation; `https://iaplacs.xyz/shangrao/` returns the Shangrao service page and WRF sample image references.
 
 ## Important Changed Files
 
@@ -167,6 +168,20 @@ NO_PROXY=127.0.0.1,localhost curl -I http://127.0.0.1:5174/data/current/maps/wrf
 Result after the Shangrao update: all returned `HTTP/1.0 200 OK`.
 
 ```bash
+git push
+```
+
+Result: pushed `main` to `origin`, including content commit `830ebe0 Add Shangrao service page`.
+
+```bash
+NO_PROXY=github.io,keruicode.github.io,iaplacs.xyz curl -I https://iaplacs.xyz/shangrao/
+NO_PROXY=github.io,keruicode.github.io,iaplacs.xyz curl -s https://iaplacs.xyz/ | rg -n "logo-lacs-blue-icon|brand-title|上饶服务"
+NO_PROXY=github.io,keruicode.github.io,iaplacs.xyz curl -s https://iaplacs.xyz/shangrao/ | rg -n "上饶专项天气服务|logo-lacs-blue-icon|wrf_precip"
+```
+
+Result after GitHub Pages deployment: `https://iaplacs.xyz/shangrao/` returned `HTTP/2 200`; live homepage and Shangrao page content matched the new blue-logo/HTML-text/Shangrao implementation.
+
+```bash
 NO_PROXY=github.io,keruicode.github.io curl -I https://keruicode.github.io/iaplacs-site/
 ```
 
@@ -231,10 +246,7 @@ Official references checked during planning:
 
 ## Next Recommended Actions
 
-1. Re-enter `iaplacs.xyz` in GitHub `Settings -> Pages -> Custom domain` and click `Save`.
-2. From the Aliyun domain list, click the blue `解析` action on the `iaplacs.xyz` row.
-3. Push the Shangrao/blue-logo changes if they are not already pushed.
-4. Add `www` separately as a CNAME to `keruicode.github.io`. In Aliyun quick-add this can be done by choosing `将网站域名解析到另外的目标域名`, selecting only `www.iaplacs.xyz`, and entering `keruicode.github.io`.
-5. After DNS check passes, wait for GitHub certificate provisioning and keep/enforce HTTPS enabled.
-6. Later, create an IAP server publishing script that generates optimized images and `manifest.json`, then commits/pushes updates to the repository.
-7. If image volume grows, keep GitHub Pages for the app and move large map assets to object storage/CDN.
+1. Add `www` separately as a CNAME to `keruicode.github.io`. In Aliyun quick-add this can be done by choosing `将网站域名解析到另外的目标域名`, selecting only `www.iaplacs.xyz`, and entering `keruicode.github.io`.
+2. Confirm GitHub Pages HTTPS remains enabled for `iaplacs.xyz` after DNS/certificate provisioning.
+3. Later, create an IAP server publishing script that generates optimized images and `manifest.json`, then commits/pushes updates to the repository.
+4. If image volume grows, keep GitHub Pages for the app and move large map assets to object storage/CDN.
