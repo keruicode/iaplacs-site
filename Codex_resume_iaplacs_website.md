@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-09 23:00 CST
+Last updated: 2026-07-09 23:05 CST
 
 ## Resume Commands
 
@@ -25,7 +25,7 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 ## Current State
 
 - Workspace was empty at the start of this thread.
-- Workspace is not a Git repository.
+- Workspace is now a Git repository on branch `main`.
 - Created a Step 0 planning document with deployment architecture, domain/备案 path, data publishing model, server inspection checklist, and visual/product direction.
 - Answered an ICP filing form question: Alibaba Cloud 备案服务码 only applies when the website/App is hosted on an eligible Alibaba Cloud mainland China resource. If the Beijing IP is not an Alibaba Cloud mainland resource, the user should file through the real server/access provider instead of trying to use Alibaba Cloud's service code.
 - Clarified how to find an Alibaba Cloud ICP 备案服务码: if the user only bought the domain, there is no service code; if they bought an eligible Alibaba Cloud mainland ECS/轻量服务器, check the ICP filing console/service-code management console or let the filing flow auto-generate it when the server and filing account are the same.
@@ -34,11 +34,25 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - Clarified static-site feasibility: static vs dynamic does not determine ICP filing. Filing depends mainly on whether the domain resolves to or uses a mainland China server/cloud resource. A fully static site can avoid buying a VM by using static hosting, but if hosted on mainland resources or mainland CDN/custom domains, ICP filing is still required.
 - Added the current lightweight route: use GitHub Pages for the MVP site, optionally store images directly in the Pages repo at first, and move images to object storage/CDN later if image volume or traffic exceeds GitHub Pages' practical limits.
 - Clarified GitHub Pages site count: one account can have only one user/organization site such as `<owner>.github.io`, but can have many project sites, one per repository, such as `<owner>.github.io/<repo>/`. Each project site can act as a separate static blog/site.
+- Built the initial static GitHub Pages MVP: `index.html`, `styles.css`, `app.js`, `data/current/manifest.json`, optimized map assets, `.nojekyll`, `CNAME`, README, and deployment notes.
+- Integrated a real WRF hourly precipitation product sample from `Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-06_18_00.png` by generating `data/current/maps/wrf_precip_20260706_1800_t01_t48.webp` at 2200x2200 and 476 KB. The original 7000x7000 PNG remains in the workspace but is ignored by Git.
+- Local HTTP preview is running at `http://127.0.0.1:5173/` from `python3 -m http.server 5173 --bind 127.0.0.1`.
+- Created local initial commit `30504fe Build initial static forecast site`.
 
 ## Important Changed Files
 
 - `/Users/xiaoxiaotu/_01_IAP/Website/IAPLACS_website_step0_plan.md`
 - `/Users/xiaoxiaotu/_01_IAP/Website/Codex_resume_iaplacs_website.md`
+- `/Users/xiaoxiaotu/_01_IAP/Website/index.html`
+- `/Users/xiaoxiaotu/_01_IAP/Website/styles.css`
+- `/Users/xiaoxiaotu/_01_IAP/Website/app.js`
+- `/Users/xiaoxiaotu/_01_IAP/Website/data/current/manifest.json`
+- `/Users/xiaoxiaotu/_01_IAP/Website/data/current/maps/wrf_precip_20260706_1800_t01_t48.webp`
+- `/Users/xiaoxiaotu/_01_IAP/Website/docs/deployment.md`
+- `/Users/xiaoxiaotu/_01_IAP/Website/README.md`
+- `/Users/xiaoxiaotu/_01_IAP/Website/CNAME`
+- `/Users/xiaoxiaotu/_01_IAP/Website/.nojekyll`
+- `/Users/xiaoxiaotu/_01_IAP/Website/.gitignore`
 
 ## Verification Commands and Results
 
@@ -52,13 +66,49 @@ Result: `/Users/xiaoxiaotu/_01_IAP/Website`
 ls -la
 ```
 
-Result at start: empty directory except `.` and `..`.
+Result at start: empty directory except `.` and `..`. After implementation the site files listed above exist.
 
 ```bash
 git status --short
 ```
 
-Result: `fatal: not a git repository (or any of the parent directories): .git`
+Result at start: `fatal: not a git repository (or any of the parent directories): .git`
+
+```bash
+python3 -m json.tool data/current/manifest.json
+```
+
+Result: valid JSON.
+
+```bash
+python3 -c 'import json, pathlib; m=json.load(open("data/current/manifest.json")); missing=[]; [missing.append(f["file"]) for p in m["products"] for f in p["frames"] if not pathlib.Path(f["file"].replace("./", "")).exists()]; print("missing=" + str(missing)); raise SystemExit(1 if missing else 0)'
+```
+
+Result: `missing=[]`
+
+```bash
+NO_PROXY=127.0.0.1,localhost curl -I http://127.0.0.1:5173/
+```
+
+Result: `HTTP/1.0 200 OK`
+
+```bash
+NO_PROXY=127.0.0.1,localhost curl -I http://127.0.0.1:5173/data/current/maps/wrf_precip_20260706_1800_t01_t48.webp
+```
+
+Result: `HTTP/1.0 200 OK`, `Content-Length: 484974`, `Content-type: image/webp`.
+
+```bash
+sips -g pixelWidth -g pixelHeight data/current/maps/wrf_precip_20260706_1800_t01_t48.webp
+```
+
+Result: `pixelWidth: 2200`, `pixelHeight: 2200`.
+
+```bash
+git status --short
+```
+
+Result after initial commit: clean.
 
 Official references checked during planning:
 
@@ -80,15 +130,17 @@ Official references checked during planning:
 - GitHub Pages official limits as checked on 2026-07-09: source repository recommended limit 1 GB, published site no larger than 1 GB, soft bandwidth limit 100 GB/month, and rate limiting may apply. This is acceptable for a low-traffic image-based MVP but not for heavy public image distribution.
 - GitHub Pages official docs as checked on 2026-07-09: maximum one user/organization Pages site per account and maximum one project Pages site per repository.
 - Do not send raw large NetCDF/GRIB/MICAPS files directly to browsers. Generate Web-friendly manifests, images, tiles, GeoJSON, or compressed JSON.
+- The root raw PNG `Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-06_18_00.png` is 7000x7000 and 5.8 MB, and is intentionally ignored by Git. Use the optimized WebP in `data/current/maps/` for the site.
+- In-app browser verification was attempted but no in-app browser backend was available (`agent.browsers.list()` returned `[]`). Verification was completed via local HTTP checks and image inspection instead.
 - Use atomic publish directories so failed data updates do not break the live site.
 - HTTPS via Certbot usually requires the HTTP site to be reachable on port 80, unless using DNS validation.
 
 ## Next Recommended Actions
 
-1. Confirm whether the IAP server has a public IPv4 and whether ports 80/443 may be opened.
-2. Run the server inspection commands from `IAPLACS_website_step0_plan.md`.
-3. Decide deployment topology:
-   - Direct deployment on IAP server if allowed.
-   - Public ECS/轻量服务器 plus scheduled push from IAP server if the IAP server should remain internal.
-4. Identify first MVP products and data paths: forecast maps, station time series, observation/radar/satellite layers, or model output.
-5. Build a minimal Nginx test page, point DNS after备案/合规条件 are satisfied, then add HTTPS.
+1. Create a GitHub repository, for example `iaplacs-site`.
+2. Add the remote and push branch `main`.
+3. Enable GitHub Pages from the repository's `main` branch/root.
+4. Configure GitHub Pages custom domain `iaplacs.xyz`.
+5. In Aliyun DNS, add GitHub Pages records for `@` and `www`.
+6. Later, create an IAP server publishing script that generates optimized images and `manifest.json`, then commits/pushes updates to the repository.
+7. If image volume grows, keep GitHub Pages for the app and move large map assets to object storage/CDN.
