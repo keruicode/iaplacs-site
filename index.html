@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="IAP-LACS 科研天气预报数据展示平台，提供模式产品、预报图和站点时间序列。"
+    />
+    <title>IAP-LACS Forecast</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">L</div>
+        <div>
+          <p class="eyebrow">Institute of Atmospheric Physics</p>
+          <h1>IAP-LACS Forecast</h1>
+        </div>
+      </div>
+      <div class="run-state" aria-live="polite">
+        <span class="status-dot"></span>
+        <span id="updateLabel">正在读取数据</span>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="control-panel" aria-label="产品控制">
+        <div class="panel-heading">
+          <p class="eyebrow">Products</p>
+          <h2>预报产品</h2>
+        </div>
+        <div id="productList" class="product-list"></div>
+
+        <div class="meta-block">
+          <p class="meta-label">起报时间</p>
+          <p id="runTime" class="meta-value">--</p>
+        </div>
+        <div class="meta-block">
+          <p class="meta-label">发布时间</p>
+          <p id="publishedAt" class="meta-value">--</p>
+        </div>
+        <div class="meta-block">
+          <p class="meta-label">数据说明</p>
+          <p id="sourceNote" class="meta-copy">样例数据，仅用于页面搭建和交互验证。</p>
+        </div>
+      </section>
+
+      <section class="map-panel" aria-label="预报图">
+        <div class="map-toolbar">
+          <div>
+            <p id="productUnit" class="eyebrow">--</p>
+            <h2 id="productTitle">读取中</h2>
+          </div>
+          <div class="toolbar-actions">
+            <a id="imageLink" class="text-button link-button" href="#" target="_blank" rel="noreferrer">打开图像</a>
+            <button id="prevLead" class="icon-button" type="button" title="上一时效" aria-label="上一时效">
+              &#8249;
+            </button>
+            <button id="playToggle" class="text-button" type="button">播放</button>
+            <button id="nextLead" class="icon-button" type="button" title="下一时效" aria-label="下一时效">
+              &#8250;
+            </button>
+          </div>
+        </div>
+
+        <div class="map-stage">
+          <img id="forecastImage" alt="预报产品图" />
+          <div class="map-badge">
+            <span id="leadLabel">--</span>
+            <span id="validTime">--</span>
+          </div>
+        </div>
+
+        <div id="leadTabs" class="lead-tabs" aria-label="预报时效"></div>
+      </section>
+
+      <aside class="insight-panel" aria-label="产品摘要">
+        <div class="panel-heading">
+          <p class="eyebrow">Overview</p>
+          <h2>关键指标</h2>
+        </div>
+
+        <div id="metricGrid" class="metric-grid"></div>
+
+        <div class="legend-block">
+          <div class="legend-header">
+            <span>色标</span>
+            <span id="legendUnit">--</span>
+          </div>
+          <div id="legendBar" class="legend-bar"></div>
+          <div id="legendTicks" class="legend-ticks"></div>
+        </div>
+
+        <div class="station-block">
+          <div class="legend-header">
+            <span>站点序列</span>
+            <span>Beijing</span>
+          </div>
+          <svg id="stationChart" viewBox="0 0 320 140" role="img" aria-label="站点时间序列"></svg>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="site-footer">
+      <span>IAP-LACS Forecast</span>
+      <span>数据产品正在建设中</span>
+      <span>iaplacs.xyz</span>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

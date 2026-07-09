@@ -1,0 +1,110 @@
+{
+  "site": {
+    "name": "IAP-LACS Forecast",
+    "domain": "iaplacs.xyz"
+  },
+  "run_time": "2026-07-07T02:00:00+08:00",
+  "published_at": "2026-07-09T23:05:00+08:00",
+  "note": "当前站点已接入一张 WRF 逐小时降水样例图，其余产品仍为页面搭建样例。后续由 IAP 服务器定时生成真实预报产品并更新此 manifest。",
+  "products": [
+    {
+      "id": "precip_24h",
+      "title": "WRF逐小时降水 T01-T48",
+      "category": "模式预报",
+      "unit": "mm",
+      "color": "#087d7a",
+      "description": "WRF 全降水逐小时预报拼图，初始化时间 2026-07-06 18:00 UTC。",
+      "legend": {
+        "gradient": "linear-gradient(90deg, #e8f2f5, #9ad4ee, #4b93c4, #31a45f, #f2d34c, #e78935, #bd3434)",
+        "ticks": ["0", "10", "25", "50", "100", "150+"]
+      },
+      "metrics": [
+        { "label": "时效范围", "value": "T01-T48" },
+        { "label": "图像大小", "value": "485 KB" },
+        { "label": "产品状态", "value": "实图样例" }
+      ],
+      "frames": [
+        {
+          "lead": 48,
+          "lead_label": "T01-T48",
+          "valid_time": "2026-07-09T02:00:00+08:00",
+          "file": "./data/current/maps/wrf_precip_20260706_1800_t01_t48.webp"
+        }
+      ]
+    },
+    {
+      "id": "temperature_2m",
+      "title": "2米气温",
+      "category": "模式预报",
+      "unit": "degC",
+      "color": "#b73b3b",
+      "description": "近地面气温分布，用于识别暖区和冷空气边界。",
+      "legend": {
+        "gradient": "linear-gradient(90deg, #31599a, #62a5d8, #f6e58d, #ef8b44, #b73b3b)",
+        "ticks": ["-10", "0", "10", "20", "30", "40"]
+      },
+      "metrics": [
+        { "label": "区域最高", "value": "36.2 degC" },
+        { "label": "区域最低", "value": "17.4 degC" },
+        { "label": "产品状态", "value": "样例" }
+      ],
+      "frames": [
+        {
+          "lead": 24,
+          "lead_label": "F024",
+          "valid_time": "2026-07-10T08:00:00+08:00",
+          "file": "./data/current/maps/temp_f024.svg"
+        },
+        {
+          "lead": 48,
+          "lead_label": "F048",
+          "valid_time": "2026-07-11T08:00:00+08:00",
+          "file": "./data/current/maps/temp_f048.svg"
+        }
+      ]
+    },
+    {
+      "id": "wind_10m",
+      "title": "10米风场",
+      "category": "模式预报",
+      "unit": "m/s",
+      "color": "#2c5f9e",
+      "description": "近地面风速和风向样例，用于展示矢量产品入口。",
+      "legend": {
+        "gradient": "linear-gradient(90deg, #f0f4f8, #b8d7ea, #5f9ec9, #2c5f9e, #21365f)",
+        "ticks": ["0", "4", "8", "12", "16", "20+"]
+      },
+      "metrics": [
+        { "label": "最大风速", "value": "15.8 m/s" },
+        { "label": "主导风向", "value": "SE" },
+        { "label": "产品状态", "value": "样例" }
+      ],
+      "frames": [
+        {
+          "lead": 24,
+          "lead_label": "F024",
+          "valid_time": "2026-07-10T08:00:00+08:00",
+          "file": "./data/current/maps/wind_f024.svg"
+        },
+        {
+          "lead": 48,
+          "lead_label": "F048",
+          "valid_time": "2026-07-11T08:00:00+08:00",
+          "file": "./data/current/maps/wind_f048.svg"
+        }
+      ]
+    }
+  ],
+  "station_series": {
+    "name": "Beijing sample time series",
+    "unit": "mm",
+    "points": [
+      { "time": "2026-07-09T08:00:00+08:00", "value": 0 },
+      { "time": "2026-07-09T14:00:00+08:00", "value": 3 },
+      { "time": "2026-07-09T20:00:00+08:00", "value": 12 },
+      { "time": "2026-07-10T02:00:00+08:00", "value": 24 },
+      { "time": "2026-07-10T08:00:00+08:00", "value": 38 },
+      { "time": "2026-07-10T14:00:00+08:00", "value": 42 }
+    ]
+  }
+}
