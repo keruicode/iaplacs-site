@@ -1,12 +1,27 @@
+const DEFAULT_REFRESH_MS = 5 * 60 * 1000;
+
+const pageConfig = {
+  service: document.body.dataset.service || "main",
+  manifestUrl: document.body.dataset.manifestUrl || "./data/current/forecast-runs.json",
+  fallbackManifestUrl:
+    document.body.dataset.fallbackManifestUrl || "./data/current/manifest.json",
+  assetBase: document.body.dataset.assetBase || "./",
+  refreshMs: Number(document.body.dataset.refreshMs || DEFAULT_REFRESH_MS),
+};
+
 const state = {
-  manifest: null,
+  catalog: null,
+  service: null,
+  runIndex: 0,
   productIndex: 0,
   leadIndex: 0,
-  timer: null,
+  playbackTimer: null,
+  refreshTimer: null,
 };
 
 const els = {
   updateLabel: document.querySelector("#updateLabel"),
+  runList: document.querySelector("#runList"),
   productList: document.querySelector("#productList"),
   runTime: document.querySelector("#runTime"),
   publishedAt: document.querySelector("#publishedAt"),
@@ -29,57 +44,202 @@ const els = {
 };
 
 async function init() {
-  try {
-    const response = await fetch("./data/current/manifest.json", { cache: "no-store" });
-    if (!response.ok) throw new Error(`manifest ${response.status}`);
-    state.manifest = await response.json();
-    state.productIndex = 0;
-    state.leadIndex = 0;
-    render();
-  } catch (error) {
-    els.updateLabel.textContent = "数据读取失败";
-    els.productTitle.textContent = "无法读取 manifest.json";
-    console.error(error);
+  await loadForecast({ preserveSelection: false });
+  if (pageConfig.refreshMs > 0) {
+    state.refreshTimer = window.setInterval(
+      () => loadForecast({ preserveSelection: true }),
+      pageConfig.refreshMs,
+    );
   }
 }
 
+async function loadForecast({ preserveSelection }) {
+  const previous = preserveSelection ? currentSelection() : {};
+
+  try {
+    const raw = await fetchForecastData();
+    const catalog = normalizeForecastData(raw);
+    const service = selectService(catalog);
+
+    state.catalog = catalog;
+    state.service = service;
+    state.runIndex = chooseRunIndex(service, previous.runId);
+    state.productIndex = chooseProductIndex(currentRun(), previous.productId);
+    state.leadIndex = chooseLeadIndex(currentProduct(), previous.frameId);
+    stopPlayback();
+    render();
+  } catch (error) {
+    showError(error);
+  }
+}
+
+async function fetchForecastData() {
+  try {
+    return await fetchJson(pageConfig.manifestUrl);
+  } catch (error) {
+    console.warn(`primary forecast catalog failed: ${pageConfig.manifestUrl}`, error);
+    return fetchJson(pageConfig.fallbackManifestUrl);
+  }
+}
+
+async function fetchJson(url) {
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok) throw new Error(`${url} ${response.status}`);
+  return response.json();
+}
+
+function normalizeForecastData(raw) {
+  if (raw.services) return raw;
+
+  const legacyRun = {
+    id: "legacy-current",
+    label: formatTime(raw.run_time),
+    run_time: raw.run_time,
+    published_at: raw.published_at,
+    summary: raw.note,
+    products: raw.products || [],
+    station_series: raw.station_series,
+  };
+
+  return {
+    schema_version: 0,
+    site: raw.site || { name: "IAP-LACS Forecast", domain: "iaplacs.xyz" },
+    published_at: raw.published_at,
+    services: {
+      main: {
+        title: raw.site?.name || "综合预报",
+        note: raw.note,
+        latest_run: legacyRun.id,
+        runs: [legacyRun],
+        station_series: raw.station_series,
+      },
+      shangrao: {
+        title: "上饶专项天气服务",
+        note: raw.note,
+        latest_run: legacyRun.id,
+        runs: [legacyRun],
+        station_series: raw.station_series,
+      },
+    },
+  };
+}
+
+function selectService(catalog) {
+  const services = catalog.services || {};
+  return services[pageConfig.service] || services.main || Object.values(services)[0];
+}
+
+function chooseRunIndex(service, previousRunId) {
+  const runs = service?.runs || [];
+  if (!runs.length) return 0;
+
+  const targetId = previousRunId || service.latest_run;
+  const found = runs.findIndex((run) => run.id === targetId);
+  return found >= 0 ? found : 0;
+}
+
+function chooseProductIndex(run, previousProductId) {
+  const products = run?.products || [];
+  if (!products.length) return 0;
+  const found = products.findIndex((product) => product.id === previousProductId);
+  return found >= 0 ? found : 0;
+}
+
+function chooseLeadIndex(product, previousFrameId) {
+  const frames = product?.frames || [];
+  if (!frames.length) return 0;
+  const found = frames.findIndex((frame) => frameId(frame) === previousFrameId);
+  return found >= 0 ? found : 0;
+}
+
+function currentSelection() {
+  return {
+    runId: currentRun()?.id,
+    productId: currentProduct()?.id,
+    frameId: frameId(currentFrame()),
+  };
+}
+
 function render() {
-  const { manifest } = state;
+  const run = currentRun();
   const product = currentProduct();
   const frame = currentFrame();
 
-  document.title = `${product.title} | ${manifest.site.name}`;
-  els.updateLabel.textContent = `已更新 ${formatTime(manifest.published_at)}`;
-  els.runTime.textContent = formatTime(manifest.run_time);
-  els.publishedAt.textContent = formatTime(manifest.published_at);
-  els.sourceNote.textContent = manifest.note;
+  if (!state.catalog || !state.service || !run || !product || !frame) {
+    renderEmpty();
+    return;
+  }
 
+  document.title = `${state.service.title || product.title} | ${state.catalog.site.name}`;
+  setText(els.updateLabel, `已更新 ${formatTime(run.published_at || state.catalog.published_at)}`);
+  setText(els.runTime, run.label || formatTime(run.run_time));
+  setText(els.publishedAt, formatTime(run.published_at || state.catalog.published_at));
+  setText(els.sourceNote, state.service.note || run.summary || state.catalog.note || "");
+
+  renderRuns();
   renderProducts();
   renderLeads();
   renderMetrics(product);
   renderLegend(product);
-  renderStationChart(manifest.station_series);
+  renderStationChart(run.station_series || state.service.station_series || state.catalog.station_series);
 
-  els.productTitle.textContent = product.title;
-  els.productUnit.textContent = `${product.category} | ${product.unit}`;
-  els.forecastImage.src = frame.file;
-  els.forecastImage.alt = `${product.title} ${frame.lead_label}`;
-  els.imageLink.href = frame.file;
-  els.leadLabel.textContent = frame.lead_label;
-  els.validTime.textContent = `有效时间 ${formatTime(frame.valid_time)}`;
+  const imageSrc = resolveAssetPath(frame.file);
+  setText(els.productTitle, product.title);
+  setText(els.productUnit, `${product.category || "预报产品"} | ${product.unit || "--"}`);
+  if (els.forecastImage) {
+    els.forecastImage.src = imageSrc;
+    els.forecastImage.alt = `${product.title} ${frame.lead_label}`;
+  }
+  if (els.imageLink) els.imageLink.href = imageSrc;
+  setText(els.leadLabel, frame.lead_label);
+  setText(els.validTime, frame.valid_label || `有效时间 ${formatTime(frame.valid_time)}`);
+}
+
+function renderEmpty() {
+  setText(els.updateLabel, "暂无数据");
+  setText(els.productTitle, "暂无可显示产品");
+  setText(els.productUnit, "--");
+  setText(els.leadLabel, "--");
+  setText(els.validTime, "--");
+  if (els.productList) els.productList.innerHTML = "";
+  if (els.runList) els.runList.innerHTML = "";
+  if (els.leadTabs) els.leadTabs.innerHTML = "";
+}
+
+function renderRuns() {
+  if (!els.runList) return;
+  els.runList.innerHTML = "";
+  (state.service.runs || []).forEach((run, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `run-button${index === state.runIndex ? " is-active" : ""}`;
+    button.innerHTML = `
+      <span class="run-name">${run.label || run.id}</span>
+      <span class="run-desc">${run.summary || `发布 ${formatTime(run.published_at)}`}</span>
+    `;
+    button.addEventListener("click", () => {
+      state.runIndex = index;
+      state.productIndex = 0;
+      state.leadIndex = 0;
+      stopPlayback();
+      render();
+    });
+    els.runList.appendChild(button);
+  });
 }
 
 function renderProducts() {
+  if (!els.productList) return;
   els.productList.innerHTML = "";
-  state.manifest.products.forEach((product, index) => {
+  (currentRun().products || []).forEach((product, index) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `product-button${index === state.productIndex ? " is-active" : ""}`;
     button.innerHTML = `
-      <span class="product-stripe" style="background:${product.color}"></span>
+      <span class="product-stripe" style="background:${product.color || "#0f68c8"}"></span>
       <span>
         <span class="product-name">${product.title}</span>
-        <span class="product-desc">${product.description}</span>
+        <span class="product-desc">${product.description || ""}</span>
       </span>
     `;
     button.addEventListener("click", () => {
@@ -93,9 +253,10 @@ function renderProducts() {
 }
 
 function renderLeads() {
+  if (!els.leadTabs) return;
   const product = currentProduct();
   els.leadTabs.innerHTML = "";
-  product.frames.forEach((frame, index) => {
+  (product.frames || []).forEach((frame, index) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `lead-tab${index === state.leadIndex ? " is-active" : ""}`;
@@ -109,8 +270,13 @@ function renderLeads() {
 }
 
 function renderMetrics(product) {
+  if (!els.metricGrid) return;
   els.metricGrid.innerHTML = "";
-  product.metrics.forEach((metric) => {
+  const metrics = product.metrics?.length
+    ? product.metrics
+    : [{ label: "图像数量", value: String(product.frames?.length || 0) }];
+
+  metrics.forEach((metric) => {
     const block = document.createElement("div");
     block.className = "metric";
     block.innerHTML = `
@@ -122,10 +288,13 @@ function renderMetrics(product) {
 }
 
 function renderLegend(product) {
-  els.legendUnit.textContent = product.unit;
-  els.legendBar.style.background = product.legend.gradient;
+  if (!els.legendUnit || !els.legendBar || !els.legendTicks) return;
+  els.legendUnit.textContent = product.unit || "--";
+  els.legendBar.style.background =
+    product.legend?.gradient ||
+    "linear-gradient(90deg, #e6eef4, #7fc8e8, #2c7bb6, #36a852, #f6d64a, #ee8a35, #c33f3f)";
   els.legendTicks.innerHTML = "";
-  product.legend.ticks.forEach((tick) => {
+  (product.legend?.ticks || []).forEach((tick) => {
     const span = document.createElement("span");
     span.textContent = tick;
     els.legendTicks.appendChild(span);
@@ -133,7 +302,14 @@ function renderLegend(product) {
 }
 
 function renderStationChart(series) {
-  if (!series || !series.points?.length) return;
+  if (!els.stationChart) return;
+  if (!series || !series.points?.length) {
+    els.stationChart.innerHTML = `
+      <text x="24" y="72" fill="#667386" font-size="12">暂无站点序列</text>
+    `;
+    return;
+  }
+
   const width = 320;
   const height = 140;
   const pad = 22;
@@ -143,7 +319,8 @@ function renderStationChart(series) {
   const span = max - min || 1;
   const path = series.points
     .map((point, index) => {
-      const x = pad + (index / (series.points.length - 1)) * (width - pad * 2);
+      const denom = Math.max(series.points.length - 1, 1);
+      const x = pad + (index / denom) * (width - pad * 2);
       const y = height - pad - ((point.value - min) / span) * (height - pad * 2);
       return `${index === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
     })
@@ -152,56 +329,89 @@ function renderStationChart(series) {
   const area = `${path} L ${width - pad} ${height - pad} L ${pad} ${height - pad} Z`;
 
   els.stationChart.innerHTML = `
-    <path d="${area}" fill="rgba(8, 125, 122, 0.12)"></path>
-    <path d="${path}" fill="none" stroke="#087d7a" stroke-width="3"></path>
+    <path d="${area}" fill="rgba(15, 104, 200, 0.12)"></path>
+    <path d="${path}" fill="none" stroke="#0f68c8" stroke-width="3"></path>
     <line x1="${pad}" y1="${height - pad}" x2="${width - pad}" y2="${height - pad}" stroke="#d8e0e6"></line>
     <text x="${pad}" y="18" fill="#667386" font-size="11">${series.name}</text>
     <text x="${width - pad}" y="18" text-anchor="end" fill="#667386" font-size="11">${series.unit}</text>
   `;
 }
 
+function currentRun() {
+  return state.service?.runs?.[state.runIndex];
+}
+
 function currentProduct() {
-  return state.manifest.products[state.productIndex];
+  return currentRun()?.products?.[state.productIndex];
 }
 
 function currentFrame() {
-  return currentProduct().frames[state.leadIndex];
+  return currentProduct()?.frames?.[state.leadIndex];
 }
 
 function stepLead(delta) {
-  const count = currentProduct().frames.length;
-  state.leadIndex = (state.leadIndex + delta + count) % count;
+  const frames = currentProduct()?.frames || [];
+  if (!frames.length) return;
+  state.leadIndex = (state.leadIndex + delta + frames.length) % frames.length;
   render();
 }
 
 function togglePlayback() {
-  if (state.timer) {
+  if (state.playbackTimer) {
     stopPlayback();
     return;
   }
-  els.playToggle.textContent = "暂停";
-  state.timer = window.setInterval(() => stepLead(1), 1800);
+  setText(els.playToggle, "暂停");
+  state.playbackTimer = window.setInterval(() => stepLead(1), 1800);
 }
 
 function stopPlayback() {
-  if (!state.timer) return;
-  window.clearInterval(state.timer);
-  state.timer = null;
-  els.playToggle.textContent = "播放";
+  if (!state.playbackTimer) return;
+  window.clearInterval(state.playbackTimer);
+  state.playbackTimer = null;
+  setText(els.playToggle, "播放");
+}
+
+function resolveAssetPath(file) {
+  if (!file) return "";
+  if (/^(https?:)?\/\//.test(file) || file.startsWith("/")) return file;
+  const cleanFile = file.replace(/^\.?\//, "");
+  const cleanBase = pageConfig.assetBase.endsWith("/")
+    ? pageConfig.assetBase
+    : `${pageConfig.assetBase}/`;
+  return `${cleanBase}${cleanFile}`;
+}
+
+function frameId(frame) {
+  if (!frame) return undefined;
+  return frame.id || frame.file || frame.lead_label;
+}
+
+function setText(element, text) {
+  if (element) element.textContent = text;
+}
+
+function showError(error) {
+  setText(els.updateLabel, "数据读取失败");
+  setText(els.productTitle, "无法读取预报清单");
+  console.error(error);
 }
 
 function formatTime(value) {
+  if (!value) return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
   return new Intl.DateTimeFormat("zh-CN", {
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).format(new Date(value));
+  }).format(date);
 }
 
-els.prevLead.addEventListener("click", () => stepLead(-1));
-els.nextLead.addEventListener("click", () => stepLead(1));
-els.playToggle.addEventListener("click", togglePlayback);
+els.prevLead?.addEventListener("click", () => stepLead(-1));
+els.nextLead?.addEventListener("click", () => stepLead(1));
+els.playToggle?.addEventListener("click", togglePlayback);
 
 init();

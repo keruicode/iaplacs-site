@@ -6,7 +6,7 @@ The first version is designed for GitHub Pages:
 
 - no backend server is required for the website itself;
 - forecast products are pre-rendered as web assets;
-- the browser loads `data/current/manifest.json`;
+- the browser loads `data/current/forecast-runs.json`, with `manifest.json` kept as a fallback;
 - the IAP server can later update files on a schedule and push them here.
 
 ## Local Preview
@@ -48,12 +48,27 @@ Replace `<github-user>` with the GitHub account or organization name.
 The website only depends on:
 
 ```text
+data/current/forecast-runs.json
 data/current/manifest.json
 data/current/maps/*
 data/current/stations/*
+tools/build_forecast_catalog.py
 ```
 
-The IAP server should generate a complete new release directory first, validate it, then update `data/current`. Keep images small and web-friendly:
+The IAP server should generate or copy a complete new run directory first, validate it, run the catalog builder, then commit both the images and JSON catalog. Current server-published directory patterns are:
+
+```text
+data/current/maps/wrf_montage_YYYYMMDD_HH/
+data/current/maps/worknx_summary_YYYYMMDD_HH/
+```
+
+Then run:
+
+```bash
+python3 tools/build_forecast_catalog.py
+```
+
+Keep images small and web-friendly:
 
 - WebP preferred for maps;
 - PNG allowed when WebP is not available;

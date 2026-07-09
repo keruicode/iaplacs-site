@@ -8,7 +8,7 @@ The IAP server only needs a scheduled publishing job:
 
 1. read model/observation products;
 2. render maps and JSON into a temporary release directory;
-3. validate `manifest.json` and image paths;
+3. validate `forecast-runs.json` and image paths;
 4. copy the result to `data/current`;
 5. commit and push to GitHub.
 
@@ -80,12 +80,30 @@ rm -rf data/current
 mkdir -p data
 cp -R "$PRODUCT_DIR" data/current
 
-test -f data/current/manifest.json
+python3 tools/build_forecast_catalog.py
+test -f data/current/forecast-runs.json
 find data/current/maps -type f | head -n 1 >/dev/null
 
-git add data/current
+git add data/current tools/build_forecast_catalog.py
 git commit -m "Update forecast products $(date +%Y%m%d_%H%M)" || exit 0
 git push
 ```
 
 For production, publish into timestamped release directories and switch `current` only after validation.
+
+For the current WRF montage workflow, the server publishing helper should copy
+`*_combined_*_grid.png` files into:
+
+```text
+data/current/maps/wrf_montage_YYYYMMDD_HH/
+```
+
+For the current WORK_nx summary workflow, copy the summary image plus its
+`manifest_fragment.json` into:
+
+```text
+data/current/maps/worknx_summary_YYYYMMDD_HH/
+```
+
+Then run `python3 tools/build_forecast_catalog.py` before `git add`, so the
+website can expose the new 起报时间 automatically after GitHub Pages deploys.

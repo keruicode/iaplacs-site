@@ -212,6 +212,51 @@ button {
   margin-bottom: 20px;
 }
 
+.run-selector-block {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.run-list {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.run-button {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  min-height: 62px;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  background: #fbfcfd;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.run-button:hover,
+.run-button.is-active {
+  border-color: #8cb9ee;
+  background: var(--blue-soft);
+}
+
+.run-name {
+  display: block;
+  color: var(--blue-deep);
+  font-size: 15px;
+  font-weight: 820;
+  line-height: 1.25;
+}
+
+.run-desc {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .product-button {
   display: grid;
   grid-template-columns: 8px minmax(0, 1fr);
@@ -340,7 +385,8 @@ button {
 
 #forecastImage {
   width: min(100%, 1280px);
-  aspect-ratio: 1 / 1;
+  height: auto;
+  max-height: min(72vh, 980px);
   object-fit: contain;
   background: #fff;
   border: 1px solid var(--line);
@@ -448,6 +494,10 @@ button {
 
 .service-main {
   padding: 18px;
+}
+
+.service-workspace {
+  min-height: calc(100vh - 91px);
 }
 
 .service-shell {

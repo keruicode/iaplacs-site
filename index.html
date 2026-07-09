@@ -12,7 +12,12 @@
     <link rel="apple-touch-icon" href="./assets/brand/favicon-512.png" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body>
+  <body
+    data-service="main"
+    data-manifest-url="./data/current/forecast-runs.json"
+    data-fallback-manifest-url="./data/current/manifest.json"
+    data-asset-base="./"
+  >
     <header class="topbar">
       <div class="brand">
         <img
@@ -44,6 +49,10 @@
         <div class="panel-heading">
           <p class="eyebrow">Products</p>
           <h2>预报产品</h2>
+        </div>
+        <div class="meta-block run-selector-block">
+          <p class="meta-label">起报时间</p>
+          <div id="runList" class="run-list" aria-label="起报时间"></div>
         </div>
         <div id="productList" class="product-list"></div>
 

@@ -5,14 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="IAP-LACS 上饶专项天气服务页面，展示降水、强对流和服务产品状态。"
+      content="IAP-LACS 上饶专项天气服务页面，按起报时次展示服务器定时发布的预报产品。"
     />
     <title>上饶专项服务 | IAP-LACS Forecast</title>
     <link rel="icon" type="image/png" sizes="192x192" href="../assets/brand/favicon-192.png" />
     <link rel="apple-touch-icon" href="../assets/brand/favicon-512.png" />
     <link rel="stylesheet" href="../styles.css" />
   </head>
-  <body>
+  <body
+    data-service="shangrao"
+    data-manifest-url="../data/current/forecast-runs.json"
+    data-fallback-manifest-url="../data/current/manifest.json"
+    data-asset-base="../"
+  >
     <header class="topbar">
       <div class="brand">
         <img
@@ -34,74 +39,93 @@
         </nav>
         <div class="run-state" aria-live="polite">
           <span class="status-dot"></span>
-          <span>上饶服务页试运行</span>
+          <span id="updateLabel">正在读取数据</span>
         </div>
       </div>
     </header>
 
-    <main class="service-main">
-      <div class="service-shell">
-        <section class="service-panel" aria-label="上饶预报主图">
-          <div class="service-panel-header">
-            <div class="service-title">
-              <p class="eyebrow">Shangrao Service</p>
-              <h2>上饶专项天气服务</h2>
-            </div>
-            <span class="service-status">静态试运行</span>
-          </div>
+    <main class="workspace service-workspace">
+      <section class="control-panel" aria-label="上饶服务控制">
+        <div class="panel-heading">
+          <p class="eyebrow">Shangrao Service</p>
+          <h2>上饶产品</h2>
+        </div>
 
-          <div class="service-map">
-            <img
-              src="../data/current/maps/wrf_precip_20260706_1800_t01_t48.webp"
-              alt="WRF逐小时降水 T01-T48 预报拼图"
-            />
-          </div>
+        <div class="meta-block run-selector-block">
+          <p class="meta-label">起报时间</p>
+          <div id="runList" class="run-list" aria-label="上饶起报时间"></div>
+        </div>
 
-          <div class="service-strip" aria-label="服务摘要">
-            <div class="service-card">
-              <h3>服务区域</h3>
-              <p>上饶</p>
-            </div>
-            <div class="service-card">
-              <h3>当前产品</h3>
-              <p>WRF 降水</p>
-            </div>
-            <div class="service-card">
-              <h3>页面状态</h3>
-              <p>建设中</p>
-            </div>
-          </div>
-        </section>
+        <div id="productList" class="product-list"></div>
 
-        <aside class="service-panel" aria-label="上饶产品状态">
-          <div class="service-panel-header">
-            <div>
-              <p class="eyebrow">Operations</p>
-              <h2>服务产品</h2>
-            </div>
-          </div>
+        <div class="meta-block">
+          <p class="meta-label">当前起报</p>
+          <p id="runTime" class="meta-value">--</p>
+        </div>
+        <div class="meta-block">
+          <p class="meta-label">发布时间</p>
+          <p id="publishedAt" class="meta-value">--</p>
+        </div>
+        <div class="meta-block">
+          <p class="meta-label">服务说明</p>
+          <p id="sourceNote" class="meta-copy">正在读取上饶服务清单。</p>
+        </div>
+      </section>
 
-          <ul class="service-list">
-            <li>
-              <strong>逐小时降水预报</strong>
-              <span>当前接入 WRF T01-T48 拼图样例，后续替换为上饶区域裁剪产品。</span>
-            </li>
-            <li>
-              <strong>强对流关注</strong>
-              <span>预留雷暴、大风、短时强降水产品入口。</span>
-            </li>
-            <li>
-              <strong>服务说明</strong>
-              <span>静态页面先用于业务展示和访问测试，数据更新脚本后续接入。</span>
-            </li>
-          </ul>
-
-          <div class="service-actions">
-            <a class="service-link primary" href="../data/current/maps/wrf_precip_20260706_1800_t01_t48.webp" target="_blank" rel="noreferrer">打开预报图</a>
-            <a class="service-link" href="../data/current/manifest.json" target="_blank" rel="noreferrer">查看数据清单</a>
+      <section class="map-panel" aria-label="上饶预报图">
+        <div class="map-toolbar">
+          <div>
+            <p id="productUnit" class="eyebrow">--</p>
+            <h2 id="productTitle">读取中</h2>
           </div>
-        </aside>
-      </div>
+          <div class="toolbar-actions">
+            <a id="imageLink" class="text-button link-button" href="#" target="_blank" rel="noreferrer">打开图像</a>
+            <button id="prevLead" class="icon-button" type="button" title="上一张" aria-label="上一张">
+              &#8249;
+            </button>
+            <button id="playToggle" class="text-button" type="button">播放</button>
+            <button id="nextLead" class="icon-button" type="button" title="下一张" aria-label="下一张">
+              &#8250;
+            </button>
+          </div>
+        </div>
+
+        <div class="map-stage">
+          <img id="forecastImage" alt="上饶预报产品图" />
+          <div class="map-badge">
+            <span id="leadLabel">--</span>
+            <span id="validTime">--</span>
+          </div>
+        </div>
+
+        <div id="leadTabs" class="lead-tabs" aria-label="产品图幅"></div>
+      </section>
+
+      <aside class="insight-panel" aria-label="上饶产品摘要">
+        <div class="panel-heading">
+          <p class="eyebrow">Operations</p>
+          <h2>服务状态</h2>
+        </div>
+
+        <div id="metricGrid" class="metric-grid"></div>
+
+        <div class="legend-block">
+          <div class="legend-header">
+            <span>色标</span>
+            <span id="legendUnit">--</span>
+          </div>
+          <div id="legendBar" class="legend-bar"></div>
+          <div id="legendTicks" class="legend-ticks"></div>
+        </div>
+
+        <div class="station-block">
+          <div class="legend-header">
+            <span>站点序列</span>
+            <span>Shangrao</span>
+          </div>
+          <svg id="stationChart" viewBox="0 0 320 140" role="img" aria-label="上饶站点时间序列"></svg>
+        </div>
+      </aside>
     </main>
 
     <footer class="site-footer">
@@ -109,5 +133,7 @@
       <span>上饶专项服务</span>
       <span>iaplacs.xyz/shangrao</span>
     </footer>
+
+    <script src="../app.js"></script>
   </body>
 </html>
