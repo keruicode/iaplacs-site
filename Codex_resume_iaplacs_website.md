@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-09 23:37 CST
+Last updated: 2026-07-09 23:55 CST
 
 ## Resume Commands
 
@@ -44,6 +44,9 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - Local preview server is currently running at `http://127.0.0.1:5173/`.
 - GitHub Pages default URL is live at `https://keruicode.github.io/iaplacs-site/` and returned `HTTP/2 200`. The user likely clicked `Remove` for the custom domain; this does not require rebuilding Pages. Re-enter `iaplacs.xyz` in `Settings -> Pages -> Custom domain` and save.
 - GitHub Pages now reports `DNS check unsuccessful / NotServedByPagesError` for `iaplacs.xyz`. DNS diagnosis shows authoritative nameservers `dns13.hichina.com` and `dns14.hichina.com`, but no `A` record for `iaplacs.xyz` and no `CNAME/A` record for `www.iaplacs.xyz`. The fix is to add GitHub Pages DNS records in Aliyun DNS.
+- User is on the Aliyun domain registration details page showing DNS servers, SSL certificate, ESA, and a cloud-server purchase prompt. For the GitHub Pages route, this is not where to buy a server. Keep DNS servers as `dns13.hichina.com` and `dns14.hichina.com`; go to `云解析 DNS` / `解析设置` to add records instead.
+- User shared an Aliyun domain list screenshot. The correct next click is the blue `解析` action on the `iaplacs.xyz` row, not `管理`, not `DNS修改`, and not the cloud-server purchase prompt.
+- User shared the Aliyun `快速添加解析` screenshot. For that dialog, select only `iaplacs.xyz` for the IPv4/A-record batch, enter the four GitHub Pages IPs one per line, and do not select `www.iaplacs.xyz` there. Add `www` separately as a CNAME to `keruicode.github.io`.
 
 ## Important Changed Files
 
@@ -186,7 +189,9 @@ Official references checked during planning:
 ## Next Recommended Actions
 
 1. Re-enter `iaplacs.xyz` in GitHub `Settings -> Pages -> Custom domain` and click `Save`.
-2. In Aliyun DNS, add GitHub Pages records for `@` and `www`: four `A` records for `@`, and `CNAME www -> keruicode.github.io`.
-3. After DNS check passes, wait for GitHub certificate provisioning and keep/enforce HTTPS enabled.
-4. Later, create an IAP server publishing script that generates optimized images and `manifest.json`, then commits/pushes updates to the repository.
-5. If image volume grows, keep GitHub Pages for the app and move large map assets to object storage/CDN.
+2. From the Aliyun domain list, click the blue `解析` action on the `iaplacs.xyz` row.
+3. In the Aliyun quick-add dialog, select only `iaplacs.xyz`, keep IPv4/A-record mode, and enter the four GitHub Pages IPs one per line.
+4. Add `www` separately as a CNAME to `keruicode.github.io`.
+5. After DNS check passes, wait for GitHub certificate provisioning and keep/enforce HTTPS enabled.
+6. Later, create an IAP server publishing script that generates optimized images and `manifest.json`, then commits/pushes updates to the repository.
+7. If image volume grows, keep GitHub Pages for the app and move large map assets to object storage/CDN.
