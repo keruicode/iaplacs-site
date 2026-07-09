@@ -3,50 +3,82 @@
     "name": "IAP-LACS Forecast",
     "domain": "iaplacs.xyz"
   },
-  "run_time": "2026-07-07T02:00:00+08:00",
-  "published_at": "2026-07-09T23:05:00+08:00",
-  "note": "当前站点已接入一张 WRF 逐小时降水样例图，其余产品仍为页面搭建样例。后续由 IAP 服务器定时生成真实预报产品并更新此 manifest。",
+  "run_time": "2026-07-09T08:00:00+08:00",
+  "published_at": "2026-07-09T22:44:07+08:00",
+  "note": "\u9996\u9875\u7efc\u5408\u9884\u62a5\u5df2\u63a5\u5165 WORK_nx \u6700\u65b0\u7a33\u5b9a T01-T48 \u964d\u6c34\u62fc\u56fe\uff1b\u56fe\u7247\u6309\u751f\u6210\u6587\u4ef6\u65f6\u95f4\u81ea\u52a8\u53d1\u5e03\u3002",
   "products": [
     {
       "id": "precip_24h",
-      "title": "WRF逐小时降水 T01-T48",
-      "category": "模式预报",
+      "title": "WRF\u7efc\u5408\u964d\u6c34\u9884\u62a5 T01-T48",
+      "category": "\u6a21\u5f0f\u9884\u62a5",
       "unit": "mm",
       "color": "#087d7a",
-      "description": "WRF 全降水逐小时预报拼图，初始化时间 2026-07-06 18:00 UTC。",
+      "description": "WORK_nx \u751f\u6210\u7684 WRF \u5168\u964d\u6c34\u9010\u5c0f\u65f6\u7efc\u5408\u9884\u62a5\u62fc\u56fe\uff0c\u6309\u6587\u4ef6\u751f\u6210\u65f6\u95f4\u81ea\u52a8\u9009\u62e9\u6700\u65b0\u7a33\u5b9a T48 \u4ea7\u54c1\u3002",
       "legend": {
         "gradient": "linear-gradient(90deg, #e8f2f5, #9ad4ee, #4b93c4, #31a45f, #f2d34c, #e78935, #bd3434)",
-        "ticks": ["0", "10", "25", "50", "100", "150+"]
+        "ticks": [
+          "0",
+          "10",
+          "25",
+          "50",
+          "100",
+          "150+"
+        ]
       },
       "metrics": [
-        { "label": "时效范围", "value": "T01-T48" },
-        { "label": "图像大小", "value": "485 KB" },
-        { "label": "产品状态", "value": "实图样例" }
+        {
+          "label": "\u8d77\u62a5\u65f6\u95f4",
+          "value": "20260709_00"
+        },
+        {
+          "label": "\u751f\u6210\u65f6\u95f4",
+          "value": "2026-07-09 22:44:07 BJT"
+        },
+        {
+          "label": "\u56fe\u50cf\u5927\u5c0f",
+          "value": "5.5 MB"
+        }
       ],
       "frames": [
         {
           "lead": 48,
           "lead_label": "T01-T48",
-          "valid_time": "2026-07-09T02:00:00+08:00",
-          "file": "./data/current/maps/wrf_precip_20260706_1800_t01_t48.webp"
+          "valid_time": "2026-07-11T08:00:00+08:00",
+          "file": "./data/current/maps/worknx_summary_20260709_00/Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-09_00_00.png"
         }
       ]
     },
     {
       "id": "temperature_2m",
-      "title": "2米气温",
-      "category": "模式预报",
+      "title": "2\u7c73\u6c14\u6e29",
+      "category": "\u6a21\u5f0f\u9884\u62a5",
       "unit": "degC",
       "color": "#b73b3b",
-      "description": "近地面气温分布，用于识别暖区和冷空气边界。",
+      "description": "\u8fd1\u5730\u9762\u6c14\u6e29\u5206\u5e03\uff0c\u7528\u4e8e\u8bc6\u522b\u6696\u533a\u548c\u51b7\u7a7a\u6c14\u8fb9\u754c\u3002",
       "legend": {
         "gradient": "linear-gradient(90deg, #31599a, #62a5d8, #f6e58d, #ef8b44, #b73b3b)",
-        "ticks": ["-10", "0", "10", "20", "30", "40"]
+        "ticks": [
+          "-10",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40"
+        ]
       },
       "metrics": [
-        { "label": "区域最高", "value": "36.2 degC" },
-        { "label": "区域最低", "value": "17.4 degC" },
-        { "label": "产品状态", "value": "样例" }
+        {
+          "label": "\u533a\u57df\u6700\u9ad8",
+          "value": "36.2 degC"
+        },
+        {
+          "label": "\u533a\u57df\u6700\u4f4e",
+          "value": "17.4 degC"
+        },
+        {
+          "label": "\u4ea7\u54c1\u72b6\u6001",
+          "value": "\u6837\u4f8b"
+        }
       ],
       "frames": [
         {
@@ -65,19 +97,35 @@
     },
     {
       "id": "wind_10m",
-      "title": "10米风场",
-      "category": "模式预报",
+      "title": "10\u7c73\u98ce\u573a",
+      "category": "\u6a21\u5f0f\u9884\u62a5",
       "unit": "m/s",
       "color": "#2c5f9e",
-      "description": "近地面风速和风向样例，用于展示矢量产品入口。",
+      "description": "\u8fd1\u5730\u9762\u98ce\u901f\u548c\u98ce\u5411\u6837\u4f8b\uff0c\u7528\u4e8e\u5c55\u793a\u77e2\u91cf\u4ea7\u54c1\u5165\u53e3\u3002",
       "legend": {
         "gradient": "linear-gradient(90deg, #f0f4f8, #b8d7ea, #5f9ec9, #2c5f9e, #21365f)",
-        "ticks": ["0", "4", "8", "12", "16", "20+"]
+        "ticks": [
+          "0",
+          "4",
+          "8",
+          "12",
+          "16",
+          "20+"
+        ]
       },
       "metrics": [
-        { "label": "最大风速", "value": "15.8 m/s" },
-        { "label": "主导风向", "value": "SE" },
-        { "label": "产品状态", "value": "样例" }
+        {
+          "label": "\u6700\u5927\u98ce\u901f",
+          "value": "15.8 m/s"
+        },
+        {
+          "label": "\u4e3b\u5bfc\u98ce\u5411",
+          "value": "SE"
+        },
+        {
+          "label": "\u4ea7\u54c1\u72b6\u6001",
+          "value": "\u6837\u4f8b"
+        }
       ],
       "frames": [
         {
@@ -99,12 +147,30 @@
     "name": "Beijing sample time series",
     "unit": "mm",
     "points": [
-      { "time": "2026-07-09T08:00:00+08:00", "value": 0 },
-      { "time": "2026-07-09T14:00:00+08:00", "value": 3 },
-      { "time": "2026-07-09T20:00:00+08:00", "value": 12 },
-      { "time": "2026-07-10T02:00:00+08:00", "value": 24 },
-      { "time": "2026-07-10T08:00:00+08:00", "value": 38 },
-      { "time": "2026-07-10T14:00:00+08:00", "value": 42 }
+      {
+        "time": "2026-07-09T08:00:00+08:00",
+        "value": 0
+      },
+      {
+        "time": "2026-07-09T14:00:00+08:00",
+        "value": 3
+      },
+      {
+        "time": "2026-07-09T20:00:00+08:00",
+        "value": 12
+      },
+      {
+        "time": "2026-07-10T02:00:00+08:00",
+        "value": 24
+      },
+      {
+        "time": "2026-07-10T08:00:00+08:00",
+        "value": 38
+      },
+      {
+        "time": "2026-07-10T14:00:00+08:00",
+        "value": 42
+      }
     ]
   }
 }
