@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-10 11:53 CST
+Last updated: 2026-07-10 12:35 CST
 
 ## Resume Commands
 
@@ -100,6 +100,16 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - Changed only the top run-card presentation to chronological order: oldest is on the left and newest is on the right. The underlying newest-first catalog and each card's original array index are preserved, so default/latest selection and product switching remain correct; the active latest card automatically scrolls into view at the right edge.
 - Bumped the script query string on all three pages to `app.js?v=20260710-06`. Code commit: `07cac8c Order forecast runs oldest to newest`.
 - Pushed the order fix and resume commit through `70a240f Update resume for chronological run order`; verified all three deployed pages load `app.js?v=20260710-06` after Pages cache propagation.
+- User then reported that changing initial times left the displayed image unchanged on both Ningxia and Shangrao, and asked to move Shangrao `总览 6x6 / 细节 1/3 / 细节 2/3 / 细节 3/3` controls above the image.
+- Diagnosis showed no missing server files: all four Shangrao runs had four distinct, locally decodable frames, and all 16 deployed image URLs returned HTTP 200 with the correct PNG/WebP content type. The three Ningxia files were also distinct and valid.
+- The practical browser risk was excessive decoded image size rather than compressed transfer size: Ningxia PNGs were `7000x7000 RGBA` (about 196 MB decoded each); Shangrao overviews were `6168x6168` (about 152 MB decoded), and details were `4112x3084` (about 51 MB decoded). This can leave a mobile browser showing one cached bitmap while later switches fail to decode.
+- Reworked image switching to use an explicit request ID and `AbortController`: every new run/frame cancels the previous fetch, clears the old image, fetches the selected URL as a Blob, ignores stale completions, and retries once with a fresh query on failure. The map now shows loading/error state instead of silently retaining the previous image.
+- Moved `leadTabs` above `map-stage` on the airport, Ningxia, and Shangrao pages; updated the map grid row order and added `decoding="async"` to forecast images.
+- Added executable `tools/optimize_forecast_images.sh`. It creates timestamp-preserving WebP derivatives with ImageMagick, limiting Ningxia and Shangrao overview images to `3200x3200` and Shangrao details to `2800x2100`. Original PNGs remain unchanged.
+- Updated `build_ningxia_frames()` to group same-stem PNG/WebP candidates and select the smaller derivative without duplicating frames or losing `valid_time`. WRF frame building already chooses the smallest same-stem candidate.
+- Regenerated the current catalog so all three Ningxia frames and all 16 Shangrao frames use optimized WebP. Ningxia images are about 1.0 MB each; Shangrao overviews are about 0.9-1.0 MB and details about 0.4-0.5 MB. Existing product publication timestamps were preserved.
+- Removed stale `shangrao_work_*` instructions from README/deployment docs and added the optimizer before catalog generation in the publishing sequence. Bumped all pages to `styles.css?v=20260710-07` and `app.js?v=20260710-07`.
+- Code/data commit: `c2667fb Fix forecast image switching and web delivery`.
 
 ## Important Changed Files
 
@@ -112,6 +122,9 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - `/Users/xiaoxiaotu/_01_IAP/Website/data/current/forecast-runs.json`
 - `/Users/xiaoxiaotu/_01_IAP/Website/data/current/maps/wrf_precip_20260706_1800_t01_t48.webp`
 - `/Users/xiaoxiaotu/_01_IAP/Website/data/current/maps/wrf_montage_20260709_02/`
+- `/Users/xiaoxiaotu/_01_IAP/Website/data/current/maps/wrf_montage_20260709_14/`
+- `/Users/xiaoxiaotu/_01_IAP/Website/data/current/maps/wrf_montage_20260709_20/`
+- `/Users/xiaoxiaotu/_01_IAP/Website/data/current/maps/wrf_montage_20260710_02/`
 - `/Users/xiaoxiaotu/_01_IAP/Website/data/current/maps/worknx_summary_20260709_00/`
 - `/Users/xiaoxiaotu/_01_IAP/Website/data/current/maps/worknx_summary_20260709_06/`
 - `/Users/xiaoxiaotu/_01_IAP/Website/data/current/maps/worknx_summary_20260709_12/`
@@ -130,6 +143,7 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - `/Users/xiaoxiaotu/_01_IAP/Website/shangrao/index.html`
 - `/Users/xiaoxiaotu/_01_IAP/Website/ningxia/index.html`
 - `/Users/xiaoxiaotu/_01_IAP/Website/tools/build_forecast_catalog.py`
+- `/Users/xiaoxiaotu/_01_IAP/Website/tools/optimize_forecast_images.sh`
 - Remote GitHub Pages repo, pushed from `server02`:
   - `data/current/maps/wrf_montage_20260709_02/`
   - `data/current/maps/worknx_summary_20260709_00/`
@@ -582,6 +596,35 @@ curl --noproxy iaplacs.xyz -L -sS 'https://iaplacs.xyz/app.js?v=20260710-06-orde
 
 Result: pushed `81fc446..70a240f`; all deployed pages reference `app.js?v=20260710-06`, and the deployed script contains `displayRuns` plus `.reverse()`. The live catalog at verification time retained three Ningxia runs and one valid Shangrao run.
 
+```bash
+file data/current/maps/wrf_montage_*/*_grid.png
+file data/current/maps/worknx_summary_*/*.png
+curl --noproxy iaplacs.xyz -I '<each of the 16 Shangrao frame URLs>'
+```
+
+Result during image-switch diagnosis: all local source images were valid; all 16 deployed Shangrao URLs returned HTTP 200 with correct image types. The source dimensions were `7000x7000` for Ningxia, `6168x6168` for Shangrao overviews, and `4112x3084` for Shangrao details.
+
+```bash
+IAPLACS_OPTIMIZE_FORCE=1 tools/optimize_forecast_images.sh
+python3 tools/build_forecast_catalog.py
+bash -n tools/optimize_forecast_images.sh
+node --check app.js
+python3 -m py_compile tools/build_forecast_catalog.py
+python3 -m json.tool data/current/forecast-runs.json
+git diff --check
+```
+
+Result: generated three `3200x3200` Ningxia WebPs, four `3200x3200` Shangrao overview WebPs, and twelve `2800x2100` detail WebPs. All checks passed; a second optimizer run produced no output, confirming unchanged derivatives are skipped.
+
+```bash
+curl --noproxy 127.0.0.1 -sS http://127.0.0.1:5175/ningxia/
+curl --noproxy 127.0.0.1 -sS http://127.0.0.1:5175/shangrao/
+curl --noproxy 127.0.0.1 -I '<one optimized Ningxia WebP>'
+curl --noproxy 127.0.0.1 -I '<one optimized Shangrao WebP>'
+```
+
+Result: both pages referenced `20260710-07`; `leadTabs` appeared before `map-stage`; optimized files returned HTTP 200 as `image/webp`; the local catalog used WebP for every Ningxia and Shangrao frame.
+
 Official references checked during planning:
 
 - Alibaba Cloud DNS add-record documentation.
@@ -604,6 +647,8 @@ Official references checked during planning:
 - GitHub Pages official docs as checked on 2026-07-09: maximum one user/organization Pages site per account and maximum one project Pages site per repository.
 - GitHub Pages publishing source docs say for branch-based publishing, select `Deploy from a branch`, then choose the branch and source folder; for this repository that is `main` and `/`.
 - Do not send raw large NetCDF/GRIB/MICAPS files directly to browsers. Generate Web-friendly manifests, images, tiles, GeoJSON, or compressed JSON.
+- Compressed file size alone is not a sufficient browser-performance check. A 5-6 MB `7000x7000 RGBA` PNG expands to roughly 196 MB when decoded; several such images can prevent mobile run switching even when every URL returns HTTP 200.
+- Server publishing must run `tools/optimize_forecast_images.sh` before `tools/build_forecast_catalog.py`. The optimizer preserves the source image mtime so derivative creation does not falsify product publication time.
 - The root raw PNG `Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-06_18_00.png` is 7000x7000 and 5.8 MB, and is intentionally ignored by Git. Use the optimized WebP in `data/current/maps/` for the site.
 - The root user-provided `logo_lacs.png` is ignored by Git after copying it into `assets/brand/logo-lacs-source.png`, so repository assets stay under `assets/brand/`.
 - AI-generated logo text is risky, so the website header lockup uses the AI-generated icon only; Chinese and English text are rendered from exact typed strings to avoid text hallucination.
@@ -625,8 +670,8 @@ Official references checked during planning:
 
 1. Add `www` separately as a CNAME to `keruicode.github.io`. In Aliyun quick-add this can be done by choosing `将网站域名解析到另外的目标域名`, selecting only `www.iaplacs.xyz`, and entering `keruicode.github.io`.
 2. Confirm GitHub Pages HTTPS remains enabled for `iaplacs.xyz` after DNS/certificate provisioning.
-3. Keep monitoring the `login02` publishing helpers so every Shangrao WRF montage or Ningxia/WORK_nx publish retains existing run directories, runs `python3 tools/build_forecast_catalog.py`, and stages the regenerated catalog together with the new image directory.
+3. Update and monitor the `login02` publishing helpers so every Shangrao WRF montage or Ningxia/WORK_nx publish retains existing run directories, runs `tools/optimize_forecast_images.sh` before `python3 tools/build_forecast_catalog.py`, and stages the new WebP files plus regenerated catalog.
 4. Add real airport service products to replace the current airport samples under the homepage service.
 5. Later, extend `tools/build_forecast_catalog.py` with additional product scanners when the server starts publishing more product families beyond WRF rainfall montage and WORK_nx summary.
 6. If image volume grows, keep GitHub Pages for the app and move large map assets to object storage/CDN.
-7. Perform one real iPhone/Android touch check after the `20260710-05` frontend deploy: open a forecast image, pinch to zoom, drag, reset, and close; repeat at desktop width with wheel zoom.
+7. Perform one real iPhone/Android check after the `20260710-07` deploy: switch every Ningxia and Shangrao run, switch all four Shangrao frames, then test pinch zoom, drag, reset, and close; repeat at desktop width with wheel zoom.
