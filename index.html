@@ -10,7 +10,7 @@
     <title>机场气象服务 | IAP-LACS Forecast</title>
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/brand/favicon-192.png" />
     <link rel="apple-touch-icon" href="./assets/brand/favicon-512.png" />
-    <link rel="stylesheet" href="./styles.css?v=20260710-04" />
+    <link rel="stylesheet" href="./styles.css?v=20260710-05" />
   </head>
   <body
     class="auth-lock"
@@ -18,6 +18,7 @@
     data-manifest-url="./data/current/forecast-runs.json"
     data-fallback-manifest-url="./data/current/manifest.json"
     data-asset-base="./"
+    data-refresh-ms="120000"
   >
     <header class="topbar">
       <div class="brand">
@@ -47,10 +48,15 @@
     </header>
 
     <section class="run-switchbar" aria-label="机场服务起报时间">
-      <div class="run-switch-heading">
-        <p class="eyebrow">Initial Time</p>
-        <h2>起报时间</h2>
-        <p>选择不同起报时次，页面会随服务器新清单自动更新。</p>
+      <div class="run-switch-heading-row">
+        <div class="run-switch-heading">
+          <p class="eyebrow">Initial Time</p>
+          <h2>起报时间</h2>
+          <p id="runSummary" aria-live="polite">正在读取时次清单</p>
+        </div>
+        <button id="refreshCatalog" class="refresh-button" type="button" title="刷新数据" aria-label="刷新数据">
+          &#8635;
+        </button>
       </div>
       <div id="runList" class="run-list run-list-horizontal" aria-label="机场起报时间"></div>
     </section>
@@ -84,7 +90,7 @@
             <h2 id="productTitle">读取中</h2>
           </div>
           <div class="toolbar-actions">
-            <a id="imageLink" class="text-button link-button" href="#" target="_blank" rel="noreferrer">打开图像</a>
+            <a id="imageLink" class="text-button link-button" href="#" target="_blank" rel="noreferrer">放大查看</a>
             <button id="prevLead" class="icon-button" type="button" title="上一时效" aria-label="上一时效">
               &#8249;
             </button>
@@ -95,7 +101,7 @@
         </div>
 
         <div class="map-stage">
-          <img id="forecastImage" alt="机场预报产品图" />
+          <img id="forecastImage" alt="机场预报产品图" role="button" tabindex="0" draggable="false" aria-label="放大查看当前预报图" />
           <div class="map-badge">
             <span id="leadLabel">--</span>
             <span id="validTime">--</span>
@@ -129,6 +135,6 @@
       <span>iaplacs.xyz</span>
     </footer>
 
-    <script src="./app.js?v=20260710-04"></script>
+    <script src="./app.js?v=20260710-05"></script>
   </body>
 </html>

@@ -65,11 +65,17 @@ The IAP server should generate or copy a complete new run directory first, valid
 
 ```text
 data/current/maps/wrf_montage_YYYYMMDD_HH/
+data/current/maps/shangrao_work_YYYYMMDD_HH/
 data/current/maps/worknx_summary_YYYYMMDD_HH/
 ```
 
-`worknx_summary_*` is exposed only on `/ningxia/`; `wrf_montage_*` is exposed
-only on `/shangrao/`. The homepage uses the airport service catalog.
+`worknx_summary_*` is exposed only on `/ningxia/`; `wrf_montage_*` and
+`shangrao_work_*` are exposed only on `/shangrao/` and are merged when they have
+the same initial time. The homepage uses the airport service catalog.
+
+Keep the existing run directories when publishing a new one. Removing
+`data/current` before every publish leaves only one selectable initial time; the catalog
+builder can expose up to eight retained Ningxia runs and eight retained Shangrao runs.
 
 Then run:
 

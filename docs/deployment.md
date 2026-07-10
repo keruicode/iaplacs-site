@@ -71,14 +71,13 @@ The IAP server can run a scheduled script similar to:
 set -euo pipefail
 
 SITE_REPO="$HOME/iaplacs-site"
-PRODUCT_DIR="/path/to/generated/web-products"
+PRODUCT_DIR="/path/to/generated/run-directories"
 
 cd "$SITE_REPO"
 git pull --ff-only
 
-rm -rf data/current
-mkdir -p data
-cp -R "$PRODUCT_DIR" data/current
+mkdir -p data/current/maps
+rsync -a "$PRODUCT_DIR"/ data/current/maps/
 
 python3 tools/build_forecast_catalog.py
 test -f data/current/forecast-runs.json
@@ -89,7 +88,12 @@ git commit -m "Update forecast products $(date +%Y%m%d_%H%M)" || exit 0
 git push
 ```
 
-For production, publish into timestamped release directories and switch `current` only after validation.
+Do not remove `data/current` during each publish. The run-specific directories already
+stored there are what let the Ningxia and Shangrao pages expose several initial times.
+Apply a separate retention job only after the catalog has more history than needed; the
+catalog displays the newest eight runs by default.
+
+For production, finish each timestamped run directory before copying it into the repository.
 
 For the current Shangrao WRF montage workflow, the server publishing helper should copy
 `*_combined_*_grid.png` files into:
@@ -97,6 +101,16 @@ For the current Shangrao WRF montage workflow, the server publishing helper shou
 ```text
 data/current/maps/wrf_montage_YYYYMMDD_HH/
 ```
+
+For the Shangrao WORK workflow, copy the product image plus its
+`manifest_fragment.json` into:
+
+```text
+data/current/maps/shangrao_work_YYYYMMDD_HH/
+```
+
+If a WRF montage directory and a Shangrao WORK directory use the same initial time,
+the catalog builder combines their products under one selectable run.
 
 For the current Ningxia/WORK_nx workflow, copy the summary image plus its
 `manifest_fragment.json` into:
