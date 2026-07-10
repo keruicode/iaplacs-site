@@ -4,7 +4,7 @@
     "name": "IAP-LACS Forecast",
     "domain": "iaplacs.xyz"
   },
-  "published_at": "2026-07-11T04:52:36+08:00",
+  "published_at": "2026-07-11T05:16:49+08:00",
   "services": {
     "airport": {
       "title": "机场气象服务",
@@ -284,8 +284,49 @@
       "title": "宁夏预报",
       "subtitle": "Ningxia forecast",
       "note": "宁夏页面集中展示 WORK_nx 发布的宁夏区域预报图。新起报时次推送到仓库后，会自动出现在顶部起报时间选择区。",
-      "latest_run": "20260710_00",
+      "latest_run": "20260710_12",
       "runs": [
+        {
+          "id": "20260710_12",
+          "label": "2026-07-10 20:00 BJT",
+          "run_time": "2026-07-10T20:00:00+08:00",
+          "published_at": "2026-07-11T05:16:49+08:00",
+          "summary": "宁夏区域预报图集，共 1 张图",
+          "products": [
+            {
+              "id": "ningxia_precip_series",
+              "title": "宁夏降水预报图集",
+              "category": "宁夏预报",
+              "unit": "mm",
+              "color": "#0f68c8",
+              "description": "WORK_nx 生成的宁夏区域降水预报图集，按起报时次自动归档。",
+              "metrics": [
+                {
+                  "label": "起报时次",
+                  "value": "20260710 12 UTC"
+                },
+                {
+                  "label": "生成时间",
+                  "value": "2026-07-11 05:16 BJT"
+                },
+                {
+                  "label": "图像数量",
+                  "value": "1"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "precip_hourly_wrf_allrain_t01_t48_initutc_2026_07_10_12_00",
+                  "lead": 48,
+                  "lead_label": "T01-T48",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260710_12/Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-10_12_00.webp",
+                  "bytes": 3428305,
+                  "valid_time": "2026-07-12T20:00:00+08:00"
+                }
+              ]
+            }
+          ]
+        },
         {
           "id": "20260710_00",
           "label": "2026-07-10 08:00 BJT",
@@ -445,47 +486,6 @@
                   "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260709_06/Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-09_06_00.webp",
                   "bytes": 1058570,
                   "valid_time": "2026-07-11T14:00:00+08:00"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "20260709_00",
-          "label": "2026-07-09 08:00 BJT",
-          "run_time": "2026-07-09T08:00:00+08:00",
-          "published_at": "2026-07-09T22:44:07+08:00",
-          "summary": "宁夏区域预报图集，共 1 张图",
-          "products": [
-            {
-              "id": "ningxia_precip_series",
-              "title": "宁夏降水预报图集",
-              "category": "宁夏预报",
-              "unit": "mm",
-              "color": "#0f68c8",
-              "description": "WORK_nx 生成的宁夏区域降水预报图集，按起报时次自动归档。",
-              "metrics": [
-                {
-                  "label": "起报时次",
-                  "value": "20260709 00 UTC"
-                },
-                {
-                  "label": "生成时间",
-                  "value": "2026-07-09 22:44 BJT"
-                },
-                {
-                  "label": "图像数量",
-                  "value": "1"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "precip_hourly_wrf_allrain_t01_t48_initutc_2026_07_09_00_00",
-                  "lead": 48,
-                  "lead_label": "T01-T48",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260709_00/Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-09_00_00.webp",
-                  "bytes": 1062598,
-                  "valid_time": "2026-07-11T08:00:00+08:00"
                 }
               ]
             }
