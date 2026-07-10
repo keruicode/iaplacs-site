@@ -15,6 +15,7 @@ MAPS_DIR = ROOT / "data" / "current" / "maps"
 CATALOG_PATH = ROOT / "data" / "current" / "forecast-runs.json"
 BJT = timezone(timedelta(hours=8))
 MAX_RUNS = int(os.environ.get("IAPLACS_MAX_RUNS", "8"))
+ASSET_BASE_URL = os.environ.get("IAPLACS_ASSET_BASE_URL", "").strip().rstrip("/")
 
 
 RUN_DIR_RE = re.compile(r"^wrf_montage_(\d{8}_\d{2})$")
@@ -273,7 +274,7 @@ def build_ningxia_frames(run_dir: Path, fragment: dict) -> list[dict]:
             "id": path.stem.lower().replace("-", "_"),
             "lead": lead_value_from_label(lead_label),
             "lead_label": lead_label,
-            "file": "./" + path.relative_to(ROOT).as_posix(),
+            "file": forecast_asset_url(path),
             "bytes": path.stat().st_size,
         }
         if fragment_stem and path.stem == fragment_stem:
@@ -336,10 +337,17 @@ def build_frames(run_id: str, run_dir: Path) -> list[dict]:
     for key, candidates in sorted(groups.items(), key=frame_sort_key):
         chosen = min(candidates, key=lambda item: item.stat().st_size)
         frame = frame_meta(run_id, key)
-        frame["file"] = "./" + chosen.relative_to(ROOT).as_posix()
+        frame["file"] = forecast_asset_url(chosen)
         frame["bytes"] = chosen.stat().st_size
         frames.append(frame)
     return frames
+
+
+def forecast_asset_url(path: Path) -> str:
+    relative = path.relative_to(ROOT).as_posix()
+    if ASSET_BASE_URL:
+        return f"{ASSET_BASE_URL}/{relative}"
+    return f"./{relative}"
 
 
 def frame_sort_key(item: tuple[str, list[Path]]) -> tuple[int, int, str]:

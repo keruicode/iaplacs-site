@@ -645,6 +645,15 @@ Official references checked during planning:
 - Certbot Nginx instructions.
 - GitHub Pages quickstart and publishing-source docs.
 
+## Optional Alibaba OSS Image Origin
+
+- `tools/build_forecast_catalog.py` now reads optional `IAPLACS_ASSET_BASE_URL`. When unset, output is unchanged and Ningxia/Shangrao frames keep GitHub-relative paths. When set, only those forecast raster frames use absolute object-storage URLs; airport sample SVGs remain in GitHub Pages.
+- The server-side publishers in `/Volumes/storage/江西VPN-每日预报` create proportional WebP derivatives with no crop operation, upload them to OSS only when `server02:~/.iaplacs-oss.env` has `IAPLACS_OSS_ENABLED=1`, verify one public object, and then build/push the OSS-backed catalog. GitHub image copies remain as a fallback during rollout.
+- `server02` has user-local `~/bin/ossutil` v1.7.19 installed from Alibaba Cloud's official current Linux AMD64 package. No OSS credentials were configured or stored by Codex.
+- `/Volumes/storage/江西VPN-每日预报/configure_oss_server02.sh` is the interactive one-time setup helper. It keeps AccessKey input inside the server terminal, supports a dedicated CORS rule for `https://iaplacs.xyz`, uploads one isolated WebP test object, verifies public range access and the CORS response, and only then enables the runtime environment file.
+- The current frontend fetches forecast images as Blobs, so OSS must return `Access-Control-Allow-Origin: https://iaplacs.xyz`; a URL that merely opens in a browser is not sufficient.
+- Do not put AccessKey ID/Secret in Git, chat, publisher scripts, cron, or `forecast-runs.json`. Prefer a dedicated RAM user restricted to the selected Bucket/prefix.
+
 ## Known Pitfalls
 
 - If the target server is in mainland China and `iaplacs.xyz` resolves to it, ICP filing is required before normal public access.
@@ -687,3 +696,4 @@ Official references checked during planning:
 5. Later, extend `tools/build_forecast_catalog.py` with additional product scanners when the server starts publishing more product families beyond WRF rainfall montage and WORK_nx summary.
 6. If image volume grows, keep GitHub Pages for the app and move large map assets to object storage/CDN.
 7. Perform one real iPhone/Android check after the `20260710-07` deploy: switch every Ningxia and Shangrao run, switch all four Shangrao frames, then test pinch zoom, drag, reset, and close; repeat at desktop width with wheel zoom.
+8. Complete the one-time OSS setup on `server02`, then publish one current prefix and verify that `forecast-runs.json` uses the expected OSS host before relying on cron.
