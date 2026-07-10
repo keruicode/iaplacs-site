@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-10 11:51 CST
+Last updated: 2026-07-10 11:53 CST
 
 ## Resume Commands
 
@@ -98,6 +98,7 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - Server-side follow-up commit `81fc446 Remove incorrect Shangrao WORK product` removed the temporary `20260710_02` Shangrao WORK run; current tracked data again has the valid `20260709_02` Shangrao run only. The scanner support remains available for corrected future directories.
 - Changed only the top run-card presentation to chronological order: oldest is on the left and newest is on the right. The underlying newest-first catalog and each card's original array index are preserved, so default/latest selection and product switching remain correct; the active latest card automatically scrolls into view at the right edge.
 - Bumped the script query string on all three pages to `app.js?v=20260710-06`. Code commit: `07cac8c Order forecast runs oldest to newest`.
+- Pushed the order fix and resume commit through `70a240f Update resume for chronological run order`; verified all three deployed pages load `app.js?v=20260710-06` after Pages cache propagation.
 
 ## Important Changed Files
 
@@ -569,6 +570,16 @@ curl --noproxy 127.0.0.1 -sS 'http://127.0.0.1:5175/app.js?v=20260710-06'
 ```
 
 Result: local HTML references `app.js?v=20260710-06`; the served script contains the reversed display list and `displayRuns` renderer.
+
+```bash
+git push origin main
+curl --noproxy iaplacs.xyz -L -sS 'https://iaplacs.xyz/?order=70a240f'
+curl --noproxy iaplacs.xyz -L -sS 'https://iaplacs.xyz/ningxia/?order=70a240f-retry1'
+curl --noproxy iaplacs.xyz -L -sS 'https://iaplacs.xyz/shangrao/?order=70a240f-retry1'
+curl --noproxy iaplacs.xyz -L -sS 'https://iaplacs.xyz/app.js?v=20260710-06-order-70a240f'
+```
+
+Result: pushed `81fc446..70a240f`; all deployed pages reference `app.js?v=20260710-06`, and the deployed script contains `displayRuns` plus `.reverse()`. The live catalog at verification time retained three Ningxia runs and one valid Shangrao run.
 
 Official references checked during planning:
 
