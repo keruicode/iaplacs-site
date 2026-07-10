@@ -18,6 +18,13 @@ images are uploaded to Alibaba OSS before the catalog is generated, and
 GitHub image copies remain useful as repository fallback, but normal browser
 image requests should go to OSS.
 
+The frontend then preloads the retained images for the active service with
+three concurrent requests. It keeps successful images in memory and in a
+versioned browser Cache Storage cache. Do not add a changing timestamp to the
+image URL on every render; the publication version in the catalog is what lets
+unchanged images remain locally cacheable while new products invalidate only
+their own URLs.
+
 GitHub Pages then serves the updated static files.
 
 ## Enable GitHub Pages After Push

@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-10 20:18 CST
+Last updated: 2026-07-10 20:45 CST
 
 ## Resume Commands
 
@@ -667,6 +667,13 @@ Official references checked during planning:
 - Live `/`, `/ningxia/`, and `/shangrao/` HTML all load `app.js?v=20260710-08`; the deployed script contains `MAX_DISPLAY_RUNS = 5` and `limitCatalogRuns`.
 - A representative current Ningxia OSS object returned `HTTP 200`, `Content-Type: image/webp`, `Access-Control-Allow-Origin: https://iaplacs.xyz`, `Cache-Control: public,max-age=604800`, and `Content-Length: 3461871`.
 - The OSS five-run retention result remains the server-side Bucket inventory of 50 forecast objects. The next operational check is after the next automated Ningxia and Shangrao publication, confirming new objects are uploaded/skipped correctly and old prefixes are pruned without deleting one of the five retained runs.
+
+## Browser Image Preload And Full-Screen Navigation
+
+- The working tree now adds a versioned browser Cache Storage (`iaplacs-forecast-images-v1`) plus an in-memory Blob/Object URL cache. The active service is preloaded across all retained runs with three concurrent image requests; unchanged URLs can be reused after a page reload, while the catalog publication version changes the cache key for a newly published image.
+- Expected preload sizes from the current catalog are five images for Ningxia and 20 images for Shangrao. The viewer sequence spans the full active service, so its left/right arrows, keyboard left/right keys, and unzoomed touch swipes can move through all retained runs and product frames without returning to the page controls. The current zoom transform is preserved when navigating with the viewer arrows.
+- All three pages now reference `app.js?v=20260710-09`. `node --check app.js`, `git diff --check`, local HTTP `200` checks, and static presence checks for the cache/preload/viewer controls passed.
+- Browser automation could not be completed because the available browser list returned `[]`; a real mobile touch pass remains a follow-up after deployment. The implementation falls back to ordinary fetch/memory caching when Cache Storage is unavailable.
 
 ## Known Pitfalls
 

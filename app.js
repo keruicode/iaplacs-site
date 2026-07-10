@@ -2,6 +2,8 @@ const DEFAULT_REFRESH_MS = 2 * 60 * 1000;
 const MAX_DISPLAY_RUNS = 5;
 const MAX_VIEWER_SCALE = 6;
 const VIEWER_ZOOM_STEP = 1.25;
+const IMAGE_CACHE_NAME = "iaplacs-forecast-images-v1";
+const IMAGE_PREFETCH_CONCURRENCY = 3;
 const ACCESS_PASSWORD = "123";
 const ACCESS_TOKEN_KEY = "iaplacs_access_token";
 const ACCESS_TOKEN_VALUE = "iaplacs_access_granted_v1";
@@ -25,11 +27,13 @@ const state = {
   loading: false,
   hasNewLatestRun: false,
   imageRequestId: 0,
-  imageAbortController: null,
-  imageObjectUrl: null,
   imageSource: null,
   imageStatus: "idle",
+  prefetchSignature: "",
 };
+
+const imageResourceCache = new Map();
+let persistentImageCachePromise = null;
 
 const els = {
   updateLabel: document.querySelector("#updateLabel"),
@@ -68,6 +72,10 @@ const viewerState = {
   gesture: null,
   lastTap: null,
   opener: null,
+  source: null,
+  requestId: 0,
+  loading: false,
+  resetOnImageLoad: false,
 };
 
 async function init() {
@@ -104,6 +112,7 @@ async function loadForecast({ preserveSelection }) {
     state.runIndex = chooseRunIndex(service, hasNewLatestRun ? undefined : previous.runId);
     state.productIndex = chooseProductIndex(currentRun(), previous.productId);
     state.leadIndex = chooseLeadIndex(currentProduct(), previous.frameId);
+    syncForecastImageCache(catalog);
     render();
   } catch (error) {
     if (state.catalog) {
@@ -260,18 +269,21 @@ function render() {
   renderProductNote(run, product, frame);
   updateControls(product);
 
-  const imageSrc = withAssetVersion(
-    resolveAssetPath(frame.file),
-    frame.version || run.published_at || state.catalog.published_at,
-  );
+  const imageSrc = forecastFrameSource(run, frame);
+  const imageAlt = `${product.title} ${frame.lead_label}`;
   setText(els.productTitle, product.title);
   setText(els.productUnit, `${product.category || "预报产品"} | ${product.unit || "--"}`);
   if (els.forecastImage) {
-    loadForecastImage(imageSrc, `${product.title} ${frame.lead_label}`);
+    loadForecastImage(imageSrc, imageAlt);
   }
   if (els.imageLink) els.imageLink.href = imageSrc;
   setText(els.leadLabel, frame.lead_label);
   setText(els.validTime, frame.valid_label || `有效时间 ${formatTime(frame.valid_time)}`);
+  updateViewerControls();
+  if (viewerState.root && !viewerState.root.hidden) {
+    syncViewerFrame(imageSrc, imageAlt, { reset: false });
+  }
+  warmServiceImages(state.service, imageSrc);
 }
 
 function updateControls(product) {
@@ -432,6 +444,162 @@ function currentFrame() {
   return currentProduct()?.frames?.[state.leadIndex];
 }
 
+function forecastFrameSource(run, frame) {
+  return withAssetVersion(
+    resolveAssetPath(frame?.file),
+    frame?.version || run?.published_at || state.catalog?.published_at,
+  );
+}
+
+function collectServiceImageSources(service) {
+  const sources = new Set();
+  for (const run of service?.runs || []) {
+    for (const product of run.products || []) {
+      for (const frame of product.frames || []) {
+        const source = forecastFrameSource(run, frame);
+        if (source) sources.add(source);
+      }
+    }
+  }
+  return [...sources];
+}
+
+function collectCatalogImageSources(catalog) {
+  const sources = new Set();
+  for (const service of Object.values(catalog?.services || {})) {
+    collectServiceImageSources(service).forEach((source) => sources.add(source));
+  }
+  return sources;
+}
+
+function syncForecastImageCache(catalog) {
+  const desiredSources = collectCatalogImageSources(catalog);
+  for (const [source, entry] of imageResourceCache) {
+    if (desiredSources.has(source) || !entry.objectUrl) continue;
+    URL.revokeObjectURL(entry.objectUrl);
+    imageResourceCache.delete(source);
+  }
+  void prunePersistentImageCache(desiredSources);
+}
+
+function warmServiceImages(service, activeSource) {
+  const sources = collectServiceImageSources(service);
+  const signature = sources.join("\n");
+  if (state.prefetchSignature === signature) return;
+  state.prefetchSignature = signature;
+
+  const orderedSources = [
+    activeSource,
+    ...sources.filter((source) => source !== activeSource),
+  ].filter(Boolean);
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < orderedSources.length) {
+      const source = orderedSources[cursor];
+      cursor += 1;
+      try {
+        await getImageResource(source);
+      } catch (error) {
+        console.warn("forecast image prefetch failed", source, error);
+      }
+    }
+  };
+
+  const workerCount = Math.min(IMAGE_PREFETCH_CONCURRENCY, orderedSources.length);
+  void Promise.all(Array.from({ length: workerCount }, () => worker()));
+}
+
+function openPersistentImageCache() {
+  if (!("caches" in window)) return Promise.resolve(null);
+  if (!persistentImageCachePromise) {
+    persistentImageCachePromise = window.caches
+      .open(IMAGE_CACHE_NAME)
+      .catch((error) => {
+        console.warn("persistent forecast image cache unavailable", error);
+        return null;
+      });
+  }
+  return persistentImageCachePromise;
+}
+
+async function prunePersistentImageCache(desiredSources) {
+  const cache = await openPersistentImageCache();
+  if (!cache) return;
+  try {
+    const requests = await cache.keys();
+    await Promise.all(
+      requests
+        .filter((request) => !desiredSources.has(request.url))
+        .map((request) => cache.delete(request)),
+    );
+  } catch (error) {
+    console.warn("persistent forecast image cache cleanup failed", error);
+  }
+}
+
+function getImageResource(source) {
+  const existing = imageResourceCache.get(source);
+  if (existing) return existing.promise;
+
+  const entry = { objectUrl: null, promise: null };
+  entry.promise = readForecastImage(source)
+    .then((blob) => {
+      entry.objectUrl = URL.createObjectURL(blob);
+      return entry.objectUrl;
+    })
+    .catch((error) => {
+      if (imageResourceCache.get(source) === entry) imageResourceCache.delete(source);
+      throw error;
+    });
+  imageResourceCache.set(source, entry);
+  return entry.promise;
+}
+
+function invalidateImageResource(source) {
+  const entry = imageResourceCache.get(source);
+  if (!entry) return;
+  if (entry.objectUrl) URL.revokeObjectURL(entry.objectUrl);
+  imageResourceCache.delete(source);
+}
+
+async function readForecastImage(source) {
+  const persistentCache = await openPersistentImageCache();
+  if (persistentCache) {
+    try {
+      const cachedResponse = await persistentCache.match(source);
+      if (cachedResponse) return cachedResponse.blob();
+    } catch (error) {
+      await persistentCache.delete(source).catch(() => {});
+      console.warn("persistent forecast image cache read failed", source, error);
+    }
+  }
+
+  let response = null;
+  let lastError = null;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const requestUrl = attempt > 0 ? withRetryVersion(source, attempt) : source;
+    try {
+      response = await fetch(requestUrl, {
+        cache: attempt > 0 ? "no-store" : "force-cache",
+      });
+      if (response.ok) break;
+      lastError = new Error(`${requestUrl} ${response.status}`);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  if (!response?.ok) throw lastError || new Error(`image request failed: ${source}`);
+
+  const cacheResponse = persistentCache ? response.clone() : null;
+  const blob = await response.blob();
+  if (persistentCache && cacheResponse) {
+    persistentCache.put(source, cacheResponse).catch((error) => {
+      console.warn("persistent forecast image cache write failed", source, error);
+    });
+  }
+  return blob;
+}
+
 function stepLead(delta) {
   const frames = currentProduct()?.frames || [];
   if (!frames.length) return;
@@ -474,33 +642,18 @@ function loadForecastImage(source, alt) {
 
   state.imageRequestId += 1;
   const requestId = state.imageRequestId;
-  state.imageAbortController?.abort();
-  state.imageAbortController = new AbortController();
   state.imageSource = source;
   state.imageStatus = "loading";
   setImageState("loading");
   image.removeAttribute("src");
 
-  fetchForecastImage({
-    source,
-    requestId,
-    attempt: 0,
-    signal: state.imageAbortController.signal,
-  });
+  resolveForecastImage({ source, requestId, attempt: 0 });
 }
 
-async function fetchForecastImage({ source, requestId, attempt, signal }) {
+async function resolveForecastImage({ source, requestId, attempt }) {
   try {
-    const requestUrl = attempt > 0 ? withRetryVersion(source, attempt) : source;
-    const response = await fetch(requestUrl, { cache: "no-cache", signal });
-    if (!response.ok) throw new Error(`${requestUrl} ${response.status}`);
-    const blob = await response.blob();
-    if (requestId !== state.imageRequestId || signal.aborted) return;
-
-    const objectUrl = URL.createObjectURL(blob);
-    const previousObjectUrl = state.imageObjectUrl;
-    state.imageObjectUrl = objectUrl;
-    if (previousObjectUrl) URL.revokeObjectURL(previousObjectUrl);
+    const objectUrl = await getImageResource(source);
+    if (requestId !== state.imageRequestId) return;
 
     els.forecastImage.onload = () => {
       if (requestId !== state.imageRequestId) return;
@@ -509,23 +662,22 @@ async function fetchForecastImage({ source, requestId, attempt, signal }) {
     };
     els.forecastImage.onerror = () => {
       if (requestId !== state.imageRequestId) return;
-      URL.revokeObjectURL(objectUrl);
-      if (state.imageObjectUrl === objectUrl) state.imageObjectUrl = null;
-      retryForecastImage({ source, requestId, attempt, signal });
+      invalidateImageResource(source);
+      retryForecastImage({ source, requestId, attempt });
     };
     els.forecastImage.src = objectUrl;
   } catch (error) {
-    if (error.name === "AbortError" || requestId !== state.imageRequestId) return;
+    if (requestId !== state.imageRequestId) return;
     console.warn("forecast image request failed", error);
-    retryForecastImage({ source, requestId, attempt, signal });
+    retryForecastImage({ source, requestId, attempt });
   }
 }
 
-function retryForecastImage({ source, requestId, attempt, signal }) {
-  if (attempt < 1 && !signal.aborted) {
+function retryForecastImage({ source, requestId, attempt }) {
+  if (attempt < 1) {
     window.setTimeout(() => {
-      if (requestId !== state.imageRequestId || signal.aborted) return;
-      fetchForecastImage({ source, requestId, attempt: attempt + 1, signal });
+      if (requestId !== state.imageRequestId) return;
+      resolveForecastImage({ source, requestId, attempt: attempt + 1 });
     }, 350);
     return;
   }
@@ -630,6 +782,10 @@ function setupImageViewer() {
       </div>
     </div>
     <div class="viewer-stage" tabindex="0">
+      <div class="viewer-frame-nav" aria-label="服务图像切换">
+        <button class="viewer-icon-button" type="button" data-viewer-action="previous-frame" title="上一张" aria-label="上一张">&#8249;</button>
+        <button class="viewer-icon-button" type="button" data-viewer-action="next-frame" title="下一张" aria-label="下一张">&#8250;</button>
+      </div>
       <img class="viewer-image" alt="" draggable="false" />
     </div>
   `;
@@ -643,13 +799,18 @@ function setupImageViewer() {
   viewerState.zoomLabel = root.querySelector(".viewer-zoom");
 
   root.addEventListener("click", handleViewerAction);
+  root.querySelector(".viewer-frame-nav")?.addEventListener("pointerdown", (event) => {
+    event.stopPropagation();
+  });
+  root.querySelector(".viewer-frame-nav")?.addEventListener("pointerup", (event) => {
+    event.stopPropagation();
+  });
   viewerState.stage.addEventListener("wheel", handleViewerWheel, { passive: false });
   viewerState.stage.addEventListener("dblclick", handleViewerDoubleClick);
   viewerState.stage.addEventListener("pointerdown", handleViewerPointerDown);
   viewerState.stage.addEventListener("pointermove", handleViewerPointerMove);
   viewerState.stage.addEventListener("pointerup", handleViewerPointerEnd);
   viewerState.stage.addEventListener("pointercancel", handleViewerPointerEnd);
-  viewerState.image.addEventListener("load", resetViewer);
   document.addEventListener("keydown", handleViewerKeydown);
   window.addEventListener("resize", applyViewerTransform);
 
@@ -665,6 +826,119 @@ function setupImageViewer() {
   });
 }
 
+function viewerEntries() {
+  const entries = [];
+  const runs = state.service?.runs || [];
+  for (let runIndex = runs.length - 1; runIndex >= 0; runIndex -= 1) {
+    const run = runs[runIndex];
+    for (let productIndex = 0; productIndex < (run.products || []).length; productIndex += 1) {
+      const product = run.products[productIndex];
+      for (let leadIndex = 0; leadIndex < (product.frames || []).length; leadIndex += 1) {
+        const frame = product.frames[leadIndex];
+        entries.push({
+          runIndex,
+          productIndex,
+          leadIndex,
+          run,
+          product,
+          frame,
+          source: forecastFrameSource(run, frame),
+        });
+      }
+    }
+  }
+  return entries;
+}
+
+function currentViewerEntryIndex(entries) {
+  const index = entries.findIndex(
+    (entry) =>
+      entry.runIndex === state.runIndex &&
+      entry.productIndex === state.productIndex &&
+      entry.leadIndex === state.leadIndex,
+  );
+  return index >= 0 ? index : 0;
+}
+
+function updateViewerControls() {
+  if (!viewerState.root) return;
+  const entries = viewerEntries();
+  const hasMultipleFrames = entries.length > 1;
+  viewerState.root
+    .querySelector('[data-viewer-action="previous-frame"]')
+    ?.toggleAttribute("disabled", !hasMultipleFrames);
+  viewerState.root
+    .querySelector('[data-viewer-action="next-frame"]')
+    ?.toggleAttribute("disabled", !hasMultipleFrames);
+}
+
+function stepViewerFrame(delta) {
+  const entries = viewerEntries();
+  if (entries.length <= 1) return;
+  const currentIndex = currentViewerEntryIndex(entries);
+  const nextIndex = (currentIndex + delta + entries.length) % entries.length;
+  const next = entries[nextIndex];
+  state.runIndex = next.runIndex;
+  state.productIndex = next.productIndex;
+  state.leadIndex = next.leadIndex;
+  state.hasNewLatestRun = false;
+  render();
+}
+
+function syncViewerFrame(source, alt, { reset = false } = {}) {
+  if (!viewerState.root || viewerState.root.hidden || !source) return;
+
+  const run = currentRun();
+  const product = currentProduct();
+  const frame = currentFrame();
+  const entries = viewerEntries();
+  const position = entries.length ? `${currentViewerEntryIndex(entries) + 1}/${entries.length}` : "--";
+  viewerState.title.textContent = product?.title || "预报图";
+  viewerState.meta.textContent = [run?.label, position, frame?.lead_label, frame?.valid_label]
+    .filter(Boolean)
+    .join(" · ");
+  updateViewerControls();
+
+  if (viewerState.source === source && (viewerState.loading || viewerState.image.src)) {
+    if (reset) resetViewer();
+    return;
+  }
+
+  viewerState.source = source;
+  viewerState.requestId += 1;
+  const requestId = viewerState.requestId;
+  viewerState.loading = true;
+  viewerState.resetOnImageLoad = reset;
+  viewerState.image.alt = alt;
+  if (reset) resetViewer();
+
+  getImageResource(source)
+    .then((objectUrl) => {
+      if (requestId !== viewerState.requestId) return;
+      viewerState.image.onload = () => {
+        if (requestId !== viewerState.requestId) return;
+        viewerState.loading = false;
+        if (viewerState.resetOnImageLoad) {
+          viewerState.resetOnImageLoad = false;
+          resetViewer();
+        } else {
+          applyViewerTransform();
+        }
+      };
+      viewerState.image.onerror = () => {
+        if (requestId !== viewerState.requestId) return;
+        viewerState.loading = false;
+        invalidateImageResource(source);
+      };
+      viewerState.image.src = objectUrl;
+    })
+    .catch((error) => {
+      if (requestId !== viewerState.requestId) return;
+      viewerState.loading = false;
+      console.warn("viewer image request failed", error);
+    });
+}
+
 function openImageViewer(opener) {
   const frame = currentFrame();
   const product = currentProduct();
@@ -672,20 +946,14 @@ function openImageViewer(opener) {
   if (!viewerState.root || !frame || !product) return;
 
   viewerState.opener = opener;
-  viewerState.title.textContent = product.title;
-  viewerState.meta.textContent = [run?.label, frame.lead_label, frame.valid_label]
-    .filter(Boolean)
-    .join(" · ");
-  viewerState.image.src =
-    els.forecastImage?.src ||
-    els.forecastImage?.currentSrc ||
-    withAssetVersion(resolveAssetPath(frame.file), run?.published_at);
-  viewerState.image.alt = `${product.title} ${frame.lead_label || ""}`.trim();
   viewerState.root.hidden = false;
   document.body.classList.add("viewer-open");
-  resetViewer();
+  syncViewerFrame(
+    forecastFrameSource(run, frame),
+    `${product.title} ${frame.lead_label || ""}`.trim(),
+    { reset: true },
+  );
   window.requestAnimationFrame(() => {
-    resetViewer();
     viewerState.root.querySelector('[data-viewer-action="close"]')?.focus();
   });
 }
@@ -704,6 +972,8 @@ function handleViewerAction(event) {
   if (!button) return;
   const action = button.dataset.viewerAction;
   if (action === "close") closeImageViewer();
+  if (action === "previous-frame") stepViewerFrame(-1);
+  if (action === "next-frame") stepViewerFrame(1);
   if (action === "reset") resetViewer();
   if (action === "zoom-in") zoomViewer(viewerState.scale * VIEWER_ZOOM_STEP);
   if (action === "zoom-out") zoomViewer(viewerState.scale / VIEWER_ZOOM_STEP);
@@ -774,11 +1044,20 @@ function handleViewerPointerMove(event) {
 function handleViewerPointerEnd(event) {
   if (!viewerState.pointers.has(event.pointerId)) return;
   const gesture = viewerState.gesture;
+  const swipeX = gesture ? event.clientX - gesture.startX : 0;
+  const swipeY = gesture ? event.clientY - gesture.startY : 0;
   const isTouchTap =
     event.pointerType === "touch" &&
     viewerState.pointers.size === 1 &&
     gesture?.type === "drag" &&
     !gesture.moved;
+  const isTouchSwipe =
+    event.pointerType === "touch" &&
+    viewerState.pointers.size === 1 &&
+    gesture?.type === "drag" &&
+    viewerState.scale <= 1.05 &&
+    Math.abs(swipeX) > 56 &&
+    Math.abs(swipeX) > Math.abs(swipeY) * 1.2;
 
   viewerState.pointers.delete(event.pointerId);
   if (viewerState.pointers.size >= 2) {
@@ -798,6 +1077,10 @@ function handleViewerPointerEnd(event) {
     viewerState.gesture = null;
   }
 
+  if (isTouchSwipe) {
+    stepViewerFrame(swipeX < 0 ? 1 : -1);
+    return;
+  }
   if (isTouchTap) handleViewerTap(event.clientX, event.clientY);
 }
 
@@ -919,6 +1202,16 @@ function handleViewerKeydown(event) {
   if (event.key === "+" || event.key === "=") zoomViewer(viewerState.scale * VIEWER_ZOOM_STEP);
   if (event.key === "-") zoomViewer(viewerState.scale / VIEWER_ZOOM_STEP);
   if (event.key === "0") resetViewer();
+  if (event.key === "ArrowLeft") {
+    event.preventDefault();
+    stepViewerFrame(-1);
+    return;
+  }
+  if (event.key === "ArrowRight") {
+    event.preventDefault();
+    stepViewerFrame(1);
+    return;
+  }
   if (event.key.startsWith("Arrow")) {
     event.preventDefault();
     const amount = 48;
@@ -965,6 +1258,13 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && state.catalog) {
     loadForecast({ preserveSelection: true });
   }
+});
+window.addEventListener("pagehide", (event) => {
+  if (event.persisted) return;
+  for (const entry of imageResourceCache.values()) {
+    if (entry.objectUrl) URL.revokeObjectURL(entry.objectUrl);
+  }
+  imageResourceCache.clear();
 });
 
 if (ensureAccess()) init();
