@@ -659,6 +659,15 @@ Official references checked during planning:
 - The current frontend fetches forecast images as Blobs, so OSS must return `Access-Control-Allow-Origin: https://iaplacs.xyz`; a URL that merely opens in a browser is not sufficient.
 - Do not put AccessKey ID/Secret in Git, chat, publisher scripts, cron, or `forecast-runs.json`. Prefer a dedicated RAM user restricted to the selected Bucket/prefix.
 
+## Latest Website Verification
+
+- Website commit `46f06c7 Prefer OSS and retain five forecast runs` was pushed from `67defd0` to `origin/main`; the local worktree is clean and tracks `origin/main`.
+- `node --check app.js`, `python3 -m json.tool data/current/forecast-runs.json`, and the catalog-module check all passed. The generator reports `MAX_RUNS=5` and the production OSS prefix by default.
+- Live `https://iaplacs.xyz/data/current/forecast-runs.json` verification returned five Ningxia runs (`20260710_00`, `20260709_18`, `20260709_12`, `20260709_06`, `20260709_00`) and five Shangrao runs (`20260710_08`, `20260710_02`, `20260709_20`, `20260709_14`, `20260709_02`). It contains 25 forecast frame URLs: 25 OSS URLs and zero relative forecast URLs.
+- Live `/`, `/ningxia/`, and `/shangrao/` HTML all load `app.js?v=20260710-08`; the deployed script contains `MAX_DISPLAY_RUNS = 5` and `limitCatalogRuns`.
+- A representative current Ningxia OSS object returned `HTTP 200`, `Content-Type: image/webp`, `Access-Control-Allow-Origin: https://iaplacs.xyz`, `Cache-Control: public,max-age=604800`, and `Content-Length: 3461871`.
+- The OSS five-run retention result remains the server-side Bucket inventory of 50 forecast objects. The next operational check is after the next automated Ningxia and Shangrao publication, confirming new objects are uploaded/skipped correctly and old prefixes are pruned without deleting one of the five retained runs.
+
 ## Known Pitfalls
 
 - If the target server is in mainland China and `iaplacs.xyz` resolves to it, ICP filing is required before normal public access.
