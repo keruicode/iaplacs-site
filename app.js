@@ -23,6 +23,11 @@ const state = {
   refreshTimer: null,
   loading: false,
   hasNewLatestRun: false,
+  imageRequestId: 0,
+  imageAbortController: null,
+  imageObjectUrl: null,
+  imageSource: null,
+  imageStatus: "idle",
 };
 
 const els = {
@@ -36,6 +41,7 @@ const els = {
   sourceNote: document.querySelector("#sourceNote"),
   productUnit: document.querySelector("#productUnit"),
   productTitle: document.querySelector("#productTitle"),
+  mapStage: document.querySelector(".map-stage"),
   forecastImage: document.querySelector("#forecastImage"),
   leadLabel: document.querySelector("#leadLabel"),
   validTime: document.querySelector("#validTime"),
@@ -245,8 +251,7 @@ function render() {
   setText(els.productTitle, product.title);
   setText(els.productUnit, `${product.category || "预报产品"} | ${product.unit || "--"}`);
   if (els.forecastImage) {
-    els.forecastImage.src = imageSrc;
-    els.forecastImage.alt = `${product.title} ${frame.lead_label}`;
+    loadForecastImage(imageSrc, `${product.title} ${frame.lead_label}`);
   }
   if (els.imageLink) els.imageLink.href = imageSrc;
   setText(els.leadLabel, frame.lead_label);
@@ -437,6 +442,93 @@ function withAssetVersion(url, version) {
   if (!url || url.startsWith("data:")) return url;
   const separator = url.includes("?") ? "&" : "?";
   return `${url}${separator}v=${encodeURIComponent(version || Date.now())}`;
+}
+
+function loadForecastImage(source, alt) {
+  const image = els.forecastImage;
+  if (!image || !source) return;
+  image.alt = alt;
+
+  if (
+    state.imageSource === source &&
+    (state.imageStatus === "loading" || state.imageStatus === "ready")
+  ) {
+    return;
+  }
+
+  state.imageRequestId += 1;
+  const requestId = state.imageRequestId;
+  state.imageAbortController?.abort();
+  state.imageAbortController = new AbortController();
+  state.imageSource = source;
+  state.imageStatus = "loading";
+  setImageState("loading");
+  image.removeAttribute("src");
+
+  fetchForecastImage({
+    source,
+    requestId,
+    attempt: 0,
+    signal: state.imageAbortController.signal,
+  });
+}
+
+async function fetchForecastImage({ source, requestId, attempt, signal }) {
+  try {
+    const requestUrl = attempt > 0 ? withRetryVersion(source, attempt) : source;
+    const response = await fetch(requestUrl, { cache: "no-cache", signal });
+    if (!response.ok) throw new Error(`${requestUrl} ${response.status}`);
+    const blob = await response.blob();
+    if (requestId !== state.imageRequestId || signal.aborted) return;
+
+    const objectUrl = URL.createObjectURL(blob);
+    const previousObjectUrl = state.imageObjectUrl;
+    state.imageObjectUrl = objectUrl;
+    if (previousObjectUrl) URL.revokeObjectURL(previousObjectUrl);
+
+    els.forecastImage.onload = () => {
+      if (requestId !== state.imageRequestId) return;
+      state.imageStatus = "ready";
+      setImageState("ready");
+    };
+    els.forecastImage.onerror = () => {
+      if (requestId !== state.imageRequestId) return;
+      URL.revokeObjectURL(objectUrl);
+      if (state.imageObjectUrl === objectUrl) state.imageObjectUrl = null;
+      retryForecastImage({ source, requestId, attempt, signal });
+    };
+    els.forecastImage.src = objectUrl;
+  } catch (error) {
+    if (error.name === "AbortError" || requestId !== state.imageRequestId) return;
+    console.warn("forecast image request failed", error);
+    retryForecastImage({ source, requestId, attempt, signal });
+  }
+}
+
+function retryForecastImage({ source, requestId, attempt, signal }) {
+  if (attempt < 1 && !signal.aborted) {
+    window.setTimeout(() => {
+      if (requestId !== state.imageRequestId || signal.aborted) return;
+      fetchForecastImage({ source, requestId, attempt: attempt + 1, signal });
+    }, 350);
+    return;
+  }
+
+  state.imageStatus = "error";
+  state.imageSource = null;
+  setImageState("error");
+}
+
+function withRetryVersion(url, attempt) {
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}retry=${Date.now()}-${attempt}`;
+}
+
+function setImageState(status) {
+  if (els.mapStage) els.mapStage.dataset.imageState = status;
+  if (els.forecastImage) {
+    els.forecastImage.setAttribute("aria-busy", String(status === "loading"));
+  }
 }
 
 function frameId(frame) {

@@ -79,6 +79,7 @@ git pull --ff-only
 mkdir -p data/current/maps
 rsync -a "$PRODUCT_DIR"/ data/current/maps/
 
+tools/optimize_forecast_images.sh
 python3 tools/build_forecast_catalog.py
 test -f data/current/forecast-runs.json
 find data/current/maps -type f | head -n 1 >/dev/null
@@ -102,16 +103,6 @@ For the current Shangrao WRF montage workflow, the server publishing helper shou
 data/current/maps/wrf_montage_YYYYMMDD_HH/
 ```
 
-For the Shangrao WORK workflow, copy the product image plus its
-`manifest_fragment.json` into:
-
-```text
-data/current/maps/shangrao_work_YYYYMMDD_HH/
-```
-
-If a WRF montage directory and a Shangrao WORK directory use the same initial time,
-the catalog builder combines their products under one selectable run.
-
 For the current Ningxia/WORK_nx workflow, copy the summary image plus its
 `manifest_fragment.json` into:
 
@@ -119,7 +110,8 @@ For the current Ningxia/WORK_nx workflow, copy the summary image plus its
 data/current/maps/worknx_summary_YYYYMMDD_HH/
 ```
 
-Then run `python3 tools/build_forecast_catalog.py` before `git add`, so the
+Then run `tools/optimize_forecast_images.sh` and
+`python3 tools/build_forecast_catalog.py` before `git add`, so the
 website can expose the new 起报时间 automatically after GitHub Pages deploys.
 The generated catalog keeps `/` as the airport service, `/ningxia/` as the
 WORK_nx/NX product page, and `/shangrao/` as the Shangrao product page.

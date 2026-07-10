@@ -248,17 +248,24 @@ def build_ningxia_runs() -> list[dict]:
 
 
 def build_ningxia_frames(run_dir: Path, fragment: dict) -> list[dict]:
-    image_paths = sorted(
-        path
-        for path in run_dir.iterdir()
-        if path.suffix.lower() in {".png", ".webp", ".jpg", ".jpeg"}
-    )
-    if not image_paths and fragment.get("file"):
-        image_paths = [ROOT / fragment["file"].replace("./", "", 1)]
+    groups: dict[str, list[Path]] = {}
+    for path in run_dir.iterdir():
+        if path.suffix.lower() not in {".png", ".webp", ".jpg", ".jpeg"}:
+            continue
+        groups.setdefault(path.stem, []).append(path)
+
+    if not groups and fragment.get("file"):
+        fallback = ROOT / fragment["file"].replace("./", "", 1)
+        groups.setdefault(fallback.stem, []).append(fallback)
 
     frames = []
     fragment_file = fragment.get("file", "")
-    for path in image_paths:
+    fragment_stem = Path(fragment_file).stem if fragment_file else ""
+    for _, candidates in sorted(groups.items()):
+        existing = [path for path in candidates if path.exists()]
+        if not existing:
+            continue
+        path = min(existing, key=lambda item: item.stat().st_size)
         if not path.exists():
             continue
         lead_label = lead_label_from_name(path.name)
@@ -269,7 +276,7 @@ def build_ningxia_frames(run_dir: Path, fragment: dict) -> list[dict]:
             "file": "./" + path.relative_to(ROOT).as_posix(),
             "bytes": path.stat().st_size,
         }
-        if fragment_file and path == ROOT / fragment_file.replace("./", "", 1):
+        if fragment_stem and path.stem == fragment_stem:
             valid_time = fragment.get("valid_time")
             if valid_time:
                 frame["valid_time"] = valid_time

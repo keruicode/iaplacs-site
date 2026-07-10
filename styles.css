@@ -518,7 +518,7 @@ button {
 
 .map-panel {
   display: grid;
-  grid-template-rows: auto minmax(260px, 1fr) auto;
+  grid-template-rows: auto auto minmax(260px, 1fr);
   min-width: 0;
 }
 
@@ -595,6 +595,31 @@ button {
   min-height: 480px;
 }
 
+.map-stage[data-image-state="loading"]::after,
+.map-stage[data-image-state="error"]::after {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  z-index: 2;
+  min-width: 140px;
+  padding: 10px 14px;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--muted);
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.map-stage[data-image-state="loading"]::after {
+  content: "图像加载中";
+}
+
+.map-stage[data-image-state="error"]::after {
+  content: "图像加载失败";
+  color: var(--red);
+}
+
 #forecastImage {
   width: min(100%, 1280px);
   height: auto;
@@ -604,6 +629,12 @@ button {
   border: 1px solid var(--line);
   cursor: zoom-in;
   touch-action: manipulation;
+  transition: opacity 140ms ease;
+}
+
+.map-stage[data-image-state="loading"] #forecastImage,
+.map-stage[data-image-state="error"] #forecastImage {
+  opacity: 0.12;
 }
 
 #forecastImage:focus-visible {
@@ -631,7 +662,8 @@ button {
   grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
   gap: 8px;
   padding: 14px 18px 18px;
-  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: #fff;
 }
 
 .lead-tab {

@@ -65,13 +65,11 @@ The IAP server should generate or copy a complete new run directory first, valid
 
 ```text
 data/current/maps/wrf_montage_YYYYMMDD_HH/
-data/current/maps/shangrao_work_YYYYMMDD_HH/
 data/current/maps/worknx_summary_YYYYMMDD_HH/
 ```
 
-`worknx_summary_*` is exposed only on `/ningxia/`; `wrf_montage_*` and
-`shangrao_work_*` are exposed only on `/shangrao/` and are merged when they have
-the same initial time. The homepage uses the airport service catalog.
+`worknx_summary_*` is exposed only on `/ningxia/`; `wrf_montage_*` is exposed
+only on `/shangrao/`. The homepage uses the airport service catalog.
 
 Keep the existing run directories when publishing a new one. Removing
 `data/current` before every publish leaves only one selectable initial time; the catalog
@@ -80,6 +78,7 @@ builder can expose up to eight retained Ningxia runs and eight retained Shangrao
 Then run:
 
 ```bash
+tools/optimize_forecast_images.sh
 python3 tools/build_forecast_catalog.py
 ```
 
@@ -87,7 +86,9 @@ Keep images small and web-friendly:
 
 - WebP preferred for maps;
 - PNG allowed when WebP is not available;
-- target 300 KB to 800 KB per product image for smooth loading;
+- run `tools/optimize_forecast_images.sh` before building the catalog;
+- keep decoded dimensions bounded for mobile browsers, not only compressed file size;
+- target roughly 300 KB to 1.2 MB per product image for smooth loading;
 - keep only a small number of recent releases in Git.
 
 For a heavier public service, keep the website on GitHub Pages and move large images to object storage/CDN.
