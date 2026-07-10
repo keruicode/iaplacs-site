@@ -7,6 +7,7 @@ The first version is designed for GitHub Pages:
 - no backend server is required for the website itself;
 - forecast products are pre-rendered as web assets;
 - the browser loads `data/current/forecast-runs.json`, with `manifest.json` kept as a fallback;
+- forecast map images are delivered from the Alibaba OSS origin; GitHub Pages carries the app, catalog, and fallback copies;
 - the IAP server can later update files on a schedule and push them here.
 
 Current service routes:
@@ -73,7 +74,13 @@ only on `/shangrao/`. The homepage uses the airport service catalog.
 
 Keep the existing run directories when publishing a new one. Removing
 `data/current` before every publish leaves only one selectable initial time; the catalog
-builder can expose up to eight retained Ningxia runs and eight retained Shangrao runs.
+builder exposes at most five retained Ningxia runs and five retained Shangrao runs.
+
+The production image path is the OSS origin
+`https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/`.
+The server publisher uploads the optimized PNG/WebP assets first, then generates the
+catalog with those OSS URLs. OSS retention is also limited to the newest five run
+directories per product family: `worknx_summary_*` and `wrf_montage_*`.
 
 Then run:
 
@@ -91,4 +98,5 @@ Keep images small and web-friendly:
 - target roughly 300 KB to 1.2 MB per product image for smooth loading;
 - keep only a small number of recent releases in Git.
 
-For a heavier public service, keep the website on GitHub Pages and move large images to object storage/CDN.
+For a heavier public service, keep the website and catalog on GitHub Pages while
+continuing to serve large images from OSS or a CDN.

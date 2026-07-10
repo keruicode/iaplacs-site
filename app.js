@@ -1,4 +1,5 @@
 const DEFAULT_REFRESH_MS = 2 * 60 * 1000;
+const MAX_DISPLAY_RUNS = 5;
 const MAX_VIEWER_SCALE = 6;
 const VIEWER_ZOOM_STEP = 1.25;
 const ACCESS_PASSWORD = "123";
@@ -133,7 +134,7 @@ async function fetchJson(url) {
 }
 
 function normalizeForecastData(raw) {
-  if (raw.services) return raw;
+  if (raw.services) return limitCatalogRuns(raw);
 
   const legacyRun = {
     id: "legacy-current",
@@ -145,7 +146,7 @@ function normalizeForecastData(raw) {
     station_series: raw.station_series,
   };
 
-  return {
+  return limitCatalogRuns({
     schema_version: 0,
     site: raw.site || { name: "IAP-LACS Forecast", domain: "iaplacs.xyz" },
     published_at: raw.published_at,
@@ -172,7 +173,22 @@ function normalizeForecastData(raw) {
         station_series: raw.station_series,
       },
     },
-  };
+  });
+}
+
+function limitCatalogRuns(catalog) {
+  const services = Object.fromEntries(
+    Object.entries(catalog.services || {}).map(([key, service]) => {
+      const runs = Array.isArray(service?.runs)
+        ? service.runs.slice(0, MAX_DISPLAY_RUNS)
+        : [];
+      const latestRunId = runs.some((run) => run.id === service?.latest_run)
+        ? service.latest_run
+        : runs[0]?.id || null;
+      return [key, { ...service, latest_run: latestRunId, runs }];
+    }),
+  );
+  return { ...catalog, services };
 }
 
 function selectService(catalog) {

@@ -12,6 +12,12 @@ The IAP server only needs a scheduled publishing job:
 4. copy the result to `data/current`;
 5. commit and push to GitHub.
 
+In production, GitHub Pages is the page and catalog origin. Forecast PNG/WebP
+images are uploaded to Alibaba OSS before the catalog is generated, and
+`forecast-runs.json` points Ningxia and Shangrao frames to the OSS origin. The
+GitHub image copies remain useful as repository fallback, but normal browser
+image requests should go to OSS.
+
 GitHub Pages then serves the updated static files.
 
 ## Enable GitHub Pages After Push
@@ -91,8 +97,10 @@ git push
 
 Do not remove `data/current` during each publish. The run-specific directories already
 stored there are what let the Ningxia and Shangrao pages expose several initial times.
-Apply a separate retention job only after the catalog has more history than needed; the
-catalog displays the newest eight runs by default.
+Keep only the newest five run directories for each product family. The production
+publisher applies this separately to `worknx_summary_*` (Ningxia) and `wrf_montage_*`
+(Shangrao), so each page exposes at most five initial times and OSS does not retain
+older forecast prefixes.
 
 For production, finish each timestamped run directory before copying it into the repository.
 
@@ -113,5 +121,9 @@ data/current/maps/worknx_summary_YYYYMMDD_HH/
 Then run `tools/optimize_forecast_images.sh` and
 `python3 tools/build_forecast_catalog.py` before `git add`, so the
 website can expose the new 起报时间 automatically after GitHub Pages deploys.
+With the production OSS setup, keep `IAPLACS_MAX_RUNS=5` and
+`IAPLACS_ASSET_BASE_URL` set to the OSS prefix (the catalog builder now defaults to
+the production OSS prefix). Verify the public OSS object and CORS response before
+publishing the catalog.
 The generated catalog keeps `/` as the airport service, `/ningxia/` as the
 WORK_nx/NX product page, and `/shangrao/` as the Shangrao product page.

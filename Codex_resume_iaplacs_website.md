@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-10 12:41 CST
+Last updated: 2026-07-10 20:18 CST
 
 ## Resume Commands
 
@@ -645,10 +645,15 @@ Official references checked during planning:
 - Certbot Nginx instructions.
 - GitHub Pages quickstart and publishing-source docs.
 
-## Optional Alibaba OSS Image Origin
+## Current OSS-First Image Delivery And Five-Run Retention
 
-- `tools/build_forecast_catalog.py` now reads optional `IAPLACS_ASSET_BASE_URL`. When unset, output is unchanged and Ningxia/Shangrao frames keep GitHub-relative paths. When set, only those forecast raster frames use absolute object-storage URLs; airport sample SVGs remain in GitHub Pages.
-- The server-side publishers in `/Volumes/storage/江西VPN-每日预报` create proportional WebP derivatives with no crop operation, upload them to OSS only when `server02:~/.iaplacs-oss.env` has `IAPLACS_OSS_ENABLED=1`, verify one public object, and then build/push the OSS-backed catalog. GitHub image copies remain as a fallback during rollout.
+- The production asset origin is `https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/`. GitHub Pages carries the HTML/JS/catalog; Ningxia and Shangrao forecast frames in the catalog point to OSS, while airport sample SVGs remain GitHub-relative.
+- `tools/build_forecast_catalog.py` now defaults `IAPLACS_ASSET_BASE_URL` to the production OSS prefix and defaults `IAPLACS_MAX_RUNS` to `5`. An explicit empty `IAPLACS_ASSET_BASE_URL` can still be used for a deliberate GitHub-relative fallback build.
+- The server-side publishers in `/Volumes/storage/江西VPN-每日预报` create proportional WebP derivatives with no crop operation, upload PNG/WebP assets to OSS, verify a public object, and then build/push the OSS-backed catalog. GitHub image copies remain as a fallback.
+- OSS retention is active at five initialization times separately for `worknx_summary_*` and `wrf_montage_*`; the Bucket inventory after cleanup was 50 forecast objects (five Ningxia runs with PNG/WebP plus five Shangrao runs with four PNG/WebP frames).
+- Frontend `app.js` now limits every normalized service catalog to five runs as a second guard, preserving the existing display order of oldest on the left and newest on the right.
+- Local repository was fast-forwarded from `8ed8620` to server-published `67defd0 Update WORK_nx summary 20260710_00`. The current catalog reports five Ningxia runs (`20260710_00` through `20260709_00`), five Shangrao runs (`20260710_08` through `20260709_02`), 25 forecast frame URLs, and all 25 use the OSS host.
+- Measured from the same Mac, OSS delivery was materially faster than GitHub for the tested products: Ningxia `0.230s` TTFB / `0.955s` total versus GitHub `2.028s` / `9.767s`; Shangrao `0.198s` / `0.525s` versus `0.504s` / `4.806s`.
 - `server02` has user-local `~/bin/ossutil` v1.7.19 installed from Alibaba Cloud's official current Linux AMD64 package. No OSS credentials were configured or stored by Codex.
 - `/Volumes/storage/江西VPN-每日预报/configure_oss_server02.sh` is the interactive one-time setup helper. It keeps AccessKey input inside the server terminal, supports a dedicated CORS rule for `https://iaplacs.xyz`, uploads one isolated WebP test object, verifies public range access and the CORS response, and only then enables the runtime environment file.
 - The current frontend fetches forecast images as Blobs, so OSS must return `Access-Control-Allow-Origin: https://iaplacs.xyz`; a URL that merely opens in a browser is not sufficient.
@@ -691,9 +696,9 @@ Official references checked during planning:
 
 1. Add `www` separately as a CNAME to `keruicode.github.io`. In Aliyun quick-add this can be done by choosing `将网站域名解析到另外的目标域名`, selecting only `www.iaplacs.xyz`, and entering `keruicode.github.io`.
 2. Confirm GitHub Pages HTTPS remains enabled for `iaplacs.xyz` after DNS/certificate provisioning.
-3. Update and monitor the `login02` publishing helpers so every Shangrao WRF montage or Ningxia/WORK_nx publish retains existing run directories, runs `tools/optimize_forecast_images.sh` before `python3 tools/build_forecast_catalog.py`, and stages the new WebP files plus regenerated catalog.
+3. Monitor the `login02` publishing helpers after the next forecast cycles: confirm OSS uploads/skips, the generated catalog still contains only five runs per family, and the post-publish retention pass reports no stale forecast prefixes.
 4. Add real airport service products to replace the current airport samples under the homepage service.
 5. Later, extend `tools/build_forecast_catalog.py` with additional product scanners when the server starts publishing more product families beyond WRF rainfall montage and WORK_nx summary.
-6. If image volume grows, keep GitHub Pages for the app and move large map assets to object storage/CDN.
-7. Perform one real iPhone/Android check after the `20260710-07` deploy: switch every Ningxia and Shangrao run, switch all four Shangrao frames, then test pinch zoom, drag, reset, and close; repeat at desktop width with wheel zoom.
-8. Complete the one-time OSS setup on `server02`, then publish one current prefix and verify that `forecast-runs.json` uses the expected OSS host before relying on cron.
+6. Keep GitHub Pages for the app/catalog and OSS for forecast images; move to an additional CDN only if traffic or latency later requires it.
+7. Perform one real iPhone/Android check after the `20260710-08` deploy: switch every Ningxia and Shangrao run, switch all four Shangrao frames, then test pinch zoom, drag, reset, and close; repeat at desktop width with wheel zoom.
+8. When the local GitHub route is responsive, fast-forward this clean clone after future server commits; do not overwrite concurrent forecast data commits.

@@ -14,8 +14,13 @@ ROOT = Path(__file__).resolve().parents[1]
 MAPS_DIR = ROOT / "data" / "current" / "maps"
 CATALOG_PATH = ROOT / "data" / "current" / "forecast-runs.json"
 BJT = timezone(timedelta(hours=8))
-MAX_RUNS = int(os.environ.get("IAPLACS_MAX_RUNS", "8"))
-ASSET_BASE_URL = os.environ.get("IAPLACS_ASSET_BASE_URL", "").strip().rstrip("/")
+DEFAULT_ASSET_BASE_URL = (
+    "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs"
+)
+MAX_RUNS = int(os.environ.get("IAPLACS_MAX_RUNS", "5"))
+ASSET_BASE_URL = os.environ.get(
+    "IAPLACS_ASSET_BASE_URL", DEFAULT_ASSET_BASE_URL
+).strip().rstrip("/")
 
 
 RUN_DIR_RE = re.compile(r"^wrf_montage_(\d{8}_\d{2})$")
