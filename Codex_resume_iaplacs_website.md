@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-10 11:31 CST
+Last updated: 2026-07-10 11:35 CST
 
 ## Resume Commands
 
@@ -93,6 +93,8 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - Updated asset query strings to `styles.css?v=20260710-05` and `app.js?v=20260710-05`.
 - Corrected deployment guidance so new run directories are merged into `data/current/maps/` rather than deleting `data/current`; removing that directory was the reason only one initial time could remain. Documented `wrf_montage_*`, `shangrao_work_*`, and `worknx_summary_*` ownership and same-run Shangrao merging.
 - Frontend code commit after rebasing onto the latest server data is `879a975 Improve run switching and image zoom`.
+- Pushed the frontend and resume commits through `6b7f403 Update resume for multi-run viewer` to `origin/main` after preserving the concurrent server data commit `9169de7`.
+- Verified the deployed homepage, `/ningxia/`, and `/shangrao/` all reference `styles.css?v=20260710-05` and `app.js?v=20260710-05`; the first Ningxia request briefly hit an older Pages cache node, and a retry returned the new page.
 
 ## Important Changed Files
 
@@ -532,6 +534,22 @@ curl --noproxy iaplacs.xyz -L -sS 'https://iaplacs.xyz/data/current/forecast-run
 ```
 
 Result before pushing the frontend commit: the deployed catalog already exposed Ningxia runs `20260709_12,20260709_06,20260709_00` and Shangrao runs `20260710_02,20260709_02`, proving the server-side multi-run data publishing was live.
+
+```bash
+git push origin main
+```
+
+Result: pushed `9169de7..6b7f403` to `origin/main`, including frontend commit `879a975` and the resume update.
+
+```bash
+curl --noproxy iaplacs.xyz -L -sS 'https://iaplacs.xyz/?deploy=6b7f403'
+curl --noproxy iaplacs.xyz -L -sS 'https://iaplacs.xyz/ningxia/?deploy=6b7f403-retry1'
+curl --noproxy iaplacs.xyz -L -sS 'https://iaplacs.xyz/shangrao/?deploy=6b7f403'
+curl --noproxy iaplacs.xyz -L -sS 'https://iaplacs.xyz/app.js?v=20260710-05-deploy-6b7f403'
+curl --noproxy iaplacs.xyz -L -sS 'https://iaplacs.xyz/data/current/forecast-runs.json?deploy=6b7f403'
+```
+
+Result: all three deployed pages returned the `20260710-05` controls and `放大查看`; deployed JS contained `setupImageViewer`, `createPinchGesture`, `withAssetVersion`, and the two-minute refresh; the online catalog parsed with Ningxia IDs `20260709_12,20260709_06,20260709_00` and Shangrao IDs `20260710_02,20260709_02`.
 
 Official references checked during planning:
 
