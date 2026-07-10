@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-10 02:19 CST
+Last updated: 2026-07-10 11:31 CST
 
 ## Resume Commands
 
@@ -84,6 +84,15 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - Added a static client-side password gate. All pages start with `body.auth-lock`; `app.js` requires password `123`, then stores `localStorage["iaplacs_access_token"]="iaplacs_access_granted_v1"` so the same browser does not prompt again. This is a lightweight static access gate, not server-grade security.
 - Bumped frontend asset query strings to `styles.css?v=20260710-04` and `app.js?v=20260710-04`.
 - Local code commit for legend removal and static password gate is `3547fb6 Add static access gate and remove legends`.
+- Server publishing retained three Ningxia runs in commits `ddcea51`, `13d90f3`, and `bab4bd3`; the live Ningxia catalog now exposes `20260709_00`, `20260709_06`, and `20260709_12`, labeled `08:00`, `14:00`, and `20:00 BJT`.
+- Added Shangrao WORK product scanning in `d497951 Support Shangrao WORK publishing`. Server commit `9169de7 Update Shangrao WORK 20260710_02` added a second Shangrao run, so the live page now exposes `20260710_02` and the earlier `20260709_02`.
+- Reworked the top run selector into compact date/time buttons with a `最新` marker, run count/latest summary, horizontal mobile scrolling, and a manual refresh control.
+- Forecast JSON now refreshes every two minutes with a unique cache-busting query. When a newer run appears during an open session, the viewer switches to it automatically; returning to a visible tab also triggers a refresh.
+- Added cache-busting to product image URLs using the run publication timestamp, preventing an updated image at the same path from remaining stale in the browser.
+- Added a full-screen image viewer for all three pages. Clicking the main image or `放大查看` opens it; desktop supports wheel/double-click zoom and dragging, while touch devices support double-tap, two-finger pinch zoom, and dragging. The viewer also provides zoom, reset, and close controls and supports `Esc`/keyboard navigation.
+- Updated asset query strings to `styles.css?v=20260710-05` and `app.js?v=20260710-05`.
+- Corrected deployment guidance so new run directories are merged into `data/current/maps/` rather than deleting `data/current`; removing that directory was the reason only one initial time could remain. Documented `wrf_montage_*`, `shangrao_work_*`, and `worknx_summary_*` ownership and same-run Shangrao merging.
+- Frontend code commit after rebasing onto the latest server data is `879a975 Improve run switching and image zoom`.
 
 ## Important Changed Files
 
@@ -96,6 +105,10 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - `/Users/xiaoxiaotu/_01_IAP/Website/data/current/forecast-runs.json`
 - `/Users/xiaoxiaotu/_01_IAP/Website/data/current/maps/wrf_precip_20260706_1800_t01_t48.webp`
 - `/Users/xiaoxiaotu/_01_IAP/Website/data/current/maps/wrf_montage_20260709_02/`
+- `/Users/xiaoxiaotu/_01_IAP/Website/data/current/maps/worknx_summary_20260709_00/`
+- `/Users/xiaoxiaotu/_01_IAP/Website/data/current/maps/worknx_summary_20260709_06/`
+- `/Users/xiaoxiaotu/_01_IAP/Website/data/current/maps/worknx_summary_20260709_12/`
+- `/Users/xiaoxiaotu/_01_IAP/Website/data/current/maps/shangrao_work_20260710_02/`
 - `/Users/xiaoxiaotu/_01_IAP/Website/docs/deployment.md`
 - `/Users/xiaoxiaotu/_01_IAP/Website/README.md`
 - `/Users/xiaoxiaotu/_01_IAP/Website/CNAME`
@@ -485,6 +498,41 @@ dig +short @dns13.hichina.com www.iaplacs.xyz A
 
 Result: empty output.
 
+```bash
+python3 -c '<temporary catalog fixture creating three Ningxia and three Shangrao run directories>'
+```
+
+Result: the generated catalog reported `3 ningxia run(s), 3 shangrao run(s)`; Ningxia IDs were sorted `20260710_00,20260709_12,20260709_00`, and Shangrao IDs were sorted `20260710_02,20260709_14,20260709_02`, with the newest ID selected as `latest_run` for each service.
+
+```bash
+node --check app.js
+python3 -m py_compile tools/build_forecast_catalog.py
+python3 -m json.tool data/current/forecast-runs.json
+git diff --check
+```
+
+Result after the responsive viewer/run-selector update: all checks passed.
+
+```bash
+python3 -c '<HTML parser duplicate-ID and required-control check>'
+```
+
+Result: `index.html`, `ningxia/index.html`, and `shangrao/index.html` all had `duplicate_ids=[]` and no missing `runSummary`, `refreshCatalog`, `runList`, `forecastImage`, or `imageLink` IDs.
+
+```bash
+curl --noproxy 127.0.0.1 -sS http://127.0.0.1:5175/
+curl --noproxy 127.0.0.1 -sS http://127.0.0.1:5175/ningxia/
+curl --noproxy 127.0.0.1 -sS http://127.0.0.1:5175/shangrao/
+```
+
+Result: all pages returned successfully and referenced the `20260710-05` assets, top refresh/run-summary controls, and `放大查看`; local JS/CSS contained the full-screen viewer, pinch handler, two-minute refresh, mobile viewport rules, and `最新` run styling.
+
+```bash
+curl --noproxy iaplacs.xyz -L -sS 'https://iaplacs.xyz/data/current/forecast-runs.json?inspect=20260710-1129'
+```
+
+Result before pushing the frontend commit: the deployed catalog already exposed Ningxia runs `20260709_12,20260709_06,20260709_00` and Shangrao runs `20260710_02,20260709_02`, proving the server-side multi-run data publishing was live.
+
 Official references checked during planning:
 
 - Alibaba Cloud DNS add-record documentation.
@@ -511,12 +559,15 @@ Official references checked during planning:
 - The root user-provided `logo_lacs.png` is ignored by Git after copying it into `assets/brand/logo-lacs-source.png`, so repository assets stay under `assets/brand/`.
 - AI-generated logo text is risky, so the website header lockup uses the AI-generated icon only; Chinese and English text are rendered from exact typed strings to avoid text hallucination.
 - The active header no longer uses the lockup PNG for text. Keep LACS Chinese and English names as HTML text in `index.html`, `ningxia/index.html`, and `shangrao/index.html`.
-- GitHub Pages does not provide reliable directory listing for discovering new image folders. Server-side publishing must update `data/current/forecast-runs.json` whenever it adds a new `wrf_montage_YYYYMMDD_HH` or `worknx_summary_YYYYMMDD_HH` directory.
+- GitHub Pages does not provide reliable directory listing for discovering new image folders. Server-side publishing must update `data/current/forecast-runs.json` whenever it adds a new `wrf_montage_YYYYMMDD_HH`, `shangrao_work_YYYYMMDD_HH`, or `worknx_summary_YYYYMMDD_HH` directory.
 - `tools/build_forecast_catalog.py` intentionally uses product file mtimes for `published_at`, not wall-clock time, so repeated server runs do not create false Git changes when images are unchanged.
 - For the WORK_nx/Ningxia forecast, "time" means the image file generation/modification time (`mtime`). Do not substitute the WRF `Times` variable or directory name when deciding the publication time.
 - Keep product ownership separate: homepage `/` is airport service, `/ningxia/` is WORK_nx/NX Ningxia products, and `/shangrao/` is Shangrao products. Do not merge Ningxia products back into the homepage or Shangrao page.
 - The password gate is client-side because the site is on GitHub Pages. It hides the UI and persists access through localStorage, but anyone inspecting static assets can bypass it. Use a real backend, Cloudflare Access, Netlify/Vercel auth, or another edge/access-control layer if real access control becomes necessary.
 - In-app browser verification was attempted but no in-app browser backend was available (`agent.browsers.list()` returned `[]`). Verification was completed via local HTTP checks and image inspection instead.
+- Do not use a publishing step such as `rm -rf data/current`. Multiple selectable initial times depend on retaining the timestamped run directories under `data/current/maps/`; use a separate bounded retention policy after successful publication.
+- The page can only expose runs present in `data/current/forecast-runs.json`. A source-server directory is not visible to GitHub Pages until its image directory and regenerated catalog are both committed and deployed.
+- The image viewer's DOM, event logic, responsive CSS, and local HTTP assets were verified, but a real browser screenshot/touch gesture pass was unavailable in this session because the in-app browser backend list was empty.
 - Use atomic publish directories so failed data updates do not break the live site.
 - HTTPS via Certbot usually requires the HTTP site to be reachable on port 80, unless using DNS validation.
 
@@ -524,7 +575,8 @@ Official references checked during planning:
 
 1. Add `www` separately as a CNAME to `keruicode.github.io`. In Aliyun quick-add this can be done by choosing `将网站域名解析到另外的目标域名`, selecting only `www.iaplacs.xyz`, and entering `keruicode.github.io`.
 2. Confirm GitHub Pages HTTPS remains enabled for `iaplacs.xyz` after DNS/certificate provisioning.
-3. Update the server-side publishing helpers on `login02` so every Shangrao WRF montage or Ningxia/WORK_nx summary publish runs `python3 tools/build_forecast_catalog.py` before `git add`, then stages `data/current/forecast-runs.json` together with the image directory.
+3. Keep monitoring the `login02` publishing helpers so every Shangrao WRF/WORK or Ningxia/WORK_nx publish retains existing run directories, runs `python3 tools/build_forecast_catalog.py`, and stages the regenerated catalog together with the new image directory.
 4. Add real airport service products to replace the current airport samples under the homepage service.
 5. Later, extend `tools/build_forecast_catalog.py` with additional product scanners when the server starts publishing more product families beyond WRF rainfall montage and WORK_nx summary.
 6. If image volume grows, keep GitHub Pages for the app and move large map assets to object storage/CDN.
+7. Perform one real iPhone/Android touch check after the `20260710-05` frontend deploy: open a forecast image, pinch to zoom, drag, reset, and close; repeat at desktop width with wheel zoom.
