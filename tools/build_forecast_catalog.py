@@ -18,6 +18,7 @@ MAX_RUNS = int(os.environ.get("IAPLACS_MAX_RUNS", "8"))
 
 
 RUN_DIR_RE = re.compile(r"^wrf_montage_(\d{8}_\d{2})$")
+SHANGRAO_WORK_DIR_RE = re.compile(r"^shangrao_work_(\d{8}_\d{2})$")
 DETAIL_RE = re.compile(r"_combined_detail_p(\d{2})_")
 LEAD_RANGE_RE = re.compile(r"T(\d{2})_T(\d{2})", re.IGNORECASE)
 
@@ -26,7 +27,8 @@ def main() -> None:
     airport_runs = build_airport_runs()
     wrf_runs = build_wrf_runs()
     ningxia_runs = build_ningxia_runs()
-    shangrao_runs = wrf_runs
+    shangrao_work_runs = build_shangrao_work_runs()
+    shangrao_runs = merge_shangrao_runs(wrf_runs, shangrao_work_runs)
     catalog_published_at = latest_published_at(
         airport_runs + ningxia_runs + shangrao_runs
     )
@@ -210,6 +212,133 @@ def build_wrf_runs() -> list[dict]:
 
     runs.sort(key=lambda item: item["run_time"], reverse=True)
     return runs[:MAX_RUNS]
+
+
+def build_shangrao_work_runs() -> list[dict]:
+    runs = []
+    if not MAPS_DIR.exists():
+        return runs
+
+    for run_dir in sorted(MAPS_DIR.glob("shangrao_work_*")):
+        if not run_dir.is_dir():
+            continue
+        match = SHANGRAO_WORK_DIR_RE.match(run_dir.name)
+        if not match:
+            continue
+
+        fragment_path = run_dir / "manifest_fragment.json"
+        if not fragment_path.exists():
+            continue
+        fragment = json.loads(fragment_path.read_text(encoding="utf-8"))
+        frames = build_shangrao_work_frames(run_dir, fragment)
+        if not frames:
+            continue
+
+        run_id = fragment.get("run_prefix") or match.group(1)
+        run_time = fragment.get("run_time") or parse_run_time(run_id).isoformat()
+        generated_at = fragment.get("generated_at") or latest_mtime(run_dir).isoformat()
+        runs.append(
+            {
+                "id": run_id,
+                "label": f"{format_run_label(run_time)} BJT",
+                "run_time": run_time,
+                "published_at": generated_at,
+                "summary": "上饶 WORK 雾区逐小时降水成品",
+                "products": [
+                    build_shangrao_work_product(run_id, frames, generated_at)
+                ],
+            }
+        )
+
+    runs.sort(key=lambda item: item["run_time"], reverse=True)
+    return runs[:MAX_RUNS]
+
+
+def build_shangrao_work_frames(run_dir: Path, fragment: dict) -> list[dict]:
+    groups: dict[str, list[Path]] = {}
+    for path in run_dir.iterdir():
+        if path.suffix.lower() not in {".png", ".webp", ".jpg", ".jpeg"}:
+            continue
+        groups.setdefault(path.stem, []).append(path)
+
+    frames = []
+    for stem, candidates in sorted(groups.items()):
+        chosen = min(candidates, key=lambda item: item.stat().st_size)
+        lead_label = lead_label_from_name(chosen.name)
+        frame = {
+            "id": stem.lower().replace("-", "_"),
+            "lead": lead_value_from_label(lead_label),
+            "lead_label": lead_label,
+            "file": "./" + chosen.relative_to(ROOT).as_posix(),
+            "bytes": chosen.stat().st_size,
+        }
+        valid_start = fragment.get("valid_start")
+        valid_time = fragment.get("valid_time")
+        if valid_start:
+            frame["valid_start"] = valid_start
+        if valid_time:
+            frame["valid_time"] = valid_time
+            if valid_start:
+                frame["valid_label"] = (
+                    f"{format_run_label(valid_start)} 至 "
+                    f"{format_run_label(valid_time)} BJT"
+                )
+            else:
+                frame["valid_label"] = f"有效至 {format_run_label(valid_time)} BJT"
+        frames.append(frame)
+    return frames
+
+
+def build_shangrao_work_product(
+    run_id: str, frames: list[dict], generated_at: str
+) -> dict:
+    return {
+        "id": "shangrao_fog_hourly_precip",
+        "title": "上饶雾区逐小时降水预报 T07-T48",
+        "category": "上饶预报",
+        "unit": "mm",
+        "color": "#0f68c8",
+        "description": "WORK 生成的雾区逐小时降水综合图，按图片文件生成时间自动发布。",
+        "metrics": [
+            {"label": "起报时次", "value": run_id.replace("_", " ") + " BJT"},
+            {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},
+            {"label": "图像数量", "value": str(len(frames))},
+        ],
+        "frames": frames,
+    }
+
+
+def merge_shangrao_runs(*run_groups: list[dict]) -> list[dict]:
+    merged: dict[str, dict] = {}
+    for runs in run_groups:
+        for run in runs:
+            run_id = run["id"]
+            if run_id not in merged:
+                merged[run_id] = {
+                    **run,
+                    "products": list(run.get("products", [])),
+                }
+                continue
+
+            target = merged[run_id]
+            target["published_at"] = max(
+                target.get("published_at", ""), run.get("published_at", "")
+            )
+            existing_ids = {
+                product.get("id") for product in target.get("products", [])
+            }
+            target["products"].extend(
+                product
+                for product in run.get("products", [])
+                if product.get("id") not in existing_ids
+            )
+
+    results = list(merged.values())
+    for run in results:
+        product_count = len(run.get("products", []))
+        run["summary"] = f"上饶服务器预报产品，共 {product_count} 类"
+    results.sort(key=lambda item: item["run_time"], reverse=True)
+    return results[:MAX_RUNS]
 
 
 def build_ningxia_runs() -> list[dict]:
