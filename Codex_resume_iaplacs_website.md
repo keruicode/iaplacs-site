@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-10 12:35 CST
+Last updated: 2026-07-10 12:41 CST
 
 ## Resume Commands
 
@@ -110,6 +110,7 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - Regenerated the current catalog so all three Ningxia frames and all 16 Shangrao frames use optimized WebP. Ningxia images are about 1.0 MB each; Shangrao overviews are about 0.9-1.0 MB and details about 0.4-0.5 MB. Existing product publication timestamps were preserved.
 - Removed stale `shangrao_work_*` instructions from README/deployment docs and added the optimizer before catalog generation in the publishing sequence. Bumped all pages to `styles.css?v=20260710-07` and `app.js?v=20260710-07`.
 - Code/data commit: `c2667fb Fix forecast image switching and web delivery`.
+- Pushed the code/data and resume commits through `930e65c Update resume for forecast image delivery`. After Pages cache propagation, all three deployed pages loaded `v07`, the online catalog used WebP for every Ningxia/Shangrao frame, and all 19 optimized image URLs returned `HTTP 200 image/webp`.
 
 ## Important Changed Files
 
@@ -624,6 +625,17 @@ curl --noproxy 127.0.0.1 -I '<one optimized Shangrao WebP>'
 ```
 
 Result: both pages referenced `20260710-07`; `leadTabs` appeared before `map-stage`; optimized files returned HTTP 200 as `image/webp`; the local catalog used WebP for every Ningxia and Shangrao frame.
+
+```bash
+git push origin main
+curl --noproxy iaplacs.xyz -L -sS 'https://iaplacs.xyz/?images=930e65c-retry1'
+curl --noproxy iaplacs.xyz -L -sS 'https://iaplacs.xyz/ningxia/?images=930e65c-retry1'
+curl --noproxy iaplacs.xyz -L -sS 'https://iaplacs.xyz/shangrao/?images=930e65c'
+curl --noproxy iaplacs.xyz -L -sS 'https://iaplacs.xyz/app.js?v=20260710-07-images-930e65c'
+curl --noproxy iaplacs.xyz -I '<each optimized catalog image URL>'
+```
+
+Result: pushed `e167bd7..930e65c`; all pages loaded `20260710-07`, controls were above the image, deployed JS contained cancellation/Blob/retry switching, and all 19 optimized Ningxia/Shangrao WebPs returned `200 image/webp`.
 
 Official references checked during planning:
 
