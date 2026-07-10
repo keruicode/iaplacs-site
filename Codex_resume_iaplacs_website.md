@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-10 11:35 CST
+Last updated: 2026-07-10 11:51 CST
 
 ## Resume Commands
 
@@ -95,6 +95,9 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - Frontend code commit after rebasing onto the latest server data is `879a975 Improve run switching and image zoom`.
 - Pushed the frontend and resume commits through `6b7f403 Update resume for multi-run viewer` to `origin/main` after preserving the concurrent server data commit `9169de7`.
 - Verified the deployed homepage, `/ningxia/`, and `/shangrao/` all reference `styles.css?v=20260710-05` and `app.js?v=20260710-05`; the first Ningxia request briefly hit an older Pages cache node, and a retry returned the new page.
+- Server-side follow-up commit `81fc446 Remove incorrect Shangrao WORK product` removed the temporary `20260710_02` Shangrao WORK run; current tracked data again has the valid `20260709_02` Shangrao run only. The scanner support remains available for corrected future directories.
+- Changed only the top run-card presentation to chronological order: oldest is on the left and newest is on the right. The underlying newest-first catalog and each card's original array index are preserved, so default/latest selection and product switching remain correct; the active latest card automatically scrolls into view at the right edge.
+- Bumped the script query string on all three pages to `app.js?v=20260710-06`. Code commit: `07cac8c Order forecast runs oldest to newest`.
 
 ## Important Changed Files
 
@@ -110,7 +113,6 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - `/Users/xiaoxiaotu/_01_IAP/Website/data/current/maps/worknx_summary_20260709_00/`
 - `/Users/xiaoxiaotu/_01_IAP/Website/data/current/maps/worknx_summary_20260709_06/`
 - `/Users/xiaoxiaotu/_01_IAP/Website/data/current/maps/worknx_summary_20260709_12/`
-- `/Users/xiaoxiaotu/_01_IAP/Website/data/current/maps/shangrao_work_20260710_02/`
 - `/Users/xiaoxiaotu/_01_IAP/Website/docs/deployment.md`
 - `/Users/xiaoxiaotu/_01_IAP/Website/README.md`
 - `/Users/xiaoxiaotu/_01_IAP/Website/CNAME`
@@ -550,6 +552,23 @@ curl --noproxy iaplacs.xyz -L -sS 'https://iaplacs.xyz/data/current/forecast-run
 ```
 
 Result: all three deployed pages returned the `20260710-05` controls and `放大查看`; deployed JS contained `setupImageViewer`, `createPinchGesture`, `withAssetVersion`, and the two-minute refresh; the online catalog parsed with Ningxia IDs `20260709_12,20260709_06,20260709_00` and Shangrao IDs `20260710_02,20260709_02`.
+
+Later server correction: commit `81fc446` removed the invalid `20260710_02` Shangrao WORK directory and regenerated the catalog, leaving `20260709_02` as the current valid Shangrao run.
+
+```bash
+node --check app.js
+node -e '<render-order fixture>'
+git diff --check
+```
+
+Result for the run-order change: JS syntax and diff checks passed; the fixture produced `display=old,middle,new`, original indices `2,1,0`, and placed the latest run at display position `2` while retaining original index `0`.
+
+```bash
+curl --noproxy 127.0.0.1 -sS http://127.0.0.1:5175/
+curl --noproxy 127.0.0.1 -sS 'http://127.0.0.1:5175/app.js?v=20260710-06'
+```
+
+Result: local HTML references `app.js?v=20260710-06`; the served script contains the reversed display list and `displayRuns` renderer.
 
 Official references checked during planning:
 
