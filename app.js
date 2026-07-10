@@ -276,8 +276,11 @@ function renderRuns() {
   els.runList.innerHTML = "";
   const runs = state.service.runs || [];
   const latestRunId = state.service.latest_run;
+  const displayRuns = runs
+    .map((run, index) => ({ run, index }))
+    .reverse();
 
-  runs.forEach((run, index) => {
+  displayRuns.forEach(({ run, index }) => {
     const parts = formatRunParts(run);
     const button = document.createElement("button");
     button.type = "button";
