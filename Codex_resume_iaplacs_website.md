@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-10 20:45 CST
+Last updated: 2026-07-11 21:51 CST
 
 ## Resume Commands
 
@@ -143,6 +143,7 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - `/Users/xiaoxiaotu/_01_IAP/Website/assets/brand/logo-lacs-blue-icon.png`
 - `/Users/xiaoxiaotu/_01_IAP/Website/shangrao/index.html`
 - `/Users/xiaoxiaotu/_01_IAP/Website/ningxia/index.html`
+- `/Users/xiaoxiaotu/_01_IAP/Website/airpots/index.html`
 - `/Users/xiaoxiaotu/_01_IAP/Website/tools/build_forecast_catalog.py`
 - `/Users/xiaoxiaotu/_01_IAP/Website/tools/optimize_forecast_images.sh`
 - Remote GitHub Pages repo, pushed from `server02`:
@@ -675,6 +676,15 @@ Official references checked during planning:
 - All three pages now reference `app.js?v=20260710-09`. `node --check app.js`, `git diff --check`, local HTTP `200` checks, and static presence checks for the cache/preload/viewer controls passed.
 - Browser automation could not be completed because the available browser list returned `[]`; a real mobile touch pass remains a follow-up after deployment. The implementation falls back to ordinary fetch/memory caching when Cache Storage is unavailable.
 
+## Current Route Layout
+
+- The root `https://iaplacs.xyz/` now uses `data-service="ningxia"` and displays the Ningxia forecast service.
+- The previous airport page was moved to `https://iaplacs.xyz/airpots/` in `airpots/index.html`, with parent-relative asset, catalog, and script paths and `data-service="airport"`.
+- `/ningxia/` remains available as the dedicated Ningxia route; `/shangrao/` remains the dedicated Shangrao route.
+- The visible `机场服务`, `宁夏预报`, and `上饶服务` site-navigation buttons were removed from all four page templates. Internal run-time and product-image controls remain.
+- All four templates use `styles.css?v=20260710-08` and `app.js?v=20260710-09`.
+- The current worktree was clean before this route change; no forecast catalog or OSS image data was modified.
+
 ## Known Pitfalls
 
 - If the target server is in mainland China and `iaplacs.xyz` resolves to it, ICP filing is required before normal public access.
@@ -698,7 +708,7 @@ Official references checked during planning:
 - GitHub Pages does not provide reliable directory listing for discovering new image folders. Server-side publishing must update `data/current/forecast-runs.json` whenever it adds a new `wrf_montage_YYYYMMDD_HH` or `worknx_summary_YYYYMMDD_HH` directory.
 - `tools/build_forecast_catalog.py` intentionally uses product file mtimes for `published_at`, not wall-clock time, so repeated server runs do not create false Git changes when images are unchanged.
 - For the WORK_nx/Ningxia forecast, "time" means the image file generation/modification time (`mtime`). Do not substitute the WRF `Times` variable or directory name when deciding the publication time.
-- Keep product ownership separate: homepage `/` is airport service, `/ningxia/` is WORK_nx/NX Ningxia products, and `/shangrao/` is Shangrao products. Do not merge Ningxia products back into the homepage or Shangrao page.
+- Keep product ownership separate: root `/` and `/ningxia/` are WORK_nx/NX Ningxia products, `/airpots/` is the airport sample service, and `/shangrao/` is Shangrao products. Do not merge these service catalogs.
 - Shangrao products must be regional `wrf_montage_*` outputs generated from WORK wrfout through `batch_ncks.sh`, NCL, and montage. Do not publish ready-made `Precip_hourly_Fog_TargetT07_T48_ActualT07_T48_*.png` nationwide products to `/shangrao/`.
 - The password gate is client-side because the site is on GitHub Pages. It hides the UI and persists access through localStorage, but anyone inspecting static assets can bypass it. Use a real backend, Cloudflare Access, Netlify/Vercel auth, or another edge/access-control layer if real access control becomes necessary.
 - In-app browser verification was attempted but no in-app browser backend was available (`agent.browsers.list()` returned `[]`). Verification was completed via local HTTP checks and image inspection instead.
@@ -713,7 +723,7 @@ Official references checked during planning:
 1. Add `www` separately as a CNAME to `keruicode.github.io`. In Aliyun quick-add this can be done by choosing `将网站域名解析到另外的目标域名`, selecting only `www.iaplacs.xyz`, and entering `keruicode.github.io`.
 2. Confirm GitHub Pages HTTPS remains enabled for `iaplacs.xyz` after DNS/certificate provisioning.
 3. Monitor the `login02` publishing helpers after the next forecast cycles: confirm OSS uploads/skips, the generated catalog still contains only five runs per family, and the post-publish retention pass reports no stale forecast prefixes.
-4. Add real airport service products to replace the current airport samples under the homepage service.
+4. Add real airport service products to replace the current samples under `/airpots/`.
 5. Later, extend `tools/build_forecast_catalog.py` with additional product scanners when the server starts publishing more product families beyond WRF rainfall montage and WORK_nx summary.
 6. Keep GitHub Pages for the app/catalog and OSS for forecast images; move to an additional CDN only if traffic or latency later requires it.
 7. Perform one real iPhone/Android check after the `20260710-08` deploy: switch every Ningxia and Shangrao run, switch all four Shangrao frames, then test pinch zoom, drag, reset, and close; repeat at desktop width with wheel zoom.

@@ -133,4 +133,6 @@ With the production OSS setup, keep `IAPLACS_MAX_RUNS=5` and
 the production OSS prefix). Verify the public OSS object and CORS response before
 publishing the catalog.
 The generated catalog keeps `/` as the airport service, `/ningxia/` as the
-WORK_nx/NX product page, and `/shangrao/` as the Shangrao product page.
+WORK_nx/NX product page, `/shangrao/` as the Shangrao product page, and
+`/airpots/` as the airport sample product page. The root `/` and `/ningxia/`
+both read the Ningxia service from the catalog.

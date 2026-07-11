@@ -12,7 +12,8 @@ The first version is designed for GitHub Pages:
 
 Current service routes:
 
-- `/` is the airport weather service entry;
+- `/` is the Ningxia forecast entry;
+- `/airpots/` is the airport weather service entry;
 - `/ningxia/` shows WORK_nx/NX Ningxia forecast products;
 - `/shangrao/` shows Shangrao forecast products.
 
@@ -69,8 +70,8 @@ data/current/maps/wrf_montage_YYYYMMDD_HH/
 data/current/maps/worknx_summary_YYYYMMDD_HH/
 ```
 
-`worknx_summary_*` is exposed only on `/ningxia/`; `wrf_montage_*` is exposed
-only on `/shangrao/`. The homepage uses the airport service catalog.
+`worknx_summary_*` is exposed on `/` and `/ningxia/`; `wrf_montage_*` is exposed
+only on `/shangrao/`. The airport service catalog is available at `/airpots/`.
 
 When a service page opens, the frontend preloads all images in its retained
 catalog with a small concurrency limit. Images are reused through in-memory

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="IAP-LACS 机场气象服务页面，展示机场保障相关预报图和样例产品。"
+    />
+    <title>机场气象服务 | IAP-LACS Forecast</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/brand/favicon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/brand/favicon-512.png" />
+    <link rel="stylesheet" href="../styles.css?v=20260710-08" />
+  </head>
+  <body
+    class="auth-lock"
+    data-service="airport"
+    data-manifest-url="../data/current/forecast-runs.json"
+    data-fallback-manifest-url="../data/current/manifest.json"
+    data-asset-base="../"
+    data-refresh-ms="120000"
+  >
+    <header class="topbar">
+      <div class="brand">
+        <img
+          class="brand-icon"
+          src="../assets/brand/logo-lacs-blue-icon.png"
+          alt=""
+          aria-hidden="true"
+        />
+        <div class="brand-copy">
+          <p class="brand-title">中国科学院大气物理研究所云降水物理与强风暴实验室</p>
+          <p class="brand-subtitle">LABORATORY OF CLOUD-PRECIPITATION PHYSICS AND SEVERE STORMS(LACS), IAP, CAS</p>
+          <h1 class="sr-only">机场气象服务</h1>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <div class="run-state" aria-live="polite">
+          <span class="status-dot"></span>
+          <span id="updateLabel">正在读取数据</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="run-switchbar" aria-label="机场服务起报时间">
+      <div class="run-switch-heading-row">
+        <div class="run-switch-heading">
+          <p class="eyebrow">Initial Time</p>
+          <h2>起报时间</h2>
+          <p id="runSummary" aria-live="polite">正在读取时次清单</p>
+        </div>
+        <button id="refreshCatalog" class="refresh-button" type="button" title="刷新数据" aria-label="刷新数据">
+          &#8635;
+        </button>
+      </div>
+      <div id="runList" class="run-list run-list-horizontal" aria-label="机场起报时间"></div>
+    </section>
+
+    <main class="workspace">
+      <section class="control-panel" aria-label="产品控制">
+        <div class="panel-heading">
+          <p class="eyebrow">Airport Service</p>
+          <h2>机场产品</h2>
+        </div>
+        <div id="productList" class="product-list"></div>
+
+        <div class="meta-block">
+          <p class="meta-label">当前起报</p>
+          <p id="runTime" class="meta-value">--</p>
+        </div>
+        <div class="meta-block">
+          <p class="meta-label">发布时间</p>
+          <p id="publishedAt" class="meta-value">--</p>
+        </div>
+        <div class="meta-block">
+          <p class="meta-label">服务说明</p>
+          <p id="sourceNote" class="meta-copy">正在读取机场服务清单。</p>
+        </div>
+      </section>
+
+      <section class="map-panel" aria-label="机场预报图">
+        <div class="map-toolbar">
+          <div>
+            <p id="productUnit" class="eyebrow">--</p>
+            <h2 id="productTitle">读取中</h2>
+          </div>
+          <div class="toolbar-actions">
+            <a id="imageLink" class="text-button link-button" href="#" target="_blank" rel="noreferrer">放大查看</a>
+            <button id="prevLead" class="icon-button" type="button" title="上一时效" aria-label="上一时效">
+              &#8249;
+            </button>
+            <button id="nextLead" class="icon-button" type="button" title="下一时效" aria-label="下一时效">
+              &#8250;
+            </button>
+          </div>
+        </div>
+
+        <div id="leadTabs" class="lead-tabs" aria-label="预报时效"></div>
+
+        <div class="map-stage">
+          <img id="forecastImage" alt="机场预报产品图" role="button" tabindex="0" draggable="false" decoding="async" aria-label="放大查看当前预报图" />
+          <div class="map-badge">
+            <span id="leadLabel">--</span>
+            <span id="validTime">--</span>
+          </div>
+        </div>
+
+      </section>
+
+      <aside class="insight-panel" aria-label="产品摘要">
+        <div class="panel-heading">
+          <p class="eyebrow">Overview</p>
+          <h2>机场状态</h2>
+        </div>
+
+        <div id="metricGrid" class="metric-grid"></div>
+
+        <div class="product-note-block">
+          <div class="note-header">
+            <span>服务说明</span>
+            <span>Airport</span>
+          </div>
+          <p id="productNote" class="product-note">正在读取机场产品说明。</p>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="site-footer">
+      <span>IAP-LACS Forecast</span>
+      <span>机场气象服务</span>
+      <span>iaplacs.xyz</span>
+    </footer>
+
+    <script src="../app.js?v=20260710-09"></script>
+  </body>
+</html>
