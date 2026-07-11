@@ -70,7 +70,6 @@ const viewerState = {
   y: 0,
   pointers: new Map(),
   gesture: null,
-  lastTap: null,
   opener: null,
   source: null,
   requestId: 0,
@@ -260,7 +259,12 @@ function render() {
   setText(els.runSummary, formatRunSummary(state.service.runs || []));
   setText(els.runTime, run.label || formatTime(run.run_time));
   setText(els.publishedAt, formatTime(run.published_at || state.catalog.published_at));
-  setText(els.sourceNote, state.service.note || run.summary || state.catalog.note || "");
+  setText(
+    els.sourceNote,
+    pageConfig.service === "ningxia"
+      ? ""
+      : state.service.note || run.summary || state.catalog.note || "",
+  );
 
   renderRuns();
   renderProducts();
@@ -278,7 +282,12 @@ function render() {
   }
   if (els.imageLink) els.imageLink.href = imageSrc;
   setText(els.leadLabel, frame.lead_label);
-  setText(els.validTime, frame.valid_label || `有效时间 ${formatTime(frame.valid_time)}`);
+  setText(
+    els.validTime,
+    pageConfig.service === "ningxia"
+      ? ""
+      : frame.valid_label || `有效时间 ${formatTime(frame.valid_time)}`,
+  );
   updateViewerControls();
   if (viewerState.root && !viewerState.root.hidden) {
     syncViewerFrame(imageSrc, imageAlt, { reset: false });
@@ -391,7 +400,11 @@ function renderLeads() {
   if (!els.leadTabs) return;
   const product = currentProduct();
   els.leadTabs.innerHTML = "";
-  (product.frames || []).forEach((frame, index) => {
+  const frames = product.frames || [];
+  const hideSingleNingxiaFrame = pageConfig.service === "ningxia" && frames.length <= 1;
+  els.leadTabs.hidden = hideSingleNingxiaFrame;
+  if (hideSingleNingxiaFrame) return;
+  frames.forEach((frame, index) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `lead-tab${index === state.leadIndex ? " is-active" : ""}`;
@@ -806,7 +819,6 @@ function setupImageViewer() {
     event.stopPropagation();
   });
   viewerState.stage.addEventListener("wheel", handleViewerWheel, { passive: false });
-  viewerState.stage.addEventListener("dblclick", handleViewerDoubleClick);
   viewerState.stage.addEventListener("pointerdown", handleViewerPointerDown);
   viewerState.stage.addEventListener("pointermove", handleViewerPointerMove);
   viewerState.stage.addEventListener("pointerup", handleViewerPointerEnd);
@@ -985,11 +997,6 @@ function handleViewerWheel(event) {
   zoomViewer(viewerState.scale * factor, event.clientX, event.clientY);
 }
 
-function handleViewerDoubleClick(event) {
-  event.preventDefault();
-  toggleViewerZoom(event.clientX, event.clientY);
-}
-
 function handleViewerPointerDown(event) {
   if (event.pointerType === "mouse" && event.button !== 0) return;
   event.preventDefault();
@@ -1046,11 +1053,6 @@ function handleViewerPointerEnd(event) {
   const gesture = viewerState.gesture;
   const swipeX = gesture ? event.clientX - gesture.startX : 0;
   const swipeY = gesture ? event.clientY - gesture.startY : 0;
-  const isTouchTap =
-    event.pointerType === "touch" &&
-    viewerState.pointers.size === 1 &&
-    gesture?.type === "drag" &&
-    !gesture.moved;
   const isTouchSwipe =
     event.pointerType === "touch" &&
     viewerState.pointers.size === 1 &&
@@ -1079,9 +1081,7 @@ function handleViewerPointerEnd(event) {
 
   if (isTouchSwipe) {
     stepViewerFrame(swipeX < 0 ? 1 : -1);
-    return;
   }
-  if (isTouchTap) handleViewerTap(event.clientX, event.clientY);
 }
 
 function createPinchGesture() {
@@ -1115,29 +1115,6 @@ function updatePinchGesture() {
   viewerState.x = currentPoint.x - (startPoint.x - gesture.startX) * ratio;
   viewerState.y = currentPoint.y - (startPoint.y - gesture.startY) * ratio;
   applyViewerTransform();
-}
-
-function handleViewerTap(clientX, clientY) {
-  const now = Date.now();
-  const previous = viewerState.lastTap;
-  if (
-    previous &&
-    now - previous.time < 320 &&
-    Math.hypot(clientX - previous.x, clientY - previous.y) < 32
-  ) {
-    viewerState.lastTap = null;
-    toggleViewerZoom(clientX, clientY);
-    return;
-  }
-  viewerState.lastTap = { time: now, x: clientX, y: clientY };
-}
-
-function toggleViewerZoom(clientX, clientY) {
-  if (viewerState.scale > 1.05) {
-    resetViewer();
-  } else {
-    zoomViewer(2.5, clientX, clientY);
-  }
 }
 
 function zoomViewer(nextScale, clientX, clientY) {

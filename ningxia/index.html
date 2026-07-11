@@ -10,7 +10,7 @@
     <title>宁夏预报 | IAP-LACS Forecast</title>
     <link rel="icon" type="image/png" sizes="192x192" href="../assets/brand/favicon-192.png" />
     <link rel="apple-touch-icon" href="../assets/brand/favicon-512.png" />
-    <link rel="stylesheet" href="../styles.css?v=20260710-08" />
+    <link rel="stylesheet" href="../styles.css?v=20260712-01" />
   </head>
   <body
     class="auth-lock"
@@ -66,16 +66,8 @@
         <div id="productList" class="product-list"></div>
 
         <div class="meta-block">
-          <p class="meta-label">当前起报</p>
-          <p id="runTime" class="meta-value">--</p>
-        </div>
-        <div class="meta-block">
-          <p class="meta-label">发布时间</p>
-          <p id="publishedAt" class="meta-value">--</p>
-        </div>
-        <div class="meta-block">
           <p class="meta-label">服务说明</p>
-          <p id="sourceNote" class="meta-copy">正在读取宁夏预报清单。</p>
+          <p id="sourceNote" class="meta-copy"></p>
         </div>
       </section>
 
@@ -99,11 +91,7 @@
         <div id="leadTabs" class="lead-tabs" aria-label="宁夏产品图幅"></div>
 
         <div class="map-stage">
-          <img id="forecastImage" alt="宁夏预报产品图" role="button" tabindex="0" draggable="false" decoding="async" aria-label="放大查看当前预报图" />
-          <div class="map-badge">
-            <span id="leadLabel">--</span>
-            <span id="validTime">--</span>
-          </div>
+          <img id="forecastImage" src="../data/current/maps/wrf_precip_20260706_1800_t01_t48.webp" alt="宁夏预报产品图" role="button" tabindex="0" draggable="false" decoding="async" aria-label="放大查看当前预报图" />
         </div>
 
       </section>
@@ -116,13 +104,7 @@
 
         <div id="metricGrid" class="metric-grid"></div>
 
-        <div class="product-note-block service-focus-block">
-          <div class="note-header">
-            <span>服务区域</span>
-            <span>Ningxia</span>
-          </div>
-          <p id="productNote" class="product-note">宁夏预报当前接入 WORK_nx 区域预报图，后续可继续扩展温度、风场、能见度和机场相关产品。</p>
-        </div>
+        <div class="product-note-block service-focus-block service-focus-empty" aria-label="服务区域"></div>
       </aside>
     </main>
 
@@ -132,6 +114,6 @@
       <span>iaplacs.xyz/ningxia</span>
     </footer>
 
-    <script src="../app.js?v=20260710-09"></script>
+    <script src="../app.js?v=20260712-01"></script>
   </body>
 </html>

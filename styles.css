@@ -707,6 +707,10 @@ button {
   background: #f6faff;
 }
 
+.service-focus-empty {
+  min-height: 92px;
+}
+
 .service-main {
   padding: 18px;
 }
@@ -940,7 +944,7 @@ button {
 
 .viewer-frame-nav {
   position: absolute;
-  inset: 0 12px;
+  inset: 0 clamp(64px, 8vw, 150px);
   z-index: 2;
   display: flex;
   align-items: center;
@@ -979,9 +983,11 @@ button {
 
 .viewer-frame-nav .viewer-icon-button {
   pointer-events: auto;
+  width: 60px;
+  height: 72px;
   border-color: rgba(255, 255, 255, 0.3);
   background: rgba(19, 34, 56, 0.88);
-  font-size: 30px;
+  font-size: 46px;
 }
 
 .viewer-close {
@@ -1169,6 +1175,16 @@ button {
 
   .viewer-stage {
     padding: 8px;
+  }
+
+  .viewer-frame-nav {
+    inset: 0 14px;
+  }
+
+  .viewer-frame-nav .viewer-icon-button {
+    width: 48px;
+    height: 60px;
+    font-size: 38px;
   }
 
   .viewer-image {

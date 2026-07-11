@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-11 23:51 CST
+Last updated: 2026-07-12 06:36 CST
 
 ## Resume Commands
 
@@ -687,6 +687,24 @@ Official references checked during planning:
 - GitHub tree checks at `af7ae1b` confirmed `index.html` uses `data-service="ningxia"`, `airpots/index.html` uses `data-service="airport"`, and all four templates have no visible `site-nav`/`nav-link` buttons.
 - After Pages propagation, live checks returned the root as Ningxia, `/airpots/` as the airport page, and `/ningxia/` plus `/shangrao/` as their existing services. All four live pages loaded CSS v08 and app JS v09.
 - Live `forecast-runs.json` remained OSS-first with the bounded five-run catalogs for Ningxia and Shangrao; the latest server publication timestamp observed was `2026-07-11T22:55:04+08:00`.
+
+## Ningxia Page UI Cleanup
+
+- Root `/` and `/ningxia/` were cleaned up for the Ningxia forecast view.
+- The left panel no longer shows `当前起报` or `发布时间`. It keeps the `服务说明` label but leaves the content blank, so the generated WORK_nx explanatory note is not displayed on the page.
+- The right `服务区域` module position is preserved as an empty block; visible `服务区域 / Ningxia` text and the product-note paragraph were removed on the Ningxia templates.
+- The main image badge was removed from the Ningxia templates, and `app.js` also blanks Ningxia `validTime` text. For single-frame Ningxia products, the `T01-T48` lead tab is hidden.
+- The image viewer no longer has desktop double-click or mobile double-tap zoom behavior. Button zoom, wheel zoom, pinch zoom, drag, keyboard, and left/right image navigation remain.
+- Viewer left/right buttons were enlarged and moved inward from the screen edge on desktop; mobile buttons are also larger than before but remain closer to the sides to preserve image space.
+- Root `index.html` now includes a local initial image source, `./data/current/maps/wrf_precip_20260706_1800_t01_t48.webp`, so directly opening the local file or serving it before catalog load still displays one image.
+- Root and `/ningxia/` now load `styles.css?v=20260712-01` and `app.js?v=20260712-01`.
+- Current local verification passed:
+  - `node --check app.js`
+  - `git diff --check`
+  - `python3 -m json.tool data/current/forecast-runs.json`
+  - `rg` confirmed root and `/ningxia/` no longer contain visible `当前起报`, `发布时间`, `T01-T48`, `宁夏页面集中展示`, or `新起报时次` text.
+  - Local HTTP checks on `http://127.0.0.1:5180/`, `http://127.0.0.1:5180/ningxia/`, and `http://127.0.0.1:5180/data/current/maps/wrf_precip_20260706_1800_t01_t48.webp` all returned `200`.
+- Important: local `main` is still behind the server-published remote forecast-data history and the working tree shows data-only changes/deletions from concurrent server updates. Do not stage or overwrite `data/current` from this local checkout when publishing UI-only changes.
 
 ## Known Pitfalls
 
