@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-11 22:45 CST
+Last updated: 2026-07-11 23:51 CST
 
 ## Resume Commands
 
@@ -683,10 +683,10 @@ Official references checked during planning:
 - `/ningxia/` remains available as the dedicated Ningxia route; `/shangrao/` remains the dedicated Shangrao route.
 - The visible `机场服务`, `宁夏预报`, and `上饶服务` site-navigation buttons were removed from all four page templates. Internal run-time and product-image controls remain.
 - All four templates use `styles.css?v=20260710-08` and `app.js?v=20260710-09`.
-- Route commit `5c8c0a9 Make Ningxia the home route` was pushed as a fast-forward from remote data commit `e0fdc41`; no forecast catalog or OSS image data was modified by the route change.
-- GitHub raw-file checks at `5c8c0a9` confirmed root `data-service="ningxia"`, `/airpots/` `data-service="airport"`, and no visible `site-nav`/`nav-link` buttons in the templates.
+- The final route/data-preservation commit is `af7ae1b Make Ningxia the home route and preserve forecast data`, based directly on the latest server-published remote commit `bdd7b42`; it was pushed without force-updating `main`, so the current server forecast tree was retained.
+- GitHub tree checks at `af7ae1b` confirmed `index.html` uses `data-service="ningxia"`, `airpots/index.html` uses `data-service="airport"`, and all four templates have no visible `site-nav`/`nav-link` buttons.
 - After Pages propagation, live checks returned the root as Ningxia, `/airpots/` as the airport page, and `/ningxia/` plus `/shangrao/` as their existing services. All four live pages loaded CSS v08 and app JS v09.
-- Live `forecast-runs.json` remained at five Ningxia runs, five Shangrao runs, 25 forecast frame URLs, and 25 OSS URLs.
+- Live `forecast-runs.json` remained OSS-first with the bounded five-run catalogs for Ningxia and Shangrao; the latest server publication timestamp observed was `2026-07-11T22:55:04+08:00`.
 
 ## Known Pitfalls
 
