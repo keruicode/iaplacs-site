@@ -704,9 +704,9 @@ Official references checked during planning:
   - `python3 -m json.tool data/current/forecast-runs.json`
   - `rg` confirmed root and `/ningxia/` no longer contain visible `当前起报`, `发布时间`, `T01-T48`, `宁夏页面集中展示`, or `新起报时次` text.
   - Local HTTP checks on `http://127.0.0.1:5180/`, `http://127.0.0.1:5180/ningxia/`, and `http://127.0.0.1:5180/data/current/maps/wrf_precip_20260706_1800_t01_t48.webp` all returned `200`.
-- Deployment commit `def19ea Clean Ningxia forecast page UI` was built as a fast-forward commit directly on remote `main` commit `7d695fe` using a temporary Git index, so server-published forecast data was preserved.
+- Site-runtime deployment commit `def19ea Clean Ningxia forecast page UI` was built as a fast-forward commit directly on remote `main` commit `7d695fe` using a temporary Git index, so server-published forecast data was preserved. Later resume-only commits may advance `main` without changing runtime site files.
 - Live verification after deploy passed:
-  - Remote `main` is `def19ea922f498647ef6f19b84f78b04e6e79d2e`.
+  - The runtime site files are from `def19ea922f498647ef6f19b84f78b04e6e79d2e`; resume-only follow-up commit `b1a8dc9d0f0dfe506bd0895489fe66fcc4ca69f1` was also pushed.
   - `https://iaplacs.xyz/?v=def19ea` and `https://iaplacs.xyz/ningxia/?v=def19ea` both load `styles.css?v=20260712-01` and `app.js?v=20260712-01`, include the local initial WebP image, include the empty service-area block, and no longer match the removed visible labels.
   - Live `https://iaplacs.xyz/app.js?v=20260712-01` contains `hideSingleNingxiaFrame` and no `dblclick`, `handleViewerDoubleClick`, or `toggleViewerZoom` matches.
   - Live `https://iaplacs.xyz/styles.css?v=20260712-01` contains the larger inward viewer navigation buttons.
