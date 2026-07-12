@@ -7,7 +7,6 @@ const IMAGE_PREFETCH_CONCURRENCY = 3;
 const ACCESS_PASSWORD = "123";
 const ACCESS_TOKEN_KEY = "iaplacs_access_token";
 const ACCESS_TOKEN_VALUE = "iaplacs_access_granted_v1";
-const SHANGRAO_PINNED_RUN_IDS = ["20260710_02"];
 
 const pageConfig = {
   service: document.body.dataset.service || "airport",
@@ -203,23 +202,7 @@ function limitCatalogRuns(catalog) {
 }
 
 function normalizeShangraoRuns(sourceRuns) {
-  const normalized = sourceRuns.map(normalizeShangraoRun);
-  const latestRuns = normalized.slice(0, MAX_DISPLAY_RUNS);
-  const runsById = new Map(latestRuns.map((run) => [run.id, run]));
-
-  for (const run of normalized) {
-    if (SHANGRAO_PINNED_RUN_IDS.includes(run.id) && !runsById.has(run.id)) {
-      runsById.set(run.id, run);
-    }
-  }
-
-  for (const runId of SHANGRAO_PINNED_RUN_IDS) {
-    if (!runsById.has(runId)) {
-      runsById.set(runId, createPinnedShangraoRun(runId));
-    }
-  }
-
-  return [...runsById.values()].sort((a, b) => {
+  return sourceRuns.map(normalizeShangraoRun).slice(0, MAX_DISPLAY_RUNS).sort((a, b) => {
     const aTime = Date.parse(a.run_time || "");
     const bTime = Date.parse(b.run_time || "");
     return (Number.isFinite(bTime) ? bTime : 0) - (Number.isFinite(aTime) ? aTime : 0);
@@ -347,53 +330,6 @@ function bjtParts(date) {
 
 function twoDigits(value) {
   return String(value).padStart(2, "0");
-}
-
-function createPinnedShangraoRun(runId) {
-  const runTime = parseRunId(runId);
-  const frameBase = `./data/current/maps/wrf_montage_${runId}`;
-  const product = {
-    id: "wrf_rain_montage",
-    title: "上饶 WRF 逐小时降水拼图",
-    category: "上饶预报",
-    unit: "mm",
-    color: "#0f68c8",
-    description: `上饶服务起报时次 ${runId}，包含总览图和分段细节图。`,
-    metrics: [
-      { label: "起报时次", value: runId.replace("_", " ") + " BJT" },
-      { label: "图像数量", value: "4" },
-      { label: "产品状态", value: "历史补充" },
-    ],
-    frames: [
-      {
-        id: "overview",
-        lead: 48,
-        lead_label: "总览",
-        valid_label: "",
-        file: `${frameBase}/${runId}_combined_overview_6x6_grid.webp`,
-      },
-      ...[1, 2, 3].map((page) => ({
-        id: `detail_p${String(page).padStart(2, "0")}`,
-        lead: 12 + page * 12,
-        lead_label: formatShangraoWindow(runTime, page),
-        valid_label: "",
-        file: `${frameBase}/${runId}_combined_detail_p${String(page).padStart(2, "0")}_4x3_grid.webp`,
-      })),
-    ],
-  };
-
-  return {
-    id: runId,
-    label: `${runId.slice(0, 4)}-${runId.slice(4, 6)}-${runId.slice(6, 8)} ${runId.slice(9, 11)}:00 BJT`,
-    run_time: runTime,
-    published_at: runTime,
-    summary: "WRF 逐小时降水拼图，共 4 张图",
-    products: [product],
-  };
-}
-
-function parseRunId(runId) {
-  return `${runId.slice(0, 4)}-${runId.slice(4, 6)}-${runId.slice(6, 8)}T${runId.slice(9, 11)}:00:00+08:00`;
 }
 
 function selectService(catalog) {

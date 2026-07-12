@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-12 07:53 CST
+Last updated: 2026-07-12 18:55 CST
 
 ## Resume Commands
 
@@ -10,6 +10,16 @@ codex resume 019f472c-9bd3-7222-9160-5fa0162a1249
 
 ```bash
 code resume 019f472c-9bd3-7222-9160-5fa0162a1249
+```
+
+Latest diagnostic follow-up in this thread:
+
+```bash
+codex resume 019f54bd-2333-7323-a89d-92bf699aec95
+```
+
+```bash
+code resume 019f54bd-2333-7323-a89d-92bf699aec95
 ```
 
 ## Thread
@@ -735,6 +745,31 @@ Official references checked during planning:
   - Live `https://iaplacs.xyz/?v=7555ecf2` and `https://iaplacs.xyz/shangrao/?v=7555ecf2` both loaded the `20260712-02` assets after Pages cache propagation.
   - Live `https://iaplacs.xyz/app.js?v=20260712-02-7555ecf` contains `SHANGRAO_PINNED_RUN_IDS`, `normalizeShangraoRuns`, and `formatShangraoWindow`, with no `dblclick`/`handleViewerDoubleClick` match.
   - Live `https://iaplacs.xyz/styles.css?v=20260712-02-7555ecf` contains the full-width image and hidden badge rules.
+
+## Ningxia OSS ACL And Shangrao Five-Run Cleanup
+
+- Follow-up thread: `019f54bd-2333-7323-a89d-92bf699aec95`.
+- User reported on 2026-07-12 that the Ningxia `2026-07-10 08:00 BJT` precipitation image did not appear, Shangrao showed 6 initial times instead of 5, and the Shangrao page should remove the left-side `当前起报` / `发布时间` / `服务说明` blocks plus the right-side `服务区域` block.
+- Live catalog check showed Ningxia had exactly five runs, including `20260710_00` labeled `2026-07-10 08:00 BJT`, and its frame URL was:
+  `https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260710_00/Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-10_00_00.webp`.
+- Public HEAD check for that `20260710_00` OSS object returned `HTTP/1.1 403 Forbidden` with OSS `AccessDenied` and message `You have no right to access this object because of bucket acl.`
+- Public HEAD checks for newer retained objects such as `worknx_summary_20260711_18/...webp`, `worknx_summary_20260711_00/...webp`, and `wrf_montage_20260712_02/...webp` returned `HTTP/1.1 200 OK`. This isolates the Ningxia `20260710_00` problem to old object ACL/public-read state, not a missing catalog entry or whole-bucket outage.
+- IAP `login02` was reachable at `10.64.201.2`; `~/bin/ossutil`, `~/.iaplacs-oss.env`, `~/bin/prune_iaplacs_oss.sh`, and `~/iaplacs-site` exist. `ossutil help set-acl` confirmed `ossutil set-acl oss://bucket/object public-read` is supported. Remote `ossutil stat` checks hung and were interrupted, so no remote ACL mutation was performed in this turn.
+- Likely publishing root cause: both publisher scripts use `ossutil cp ... -u --acl public-read`. If an old object already exists, `-u` skips upload and may not repair ACL. Early objects uploaded before public ACL setup can remain private while the catalog still references them.
+- Live Shangrao catalog showed six runs: `20260712_02`, `20260711_20`, `20260711_14`, `20260711_08`, `20260711_02`, and pinned/relative `20260710_02`.
+- Frontend root cause for the sixth Shangrao run: `app.js` pinned `20260710_02` through `SHANGRAO_PINNED_RUN_IDS`, adding it back after slicing to five. Generator root cause: `tools/build_forecast_catalog.py` had the same `SHANGRAO_PINNED_RUN_IDS` logic and forced that run to relative GitHub Pages URLs.
+- Local code changes in this follow-up:
+  - `app.js`: removed `SHANGRAO_PINNED_RUN_IDS`, removed `createPinnedShangraoRun`, and made `normalizeShangraoRuns()` strictly normalize/slice/sort at `MAX_DISPLAY_RUNS=5`.
+  - `tools/build_forecast_catalog.py`: removed Shangrao pinned-run retention and removed `force_relative`; generated Shangrao catalog will now return only latest `MAX_RUNS` runs.
+  - `shangrao/index.html`: removed `当前起报`, `发布时间`, `服务说明`, and `服务区域` UI blocks.
+  - `index.html`, `ningxia/index.html`, `shangrao/index.html`, and `airpots/index.html`: bumped shared app query string to `app.js?v=20260712-03`.
+- Verification passed:
+  - `node --check app.js`
+  - `PYTHONPYCACHEPREFIX=.tmp/pycache python3 -m py_compile tools/build_forecast_catalog.py`
+  - `rg` found no `SHANGRAO_PINNED_RUN_IDS`, `createPinnedShangraoRun`, `force_relative`, `当前起报`, `发布时间`, `服务说明`, or `服务区域` in `app.js`, `tools/build_forecast_catalog.py`, and `shangrao/index.html`.
+  - Python check against live catalog showed `live_catalog_shangrao=6` but `frontend_after_slice=5`, keeping `['20260712_02', '20260711_20', '20260711_14', '20260711_08', '20260711_02']`.
+  - Local preview started at `http://127.0.0.1:5181/`; `curl --noproxy 127.0.0.1 -I -s http://127.0.0.1:5181/shangrao/` returned `HTTP/1.0 200 OK`, and `curl --noproxy 127.0.0.1 -I -s 'http://127.0.0.1:5181/app.js?v=20260712-03'` returned `HTTP/1.0 200 OK`.
+- Working-tree caution: local `main` is still ahead/behind remote and has many pre-existing data changes/deletions from server-published forecast updates. Do not stage `data/current` blindly from this local checkout.
 
 ## Known Pitfalls
 

@@ -26,7 +26,6 @@ ASSET_BASE_URL = os.environ.get(
 RUN_DIR_RE = re.compile(r"^wrf_montage_(\d{8}_\d{2})$")
 DETAIL_RE = re.compile(r"_combined_detail_p(\d{2})_")
 LEAD_RANGE_RE = re.compile(r"T(\d{2})_T(\d{2})", re.IGNORECASE)
-SHANGRAO_PINNED_RUN_IDS = {"20260710_02"}
 
 
 def main() -> None:
@@ -216,12 +215,7 @@ def build_wrf_runs() -> list[dict]:
         )
 
     runs.sort(key=lambda item: item["run_time"], reverse=True)
-    latest_runs = runs[:MAX_RUNS]
-    selected = {run["id"]: run for run in latest_runs}
-    for run in runs:
-        if run["id"] in SHANGRAO_PINNED_RUN_IDS:
-            selected.setdefault(run["id"], run)
-    return sorted(selected.values(), key=lambda item: item["run_time"], reverse=True)
+    return runs[:MAX_RUNS]
 
 
 def build_ningxia_runs() -> list[dict]:
@@ -350,10 +344,7 @@ def build_frames(run_id: str, run_dir: Path) -> list[dict]:
     for key, candidates in sorted(groups.items(), key=frame_sort_key):
         chosen = choose_frame_candidate(key, candidates)
         frame = frame_meta(run_id, key)
-        frame["file"] = forecast_asset_url(
-            chosen,
-            force_relative=run_id in SHANGRAO_PINNED_RUN_IDS,
-        )
+        frame["file"] = forecast_asset_url(chosen)
         frame["bytes"] = chosen.stat().st_size
         frames.append(frame)
     return frames
@@ -376,9 +367,9 @@ def frame_candidate_score(path: Path) -> int:
     return 2
 
 
-def forecast_asset_url(path: Path, *, force_relative: bool = False) -> str:
+def forecast_asset_url(path: Path) -> str:
     relative = path.relative_to(ROOT).as_posix()
-    if ASSET_BASE_URL and not force_relative:
+    if ASSET_BASE_URL:
         return f"{ASSET_BASE_URL}/{relative}"
     return f"./{relative}"
 
