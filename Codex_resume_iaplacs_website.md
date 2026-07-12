@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-12 06:36 CST
+Last updated: 2026-07-12 07:53 CST
 
 ## Resume Commands
 
@@ -706,12 +706,35 @@ Official references checked during planning:
   - Local HTTP checks on `http://127.0.0.1:5180/`, `http://127.0.0.1:5180/ningxia/`, and `http://127.0.0.1:5180/data/current/maps/wrf_precip_20260706_1800_t01_t48.webp` all returned `200`.
 - Site-runtime deployment commit `def19ea Clean Ningxia forecast page UI` was built as a fast-forward commit directly on remote `main` commit `7d695fe` using a temporary Git index, so server-published forecast data was preserved. Later resume-only commits may advance `main` without changing runtime site files.
 - Live verification after deploy passed:
-  - The runtime site files are from `def19ea922f498647ef6f19b84f78b04e6e79d2e`; resume-only follow-up commit `b1a8dc9d0f0dfe506bd0895489fe66fcc4ca69f1` was also pushed.
+  - The runtime site files are from `def19ea922f498647ef6f19b84f78b04e6e79d2e`; resume-only follow-up commits `b1a8dc9d0f0dfe506bd0895489fe66fcc4ca69f1` and `efb6be07fa751a753cdbb0a146bc0005cdebd1c6` were also pushed.
   - `https://iaplacs.xyz/?v=def19ea` and `https://iaplacs.xyz/ningxia/?v=def19ea` both load `styles.css?v=20260712-01` and `app.js?v=20260712-01`, include the local initial WebP image, include the empty service-area block, and no longer match the removed visible labels.
   - Live `https://iaplacs.xyz/app.js?v=20260712-01` contains `hideSingleNingxiaFrame` and no `dblclick`, `handleViewerDoubleClick`, or `toggleViewerZoom` matches.
   - Live `https://iaplacs.xyz/styles.css?v=20260712-01` contains the larger inward viewer navigation buttons.
   - Live `https://iaplacs.xyz/data/current/maps/wrf_precip_20260706_1800_t01_t48.webp` returned `HTTP/2 200`, `Content-Type: image/webp`, and `Content-Length: 484974`.
 - Important: local `main` is still behind the server-published remote forecast-data history and the working tree shows data-only changes/deletions from concurrent server updates. Do not stage or overwrite `data/current` from this local checkout when publishing UI-only changes.
+
+## Shangrao Frame Label And Layout Fix
+
+- Site-runtime commit `7555ecf Fix Shangrao frame labels and layout` was pushed to `origin/main`, based directly on server-published remote commit `aa3c3c3`, so current forecast data was preserved.
+- Root `/` and `/ningxia/` keep the `服务区域` visible label inside the otherwise empty service-area block.
+- All four HTML entry points now load `styles.css?v=20260712-02` and `app.js?v=20260712-02`.
+- `styles.css` makes `#forecastImage` use the full available width (`width: 100%; max-width: none; max-height: none`) and hides `.map-badge`, so the lower-left `细节 1/3 / T13-T24` style box no longer appears.
+- `app.js` now normalizes Shangrao service runs on load:
+  - duplicate overview frames are collapsed to one frame, preferring 6x6 WebP when both 6x4 and 6x6 exist;
+  - overview tabs are labeled `总览`;
+  - detail tabs are labeled by Beijing-time 12-hour windows, such as `07-11 08-20` and `07-11 20-08`;
+  - `20260710_02` is pinned back into Shangrao as a historical supplemental run if the five-run live catalog no longer contains it.
+- The pinned `20260710_02` Shangrao run uses GitHub Pages relative image URLs because its OSS object check returned `403 Forbidden`, while the GitHub Pages WebP URL returned `HTTP 200`.
+- `tools/build_forecast_catalog.py` now applies the same Shangrao overview de-duplication and time-window label rules when the server regenerates `forecast-runs.json`; pinned Shangrao runs force relative URLs instead of OSS URLs.
+- Verification passed:
+  - `node --check app.js`
+  - `python3 -m py_compile tools/build_forecast_catalog.py`
+  - `git diff --check`
+  - direct Python checks showed `20260710_20` detail labels as `07-11 08-20`, `07-11 20-08`, `07-12 08-20`, and `20260711_08` detail labels as `07-11 20-08`, `07-12 08-20`, `07-12 20-08`.
+  - A Node normalization test using live `forecast-runs.json` produced six Shangrao runs: `20260711_20`, `20260711_14`, `20260711_08`, `20260711_02`, `20260710_20`, and pinned `20260710_02`; `20260711_02` had four frames after duplicate overview collapse.
+  - Live `https://iaplacs.xyz/?v=7555ecf2` and `https://iaplacs.xyz/shangrao/?v=7555ecf2` both loaded the `20260712-02` assets after Pages cache propagation.
+  - Live `https://iaplacs.xyz/app.js?v=20260712-02-7555ecf` contains `SHANGRAO_PINNED_RUN_IDS`, `normalizeShangraoRuns`, and `formatShangraoWindow`, with no `dblclick`/`handleViewerDoubleClick` match.
+  - Live `https://iaplacs.xyz/styles.css?v=20260712-02-7555ecf` contains the full-width image and hidden badge rules.
 
 ## Known Pitfalls
 
