@@ -26,6 +26,7 @@ ASSET_BASE_URL = os.environ.get(
 RUN_DIR_RE = re.compile(r"^wrf_montage_(\d{8}_\d{2})$")
 DETAIL_RE = re.compile(r"_combined_detail_p(\d{2})_")
 LEAD_RANGE_RE = re.compile(r"T(\d{2})_T(\d{2})", re.IGNORECASE)
+SHANGRAO_PINNED_RUN_IDS = {"20260710_02"}
 
 
 def main() -> None:
@@ -215,7 +216,12 @@ def build_wrf_runs() -> list[dict]:
         )
 
     runs.sort(key=lambda item: item["run_time"], reverse=True)
-    return runs[:MAX_RUNS]
+    latest_runs = runs[:MAX_RUNS]
+    selected = {run["id"]: run for run in latest_runs}
+    for run in runs:
+        if run["id"] in SHANGRAO_PINNED_RUN_IDS:
+            selected.setdefault(run["id"], run)
+    return sorted(selected.values(), key=lambda item: item["run_time"], reverse=True)
 
 
 def build_ningxia_runs() -> list[dict]:
@@ -336,28 +342,50 @@ def build_frames(run_id: str, run_dir: Path) -> list[dict]:
         key = stem
         if key.endswith("_grid"):
             key = key[: -len("_grid")]
+        if "_combined_overview_" in key:
+            key = f"{run_id}_combined_overview"
         groups.setdefault(key, []).append(path)
 
     frames = []
     for key, candidates in sorted(groups.items(), key=frame_sort_key):
-        chosen = min(candidates, key=lambda item: item.stat().st_size)
+        chosen = choose_frame_candidate(key, candidates)
         frame = frame_meta(run_id, key)
-        frame["file"] = forecast_asset_url(chosen)
+        frame["file"] = forecast_asset_url(
+            chosen,
+            force_relative=run_id in SHANGRAO_PINNED_RUN_IDS,
+        )
         frame["bytes"] = chosen.stat().st_size
         frames.append(frame)
     return frames
 
 
-def forecast_asset_url(path: Path) -> str:
+def choose_frame_candidate(key: str, candidates: list[Path]) -> Path:
+    if "_combined_overview" in key:
+        six_by_six = [path for path in candidates if "_6x6_" in path.name]
+        if six_by_six:
+            candidates = six_by_six
+    return min(candidates, key=lambda item: (frame_candidate_score(item), item.stat().st_size))
+
+
+def frame_candidate_score(path: Path) -> int:
+    suffix = path.suffix.lower()
+    if suffix == ".webp":
+        return 0
+    if suffix == ".png":
+        return 1
+    return 2
+
+
+def forecast_asset_url(path: Path, *, force_relative: bool = False) -> str:
     relative = path.relative_to(ROOT).as_posix()
-    if ASSET_BASE_URL:
+    if ASSET_BASE_URL and not force_relative:
         return f"{ASSET_BASE_URL}/{relative}"
     return f"./{relative}"
 
 
 def frame_sort_key(item: tuple[str, list[Path]]) -> tuple[int, int, str]:
     key = item[0]
-    if "_combined_overview_" in key:
+    if "_combined_overview" in key:
         return (0, 0, key)
     detail = DETAIL_RE.search(key)
     if detail:
@@ -366,24 +394,23 @@ def frame_sort_key(item: tuple[str, list[Path]]) -> tuple[int, int, str]:
 
 
 def frame_meta(run_id: str, key: str) -> dict:
-    if "_combined_overview_" in key:
+    if "_combined_overview" in key:
         return {
             "id": "overview",
             "lead": 48,
-            "lead_label": "总览 6x6",
-            "valid_label": "T13-T48 总览",
+            "lead_label": "总览",
+            "valid_label": "",
         }
 
     detail = DETAIL_RE.search(key)
     if detail:
         page = int(detail.group(1))
-        start = 13 + (page - 1) * 12
-        end = start + 11
+        lead = 24 + (page - 1) * 12
         return {
             "id": f"detail_p{page:02d}",
-            "lead": end,
-            "lead_label": f"细节 {page}/3",
-            "valid_label": f"T{start:02d}-T{end:02d}",
+            "lead": lead,
+            "lead_label": detail_window_label(run_id, page),
+            "valid_label": "",
         }
 
     return {
@@ -392,6 +419,13 @@ def frame_meta(run_id: str, key: str) -> dict:
         "lead_label": key.replace(run_id + "_combined_", ""),
         "valid_label": "组合图",
     }
+
+
+def detail_window_label(run_id: str, page: int) -> str:
+    run_time = parse_run_time(run_id)
+    start = run_time + timedelta(hours=12 + (page - 1) * 12)
+    end = run_time + timedelta(hours=24 + (page - 1) * 12)
+    return f"{start:%m-%d %H}-{end:%H}"
 
 
 def lead_label_from_name(file_name: str) -> str:

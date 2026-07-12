@@ -7,6 +7,7 @@ const IMAGE_PREFETCH_CONCURRENCY = 3;
 const ACCESS_PASSWORD = "123";
 const ACCESS_TOKEN_KEY = "iaplacs_access_token";
 const ACCESS_TOKEN_VALUE = "iaplacs_access_granted_v1";
+const SHANGRAO_PINNED_RUN_IDS = ["20260710_02"];
 
 const pageConfig = {
   service: document.body.dataset.service || "airport",
@@ -187,9 +188,11 @@ function normalizeForecastData(raw) {
 function limitCatalogRuns(catalog) {
   const services = Object.fromEntries(
     Object.entries(catalog.services || {}).map(([key, service]) => {
-      const runs = Array.isArray(service?.runs)
-        ? service.runs.slice(0, MAX_DISPLAY_RUNS)
-        : [];
+      const sourceRuns = Array.isArray(service?.runs) ? service.runs : [];
+      const runs =
+        key === "shangrao"
+          ? normalizeShangraoRuns(sourceRuns)
+          : sourceRuns.slice(0, MAX_DISPLAY_RUNS);
       const latestRunId = runs.some((run) => run.id === service?.latest_run)
         ? service.latest_run
         : runs[0]?.id || null;
@@ -197,6 +200,200 @@ function limitCatalogRuns(catalog) {
     }),
   );
   return { ...catalog, services };
+}
+
+function normalizeShangraoRuns(sourceRuns) {
+  const normalized = sourceRuns.map(normalizeShangraoRun);
+  const latestRuns = normalized.slice(0, MAX_DISPLAY_RUNS);
+  const runsById = new Map(latestRuns.map((run) => [run.id, run]));
+
+  for (const run of normalized) {
+    if (SHANGRAO_PINNED_RUN_IDS.includes(run.id) && !runsById.has(run.id)) {
+      runsById.set(run.id, run);
+    }
+  }
+
+  for (const runId of SHANGRAO_PINNED_RUN_IDS) {
+    if (!runsById.has(runId)) {
+      runsById.set(runId, createPinnedShangraoRun(runId));
+    }
+  }
+
+  return [...runsById.values()].sort((a, b) => {
+    const aTime = Date.parse(a.run_time || "");
+    const bTime = Date.parse(b.run_time || "");
+    return (Number.isFinite(bTime) ? bTime : 0) - (Number.isFinite(aTime) ? aTime : 0);
+  });
+}
+
+function normalizeShangraoRun(run) {
+  return {
+    ...run,
+    products: (run.products || []).map((product) => {
+      const frames = normalizeShangraoFrames(run, product.frames || []);
+      return {
+        ...product,
+        metrics: updateFrameCountMetric(product.metrics || [], frames.length),
+        frames,
+      };
+    }),
+  };
+}
+
+function updateFrameCountMetric(metrics, frameCount) {
+  let replaced = false;
+  const updated = metrics.map((metric) => {
+    if (metric.label !== "图像数量") return metric;
+    replaced = true;
+    return { ...metric, value: String(frameCount) };
+  });
+  if (!replaced) updated.push({ label: "图像数量", value: String(frameCount) });
+  return updated;
+}
+
+function normalizeShangraoFrames(run, frames) {
+  const overviewFrames = [];
+  const detailFrames = new Map();
+  const otherFrames = [];
+
+  for (const frame of frames) {
+    if (isShangraoOverviewFrame(frame)) {
+      overviewFrames.push(frame);
+      continue;
+    }
+    const page = shangraoDetailPage(frame);
+    if (page) {
+      const current = detailFrames.get(page);
+      if (!current || preferForecastFrame(frame, current)) detailFrames.set(page, frame);
+      continue;
+    }
+    otherFrames.push(frame);
+  }
+
+  const normalized = [];
+  if (overviewFrames.length) {
+    normalized.push({
+      ...overviewFrames.reduce((best, frame) => (preferForecastFrame(frame, best) ? frame : best)),
+      id: "overview",
+      lead_label: "总览",
+      valid_label: "",
+    });
+  }
+
+  [...detailFrames.entries()]
+    .sort(([a], [b]) => a - b)
+    .forEach(([page, frame]) => {
+      normalized.push({
+        ...frame,
+        id: `detail_p${String(page).padStart(2, "0")}`,
+        lead_label: formatShangraoWindow(run.run_time, page),
+        valid_label: "",
+      });
+    });
+
+  return normalized.concat(otherFrames);
+}
+
+function isShangraoOverviewFrame(frame) {
+  return /overview/i.test(`${frame?.id || ""} ${frame?.lead_label || ""} ${frame?.file || ""}`);
+}
+
+function shangraoDetailPage(frame) {
+  const value = `${frame?.id || ""} ${frame?.lead_label || ""} ${frame?.file || ""}`;
+  const match = value.match(/detail_p0?([1-3])|细节\s*([1-3])\/3/i);
+  if (!match) return 0;
+  return Number(match[1] || match[2] || 0);
+}
+
+function preferForecastFrame(candidate, current) {
+  const candidateFile = String(candidate?.file || "");
+  const currentFile = String(current?.file || "");
+  const candidateScore = forecastFramePreferenceScore(candidateFile);
+  const currentScore = forecastFramePreferenceScore(currentFile);
+  if (candidateScore !== currentScore) return candidateScore > currentScore;
+  return Number(candidate?.bytes || Infinity) < Number(current?.bytes || Infinity);
+}
+
+function forecastFramePreferenceScore(file) {
+  let score = 0;
+  if (/_6x6_/i.test(file)) score += 4;
+  if (/\.webp(?:\?|$)/i.test(file)) score += 2;
+  if (/\.png(?:\?|$)/i.test(file)) score += 1;
+  return score;
+}
+
+function formatShangraoWindow(runTime, page) {
+  const runDate = new Date(runTime || "");
+  if (Number.isNaN(runDate.getTime())) return `细节 ${page}/3`;
+  const start = addHours(runDate, 12 + (page - 1) * 12);
+  const end = addHours(runDate, 24 + (page - 1) * 12);
+  const startParts = bjtParts(start);
+  const endParts = bjtParts(end);
+  return `${twoDigits(startParts.month)}-${twoDigits(startParts.day)} ${twoDigits(startParts.hour)}-${twoDigits(endParts.hour)}`;
+}
+
+function addHours(date, hours) {
+  return new Date(date.getTime() + hours * 60 * 60 * 1000);
+}
+
+function bjtParts(date) {
+  const bjtDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+  return {
+    month: bjtDate.getUTCMonth() + 1,
+    day: bjtDate.getUTCDate(),
+    hour: bjtDate.getUTCHours(),
+  };
+}
+
+function twoDigits(value) {
+  return String(value).padStart(2, "0");
+}
+
+function createPinnedShangraoRun(runId) {
+  const runTime = parseRunId(runId);
+  const frameBase = `./data/current/maps/wrf_montage_${runId}`;
+  const product = {
+    id: "wrf_rain_montage",
+    title: "上饶 WRF 逐小时降水拼图",
+    category: "上饶预报",
+    unit: "mm",
+    color: "#0f68c8",
+    description: `上饶服务起报时次 ${runId}，包含总览图和分段细节图。`,
+    metrics: [
+      { label: "起报时次", value: runId.replace("_", " ") + " BJT" },
+      { label: "图像数量", value: "4" },
+      { label: "产品状态", value: "历史补充" },
+    ],
+    frames: [
+      {
+        id: "overview",
+        lead: 48,
+        lead_label: "总览",
+        valid_label: "",
+        file: `${frameBase}/${runId}_combined_overview_6x6_grid.webp`,
+      },
+      ...[1, 2, 3].map((page) => ({
+        id: `detail_p${String(page).padStart(2, "0")}`,
+        lead: 12 + page * 12,
+        lead_label: formatShangraoWindow(runTime, page),
+        valid_label: "",
+        file: `${frameBase}/${runId}_combined_detail_p${String(page).padStart(2, "0")}_4x3_grid.webp`,
+      })),
+    ],
+  };
+
+  return {
+    id: runId,
+    label: `${runId.slice(0, 4)}-${runId.slice(4, 6)}-${runId.slice(6, 8)} ${runId.slice(9, 11)}:00 BJT`,
+    run_time: runTime,
+    published_at: runTime,
+    summary: "WRF 逐小时降水拼图，共 4 张图",
+    products: [product],
+  };
+}
+
+function parseRunId(runId) {
+  return `${runId.slice(0, 4)}-${runId.slice(4, 6)}-${runId.slice(6, 8)}T${runId.slice(9, 11)}:00:00+08:00`;
 }
 
 function selectService(catalog) {
@@ -274,17 +471,18 @@ function render() {
   updateControls(product);
 
   const imageSrc = forecastFrameSource(run, frame);
-  const imageAlt = `${product.title} ${frame.lead_label}`;
+  const frameLabel = displayFrameLabel(frame);
+  const imageAlt = `${product.title} ${frameLabel}`;
   setText(els.productTitle, product.title);
   setText(els.productUnit, `${product.category || "预报产品"} | ${product.unit || "--"}`);
   if (els.forecastImage) {
     loadForecastImage(imageSrc, imageAlt);
   }
   if (els.imageLink) els.imageLink.href = imageSrc;
-  setText(els.leadLabel, frame.lead_label);
+  setText(els.leadLabel, frameLabel);
   setText(
     els.validTime,
-    pageConfig.service === "ningxia"
+    pageConfig.service === "ningxia" || pageConfig.service === "shangrao"
       ? ""
       : frame.valid_label || `有效时间 ${formatTime(frame.valid_time)}`,
   );
@@ -408,7 +606,7 @@ function renderLeads() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `lead-tab${index === state.leadIndex ? " is-active" : ""}`;
-    button.textContent = frame.lead_label;
+    button.textContent = displayFrameLabel(frame);
     button.addEventListener("click", () => {
       state.leadIndex = index;
       render();
@@ -440,9 +638,15 @@ function renderProductNote(run, product, frame) {
   const parts = [
     product.description,
     run.summary,
-    frame.valid_label || (frame.valid_time ? `有效时间 ${formatTime(frame.valid_time)}` : ""),
+    pageConfig.service === "shangrao"
+      ? ""
+      : frame.valid_label || (frame.valid_time ? `有效时间 ${formatTime(frame.valid_time)}` : ""),
   ].filter(Boolean);
   els.productNote.textContent = parts.join(" ");
+}
+
+function displayFrameLabel(frame) {
+  return frame?.lead_label || frame?.valid_label || "--";
 }
 
 function currentRun() {
@@ -906,7 +1110,7 @@ function syncViewerFrame(source, alt, { reset = false } = {}) {
   const entries = viewerEntries();
   const position = entries.length ? `${currentViewerEntryIndex(entries) + 1}/${entries.length}` : "--";
   viewerState.title.textContent = product?.title || "预报图";
-  viewerState.meta.textContent = [run?.label, position, frame?.lead_label, frame?.valid_label]
+  viewerState.meta.textContent = [run?.label, position, displayFrameLabel(frame), frame?.valid_label]
     .filter(Boolean)
     .join(" · ");
   updateViewerControls();
