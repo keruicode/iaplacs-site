@@ -258,7 +258,7 @@ def build_ningxia_frames(run_dir: Path, fragment: dict) -> list[dict]:
     for path in run_dir.iterdir():
         if path.suffix.lower() not in {".png", ".webp", ".jpg", ".jpeg"}:
             continue
-        groups.setdefault(path.stem, []).append(path)
+        groups.setdefault(frame_asset_stem(path), []).append(path)
 
     if not groups and fragment.get("file"):
         fallback = ROOT / fragment["file"].replace("./", "", 1)
@@ -271,7 +271,8 @@ def build_ningxia_frames(run_dir: Path, fragment: dict) -> list[dict]:
         existing = [path for path in candidates if path.exists()]
         if not existing:
             continue
-        path = choose_preview_candidate(existing)
+        path = choose_frame_candidate("", existing)
+        preview_path = choose_preview_candidate(existing)
         full_path = choose_full_candidate("", existing)
         if not path.exists():
             continue
@@ -283,6 +284,7 @@ def build_ningxia_frames(run_dir: Path, fragment: dict) -> list[dict]:
             "file": forecast_asset_url(path),
             "bytes": path.stat().st_size,
         }
+        add_preview_asset(frame, path, preview_path)
         add_full_asset(frame, path, full_path)
         if fragment_stem and path.stem == fragment_stem:
             valid_time = fragment.get("valid_time")
@@ -332,7 +334,7 @@ def build_frames(run_id: str, run_dir: Path) -> list[dict]:
     for path in run_dir.iterdir():
         if path.suffix.lower() not in {".png", ".webp", ".jpg", ".jpeg"}:
             continue
-        stem = path.stem
+        stem = frame_asset_stem(path)
         if not stem.startswith(run_id + "_combined_"):
             continue
         key = stem
@@ -349,6 +351,8 @@ def build_frames(run_id: str, run_dir: Path) -> list[dict]:
         frame = frame_meta(run_id, key)
         frame["file"] = forecast_asset_url(chosen)
         frame["bytes"] = chosen.stat().st_size
+        preview = choose_preview_candidate(candidates)
+        add_preview_asset(frame, chosen, preview)
         add_full_asset(frame, chosen, full)
         frames.append(frame)
     return frames
@@ -359,11 +363,18 @@ def choose_frame_candidate(key: str, candidates: list[Path]) -> Path:
         six_by_six = [path for path in candidates if "_6x6_" in path.name]
         if six_by_six:
             candidates = six_by_six
-    return choose_preview_candidate(candidates)
+    candidates = [path for path in candidates if not is_preview_asset(path)] or candidates
+    return min(candidates, key=lambda item: (frame_candidate_score(item), item.stat().st_size))
 
 
 def choose_preview_candidate(candidates: list[Path]) -> Path:
-    return min(candidates, key=lambda item: (frame_candidate_score(item), item.stat().st_size))
+    previews = [path for path in candidates if is_preview_asset(path)]
+    if previews:
+        return min(previews, key=lambda item: item.stat().st_size)
+    return min(
+        [path for path in candidates if not is_preview_asset(path)] or candidates,
+        key=lambda item: (frame_candidate_score(item), item.stat().st_size),
+    )
 
 
 def choose_full_candidate(key: str, candidates: list[Path]) -> Path:
@@ -371,10 +382,18 @@ def choose_full_candidate(key: str, candidates: list[Path]) -> Path:
         six_by_six = [path for path in candidates if "_6x6_" in path.name]
         if six_by_six:
             candidates = six_by_six
+    candidates = [path for path in candidates if not is_preview_asset(path)] or candidates
     pngs = [path for path in candidates if path.suffix.lower() == ".png"]
     if pngs:
         return max(pngs, key=lambda item: item.stat().st_size)
     return max(candidates, key=lambda item: item.stat().st_size)
+
+
+def add_preview_asset(frame: dict, main_path: Path, preview_path: Path) -> None:
+    if preview_path == main_path:
+        return
+    frame["preview_file"] = forecast_asset_url(preview_path)
+    frame["preview_bytes"] = preview_path.stat().st_size
 
 
 def add_full_asset(frame: dict, preview_path: Path, full_path: Path) -> None:
@@ -382,6 +401,15 @@ def add_full_asset(frame: dict, preview_path: Path, full_path: Path) -> None:
         return
     frame["full_file"] = forecast_asset_url(full_path)
     frame["full_bytes"] = full_path.stat().st_size
+
+
+def is_preview_asset(path: Path) -> bool:
+    return path.stem.endswith(".preview")
+
+
+def frame_asset_stem(path: Path) -> str:
+    stem = path.stem
+    return stem[: -len(".preview")] if stem.endswith(".preview") else stem
 
 
 def frame_candidate_score(path: Path) -> int:

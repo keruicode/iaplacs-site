@@ -104,6 +104,7 @@ python3 tools/build_forecast_catalog.py
 Keep images small and web-friendly:
 
 - WebP preferred for maps;
+- `.preview.webp` files are used for first-screen display;
 - PNG allowed when WebP is not available;
 - run `tools/optimize_forecast_images.sh` before building the catalog;
 - keep decoded dimensions bounded for mobile browsers, not only compressed file size;

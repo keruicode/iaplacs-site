@@ -70,6 +70,7 @@ const viewerState = {
   meta: null,
   zoomLabel: null,
   scale: 1,
+  fitScale: 1,
   x: 0,
   y: 0,
   pointers: new Map(),
@@ -1361,7 +1362,7 @@ function handleViewerPointerEnd(event) {
     event.pointerType === "touch" &&
     viewerState.pointers.size === 1 &&
     gesture?.type === "drag" &&
-    viewerState.scale <= 1.05 &&
+    viewerState.scale <= viewerMinScale() * 1.05 &&
     Math.abs(swipeX) > 56 &&
     Math.abs(swipeX) > Math.abs(swipeY) * 1.2;
 
@@ -1409,8 +1410,8 @@ function updatePinchGesture() {
   const currentCenter = midpoint(first, second);
   const nextScale = clamp(
     gesture.startScale * (distance(first, second) / gesture.distance),
-    1,
-    MAX_VIEWER_SCALE,
+    viewerMinScale(),
+    viewerMaxScale(),
   );
   const startPoint = viewerPoint(gesture.center.x, gesture.center.y);
   const currentPoint = viewerPoint(currentCenter.x, currentCenter.y);
@@ -1423,7 +1424,7 @@ function updatePinchGesture() {
 
 function zoomViewer(nextScale, clientX, clientY) {
   const oldScale = viewerState.scale;
-  const scale = clamp(nextScale, 1, MAX_VIEWER_SCALE);
+  const scale = clamp(nextScale, viewerMinScale(), viewerMaxScale());
   const point = Number.isFinite(clientX) && Number.isFinite(clientY)
     ? viewerPoint(clientX, clientY)
     : { x: 0, y: 0 };
@@ -1431,7 +1432,7 @@ function zoomViewer(nextScale, clientX, clientY) {
   viewerState.x = point.x - (point.x - viewerState.x) * ratio;
   viewerState.y = point.y - (point.y - viewerState.y) * ratio;
   viewerState.scale = scale;
-  if (scale === 1) {
+  if (scale <= viewerMinScale() * 1.001) {
     viewerState.x = 0;
     viewerState.y = 0;
   }
@@ -1439,7 +1440,8 @@ function zoomViewer(nextScale, clientX, clientY) {
 }
 
 function resetViewer() {
-  viewerState.scale = 1;
+  viewerState.fitScale = calculateViewerFitScale();
+  viewerState.scale = viewerMinScale();
   viewerState.x = 0;
   viewerState.y = 0;
   applyViewerTransform();
@@ -1447,13 +1449,15 @@ function resetViewer() {
 
 function applyViewerTransform() {
   if (!viewerState.image || !viewerState.stage) return;
+  viewerState.fitScale = calculateViewerFitScale();
+  viewerState.scale = clamp(viewerState.scale, viewerMinScale(), viewerMaxScale());
   clampViewerTranslation();
   viewerState.image.style.transform =
     `translate3d(${viewerState.x}px, ${viewerState.y}px, 0) scale(${viewerState.scale})`;
   if (viewerState.zoomLabel) {
-    viewerState.zoomLabel.textContent = `${Math.round(viewerState.scale * 100)}%`;
+    viewerState.zoomLabel.textContent = `${Math.round((viewerState.scale / viewerMinScale()) * 100)}%`;
   }
-  viewerState.stage.classList.toggle("is-zoomed", viewerState.scale > 1.01);
+  viewerState.stage.classList.toggle("is-zoomed", viewerState.scale > viewerMinScale() * 1.01);
 }
 
 function clampViewerTranslation() {
@@ -1463,6 +1467,23 @@ function clampViewerTranslation() {
   const maxY = Math.max(0, (imageHeight - viewerState.stage.clientHeight) / 2);
   viewerState.x = clamp(viewerState.x, -maxX, maxX);
   viewerState.y = clamp(viewerState.y, -maxY, maxY);
+}
+
+function calculateViewerFitScale() {
+  if (!viewerState.image || !viewerState.stage) return 1;
+  const naturalWidth = viewerState.image.naturalWidth || viewerState.image.offsetWidth || 1;
+  const naturalHeight = viewerState.image.naturalHeight || viewerState.image.offsetHeight || 1;
+  const stageWidth = Math.max(1, viewerState.stage.clientWidth - 16);
+  const stageHeight = Math.max(1, viewerState.stage.clientHeight - 16);
+  return Math.min(1, stageWidth / naturalWidth, stageHeight / naturalHeight);
+}
+
+function viewerMinScale() {
+  return Math.max(0.01, viewerState.fitScale || calculateViewerFitScale());
+}
+
+function viewerMaxScale() {
+  return Math.max(2, viewerMinScale() * MAX_VIEWER_SCALE);
 }
 
 function viewerPoint(clientX, clientY) {

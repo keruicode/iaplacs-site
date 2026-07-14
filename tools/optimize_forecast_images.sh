@@ -34,14 +34,36 @@ optimize_image() {
   echo "optimized ${output#$ROOT/}"
 }
 
+make_preview_image() {
+  local source="$1"
+  local output="${source%.*}.preview.webp"
+
+  if [[ "$FORCE" != "1" && -f "$output" && ! "$source" -nt "$output" ]]; then
+    return
+  fi
+
+  "${IMAGE_TOOL[@]}" "$source" \
+    -resize "1400x1400>" \
+    -strip \
+    -quality 78 \
+    -define webp:method=6 \
+    -define webp:use-sharp-yuv=true \
+    "$output"
+  touch -r "$source" "$output"
+  echo "preview ${output#$ROOT/}"
+}
+
 while IFS= read -r -d '' source; do
   optimize_image "$source" 3200
+  make_preview_image "$source"
 done < <(find "$MAPS_DIR" -type f -path "*/worknx_summary_*/*.png" -print0)
 
 while IFS= read -r -d '' source; do
   optimize_image "$source" 3200
+  make_preview_image "$source"
 done < <(find "$MAPS_DIR" -type f -path "*/wrf_montage_*/*overview*.png" -print0)
 
 while IFS= read -r -d '' source; do
   optimize_image "$source" 2800
+  make_preview_image "$source"
 done < <(find "$MAPS_DIR" -type f -path "*/wrf_montage_*/*detail*.png" -print0)

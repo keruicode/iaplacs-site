@@ -13,10 +13,10 @@ The IAP server only needs a scheduled publishing job:
 5. commit and push to GitHub.
 
 In production, GitHub Pages is the page and catalog origin. Forecast PNG/WebP
-images are uploaded to Alibaba OSS before the catalog is generated, and
-`forecast-runs.json` points Ningxia and Shangrao frames to the OSS origin. The
-GitHub image copies remain useful as repository fallback, but normal browser
-image requests should go to OSS.
+images plus small `.preview.webp` first-screen images are uploaded to Alibaba
+OSS before the catalog is generated, and `forecast-runs.json` points Ningxia and
+Shangrao frames to the OSS origin. The GitHub image copies remain useful as
+repository fallback, but normal browser image requests should go to OSS.
 
 The frontend then preloads the retained images for the active service with
 three concurrent requests. It keeps successful images in memory and in a
