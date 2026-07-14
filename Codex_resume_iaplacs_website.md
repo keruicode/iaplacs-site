@@ -837,6 +837,51 @@ Official references checked during planning:
   - Live `https://iaplacs.xyz/docs/repository-structure.md?v=46145d6` returned the new repository structure document.
 - Working-tree caution remains: local `main` is still behind/ahead relative to server-published remote history and `data/current` has pre-existing staged/unstaged churn. Do not use `git add .`; compare code files against `origin/main` and stage only intended files.
 
+## Safari Viewer Quality And Fast Preview Backfill
+
+- User reported that fullscreen image quality was fixed in Chrome but still looked wrong in Safari, and that a cold Chrome visit still took roughly 5-6 seconds before the selected run image appeared. The requested behavior is: render the clicked/current run quickly first, then queue other retained service images for background caching.
+- Site-runtime commits pushed to `origin/main` during this follow-up:
+  - `9abd7f0 Improve forecast image preview loading`
+  - `680deb2 Reduce forecast preview image weight`
+  - `d4bb429 Fix forced preview upload timestamps`
+  - final live data commit after backfill: `c2d66a3 Update WORK_nx summary 20260713_12`
+- Frontend changes:
+  - `app.js` now uses `preview_file || file` for normal page display, so the first visible image is a small `.preview.webp` when the catalog provides one.
+  - The active image is assigned directly to `img.src` first; caching starts after active image load instead of blocking the first render behind `fetch -> blob -> objectURL`.
+  - `scheduleServiceImageWarmup()` queues the remaining images for the active service after the selected image has loaded, and avoids competing with the active image first.
+  - Cache Storage keys are normalized to persistent absolute URLs, so cached preview/full images can be reused across route visits without object-URL key drift.
+  - Fullscreen viewer image source still prefers the PNG original through `full_file`, `download_file`, `png_file`, or inferred `.png`; preview WebP is only for the page thumbnail/main display.
+  - Safari quality fix: viewer sizing now uses the image's intrinsic natural dimensions plus transform scale, and CSS no longer constrains `.viewer-image` with `max-width`/`max-height`. This avoids Safari scaling an already downsampled rendered layer.
+  - Viewer keeps the left-side `下载原图` button.
+- Catalog/generator changes:
+  - `tools/build_forecast_catalog.py` now groups `.preview.webp` derivatives with their PNG/WebP originals, emits `preview_file`/`preview_bytes`, and keeps `full_file`/`full_bytes` for high-quality viewer/download paths.
+  - WRF/Shangrao overview grouping continues to de-duplicate overview candidates and prefer the 6x6 overview where available.
+- Preview optimizer changes:
+  - `tools/optimize_forecast_images.sh` now creates `.preview.webp` at max `1100x1100>` and quality `70`, which reduced Ningxia previews to about 450 KB and current Shangrao overviews/details to roughly 288-776 KB.
+  - Forced preview regeneration now touches output mtime to the current time when `FORCE=1`; normal non-forced derivative generation still preserves source mtime.
+- Server publisher changes were copied to both local source and server runtime:
+  - `/Volumes/storage/江西VPN-每日预报/remote/publish_worknx_summary_to_github.sh`
+  - `/Volumes/storage/江西VPN-每日预报/remote/publish_wrf_montage_to_github.sh`
+  - `login02:/data1/elpt_2022_00083/kerui/Website/publish_worknx_summary_to_github.sh`
+  - `login02:/data1/elpt_2022_00083/kerui/Website/publish_wrf_montage_to_github.sh`
+  - Both publishers now generate/upload `.preview.webp`, honor `IAPLACS_PREVIEW_FORCE=1`, and use the fixed forced-output mtime so `ossutil cp -u` does not skip regenerated smaller previews.
+- Backfill completed:
+  - Ningxia retained runs: `20260713_12`, `20260713_06`, `20260713_00`, `20260712_18`, `20260712_12`; each has `1/1` preview.
+  - Shangrao retained runs: `20260713_02`, `20260712_20`, `20260712_14`, `20260712_08`, `20260712_02`; each has `4/4` previews.
+- Verification passed:
+  - `node --check app.js`
+  - `PYTHONPYCACHEPREFIX=/private/tmp/iaplacs_pycache_safari_preview python3 -m py_compile tools/build_forecast_catalog.py`
+  - `bash -n tools/optimize_forecast_images.sh`
+  - `bash -n` for both local `/Volumes/storage/江西VPN-每日预报/remote/*.sh` publisher scripts
+  - `bash -n` for both server runtime publisher scripts under `/data1/elpt_2022_00083/kerui/Website`
+  - `git diff --check`
+  - live catalog `https://iaplacs.xyz/data/current/forecast-runs.json?v=20260714-final` showed Ningxia `5` runs with preview bytes `449694`, `455010`, `451682`, `455002`, `456927`; Shangrao `5` runs with `4/4` previews per run.
+  - OSS HEAD for latest Ningxia preview returned `HTTP/1.1 200 OK`, `Content-Type: image/webp`, `Content-Length: 449694`, `Cache-Control: public,max-age=604800`.
+  - OSS HEAD for latest Shangrao overview preview returned `HTTP/1.1 200 OK`, `Content-Type: image/webp`, `Content-Length: 652702`, `Cache-Control: public,max-age=604800`.
+  - Direct download timing from this local machine for latest Ningxia preview was `preview size=449694 time=2.779575`.
+- Browser-tool limitation: the user requested local browser testing through `[@电脑]`, but the Chrome extension control reported `Browser is not available: extension`, and Computer Use startup reported `Sky Computer Use service startup request failed`. Real Safari/Chrome GUI cache-clearing verification could not be completed in this Codex session; validation was done through code checks, live GitHub Pages catalog, and direct OSS object checks instead.
+- Working-tree caution remains: `origin/main` is current at `c2d66a3`, but the local checkout still reports branch ahead/behind and `data/current` churn because forecast data is also published by the server. Continue using temporary-index or targeted staging for code/doc changes, and avoid `git add .`.
+
 ## Known Pitfalls
 
 - If the target server is in mainland China and `iaplacs.xyz` resolves to it, ICP filing is required before normal public access.
