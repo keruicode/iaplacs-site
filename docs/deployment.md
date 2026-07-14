@@ -18,12 +18,17 @@ OSS before the catalog is generated, and `forecast-runs.json` points Ningxia and
 Shangrao frames to the OSS origin. The GitHub image copies remain useful as
 repository fallback, but normal browser image requests should go to OSS.
 
-The frontend then preloads the retained images for the active service with
-three concurrent requests. It keeps successful images in memory and in a
-versioned browser Cache Storage cache. Do not add a changing timestamp to the
-image URL on every render; the publication version in the catalog is what lets
-unchanged images remain locally cacheable while new products invalidate only
-their own URLs.
+After the first image renders, the frontend uses `requestIdleCallback` (with a
+timer fallback) to warm the active service's preview and medium viewer images
+one at a time using native image requests. This is intentionally not a
+cross-origin `fetch`/Blob or Cache Storage workflow: OSS can serve an image to
+an `<img>` without granting JavaScript CORS access. Native requests reuse the
+browser HTTP cache when the viewer opens, while their temporary `Image` objects
+are released instead of retaining every decoded 3200px bitmap in memory. The
+warmup is skipped when Save-Data or a 2G connection is reported. Do not add a
+changing timestamp to every render; the publication version in the catalog is
+what lets unchanged images remain locally cacheable while new products
+invalidate only their own URLs.
 
 GitHub Pages then serves the updated static files.
 

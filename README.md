@@ -76,13 +76,14 @@ data/current/maps/worknx_summary_YYYYMMDD_HH/
 `worknx_summary_*` is exposed on `/` and `/ningxia/`; `wrf_montage_*` is exposed
 only on `/shangrao/`. The airport service catalog is available at `/airpots/`.
 
-When a service page opens, the frontend preloads all images in its retained
-catalog with a small concurrency limit. Images are reused through in-memory
-Object URLs during the session and through the browser's Cache Storage across
-reloads. The cache key includes the run publication version, so a newly
-published image gets fetched while unchanged images are reused locally. The
-full-screen viewer can move left/right through every image in the current
-service, including images from other retained runs.
+After the first forecast image is shown, the frontend uses the browser's idle
+time to warm the current service's image URLs one at a time. It prioritizes the
+medium viewer WebP before other retained runs, so a later click normally uses
+the browser HTTP cache without keeping every decoded large bitmap in memory.
+The cache-busted publication version means new products fetch afresh while
+unchanged products remain reusable. The warmup is skipped for Save-Data and
+2G connections. The full-screen viewer can move left/right through every image
+in the current service, including images from other retained runs.
 
 Keep the existing run directories when publishing a new one. Removing
 `data/current` before every publish leaves only one selectable initial time; the catalog

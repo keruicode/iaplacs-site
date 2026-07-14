@@ -2,9 +2,8 @@ const DEFAULT_REFRESH_MS = 2 * 60 * 1000;
 const MAX_DISPLAY_RUNS = 5;
 const MAX_VIEWER_SCALE = 6;
 const VIEWER_ZOOM_STEP = 1.25;
-const IMAGE_CACHE_NAME = "iaplacs-forecast-images-v1";
-const IMAGE_PREFETCH_CONCURRENCY = 3;
-const ACTIVE_IMAGE_CACHE_DELAY_MS = 400;
+const IMAGE_PREFETCH_CONCURRENCY = 1;
+const IMAGE_PREFETCH_IDLE_TIMEOUT_MS = 3000;
 const ACCESS_PASSWORD = "123";
 const ACCESS_TOKEN_KEY = "iaplacs_access_token";
 const ACCESS_TOKEN_VALUE = "iaplacs_access_granted_v1";
@@ -34,10 +33,8 @@ const state = {
   imageStatus: "idle",
   prefetchSignature: "",
   prefetchTimer: null,
+  prefetchIdleId: null,
 };
-
-const imageResourceCache = new Map();
-let persistentImageCachePromise = null;
 
 const els = {
   updateLabel: document.querySelector("#updateLabel"),
@@ -119,7 +116,6 @@ async function loadForecast({ preserveSelection }) {
     state.runIndex = chooseRunIndex(service, hasNewLatestRun ? undefined : previous.runId);
     state.productIndex = chooseProductIndex(currentRun(), previous.productId);
     state.leadIndex = chooseLeadIndex(currentProduct(), previous.frameId);
-    syncForecastImageCache(catalog);
     render();
   } catch (error) {
     if (state.catalog) {
@@ -653,62 +649,62 @@ function pngVariantOfFile(file) {
   return file.replace(/\.webp(?=$|[?#])/i, ".png");
 }
 
-function collectServiceImageSources(service) {
+function collectServicePreloadSources(service) {
   const sources = new Set();
+  const appendFrameSources = (run, frame) => {
+    const viewerSource = viewerFrameSource(run, frame);
+    const previewSource = forecastFrameSource(run, frame);
+    if (viewerSource) sources.add(viewerSource);
+    if (previewSource) sources.add(previewSource);
+  };
+
+  const activeRun = currentRun();
+  const activeFrame = currentFrame();
+  if (activeRun && activeFrame) appendFrameSources(activeRun, activeFrame);
+
   for (const run of service?.runs || []) {
     for (const product of run.products || []) {
-      for (const frame of product.frames || []) {
-        const source = forecastFrameSource(run, frame);
-        if (source) sources.add(source);
-      }
+      for (const frame of product.frames || []) appendFrameSources(run, frame);
     }
   }
   return [...sources];
 }
 
-function collectCatalogImageSources(catalog) {
-  const sources = new Set();
-  for (const service of Object.values(catalog?.services || {})) {
-    collectServiceImageSources(service).forEach((source) => sources.add(source));
-  }
-  return sources;
-}
-
-function syncForecastImageCache(catalog) {
-  const desiredSources = collectCatalogImageSources(catalog);
-  for (const [source, entry] of imageResourceCache) {
-    if (desiredSources.has(source) || !entry.objectUrl) continue;
-    URL.revokeObjectURL(entry.objectUrl);
-    imageResourceCache.delete(source);
-  }
-  void prunePersistentImageCache(desiredSources);
-}
-
-function scheduleServiceImageWarmup(service, activeSource) {
+function scheduleServiceImageWarmup(service) {
   if (state.prefetchTimer) window.clearTimeout(state.prefetchTimer);
+  if (state.prefetchIdleId && "cancelIdleCallback" in window) {
+    window.cancelIdleCallback(state.prefetchIdleId);
+  }
   state.prefetchTimer = window.setTimeout(() => {
     state.prefetchTimer = null;
-    warmServiceImages(service, activeSource);
-  }, ACTIVE_IMAGE_CACHE_DELAY_MS);
+    const warmup = () => {
+      state.prefetchIdleId = null;
+      warmServiceImages(service);
+    };
+    if ("requestIdleCallback" in window) {
+      state.prefetchIdleId = window.requestIdleCallback(warmup, {
+        timeout: IMAGE_PREFETCH_IDLE_TIMEOUT_MS,
+      });
+      return;
+    }
+    warmup();
+  }, 700);
 }
 
-function warmServiceImages(service, activeSource) {
-  const sources = collectServiceImageSources(service);
+function warmServiceImages(service) {
+  if (!shouldWarmImages()) return;
+  const sources = collectServicePreloadSources(service);
   const signature = sources.join("\n");
   if (state.prefetchSignature === signature) return;
   state.prefetchSignature = signature;
 
-  const orderedSources = sources.filter((source) => source && source !== activeSource);
+  const orderedSources = sources.filter(Boolean);
   let cursor = 0;
   const worker = async () => {
     while (cursor < orderedSources.length) {
       const source = orderedSources[cursor];
       cursor += 1;
-      try {
-        await getImageResource(source);
-      } catch (error) {
-        console.warn("forecast image prefetch failed", source, error);
-      }
+      await preloadImageSource(source);
     }
   };
 
@@ -716,105 +712,19 @@ function warmServiceImages(service, activeSource) {
   void Promise.all(Array.from({ length: workerCount }, () => worker()));
 }
 
-function openPersistentImageCache() {
-  if (!("caches" in window)) return Promise.resolve(null);
-  if (!persistentImageCachePromise) {
-    persistentImageCachePromise = window.caches
-      .open(IMAGE_CACHE_NAME)
-      .catch((error) => {
-        console.warn("persistent forecast image cache unavailable", error);
-        return null;
-      });
-  }
-  return persistentImageCachePromise;
+function shouldWarmImages() {
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (!connection) return true;
+  return !connection.saveData && !/^(slow-2g|2g)$/.test(connection.effectiveType || "");
 }
 
-async function prunePersistentImageCache(desiredSources) {
-  const cache = await openPersistentImageCache();
-  if (!cache) return;
-  const desiredCacheKeys = new Set([...desiredSources].map(persistentCacheKey));
-  try {
-    const requests = await cache.keys();
-    await Promise.all(
-      requests
-        .filter((request) => !desiredCacheKeys.has(request.url))
-        .map((request) => cache.delete(request)),
-    );
-  } catch (error) {
-    console.warn("persistent forecast image cache cleanup failed", error);
-  }
-}
-
-function getImageResource(source) {
-  const existing = imageResourceCache.get(source);
-  if (existing) return existing.promise;
-
-  const entry = { objectUrl: null, promise: null };
-  entry.promise = readForecastImage(source)
-    .then((blob) => {
-      entry.objectUrl = URL.createObjectURL(blob);
-      return entry.objectUrl;
-    })
-    .catch((error) => {
-      if (imageResourceCache.get(source) === entry) imageResourceCache.delete(source);
-      throw error;
-    });
-  imageResourceCache.set(source, entry);
-  return entry.promise;
-}
-
-function invalidateImageResource(source) {
-  const entry = imageResourceCache.get(source);
-  if (!entry) return;
-  if (entry.objectUrl) URL.revokeObjectURL(entry.objectUrl);
-  imageResourceCache.delete(source);
-}
-
-async function readForecastImage(source) {
-  const persistentCache = await openPersistentImageCache();
-  const cacheKey = persistentCacheKey(source);
-  if (persistentCache) {
-    try {
-      const cachedResponse = await persistentCache.match(cacheKey);
-      if (cachedResponse) return cachedResponse.blob();
-    } catch (error) {
-      await persistentCache.delete(cacheKey).catch(() => {});
-      console.warn("persistent forecast image cache read failed", source, error);
-    }
-  }
-
-  let response = null;
-  let lastError = null;
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    const requestUrl = attempt > 0 ? withRetryVersion(source, attempt) : source;
-    try {
-      response = await fetch(requestUrl, {
-        cache: attempt > 0 ? "no-store" : "force-cache",
-      });
-      if (response.ok) break;
-      lastError = new Error(`${requestUrl} ${response.status}`);
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  if (!response?.ok) throw lastError || new Error(`image request failed: ${source}`);
-
-  const cacheResponse = persistentCache ? response.clone() : null;
-  const blob = await response.blob();
-  if (persistentCache && cacheResponse) {
-    persistentCache.put(cacheKey, cacheResponse).catch((error) => {
-      console.warn("persistent forecast image cache write failed", source, error);
-    });
-  }
-  return blob;
-}
-
-function persistentCacheKey(source) {
-  try {
-    return new URL(source, window.location.href).href;
-  } catch (error) {
-    return source;
-  }
+function preloadImageSource(source) {
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.decoding = "async";
+    image.onload = image.onerror = () => resolve();
+    image.src = source;
+  });
 }
 
 function stepLead(delta) {
@@ -868,33 +778,19 @@ function loadForecastImage(source, alt) {
 }
 
 async function resolveForecastImage({ source, requestId, attempt }) {
-  const cachedObjectUrl = cachedImageObjectUrl(source);
-  const displaySource =
-    attempt > 0 ? withRetryVersion(source, attempt) : cachedObjectUrl || source;
+  const displaySource = attempt > 0 ? withRetryVersion(source, attempt) : source;
 
   els.forecastImage.onload = () => {
     if (requestId !== state.imageRequestId) return;
     state.imageStatus = "ready";
     setImageState("ready");
-    scheduleServiceImageWarmup(state.service, source);
-    window.setTimeout(() => {
-      if (state.imageSource !== source) return;
-      getImageResource(source).catch((error) => {
-        console.warn("active forecast image cache write failed", source, error);
-      });
-    }, ACTIVE_IMAGE_CACHE_DELAY_MS);
+    scheduleServiceImageWarmup(state.service);
   };
   els.forecastImage.onerror = () => {
     if (requestId !== state.imageRequestId) return;
-    invalidateImageResource(source);
     retryForecastImage({ source, requestId, attempt });
   };
   els.forecastImage.src = displaySource;
-}
-
-function cachedImageObjectUrl(source) {
-  const entry = imageResourceCache.get(source);
-  return entry?.objectUrl || "";
 }
 
 function retryForecastImage({ source, requestId, attempt }) {
@@ -1211,42 +1107,12 @@ function handleViewerAction(event) {
   if (action === "zoom-out") zoomViewer(viewerState.scale / VIEWER_ZOOM_STEP);
 }
 
-async function handleViewerDownload(event) {
-  event.preventDefault();
-  const source = viewerState.downloadSource || viewerState.source;
-  if (!source) return;
-  const link = event.currentTarget;
-  link.classList.add("is-loading");
-  link.setAttribute("aria-busy", "true");
-
-  try {
-    const objectUrl = await getImageResource(source);
-    triggerDownload(objectUrl, viewerState.downloadName || "iaplacs-forecast.png");
-  } catch (error) {
-    console.warn("viewer image download failed, opening source", error);
-    window.open(source, "_blank", "noopener,noreferrer");
-  } finally {
-    link.classList.remove("is-loading");
-    link.removeAttribute("aria-busy");
-  }
-}
-
 function updateViewerDownload(source, name) {
   viewerState.downloadSource = source;
   viewerState.downloadName = name || "iaplacs-forecast.png";
   if (!viewerState.downloadLink) return;
   viewerState.downloadLink.href = source || "#";
   viewerState.downloadLink.download = viewerState.downloadName;
-}
-
-function triggerDownload(href, fileName) {
-  const link = document.createElement("a");
-  link.href = href;
-  link.download = fileName;
-  link.rel = "noreferrer";
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
 }
 
 function imageDownloadName(run, product, frame, source) {
@@ -1547,14 +1413,6 @@ document.addEventListener("visibilitychange", () => {
     loadForecast({ preserveSelection: true });
   }
 });
-window.addEventListener("pagehide", (event) => {
-  if (event.persisted) return;
-  for (const entry of imageResourceCache.values()) {
-    if (entry.objectUrl) URL.revokeObjectURL(entry.objectUrl);
-  }
-  imageResourceCache.clear();
-});
-
 if (ensureAccess()) init();
 
 function ensureAccess() {
