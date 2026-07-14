@@ -22,6 +22,16 @@ codex resume 019f54bd-2333-7323-a89d-92bf699aec95
 code resume 019f54bd-2333-7323-a89d-92bf699aec95
 ```
 
+Current fullscreen-viewer repair:
+
+```bash
+codex resume 019f5ef8-ca95-7bd0-b4dd-0945145df7f0
+```
+
+```bash
+code resume 019f5ef8-ca95-7bd0-b4dd-0945145df7f0
+```
+
 ## Thread
 
 - Thread ID: `019f472c-9bd3-7222-9160-5fa0162a1249`
@@ -898,7 +908,8 @@ Official references checked during planning:
   - `node --check app.js`
   - `git diff --check`
   - Computer Use opened the real `iaplacs.xyz` Ningxia fullscreen viewer and confirmed the viewer was present with its source URL. The local network then became DNS-unavailable for new OSS requests, so the final post-deploy browser image pass must be repeated after the current Chrome/network outage clears.
-- Current status: code and cache-busted entry points are ready for a targeted temporary-index deployment; do not stage concurrent `data/current` changes.
+- Deployment: isolated runtime commit `5eef25d493dca287859331756861939d3b51ad74` (`Fix fullscreen forecast viewer loading`) was pushed to `origin/main` after `a1226a3`, using a temporary index. It includes only `app.js`, the four HTML entry points, and this resume file; no concurrent `data/current` changes were published.
+- Current status: production now serves the repair once GitHub Pages propagates `app.js?v=20260714-04`. Do not stage concurrent `data/current` changes.
 
 ## Known Pitfalls
 
