@@ -43,9 +43,9 @@ make_preview_image() {
   fi
 
   "${IMAGE_TOOL[@]}" "$source" \
-    -resize "1400x1400>" \
+    -resize "1100x1100>" \
     -strip \
-    -quality 78 \
+    -quality 70 \
     -define webp:method=6 \
     -define webp:use-sharp-yuv=true \
     "$output"
