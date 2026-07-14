@@ -7,6 +7,8 @@ const IMAGE_PREFETCH_CONCURRENCY = 3;
 const ACCESS_PASSWORD = "123";
 const ACCESS_TOKEN_KEY = "iaplacs_access_token";
 const ACCESS_TOKEN_VALUE = "iaplacs_access_granted_v1";
+const NINGXIA_PRODUCT_TITLE = "降水预报图集";
+const NINGXIA_PRODUCT_DESCRIPTION = "WORK_nx 目录下的降水预报图集，按起报时次手动归档。";
 
 const pageConfig = {
   service: document.body.dataset.service || "airport",
@@ -191,6 +193,8 @@ function limitCatalogRuns(catalog) {
       const runs =
         key === "shangrao"
           ? normalizeShangraoRuns(sourceRuns)
+          : key === "ningxia"
+            ? sourceRuns.map(normalizeNingxiaRun).slice(0, MAX_DISPLAY_RUNS)
           : sourceRuns.slice(0, MAX_DISPLAY_RUNS);
       const latestRunId = runs.some((run) => run.id === service?.latest_run)
         ? service.latest_run
@@ -199,6 +203,17 @@ function limitCatalogRuns(catalog) {
     }),
   );
   return { ...catalog, services };
+}
+
+function normalizeNingxiaRun(run) {
+  return {
+    ...run,
+    products: (run.products || []).map((product) => ({
+      ...product,
+      title: NINGXIA_PRODUCT_TITLE,
+      description: NINGXIA_PRODUCT_DESCRIPTION,
+    })),
+  };
 }
 
 function normalizeShangraoRuns(sourceRuns) {

@@ -294,11 +294,11 @@ def build_ningxia_frames(run_dir: Path, fragment: dict) -> list[dict]:
 def build_ningxia_product(run_id: str, frames: list[dict], generated_at: str) -> dict:
     return {
         "id": "ningxia_precip_series",
-        "title": "宁夏降水预报图集",
+        "title": "降水预报图集",
         "category": "宁夏预报",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": "WORK_nx 生成的宁夏区域降水预报图集，按起报时次自动归档。",
+        "description": "WORK_nx 目录下的降水预报图集，按起报时次手动归档。",
         "metrics": [
             {"label": "起报时次", "value": run_id.replace("_", " ") + " UTC"},
             {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},
