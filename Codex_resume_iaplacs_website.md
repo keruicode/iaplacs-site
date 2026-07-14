@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-12 18:55 CST
+Last updated: 2026-07-14 00:00 CST
 
 ## Resume Commands
 
@@ -26,6 +26,8 @@ code resume 019f54bd-2333-7323-a89d-92bf699aec95
 
 - Thread ID: `019f472c-9bd3-7222-9160-5fa0162a1249`
 - Session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/09/rollout-2026-07-09T21-58-53-019f472c-9bd3-7222-9160-5fa0162a1249.jsonl`
+- Latest diagnostic follow-up thread ID: `019f54bd-2333-7323-a89d-92bf699aec95`
+- Latest diagnostic session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/12/rollout-2026-07-12T13-11-49-019f54bd-2333-7323-a89d-92bf699aec95.jsonl`
 - Working directory: `/Users/xiaoxiaotu/_01_IAP/Website`
 
 ## User Goal
@@ -754,8 +756,15 @@ Official references checked during planning:
   `https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260710_00/Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-10_00_00.webp`.
 - Public HEAD check for that `20260710_00` OSS object returned `HTTP/1.1 403 Forbidden` with OSS `AccessDenied` and message `You have no right to access this object because of bucket acl.`
 - Public HEAD checks for newer retained objects such as `worknx_summary_20260711_18/...webp`, `worknx_summary_20260711_00/...webp`, and `wrf_montage_20260712_02/...webp` returned `HTTP/1.1 200 OK`. This isolates the Ningxia `20260710_00` problem to old object ACL/public-read state, not a missing catalog entry or whole-bucket outage.
-- IAP `login02` was reachable at `10.64.201.2`; `~/bin/ossutil`, `~/.iaplacs-oss.env`, `~/bin/prune_iaplacs_oss.sh`, and `~/iaplacs-site` exist. `ossutil help set-acl` confirmed `ossutil set-acl oss://bucket/object public-read` is supported. Remote `ossutil stat` checks hung and were interrupted, so no remote ACL mutation was performed in this turn.
+- IAP `login02` was reachable at `10.64.201.2`; `~/bin/ossutil`, `~/.iaplacs-oss.env`, `~/bin/prune_iaplacs_oss.sh`, and `~/iaplacs-site` exist. `ossutil help set-acl` confirmed `ossutil set-acl oss://bucket/object public-read` is supported. Direct `ossutil set-acl` / `ossutil cp` attempts from `login02` hung and were interrupted. The active publisher uploads OSS objects from `server02` through `GITHUB_HOST`, so targeted repair was completed there instead.
 - Likely publishing root cause: both publisher scripts use `ossutil cp ... -u --acl public-read`. If an old object already exists, `-u` skips upload and may not repair ACL. Early objects uploaded before public ACL setup can remain private while the catalog still references them.
+- Remote publisher hardening was applied to:
+  - `/data1/elpt_2022_00083/kerui/Website/publish_worknx_summary_to_github.sh`
+  - `/data1/elpt_2022_00083/kerui/Website/publish_wrf_montage_to_github.sh`
+- Both scripts now call `verify_public_object` after each `ossutil cp ... -u --acl public-read`. The check uses public `curl --range 0-0`; if the URL is unreadable, the script force-reuploads the same image with `--acl public-read`, cache metadata, and content type, then checks again. This prevents old private OSS objects from staying private when `-u` skips an upload.
+- Remote script verification passed on `login02`: both patched scripts passed `bash -n`, and `grep` confirmed `verify_public_object` plus the ACL/readability repair path in both files.
+- Targeted OSS repair was completed on `server02` for `worknx_summary_20260710_00`: both the WebP and PNG versions of `Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-10_00_00` were reuploaded with `--acl public-read`.
+- Public HEAD checks after the repair returned `HTTP/1.1 200 OK` for both repaired objects. The WebP reported `Content-Type: image/webp`, `Content-Length: 3461871`, and `Last-Modified: Sun, 12 Jul 2026 11:40:43 GMT`; the PNG reported `Content-Type: image/png`, `Content-Length: 5807434`, and `Last-Modified: Sun, 12 Jul 2026 11:40:44 GMT`.
 - Live Shangrao catalog showed six runs: `20260712_02`, `20260711_20`, `20260711_14`, `20260711_08`, `20260711_02`, and pinned/relative `20260710_02`.
 - Frontend root cause for the sixth Shangrao run: `app.js` pinned `20260710_02` through `SHANGRAO_PINNED_RUN_IDS`, adding it back after slicing to five. Generator root cause: `tools/build_forecast_catalog.py` had the same `SHANGRAO_PINNED_RUN_IDS` logic and forced that run to relative GitHub Pages URLs.
 - Local code changes in this follow-up:
@@ -765,11 +774,35 @@ Official references checked during planning:
   - `index.html`, `ningxia/index.html`, `shangrao/index.html`, and `airpots/index.html`: bumped shared app query string to `app.js?v=20260712-03`.
 - Verification passed:
   - `node --check app.js`
-  - `PYTHONPYCACHEPREFIX=.tmp/pycache python3 -m py_compile tools/build_forecast_catalog.py`
+  - `PYTHONPYCACHEPREFIX=/private/tmp/iaplacs_pycache_final python3 -m py_compile tools/build_forecast_catalog.py`
   - `rg` found no `SHANGRAO_PINNED_RUN_IDS`, `createPinnedShangraoRun`, `force_relative`, `当前起报`, `发布时间`, `服务说明`, or `服务区域` in `app.js`, `tools/build_forecast_catalog.py`, and `shangrao/index.html`.
   - Python check against live catalog showed `live_catalog_shangrao=6` but `frontend_after_slice=5`, keeping `['20260712_02', '20260711_20', '20260711_14', '20260711_08', '20260711_02']`.
-  - Local preview started at `http://127.0.0.1:5181/`; `curl --noproxy 127.0.0.1 -I -s http://127.0.0.1:5181/shangrao/` returned `HTTP/1.0 200 OK`, and `curl --noproxy 127.0.0.1 -I -s 'http://127.0.0.1:5181/app.js?v=20260712-03'` returned `HTTP/1.0 200 OK`.
+  - Local preview started at `http://127.0.0.1:5181/`; `curl --noproxy 127.0.0.1 -I -s http://127.0.0.1:5181/shangrao/` returned `HTTP/1.0 200 OK`, and `curl --noproxy 127.0.0.1 -I -s 'http://127.0.0.1:5181/app.js?v=20260712-03'` returned `HTTP/1.0 200 OK`. The preview server was stopped during closeout.
+- Deployment commit `c179e5a0c3ef23c2cccf5a224545e38fde2cdefe` (`Fix Shangrao run limit and OSS ACL recovery`) was pushed to `origin/main` based on remote commit `a8b89b2`, using a temporary index so local `data/current` changes were not staged. The deploy changed only seven files: `Codex_resume_iaplacs_website.md`, `airpots/index.html`, `app.js`, `index.html`, `ningxia/index.html`, `shangrao/index.html`, and `tools/build_forecast_catalog.py`.
+- Post-deploy checks:
+  - `git ls-remote origin refs/heads/main` returned `c179e5a0c3ef23c2cccf5a224545e38fde2cdefe`.
+  - `git show origin/main:shangrao/index.html` confirmed `app.js?v=20260712-03` and no `当前起报`, `发布时间`, `服务说明`, or `服务区域` matches.
+  - GitHub Pages HEAD checks for `https://iaplacs.xyz/shangrao/index.html?v=c179e5a`, `https://iaplacs.xyz/app.js?v=20260712-03-c179e5a`, and `https://iaplacs.xyz/data/current/forecast-runs.json?v=c179e5a` returned `HTTP 200` with `Last-Modified: Sun, 12 Jul 2026 11:46:10 GMT`. Local `curl` in this environment returned empty bodies for those Pages GET requests despite correct HEAD `Content-Length`, so body-level live verification used the Git tree and HEAD metadata rather than local GET parsing.
 - Working-tree caution: local `main` is still ahead/behind remote and has many pre-existing data changes/deletions from server-published forecast updates. Do not stage `data/current` blindly from this local checkout.
+
+## Ningxia Product Text Update
+
+- User requested the homepage Ningxia product wording change:
+  - `宁夏降水预报图集` -> `降水预报图集`
+  - `WORK_nx 生成的宁夏区域降水预报图集，按起报时次自动归档。` -> `WORK_nx 目录下的降水预报图集，按起报时次手动归档。`
+- Site-runtime commit `2c2d824 Update Ningxia precipitation product wording` was pushed to `origin/main`, based directly on remote commit `1551071` using a temporary index. Local stale `data/current` changes were not staged.
+- Runtime changes:
+  - `tools/build_forecast_catalog.py` now emits the new Ningxia product title and description for future catalogs.
+  - `app.js` also normalizes Ningxia product title/description on load, so the current live `forecast-runs.json` can still contain old text while the page displays the new wording immediately.
+  - All four HTML entry points now reference `app.js?v=20260714-01`.
+- Verification passed:
+  - `node --check /private/tmp/iaplacs_app_20260714.js`
+  - `python3 -m py_compile /private/tmp/iaplacs_build_forecast_catalog_20260714.py`
+  - direct text checks found no old Ningxia title/description in the modified runtime files.
+  - Node normalization test against live `forecast-runs.json` produced product title `降水预报图集` and description `WORK_nx 目录下的降水预报图集，按起报时次手动归档。`
+  - `git ls-remote origin refs/heads/main` returned `2c2d8246637161c30ba459a31975ae6e37a46bf5`.
+  - Live `https://iaplacs.xyz/?v=2c2d824b` and `https://iaplacs.xyz/ningxia/?v=2c2d824b` returned `app.js?v=20260714-01` after Pages cache propagation.
+  - Live `https://iaplacs.xyz/app.js?v=20260714-01-2c2d824b` contains `NINGXIA_PRODUCT_TITLE = "降水预报图集"` and `NINGXIA_PRODUCT_DESCRIPTION = "WORK_nx 目录下的降水预报图集，按起报时次手动归档。"`
 
 ## Known Pitfalls
 
@@ -808,7 +841,7 @@ Official references checked during planning:
 
 1. Add `www` separately as a CNAME to `keruicode.github.io`. In Aliyun quick-add this can be done by choosing `将网站域名解析到另外的目标域名`, selecting only `www.iaplacs.xyz`, and entering `keruicode.github.io`.
 2. Confirm GitHub Pages HTTPS remains enabled for `iaplacs.xyz` after DNS/certificate provisioning.
-3. Monitor the `login02` publishing helpers after the next forecast cycles: confirm OSS uploads/skips, the generated catalog still contains only five runs per family, and the post-publish retention pass reports no stale forecast prefixes.
+3. Monitor the `login02` publishing helpers after the next forecast cycles: confirm the new OSS readability repair path does not report failures, generated catalogs still contain only five runs per family, and retained OSS image URLs return public `HTTP 200`.
 4. Add real airport service products to replace the current samples under `/airpots/`.
 5. Later, extend `tools/build_forecast_catalog.py` with additional product scanners when the server starts publishing more product families beyond WRF rainfall montage and WORK_nx summary.
 6. Keep GitHub Pages for the app/catalog and OSS for forecast images; move to an additional CDN only if traffic or latency later requires it.
