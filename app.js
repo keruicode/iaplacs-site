@@ -428,7 +428,7 @@ function render() {
   updateControls(product);
 
   const imageSrc = forecastFrameSource(run, frame);
-  const viewerSrc = highQualityFrameSource(run, frame) || imageSrc;
+  const viewerSrc = viewerFrameSource(run, frame) || imageSrc;
   const frameLabel = displayFrameLabel(frame);
   const imageAlt = `${product.title} ${frameLabel}`;
   setText(els.productTitle, product.title);
@@ -620,6 +620,10 @@ function currentFrame() {
 
 function forecastFrameSource(run, frame) {
   return frameAssetSource(run, frame, frame?.preview_file || frame?.file);
+}
+
+function viewerFrameSource(run, frame) {
+  return frameAssetSource(run, frame, frame?.viewer_file || frame?.file || frame?.preview_file);
 }
 
 function highQualityFrameSource(run, frame) {
@@ -1033,7 +1037,7 @@ function setupImageViewer() {
   viewerState.stage.addEventListener("pointerup", handleViewerPointerEnd);
   viewerState.stage.addEventListener("pointercancel", handleViewerPointerEnd);
   document.addEventListener("keydown", handleViewerKeydown);
-  window.addEventListener("resize", applyViewerTransform);
+  window.addEventListener("resize", handleViewerResize);
 
   els.forecastImage?.addEventListener("click", () => openImageViewer(els.forecastImage));
   els.forecastImage?.addEventListener("keydown", (event) => {
@@ -1063,7 +1067,7 @@ function viewerEntries() {
           run,
           product,
           frame,
-          source: highQualityFrameSource(run, frame),
+          source: viewerFrameSource(run, frame),
         });
       }
     }
@@ -1112,9 +1116,9 @@ function syncViewerFrame(source, alt, { reset = false } = {}) {
   const run = currentRun();
   const product = currentProduct();
   const frame = currentFrame();
-  // Keep the interactive viewer on the same optimized source as the page.
-  // OSS permits <img> requests but does not allow cross-origin fetch-to-Blob.
-  const viewerSource = source;
+  // Use the medium WebP in the viewer. It stays sharp without decoding the
+  // original 7000px PNG, and direct <img> requests do not require OSS CORS.
+  const viewerSource = viewerFrameSource(run, frame) || source;
   const downloadSource = highQualityFrameSource(run, frame) || source;
   const downloadName = imageDownloadName(run, product, frame, downloadSource);
   const entries = viewerEntries();
@@ -1413,7 +1417,8 @@ function zoomViewer(nextScale, clientX, clientY) {
 }
 
 function resetViewer() {
-  viewerState.fitScale = calculateViewerFitScale();
+  fitViewerImage();
+  viewerState.fitScale = 1;
   viewerState.scale = viewerMinScale();
   viewerState.x = 0;
   viewerState.y = 0;
@@ -1422,13 +1427,12 @@ function resetViewer() {
 
 function applyViewerTransform() {
   if (!viewerState.image || !viewerState.stage) return;
-  viewerState.fitScale = calculateViewerFitScale();
   viewerState.scale = clamp(viewerState.scale, viewerMinScale(), viewerMaxScale());
   clampViewerTranslation();
   viewerState.image.style.transform =
     `translate3d(${viewerState.x}px, ${viewerState.y}px, 0) scale(${viewerState.scale})`;
   if (viewerState.zoomLabel) {
-    viewerState.zoomLabel.textContent = `${Math.round((viewerState.scale / viewerMinScale()) * 100)}%`;
+    viewerState.zoomLabel.textContent = `${Math.round(viewerState.scale * 100)}%`;
   }
   viewerState.stage.classList.toggle("is-zoomed", viewerState.scale > viewerMinScale() * 1.01);
 }
@@ -1442,21 +1446,30 @@ function clampViewerTranslation() {
   viewerState.y = clamp(viewerState.y, -maxY, maxY);
 }
 
-function calculateViewerFitScale() {
+function fitViewerImage() {
   if (!viewerState.image || !viewerState.stage) return 1;
   const naturalWidth = viewerState.image.naturalWidth || viewerState.image.offsetWidth || 1;
   const naturalHeight = viewerState.image.naturalHeight || viewerState.image.offsetHeight || 1;
-  const stageWidth = Math.max(1, viewerState.stage.clientWidth - 16);
-  const stageHeight = Math.max(1, viewerState.stage.clientHeight - 16);
-  return Math.min(1, stageWidth / naturalWidth, stageHeight / naturalHeight);
+  const stageWidth = Math.max(1, viewerState.stage.clientWidth - 32);
+  const stageHeight = Math.max(1, viewerState.stage.clientHeight - 32);
+  const scale = Math.min(1, stageWidth / naturalWidth, stageHeight / naturalHeight);
+  viewerState.image.style.width = `${Math.max(1, Math.round(naturalWidth * scale))}px`;
+  viewerState.image.style.height = `${Math.max(1, Math.round(naturalHeight * scale))}px`;
+  return scale;
 }
 
 function viewerMinScale() {
-  return Math.max(0.01, viewerState.fitScale || calculateViewerFitScale());
+  return 1;
 }
 
 function viewerMaxScale() {
-  return Math.max(2, viewerMinScale() * MAX_VIEWER_SCALE);
+  return MAX_VIEWER_SCALE;
+}
+
+function handleViewerResize() {
+  if (!viewerState.root || viewerState.root.hidden) return;
+  fitViewerImage();
+  applyViewerTransform();
 }
 
 function viewerPoint(clientX, clientY) {
