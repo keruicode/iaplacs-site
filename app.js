@@ -55,6 +55,7 @@ const els = {
   prevLead: document.querySelector("#prevLead"),
   nextLead: document.querySelector("#nextLead"),
   imageLink: document.querySelector("#imageLink"),
+  imageDownload: document.querySelector("#imageDownload"),
   metricGrid: document.querySelector("#metricGrid"),
   productNote: document.querySelector("#productNote"),
 };
@@ -425,6 +426,8 @@ function render() {
 
   const imageSrc = forecastFrameSource(run, frame);
   const viewerSrc = viewerFrameSource(run, frame) || imageSrc;
+  const downloadSrc = highQualityFrameSource(run, frame) || viewerSrc;
+  const downloadName = imageDownloadName(run, product, frame, downloadSrc);
   const frameLabel = displayFrameLabel(frame);
   const imageAlt = `${product.title} ${frameLabel}`;
   setText(els.productTitle, product.title);
@@ -433,6 +436,10 @@ function render() {
     loadForecastImage(imageSrc, imageAlt);
   }
   if (els.imageLink) els.imageLink.href = viewerSrc;
+  if (els.imageDownload) {
+    els.imageDownload.href = downloadSrc;
+    els.imageDownload.download = downloadName;
+  }
   setText(els.leadLabel, frameLabel);
   setText(
     els.validTime,

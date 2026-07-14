@@ -508,6 +508,8 @@ button {
 .toolbar-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
 }
 
@@ -1104,6 +1106,11 @@ button {
     width: 100%;
   }
 
+  .toolbar-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
   .topbar-actions {
     align-items: stretch;
     flex-direction: column;
@@ -1150,10 +1157,6 @@ button {
 
   .toolbar-actions {
     width: 100%;
-  }
-
-  .toolbar-actions .link-button {
-    margin-right: auto;
   }
 
   .map-badge {
