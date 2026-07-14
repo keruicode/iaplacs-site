@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-14 13:42 CST
+Last updated: 2026-07-14 14:11 CST
 
 ## Resume Commands
 
@@ -918,7 +918,17 @@ Official references checked during planning:
   - `node --check app.js`
   - `git diff --check`
   - Computer Use opened `https://iaplacs.xyz/ningxia/?viewer-layout-verify=20260714-05-f3f11c3`, opened the live Ningxia image, and visually confirmed the complete image was centered in the viewport at `100%`; the zoom control reached `125%` without losing the viewer state. The download link still targets the PNG original.
-- Current status: production serves the medium-WebP viewer and fitted layout through `app.js?v=20260714-05`. Do not stage concurrent `data/current` changes.
+- Idle image warmup follow-up:
+  - Removed the CORS-incompatible cross-origin `fetch`/Blob and Cache Storage prefetch path. After the first forecast image renders, the page schedules a native `Image` warmup queue through `requestIdleCallback` (with a timer fallback).
+  - The queue first warms the current frame's medium viewer WebP, then continues through the active service's retained preview and viewer images at one request at a time. Temporary preload image objects are released after loading, allowing the browser HTTP cache to accelerate later clicks without retaining all decoded 3200px bitmaps.
+  - Warmup is skipped if the browser reports Save-Data, `slow-2g`, or `2g`.
+  - `README.md` and `docs/deployment.md` now document the direct-image/CORS limitation and idle warmup behavior. All entry points request `app.js?v=20260714-06`.
+  - Isolated runtime/docs commit `ff8129ea48c93f1e56095a9dc0604ac623b08fcb` (`Warm forecast images during browser idle time`) was pushed to `origin/main` after `f2480f6`.
+- Verification completed after deployment:
+  - `node --check app.js`
+  - `git diff --check`
+  - Computer Use opened `https://iaplacs.xyz/shangrao/?idle-preload-verify=20260714-06-ff8129e`, waited for idle warmup, opened the live Shangrao overview in the viewer, and visually confirmed the complete medium-resolution image rendered centered. The viewer's PNG download link remained intact.
+- Current status: production serves the fitted medium-WebP viewer and low-priority idle warmup through `app.js?v=20260714-06`. Do not stage concurrent `data/current` changes.
 
 ## Known Pitfalls
 
