@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-14 13:00 CST
+Last updated: 2026-07-14 13:42 CST
 
 ## Resume Commands
 
@@ -909,7 +909,16 @@ Official references checked during planning:
   - `git diff --check`
   - Computer Use opened the deployed `https://iaplacs.xyz/ningxia/?viewer-fix=20260714-04-211b107` in a new Chrome tab, clicked the forecast image, and visually confirmed the fullscreen viewer rendered the complete Ningxia forecast image. The viewer also retained its `下载原图` link to the PNG original.
 - Deployment: isolated runtime commit `5eef25d493dca287859331756861939d3b51ad74` (`Fix fullscreen forecast viewer loading`) was pushed to `origin/main` after `a1226a3`, using a temporary index. It includes only `app.js`, the four HTML entry points, and this resume file; no concurrent `data/current` changes were published.
-- Current status: production now serves the repair once GitHub Pages propagates `app.js?v=20260714-04`. Do not stage concurrent `data/current` changes.
+- Viewer layout and quality follow-up:
+  - `app.js` now uses the catalogue's medium `file` WebP (currently 3200px, quality 92) for the interactive viewer, while the page retains `preview_file` (1100px) and the download link retains the PNG original. A `viewer_file` catalogue field is supported for a future dedicated viewer derivative.
+  - The viewer now calculates a real fitted CSS width/height before applying pan and zoom. Its baseline is `100%`, so the centered grid layout remains correct across browser viewport heights; zoom stays available up to `600%`.
+  - All four entry points now request `app.js?v=20260714-05`.
+  - Isolated runtime commit `f3f11c3eb25d21d95ea676d6fd1a9f96c94d3bed` (`Improve forecast viewer fit and clarity`) was pushed to `origin/main` after `fe5d5e6` using a temporary index. It contains only `app.js` and the four HTML cache-bust entry points.
+- Verification completed after deployment:
+  - `node --check app.js`
+  - `git diff --check`
+  - Computer Use opened `https://iaplacs.xyz/ningxia/?viewer-layout-verify=20260714-05-f3f11c3`, opened the live Ningxia image, and visually confirmed the complete image was centered in the viewport at `100%`; the zoom control reached `125%` without losing the viewer state. The download link still targets the PNG original.
+- Current status: production serves the medium-WebP viewer and fitted layout through `app.js?v=20260714-05`. Do not stage concurrent `data/current` changes.
 
 ## Known Pitfalls
 
