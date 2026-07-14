@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-14 14:11 CST
+Last updated: 2026-07-14 14:19 CST
 
 ## Resume Commands
 
@@ -928,7 +928,17 @@ Official references checked during planning:
   - `node --check app.js`
   - `git diff --check`
   - Computer Use opened `https://iaplacs.xyz/shangrao/?idle-preload-verify=20260714-06-ff8129e`, waited for idle warmup, opened the live Shangrao overview in the viewer, and visually confirmed the complete medium-resolution image rendered centered. The viewer's PNG download link remained intact.
-- Current status: production serves the fitted medium-WebP viewer and low-priority idle warmup through `app.js?v=20260714-06`. Do not stage concurrent `data/current` changes.
+- Toolbar download follow-up:
+  - Added a second `下载原图` link immediately beside `放大查看` in all four page toolbars. It updates with the selected run/product/frame, points to `full_file` / the PNG original when present, and receives the generated download file name. The existing viewer-top download link remains unchanged.
+  - Updated the narrow-screen toolbar so its two text actions remain adjacent and wrap safely with the previous/next icon buttons.
+  - All entry points now request `app.js?v=20260714-07`.
+  - A concurrent forecast publisher update initially rejected the UI push. The final isolated commit was rebased onto live data commit `eaf56fc` and published as `509c53c7ba2c1179ec935e8f62b2d47b4f0c09ad` (`Add forecast download link to toolbar`), with no data files included.
+- Verification completed:
+  - `node --check app.js`
+  - `git diff --check`
+  - Temporary-index diff confirmed only `app.js`, `styles.css`, and the four HTML entry points changed.
+  - Computer Use GUI recheck could not start because the Sky native pipe failed; use a normal browser refresh to visually confirm the new toolbar action if needed.
+- Current status: production serves the fitted medium-WebP viewer, idle warmup, and two original-download entry points through `app.js?v=20260714-07`. Do not stage concurrent `data/current` changes.
 
 ## Known Pitfalls
 
