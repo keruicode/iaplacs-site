@@ -49,7 +49,11 @@ make_preview_image() {
     -define webp:method=6 \
     -define webp:use-sharp-yuv=true \
     "$output"
-  touch -r "$source" "$output"
+  if [[ "$FORCE" == "1" ]]; then
+    touch "$output"
+  else
+    touch -r "$source" "$output"
+  fi
   echo "preview ${output#$ROOT/}"
 }
 
