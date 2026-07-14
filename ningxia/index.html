@@ -8,9 +8,11 @@
       content="IAP-LACS 宁夏预报页面，按起报时次展示 WORK_nx 发布的宁夏区域预报产品。"
     />
     <title>宁夏预报 | IAP-LACS Forecast</title>
+    <link rel="dns-prefetch" href="//iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com" />
+    <link rel="preconnect" href="https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com" crossorigin />
     <link rel="icon" type="image/png" sizes="192x192" href="../assets/brand/favicon-192.png" />
     <link rel="apple-touch-icon" href="../assets/brand/favicon-512.png" />
-    <link rel="stylesheet" href="../styles.css?v=20260712-02" />
+    <link rel="stylesheet" href="../styles.css?v=20260714-02" />
   </head>
   <body
     class="auth-lock"
@@ -91,7 +93,7 @@
         <div id="leadTabs" class="lead-tabs" aria-label="宁夏产品图幅"></div>
 
         <div class="map-stage">
-          <img id="forecastImage" src="../data/current/maps/wrf_precip_20260706_1800_t01_t48.webp" alt="宁夏预报产品图" role="button" tabindex="0" draggable="false" decoding="async" aria-label="放大查看当前预报图" />
+          <img id="forecastImage" alt="宁夏预报产品图" role="button" tabindex="0" draggable="false" decoding="async" fetchpriority="high" aria-label="放大查看当前预报图" />
         </div>
 
       </section>
@@ -118,6 +120,6 @@
       <span>iaplacs.xyz/ningxia</span>
     </footer>
 
-    <script src="../app.js?v=20260714-01"></script>
+    <script src="../app.js?v=20260714-02"></script>
   </body>
 </html>

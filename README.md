@@ -17,6 +17,9 @@ Current service routes:
 - `/ningxia/` shows WORK_nx/NX Ningxia forecast products;
 - `/shangrao/` shows Shangrao forecast products.
 
+For the repository layout and what should or should not be pushed from a local
+checkout, see [docs/repository-structure.md](docs/repository-structure.md).
+
 ## Local Preview
 
 Run from this directory:

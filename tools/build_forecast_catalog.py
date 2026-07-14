@@ -271,7 +271,8 @@ def build_ningxia_frames(run_dir: Path, fragment: dict) -> list[dict]:
         existing = [path for path in candidates if path.exists()]
         if not existing:
             continue
-        path = min(existing, key=lambda item: item.stat().st_size)
+        path = choose_preview_candidate(existing)
+        full_path = choose_full_candidate("", existing)
         if not path.exists():
             continue
         lead_label = lead_label_from_name(path.name)
@@ -282,6 +283,7 @@ def build_ningxia_frames(run_dir: Path, fragment: dict) -> list[dict]:
             "file": forecast_asset_url(path),
             "bytes": path.stat().st_size,
         }
+        add_full_asset(frame, path, full_path)
         if fragment_stem and path.stem == fragment_stem:
             valid_time = fragment.get("valid_time")
             if valid_time:
@@ -343,9 +345,11 @@ def build_frames(run_id: str, run_dir: Path) -> list[dict]:
     frames = []
     for key, candidates in sorted(groups.items(), key=frame_sort_key):
         chosen = choose_frame_candidate(key, candidates)
+        full = choose_full_candidate(key, candidates)
         frame = frame_meta(run_id, key)
         frame["file"] = forecast_asset_url(chosen)
         frame["bytes"] = chosen.stat().st_size
+        add_full_asset(frame, chosen, full)
         frames.append(frame)
     return frames
 
@@ -355,7 +359,29 @@ def choose_frame_candidate(key: str, candidates: list[Path]) -> Path:
         six_by_six = [path for path in candidates if "_6x6_" in path.name]
         if six_by_six:
             candidates = six_by_six
+    return choose_preview_candidate(candidates)
+
+
+def choose_preview_candidate(candidates: list[Path]) -> Path:
     return min(candidates, key=lambda item: (frame_candidate_score(item), item.stat().st_size))
+
+
+def choose_full_candidate(key: str, candidates: list[Path]) -> Path:
+    if "_combined_overview" in key:
+        six_by_six = [path for path in candidates if "_6x6_" in path.name]
+        if six_by_six:
+            candidates = six_by_six
+    pngs = [path for path in candidates if path.suffix.lower() == ".png"]
+    if pngs:
+        return max(pngs, key=lambda item: item.stat().st_size)
+    return max(candidates, key=lambda item: item.stat().st_size)
+
+
+def add_full_asset(frame: dict, preview_path: Path, full_path: Path) -> None:
+    if full_path == preview_path:
+        return
+    frame["full_file"] = forecast_asset_url(full_path)
+    frame["full_bytes"] = full_path.stat().st_size
 
 
 def frame_candidate_score(path: Path) -> int:

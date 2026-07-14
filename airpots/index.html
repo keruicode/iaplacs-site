@@ -8,9 +8,11 @@
       content="IAP-LACS 机场气象服务页面，展示机场保障相关预报图和样例产品。"
     />
     <title>机场气象服务 | IAP-LACS Forecast</title>
+    <link rel="dns-prefetch" href="//iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com" />
+    <link rel="preconnect" href="https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com" crossorigin />
     <link rel="icon" type="image/png" sizes="192x192" href="../assets/brand/favicon-192.png" />
     <link rel="apple-touch-icon" href="../assets/brand/favicon-512.png" />
-    <link rel="stylesheet" href="../styles.css?v=20260712-02" />
+    <link rel="stylesheet" href="../styles.css?v=20260714-02" />
   </head>
   <body
     class="auth-lock"
@@ -98,7 +100,7 @@
         <div id="leadTabs" class="lead-tabs" aria-label="预报时效"></div>
 
         <div class="map-stage">
-          <img id="forecastImage" alt="机场预报产品图" role="button" tabindex="0" draggable="false" decoding="async" aria-label="放大查看当前预报图" />
+          <img id="forecastImage" alt="机场预报产品图" role="button" tabindex="0" draggable="false" decoding="async" fetchpriority="high" aria-label="放大查看当前预报图" />
           <div class="map-badge">
             <span id="leadLabel">--</span>
             <span id="validTime">--</span>
@@ -131,6 +133,6 @@
       <span>iaplacs.xyz</span>
     </footer>
 
-    <script src="../app.js?v=20260714-01"></script>
+    <script src="../app.js?v=20260714-02"></script>
   </body>
 </html>

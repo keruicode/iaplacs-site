@@ -916,6 +916,7 @@ button {
   display: grid;
   gap: 3px;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .viewer-heading strong,
@@ -941,6 +942,33 @@ button {
   align-items: center;
   gap: 6px;
   flex: 0 0 auto;
+}
+
+.viewer-download-button {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  min-width: 78px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: #0f68c8;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 760;
+  text-decoration: none;
+}
+
+.viewer-download-button:hover,
+.viewer-download-button:focus-visible {
+  border-color: #70aef5;
+  background: #1b5fa8;
+  outline: none;
+}
+
+.viewer-download-button.is-loading {
+  cursor: wait;
+  opacity: 0.72;
 }
 
 .viewer-frame-nav {
@@ -1167,6 +1195,11 @@ button {
 
   .viewer-heading {
     grid-column: 1 / -1;
+  }
+
+  .viewer-download-button {
+    grid-column: 1;
+    justify-self: start;
   }
 
   .viewer-actions {

@@ -4,6 +4,7 @@ const MAX_VIEWER_SCALE = 6;
 const VIEWER_ZOOM_STEP = 1.25;
 const IMAGE_CACHE_NAME = "iaplacs-forecast-images-v1";
 const IMAGE_PREFETCH_CONCURRENCY = 3;
+const ACTIVE_IMAGE_CACHE_DELAY_MS = 400;
 const ACCESS_PASSWORD = "123";
 const ACCESS_TOKEN_KEY = "iaplacs_access_token";
 const ACCESS_TOKEN_VALUE = "iaplacs_access_granted_v1";
@@ -32,6 +33,7 @@ const state = {
   imageSource: null,
   imageStatus: "idle",
   prefetchSignature: "",
+  prefetchTimer: null,
 };
 
 const imageResourceCache = new Map();
@@ -77,6 +79,9 @@ const viewerState = {
   requestId: 0,
   loading: false,
   resetOnImageLoad: false,
+  downloadLink: null,
+  downloadSource: null,
+  downloadName: "iaplacs-forecast.png",
 };
 
 async function init() {
@@ -422,6 +427,7 @@ function render() {
   updateControls(product);
 
   const imageSrc = forecastFrameSource(run, frame);
+  const viewerSrc = highQualityFrameSource(run, frame) || imageSrc;
   const frameLabel = displayFrameLabel(frame);
   const imageAlt = `${product.title} ${frameLabel}`;
   setText(els.productTitle, product.title);
@@ -429,7 +435,7 @@ function render() {
   if (els.forecastImage) {
     loadForecastImage(imageSrc, imageAlt);
   }
-  if (els.imageLink) els.imageLink.href = imageSrc;
+  if (els.imageLink) els.imageLink.href = viewerSrc;
   setText(els.leadLabel, frameLabel);
   setText(
     els.validTime,
@@ -441,7 +447,6 @@ function render() {
   if (viewerState.root && !viewerState.root.hidden) {
     syncViewerFrame(imageSrc, imageAlt, { reset: false });
   }
-  warmServiceImages(state.service, imageSrc);
 }
 
 function updateControls(product) {
@@ -613,10 +618,34 @@ function currentFrame() {
 }
 
 function forecastFrameSource(run, frame) {
+  return frameAssetSource(run, frame, frame?.preview_file || frame?.file);
+}
+
+function highQualityFrameSource(run, frame) {
+  const file = highQualityFrameFile(frame);
+  return file ? frameAssetSource(run, frame, file) : forecastFrameSource(run, frame);
+}
+
+function frameAssetSource(run, frame, file) {
   return withAssetVersion(
-    resolveAssetPath(frame?.file),
+    resolveAssetPath(file),
     frame?.version || run?.published_at || state.catalog?.published_at,
   );
+}
+
+function highQualityFrameFile(frame) {
+  return (
+    frame?.full_file ||
+    frame?.download_file ||
+    frame?.png_file ||
+    pngVariantOfFile(frame?.file) ||
+    frame?.file
+  );
+}
+
+function pngVariantOfFile(file) {
+  if (!file || !/\.webp(?:$|[?#])/i.test(file)) return "";
+  return file.replace(/\.webp(?=$|[?#])/i, ".png");
 }
 
 function collectServiceImageSources(service) {
@@ -650,16 +679,21 @@ function syncForecastImageCache(catalog) {
   void prunePersistentImageCache(desiredSources);
 }
 
+function scheduleServiceImageWarmup(service, activeSource) {
+  if (state.prefetchTimer) window.clearTimeout(state.prefetchTimer);
+  state.prefetchTimer = window.setTimeout(() => {
+    state.prefetchTimer = null;
+    warmServiceImages(service, activeSource);
+  }, ACTIVE_IMAGE_CACHE_DELAY_MS);
+}
+
 function warmServiceImages(service, activeSource) {
   const sources = collectServiceImageSources(service);
   const signature = sources.join("\n");
   if (state.prefetchSignature === signature) return;
   state.prefetchSignature = signature;
 
-  const orderedSources = [
-    activeSource,
-    ...sources.filter((source) => source !== activeSource),
-  ].filter(Boolean);
+  const orderedSources = sources.filter((source) => source && source !== activeSource);
   let cursor = 0;
   const worker = async () => {
     while (cursor < orderedSources.length) {
@@ -693,11 +727,12 @@ function openPersistentImageCache() {
 async function prunePersistentImageCache(desiredSources) {
   const cache = await openPersistentImageCache();
   if (!cache) return;
+  const desiredCacheKeys = new Set([...desiredSources].map(persistentCacheKey));
   try {
     const requests = await cache.keys();
     await Promise.all(
       requests
-        .filter((request) => !desiredSources.has(request.url))
+        .filter((request) => !desiredCacheKeys.has(request.url))
         .map((request) => cache.delete(request)),
     );
   } catch (error) {
@@ -732,12 +767,13 @@ function invalidateImageResource(source) {
 
 async function readForecastImage(source) {
   const persistentCache = await openPersistentImageCache();
+  const cacheKey = persistentCacheKey(source);
   if (persistentCache) {
     try {
-      const cachedResponse = await persistentCache.match(source);
+      const cachedResponse = await persistentCache.match(cacheKey);
       if (cachedResponse) return cachedResponse.blob();
     } catch (error) {
-      await persistentCache.delete(source).catch(() => {});
+      await persistentCache.delete(cacheKey).catch(() => {});
       console.warn("persistent forecast image cache read failed", source, error);
     }
   }
@@ -761,11 +797,19 @@ async function readForecastImage(source) {
   const cacheResponse = persistentCache ? response.clone() : null;
   const blob = await response.blob();
   if (persistentCache && cacheResponse) {
-    persistentCache.put(source, cacheResponse).catch((error) => {
+    persistentCache.put(cacheKey, cacheResponse).catch((error) => {
       console.warn("persistent forecast image cache write failed", source, error);
     });
   }
   return blob;
+}
+
+function persistentCacheKey(source) {
+  try {
+    return new URL(source, window.location.href).href;
+  } catch (error) {
+    return source;
+  }
 }
 
 function stepLead(delta) {
@@ -819,26 +863,33 @@ function loadForecastImage(source, alt) {
 }
 
 async function resolveForecastImage({ source, requestId, attempt }) {
-  try {
-    const objectUrl = await getImageResource(source);
-    if (requestId !== state.imageRequestId) return;
+  const cachedObjectUrl = cachedImageObjectUrl(source);
+  const displaySource =
+    attempt > 0 ? withRetryVersion(source, attempt) : cachedObjectUrl || source;
 
-    els.forecastImage.onload = () => {
-      if (requestId !== state.imageRequestId) return;
-      state.imageStatus = "ready";
-      setImageState("ready");
-    };
-    els.forecastImage.onerror = () => {
-      if (requestId !== state.imageRequestId) return;
-      invalidateImageResource(source);
-      retryForecastImage({ source, requestId, attempt });
-    };
-    els.forecastImage.src = objectUrl;
-  } catch (error) {
+  els.forecastImage.onload = () => {
     if (requestId !== state.imageRequestId) return;
-    console.warn("forecast image request failed", error);
+    state.imageStatus = "ready";
+    setImageState("ready");
+    scheduleServiceImageWarmup(state.service, source);
+    window.setTimeout(() => {
+      if (state.imageSource !== source) return;
+      getImageResource(source).catch((error) => {
+        console.warn("active forecast image cache write failed", source, error);
+      });
+    }, ACTIVE_IMAGE_CACHE_DELAY_MS);
+  };
+  els.forecastImage.onerror = () => {
+    if (requestId !== state.imageRequestId) return;
+    invalidateImageResource(source);
     retryForecastImage({ source, requestId, attempt });
-  }
+  };
+  els.forecastImage.src = displaySource;
+}
+
+function cachedImageObjectUrl(source) {
+  const entry = imageResourceCache.get(source);
+  return entry?.objectUrl || "";
 }
 
 function retryForecastImage({ source, requestId, attempt }) {
@@ -941,6 +992,7 @@ function setupImageViewer() {
         <strong id="imageViewerTitle">预报图</strong>
         <span id="imageViewerMeta"></span>
       </div>
+      <a class="viewer-download-button" href="#" data-viewer-download download>下载原图</a>
       <div class="viewer-actions">
         <button class="viewer-icon-button" type="button" data-viewer-action="zoom-out" title="缩小" aria-label="缩小">&#8722;</button>
         <output class="viewer-zoom" aria-live="polite">100%</output>
@@ -965,8 +1017,10 @@ function setupImageViewer() {
   viewerState.title = root.querySelector("#imageViewerTitle");
   viewerState.meta = root.querySelector("#imageViewerMeta");
   viewerState.zoomLabel = root.querySelector(".viewer-zoom");
+  viewerState.downloadLink = root.querySelector("[data-viewer-download]");
 
   root.addEventListener("click", handleViewerAction);
+  viewerState.downloadLink?.addEventListener("click", handleViewerDownload);
   root.querySelector(".viewer-frame-nav")?.addEventListener("pointerdown", (event) => {
     event.stopPropagation();
   });
@@ -1009,7 +1063,7 @@ function viewerEntries() {
           run,
           product,
           frame,
-          source: forecastFrameSource(run, frame),
+          source: highQualityFrameSource(run, frame),
         });
       }
     }
@@ -1058,6 +1112,9 @@ function syncViewerFrame(source, alt, { reset = false } = {}) {
   const run = currentRun();
   const product = currentProduct();
   const frame = currentFrame();
+  const viewerSource = highQualityFrameSource(run, frame) || source;
+  const fallbackSource = viewerSource === source ? "" : source;
+  const downloadName = imageDownloadName(run, product, frame, viewerSource);
   const entries = viewerEntries();
   const position = entries.length ? `${currentViewerEntryIndex(entries) + 1}/${entries.length}` : "--";
   viewerState.title.textContent = product?.title || "预报图";
@@ -1065,13 +1122,14 @@ function syncViewerFrame(source, alt, { reset = false } = {}) {
     .filter(Boolean)
     .join(" · ");
   updateViewerControls();
+  updateViewerDownload(viewerSource, downloadName);
 
-  if (viewerState.source === source && (viewerState.loading || viewerState.image.src)) {
+  if (viewerState.source === viewerSource && (viewerState.loading || viewerState.image.src)) {
     if (reset) resetViewer();
     return;
   }
 
-  viewerState.source = source;
+  viewerState.source = viewerSource;
   viewerState.requestId += 1;
   const requestId = viewerState.requestId;
   viewerState.loading = true;
@@ -1079,6 +1137,14 @@ function syncViewerFrame(source, alt, { reset = false } = {}) {
   viewerState.image.alt = alt;
   if (reset) resetViewer();
 
+  loadViewerImage({
+    source: viewerSource,
+    fallbackSource,
+    requestId,
+  });
+}
+
+function loadViewerImage({ source, fallbackSource, requestId }) {
   getImageResource(source)
     .then((objectUrl) => {
       if (requestId !== viewerState.requestId) return;
@@ -1094,13 +1160,34 @@ function syncViewerFrame(source, alt, { reset = false } = {}) {
       };
       viewerState.image.onerror = () => {
         if (requestId !== viewerState.requestId) return;
-        viewerState.loading = false;
         invalidateImageResource(source);
+        if (fallbackSource) {
+          viewerState.loading = true;
+          viewerState.source = fallbackSource;
+          updateViewerDownload(
+            fallbackSource,
+            imageDownloadName(currentRun(), currentProduct(), currentFrame(), fallbackSource),
+          );
+          loadViewerImage({ source: fallbackSource, fallbackSource: "", requestId });
+          return;
+        }
+        viewerState.loading = false;
       };
       viewerState.image.src = objectUrl;
     })
     .catch((error) => {
       if (requestId !== viewerState.requestId) return;
+      if (fallbackSource) {
+        console.warn("viewer high quality image request failed, falling back", error);
+        viewerState.loading = true;
+        viewerState.source = fallbackSource;
+        updateViewerDownload(
+          fallbackSource,
+          imageDownloadName(currentRun(), currentProduct(), currentFrame(), fallbackSource),
+        );
+        loadViewerImage({ source: fallbackSource, fallbackSource: "", requestId });
+        return;
+      }
       viewerState.loading = false;
       console.warn("viewer image request failed", error);
     });
@@ -1144,6 +1231,68 @@ function handleViewerAction(event) {
   if (action === "reset") resetViewer();
   if (action === "zoom-in") zoomViewer(viewerState.scale * VIEWER_ZOOM_STEP);
   if (action === "zoom-out") zoomViewer(viewerState.scale / VIEWER_ZOOM_STEP);
+}
+
+async function handleViewerDownload(event) {
+  event.preventDefault();
+  const source = viewerState.downloadSource || viewerState.source;
+  if (!source) return;
+  const link = event.currentTarget;
+  link.classList.add("is-loading");
+  link.setAttribute("aria-busy", "true");
+
+  try {
+    const objectUrl = await getImageResource(source);
+    triggerDownload(objectUrl, viewerState.downloadName || "iaplacs-forecast.png");
+  } catch (error) {
+    console.warn("viewer image download failed, opening source", error);
+    window.open(source, "_blank", "noopener,noreferrer");
+  } finally {
+    link.classList.remove("is-loading");
+    link.removeAttribute("aria-busy");
+  }
+}
+
+function updateViewerDownload(source, name) {
+  viewerState.downloadSource = source;
+  viewerState.downloadName = name || "iaplacs-forecast.png";
+  if (!viewerState.downloadLink) return;
+  viewerState.downloadLink.href = source || "#";
+  viewerState.downloadLink.download = viewerState.downloadName;
+}
+
+function triggerDownload(href, fileName) {
+  const link = document.createElement("a");
+  link.href = href;
+  link.download = fileName;
+  link.rel = "noreferrer";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+function imageDownloadName(run, product, frame, source) {
+  const extension = imageExtension(source);
+  const parts = [
+    pageConfig.service,
+    run?.id,
+    product?.id,
+    frameId(frame),
+  ]
+    .filter(Boolean)
+    .map((part) => String(part).replace(/[^a-zA-Z0-9_-]+/g, "_"));
+  return `${parts.join("_") || "iaplacs-forecast"}${extension}`;
+}
+
+function imageExtension(source) {
+  try {
+    const pathname = new URL(source, window.location.href).pathname;
+    const match = pathname.match(/\.(png|webp|jpe?g|svg)$/i);
+    return match ? `.${match[1].toLowerCase()}` : ".png";
+  } catch (error) {
+    const match = String(source || "").match(/\.(png|webp|jpe?g|svg)(?:$|[?#])/i);
+    return match ? `.${match[1].toLowerCase()}` : ".png";
+  }
 }
 
 function handleViewerWheel(event) {
