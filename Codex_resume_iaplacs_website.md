@@ -907,7 +907,7 @@ Official references checked during planning:
 - Verification completed before deployment:
   - `node --check app.js`
   - `git diff --check`
-  - Computer Use opened the real `iaplacs.xyz` Ningxia fullscreen viewer and confirmed the viewer was present with its source URL. The local network then became DNS-unavailable for new OSS requests, so the final post-deploy browser image pass must be repeated after the current Chrome/network outage clears.
+  - Computer Use opened the deployed `https://iaplacs.xyz/ningxia/?viewer-fix=20260714-04-211b107` in a new Chrome tab, clicked the forecast image, and visually confirmed the fullscreen viewer rendered the complete Ningxia forecast image. The viewer also retained its `下载原图` link to the PNG original.
 - Deployment: isolated runtime commit `5eef25d493dca287859331756861939d3b51ad74` (`Fix fullscreen forecast viewer loading`) was pushed to `origin/main` after `a1226a3`, using a temporary index. It includes only `app.js`, the four HTML entry points, and this resume file; no concurrent `data/current` changes were published.
 - Current status: production now serves the repair once GitHub Pages propagates `app.js?v=20260714-04`. Do not stage concurrent `data/current` changes.
 
