@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-14 00:00 CST
+Last updated: 2026-07-14 09:28 CST
 
 ## Resume Commands
 
@@ -803,6 +803,39 @@ Official references checked during planning:
   - `git ls-remote origin refs/heads/main` returned `2c2d8246637161c30ba459a31975ae6e37a46bf5`.
   - Live `https://iaplacs.xyz/?v=2c2d824b` and `https://iaplacs.xyz/ningxia/?v=2c2d824b` returned `app.js?v=20260714-01` after Pages cache propagation.
   - Live `https://iaplacs.xyz/app.js?v=20260714-01-2c2d824b` contains `NINGXIA_PRODUCT_TITLE = "降水预报图集"` and `NINGXIA_PRODUCT_DESCRIPTION = "WORK_nx 目录下的降水预报图集，按起报时次手动归档。"`
+
+## Image Loading, Viewer Quality, And Repository Structure Docs
+
+- User requested four follow-up fixes:
+  - fullscreen zoom quality should match opening the image in a new tab;
+  - a new computer should render the latest image quickly, then keep loading the remaining images in the background;
+  - root and `/ningxia/` should remove the local placeholder image and return to catalog-driven local/remote behavior;
+  - add a download button in the fullscreen viewer and write a Markdown explanation of the repository structure.
+- Site-runtime/docs commit `46145d6 Improve forecast image loading and viewer` was pushed to `origin/main`, based on server-published remote commit `8c414f1`, using a temporary index so concurrent `data/current` updates were preserved.
+- Runtime changes:
+  - `app.js` now sets the active forecast image directly on the `<img>` first, instead of waiting for `fetch -> blob -> objectURL`; this lets the browser render the latest WebP as soon as the URL is known.
+  - Background preloading now starts after the active image has loaded, skips competing with the active image first, and still stores retained service images through browser Cache Storage for fast later switching.
+  - Cache Storage keys are normalized to absolute URLs so relative fallback images are not pruned incorrectly.
+  - The fullscreen viewer now prefers `frame.full_file`, `download_file`, `png_file`, or inferred `.png` when the catalog only has `.webp`; it falls back to WebP if the PNG cannot be fetched.
+  - The viewer toolbar now has a left-side `下载原图` button. Download uses the cached/fetched viewer image blob when possible and falls back to opening the source URL.
+  - All four HTML entry points now preconnect to the OSS host, use `fetchpriority="high"` on `#forecastImage`, load `styles.css?v=20260714-02` and `app.js?v=20260714-02`, and root `/` plus `/ningxia/` no longer have a hard-coded local placeholder `src`.
+  - `tools/build_forecast_catalog.py` now keeps WebP as the normal `file` preview and adds `full_file`/`full_bytes` for the PNG original when a PNG exists.
+  - Added `docs/repository-structure.md` explaining GitHub Pages vs OSS vs IAP server responsibilities, data directory ownership, and why `data/current` should not be blindly staged from local `lazygit`.
+  - `README.md` links to `docs/repository-structure.md`; `docs/deployment.md` now correctly says `/` and `/ningxia/` are Ningxia WORK_nx routes.
+- Verification passed:
+  - `node --check app.js`
+  - `PYTHONPYCACHEPREFIX=/private/tmp/iaplacs_pycache_20260714 python3 -m py_compile tools/build_forecast_catalog.py`
+  - `git diff --check`
+  - text check found no `wrf_precip_20260706_1800`, no `20260712-03`, no old Ningxia product title, and no old Ningxia product description in the modified site files.
+  - Local HTTP preview at `http://127.0.0.1:5182/` returned `HTTP/1.0 200 OK` for `/`, `app.js?v=20260714-02`, and `styles.css?v=20260714-02`; the preview server was stopped during closeout.
+  - Direct generator-function test on local sample directories produced WebP `file` plus PNG `full_file` for both Ningxia and Shangrao frames.
+  - Public OSS HEAD checks returned `HTTP/1.1 200 OK` for current Ningxia PNG `worknx_summary_20260713_12/...2026-07-13_12_00.png` and current Shangrao PNG `wrf_montage_20260713_02/...overview_6x6_grid.png`.
+  - `git ls-remote origin refs/heads/main` returned `46145d6b6f86fee7e5a3383b7eebc1eefc0a7842`.
+  - Live `https://iaplacs.xyz/index.html?v=46145d6c`, `https://iaplacs.xyz/?v=46145d6d`, `https://iaplacs.xyz/ningxia/?v=46145d6d`, and `https://iaplacs.xyz/shangrao/?v=46145d6d` load `20260714-02`, include OSS preconnect and `fetchpriority="high"`, and no longer include the hard-coded local placeholder image.
+  - Live `https://iaplacs.xyz/app.js?v=20260714-02-46145d6` contains `highQualityFrameSource`, `scheduleServiceImageWarmup`, `cachedImageObjectUrl`, `full_file`, `pngVariantOfFile`, and the `下载原图` viewer button.
+  - Live `https://iaplacs.xyz/styles.css?v=20260714-02-46145d6` contains `.viewer-download-button` styles.
+  - Live `https://iaplacs.xyz/docs/repository-structure.md?v=46145d6` returned the new repository structure document.
+- Working-tree caution remains: local `main` is still behind/ahead relative to server-published remote history and `data/current` has pre-existing staged/unstaged churn. Do not use `git add .`; compare code files against `origin/main` and stage only intended files.
 
 ## Known Pitfalls
 
