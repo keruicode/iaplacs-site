@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-14 09:28 CST
+Last updated: 2026-07-14 13:00 CST
 
 ## Resume Commands
 
@@ -880,7 +880,25 @@ Official references checked during planning:
   - OSS HEAD for latest Shangrao overview preview returned `HTTP/1.1 200 OK`, `Content-Type: image/webp`, `Content-Length: 652702`, `Cache-Control: public,max-age=604800`.
   - Direct download timing from this local machine for latest Ningxia preview was `preview size=449694 time=2.779575`.
 - Browser-tool limitation: the user requested local browser testing through `[@电脑]`, but the Chrome extension control reported `Browser is not available: extension`, and Computer Use startup reported `Sky Computer Use service startup request failed`. Real Safari/Chrome GUI cache-clearing verification could not be completed in this Codex session; validation was done through code checks, live GitHub Pages catalog, and direct OSS object checks instead.
-- Working-tree caution remains: `origin/main` is current at `c2d66a3`, but the local checkout still reports branch ahead/behind and `data/current` churn because forecast data is also published by the server. Continue using temporary-index or targeted staging for code/doc changes, and avoid `git add .`.
+- Working-tree caution remains: site/data runtime was verified through `c2d66a3`; a resume-only follow-up commit `fcae20e` was then pushed to `origin/main`. The local checkout still reports branch ahead/behind and `data/current` churn because forecast data is also published by the server. Continue using temporary-index or targeted staging for code/doc changes, and avoid `git add .`.
+
+## Viewer CORS And Preview Repair
+
+- Follow-up thread: `019f5ef8-ca95-7bd0-b4dd-0945145df7f0`.
+- Session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/14/rollout-2026-07-14T12-53-10-019f5ef8-ca95-7bd0-b4dd-0945145df7f0.jsonl`.
+- User reported that clicking a forecast image opened a blank fullscreen viewer despite images being only a few MB on the network.
+- Computer Use reproduced the live Ningxia fullscreen viewer opening with its image unavailable. Direct public OSS HEAD requests for the referenced original PNG returned `HTTP 200`, but did not include `Access-Control-Allow-Origin`; the response also forces downloads through `Content-Disposition: attachment`.
+- Root cause: the fullscreen viewer selected `full_file` / inferred PNG then requested it through `fetch -> Blob -> objectURL`. This crosses from `iaplacs.xyz` to the OSS host, so the browser blocks the fetch without CORS permission. The original `7000x7000` PNG also expands to about `196 MB` decoded, so its 5-6 MB transfer size is misleading.
+- Runtime repair in `app.js`:
+  - the fullscreen viewer now directly assigns the currently displayed optimized `preview_file`/WebP source to its `<img>`, which is allowed cross-origin and does not create a Blob;
+  - the download link still targets `full_file` / the PNG original without making a CORS-gated fetch;
+  - removed the viewer download click handler that attempted another cross-origin Blob fetch before falling back.
+- Cache-bust repair: `index.html`, `ningxia/index.html`, `shangrao/index.html`, and `airpots/index.html` now reference `app.js?v=20260714-04`.
+- Verification completed before deployment:
+  - `node --check app.js`
+  - `git diff --check`
+  - Computer Use opened the real `iaplacs.xyz` Ningxia fullscreen viewer and confirmed the viewer was present with its source URL. The local network then became DNS-unavailable for new OSS requests, so the final post-deploy browser image pass must be repeated after the current Chrome/network outage clears.
+- Current status: code and cache-busted entry points are ready for a targeted temporary-index deployment; do not stage concurrent `data/current` changes.
 
 ## Known Pitfalls
 

@@ -1021,7 +1021,6 @@ function setupImageViewer() {
   viewerState.downloadLink = root.querySelector("[data-viewer-download]");
 
   root.addEventListener("click", handleViewerAction);
-  viewerState.downloadLink?.addEventListener("click", handleViewerDownload);
   root.querySelector(".viewer-frame-nav")?.addEventListener("pointerdown", (event) => {
     event.stopPropagation();
   });
@@ -1113,9 +1112,11 @@ function syncViewerFrame(source, alt, { reset = false } = {}) {
   const run = currentRun();
   const product = currentProduct();
   const frame = currentFrame();
-  const viewerSource = highQualityFrameSource(run, frame) || source;
-  const fallbackSource = viewerSource === source ? "" : source;
-  const downloadName = imageDownloadName(run, product, frame, viewerSource);
+  // Keep the interactive viewer on the same optimized source as the page.
+  // OSS permits <img> requests but does not allow cross-origin fetch-to-Blob.
+  const viewerSource = source;
+  const downloadSource = highQualityFrameSource(run, frame) || source;
+  const downloadName = imageDownloadName(run, product, frame, downloadSource);
   const entries = viewerEntries();
   const position = entries.length ? `${currentViewerEntryIndex(entries) + 1}/${entries.length}` : "--";
   viewerState.title.textContent = product?.title || "预报图";
@@ -1123,7 +1124,7 @@ function syncViewerFrame(source, alt, { reset = false } = {}) {
     .filter(Boolean)
     .join(" · ");
   updateViewerControls();
-  updateViewerDownload(viewerSource, downloadName);
+  updateViewerDownload(downloadSource, downloadName);
 
   if (viewerState.source === viewerSource && (viewerState.loading || viewerState.image.src)) {
     if (reset) resetViewer();
@@ -1140,58 +1141,30 @@ function syncViewerFrame(source, alt, { reset = false } = {}) {
 
   loadViewerImage({
     source: viewerSource,
-    fallbackSource,
     requestId,
   });
 }
 
-function loadViewerImage({ source, fallbackSource, requestId }) {
-  getImageResource(source)
-    .then((objectUrl) => {
-      if (requestId !== viewerState.requestId) return;
-      viewerState.image.onload = () => {
-        if (requestId !== viewerState.requestId) return;
-        viewerState.loading = false;
-        if (viewerState.resetOnImageLoad) {
-          viewerState.resetOnImageLoad = false;
-          resetViewer();
-        } else {
-          applyViewerTransform();
-        }
-      };
-      viewerState.image.onerror = () => {
-        if (requestId !== viewerState.requestId) return;
-        invalidateImageResource(source);
-        if (fallbackSource) {
-          viewerState.loading = true;
-          viewerState.source = fallbackSource;
-          updateViewerDownload(
-            fallbackSource,
-            imageDownloadName(currentRun(), currentProduct(), currentFrame(), fallbackSource),
-          );
-          loadViewerImage({ source: fallbackSource, fallbackSource: "", requestId });
-          return;
-        }
-        viewerState.loading = false;
-      };
-      viewerState.image.src = objectUrl;
-    })
-    .catch((error) => {
-      if (requestId !== viewerState.requestId) return;
-      if (fallbackSource) {
-        console.warn("viewer high quality image request failed, falling back", error);
-        viewerState.loading = true;
-        viewerState.source = fallbackSource;
-        updateViewerDownload(
-          fallbackSource,
-          imageDownloadName(currentRun(), currentProduct(), currentFrame(), fallbackSource),
-        );
-        loadViewerImage({ source: fallbackSource, fallbackSource: "", requestId });
-        return;
-      }
-      viewerState.loading = false;
-      console.warn("viewer image request failed", error);
-    });
+function loadViewerImage({ source, requestId }) {
+  if (!viewerState.image) return;
+
+  viewerState.image.onload = () => {
+    if (requestId !== viewerState.requestId) return;
+    viewerState.loading = false;
+    if (viewerState.resetOnImageLoad) {
+      viewerState.resetOnImageLoad = false;
+      resetViewer();
+    } else {
+      applyViewerTransform();
+    }
+  };
+  viewerState.image.onerror = () => {
+    if (requestId !== viewerState.requestId) return;
+    viewerState.loading = false;
+    console.warn("viewer image request failed", source);
+  };
+  viewerState.image.removeAttribute("src");
+  viewerState.image.src = source;
 }
 
 function openImageViewer(opener) {
