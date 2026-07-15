@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-15 17:13 CST
+Last updated: 2026-07-15 17:40 CST
 
 ## Resume Commands
 
@@ -957,6 +957,25 @@ Official references checked during planning:
   2. Run `tools/render_worknx_ningxia_overview.sh --recent 5` against `/data1/elpt_2022_00083/zhoubj/WORK_nx`.
   3. Extend the active WORK_nx publisher/cron to publish each generated regional overview (PNG, normal WebP, preview WebP) into its matching `worknx_summary_<UTC-run>` directory, then rebuild the catalog and publish OSS/GitHub Pages.
   4. Verify the five retained Ningxia runs each expose exactly one `T13-T48` 6x6 regional frame and that the public PNG/WebP/preview URLs return HTTP 200.
+
+## Ningxia Regional 6x6 Execution
+
+- `login02` SSH was restored on 2026-07-15. All five retained WORK_nx runs had an adjacent `wrfout_d01_*`; NCL and ImageMagick `montage` are installed on the server.
+- The renderer was corrected after live execution: it explicitly defines the hourly precipitation missing value and treats an unset `NINGXIA_SHP_FILE` as an empty string. It labels every panel `Ningxia region` and renders the 104.0--107.8E, 35.0--39.7N regional domain. No Ningxia province-boundary shapefile was found under the available IAP paths, so the operational product currently uses this crop, national outline settings, and geographic ticks.
+- A live render of `20260714_18` produced all 36 T13--T48 panels and a valid `6168x6168` PNG overview. The generated regional overview is about 0.64--0.67 MB PNG before WebP derivatives.
+- Deployed runtime scripts on `login02:/data1/elpt_2022_00083/kerui/Website`:
+  - `rain_worknx_ningxia_hour_bjt.ncl`
+  - `render_worknx_ningxia_overview.sh`
+  - `publish_worknx_ningxia_to_github.sh`
+  - patched `publish_worknx_summary_to_github.sh`, which now accepts `SOURCE_IMAGE_GLOB` for regional inputs.
+- The maintained source script was also updated at `/Volumes/storage/江西VPN-每日预报/remote/publish_worknx_summary_to_github.sh`; the new wrapper is `/Volumes/storage/江西VPN-每日预报/remote/publish_worknx_ningxia_to_github.sh`.
+- The hourly cron was changed from `publish_worknx_summary_to_github.sh` to `publish_worknx_ningxia_to_github.sh`; the prior crontab is backed up on `login02` at `/tmp/iaplacs-crontab-before-ningxia-region-20260715`.
+- Isolated site code/docs commit `1ad7cf36a61a03c7abc06a45ccf941da51fcebd0` (`Publish Ningxia regional 6x6 overviews`) was pushed. It includes the corrected NCL renderer, `tools/publish_worknx_ningxia_to_github.sh`, and updated deployment instructions.
+- Backfill completed for all five retained Ningxia runs: `20260714_18`, `20260714_12`, `20260714_06`, `20260714_00`, and `20260713_18`. Server-published data commits were `14a6517`, `8e5c6a5`, `eb4103b`, `a4b8ff0`, and `bc2c73d`.
+- Final verification:
+  - `forecast-runs.json` reports exactly five Ningxia runs; each has exactly one frame, whose `lead_label` is `T13-T48` and whose files are `Precip_hourly_WRF_Ningxia_T13_T48_*_combined_overview_6x6_grid`.
+  - All 15 public OSS assets (five preview WebPs, five 3200px WebPs, and five original PNGs) returned `HTTP 200` with the expected image content type.
+  - `https://iaplacs.xyz/data/current/forecast-runs.json?ningxia-region=bc2c73d` returned `HTTP/2 200`, `Content-Type: application/json`, and the current data commit timestamp.
 
 ## Known Pitfalls
 
