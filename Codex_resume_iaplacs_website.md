@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-15 19:58 CST
+Last updated: 2026-07-15 21:24 CST
 
 ## Resume Commands
 
@@ -1019,6 +1019,12 @@ Official references checked during planning:
 - All five retained Ningxia runs were rerendered and republished with the larger caption, black labels, and provincial boundary SHP. The current public normal WebP was visually checked at `2974x3200`.
 - The operational publisher was found to set `Cache-Control: public,max-age=604800` on every OSS image, which can mask a replaced object for seven days even when the website catalog changes. Both the `login02` runtime publisher and the maintained `/Volumes/storage/江西VPN-每日预报/remote/publish_worknx_summary_to_github.sh` now set `Cache-Control: no-cache` instead.
 - Existing PNG, normal WebP, and preview WebP objects for all five retained runs were force-uploaded with the new metadata. Public verification for the current normal WebP returned `HTTP 200`, a new ETag, and `Cache-Control: no-cache`; all 15 image URLs returned `HTTP 200`.
+
+## Ningxia Shangrao Palette Alignment
+
+- The Ningxia precipitation palette was replaced with the exact Shangrao thresholds: `0`, `1.5`, `7`, `15`, `40`, and `50 mm`. It now uses Shangrao's white, light-green, green, light-blue, deep-blue, magenta, and brown-red sequence.
+- This corrects the previous Ningxia palette, whose different levels and fill-index sequence could make the top category appear green. The maximum class now renders brown-red and the colour-bar labels match Shangrao exactly.
+- All five retained Ningxia runs were rerendered and force-published as PNG, normal WebP, and preview WebP. A public `20260715_00` WebP was visually checked: it has the brown-red top colour, `0/1.5/7/15/40/50` labels, black enlarged dates, and the provincial boundary overlay. It returned `HTTP 200` with `Cache-Control: no-cache`.
 
 ## Known Pitfalls
 
