@@ -84,7 +84,6 @@ begin
     init_bjt = bjt_label(f@START_DATE, 3)
 
     do it = start_idx, end_idx
-      label = bjt_label(times(it-1), 2) + "-" + bjt_label(times(it), 4)
       file_start = bjt_label(times(it-1), 1)
       file_end = bjt_label(times(it), 1)
       rain_h = rain_all(it,:,:) - rain_all(it-1,:,:)
@@ -114,7 +113,9 @@ begin
       res@cnFillColors = (/0,1,2,3,4,5,6/)
       res@cnMissingValFillColor = "white"
       res@cnFillDrawOrder = "PreDraw"
-      res@mpOutlineBoundarySets = "National"
+      ; Provincial boundaries are supplied by the Shangrao SHP below.  Do not
+      ; draw the NCL default outline as it can duplicate or conflict with it.
+      res@mpOutlineBoundarySets = "NoBoundaries"
       res@mpFillOn = False
       res@mpProjection = "CylindricalEquidistant"
       res@mpMinLonF = lon_min
@@ -124,11 +125,17 @@ begin
       res@pmTickMarkDisplayMode = "Always"
       res@gsnMajorLonSpacing = 1.0
       res@gsnMajorLatSpacing = 1.0
+      ; The precipitation palette has green at color index 1.  Explicitly use
+      ; black for interface text so it never inherits a palette entry.
+      res@tmXBLabelFontColor = "black"
       res@tmXBLabelFontHeightF = 0.025
+      res@tmXBLabelFontThicknessF = 4
+      res@tmYLLabelFontColor = "black"
       res@tmYLLabelFontHeightF = 0.025
+      res@tmYLLabelFontThicknessF = 4
+      res@tmBorderLineColor = "black"
       res@tmBorderThicknessF = 3
-      res@tiMainString = "Ningxia region " + label
-      res@tiMainFontHeightF = 0.050
+      res@lbLabelFontColor = "black"
       res@lbLabelBarOn = True
       res@lbOrientation = "Vertical"
       res@pmLabelBarDisplayMode = "Always"

@@ -45,6 +45,7 @@ if [[ ! -f "$NCL_SCRIPT" ]]; then
 fi
 command -v ncl >/dev/null || { echo "ERROR: ncl is required" >&2; exit 127; }
 command -v montage >/dev/null || { echo "ERROR: ImageMagick montage is required" >&2; exit 127; }
+command -v convert >/dev/null || { echo "ERROR: ImageMagick convert is required" >&2; exit 127; }
 
 mkdir -p "$OUTPUT_ROOT"
 now_epoch="$(date +%s)"
@@ -69,8 +70,32 @@ if [[ "${#sources[@]}" -eq 0 ]]; then
   exit 1
 fi
 
+caption_panel() {
+  local panel_path="$1" caption_dir="$2" panel_name panel_date caption_path
+  panel_name="$(basename "$panel_path")"
+  if [[ ! "$panel_name" =~ _rain_hour_([0-9]{4})([0-9]{2})([0-9]{2})([0-9]{2})-([0-9]{4})([0-9]{2})([0-9]{2})([0-9]{2})_BJT\.png$ ]]; then
+    echo "ERROR: cannot parse panel date from $panel_name" >&2
+    return 1
+  fi
+  panel_date="${BASH_REMATCH[2]}-${BASH_REMATCH[3]} ${BASH_REMATCH[4]}:00-${BASH_REMATCH[8]}:00"
+  caption_path="$caption_dir/$panel_name"
+
+  # Add the valid-time label after NCL rendering. This keeps the label black
+  # and independent of the precipitation palette while giving every montage
+  # tile the same caption height.
+  convert "$panel_path" \
+    -gravity North \
+    -background white \
+    -splice 0x92 \
+    -fill black \
+    -font Helvetica-Bold \
+    -pointsize 62 \
+    -annotate +0+12 "$panel_date" \
+    "$caption_path"
+}
+
 render_source() {
-  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir overview
+  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview
   base="$(basename "$source_path")"
   if [[ ! "$base" =~ InitUTC_([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2})_[0-9]{2} ]]; then
     echo "ERROR: cannot parse InitUTC from $base" >&2
@@ -82,6 +107,7 @@ render_source() {
   wrf_dir="$(dirname "$source_path")"
   run_dir="$OUTPUT_ROOT/$run_prefix"
   panel_dir="$run_dir/hourly_t13_t48"
+  caption_dir="$run_dir/captioned_t13_t48"
   overview="$run_dir/Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_${run_date}_${run_hour}_00_combined_overview_6x6_grid.png"
 
   if ! compgen -G "$wrf_dir/wrfout_d01_*" >/dev/null; then
@@ -89,7 +115,7 @@ render_source() {
     return 1
   fi
 
-  mkdir -p "$panel_dir"
+  mkdir -p "$panel_dir" "$caption_dir"
   echo "Rendering Ningxia T13-T48 panels for $run_prefix from $wrf_dir"
   WORK_NX_WRF_DIR="$wrf_dir" \
     WORK_NX_NINGXIA_PNG_DIR="$panel_dir" \
@@ -103,7 +129,13 @@ render_source() {
     return 1
   fi
 
-  montage "${panels[@]}" -tile 6x6 -geometry '100%x100%+2+2' -background white "$overview"
+  local captioned_panels=()
+  for panel in "${panels[@]}"; do
+    caption_panel "$panel" "$caption_dir"
+    captioned_panels+=("$caption_dir/$(basename "$panel")")
+  done
+
+  montage "${captioned_panels[@]}" -tile 6x6 -geometry '100%x100%+2+2' -background white "$overview"
   touch -r "$source_path" "$overview"
   echo "Rendered $overview"
 }

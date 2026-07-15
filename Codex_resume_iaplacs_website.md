@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-15 18:20 CST
+Last updated: 2026-07-15 18:35 CST
 
 ## Resume Commands
 
@@ -997,6 +997,14 @@ Official references checked during planning:
 - The cron remains at minute 55 and invokes `publish_worknx_ningxia_to_github.sh`.
 - Public PNG SHA-256 values exactly matched the freshly rendered server files for `20260715_00`, `20260714_18`, `20260714_12`, `20260714_06`, and `20260714_00`; their five PNGs plus five normal and five preview WebPs all returned `HTTP 200` on OSS.
 - Site code commit `d57042e846fd4fd457b3a800e9edff2b404a3bff` (`Overlay provincial boundaries on Ningxia forecasts`) was pushed to `main`.
+
+## Ningxia Captioned Montage Refresh
+
+- Root cause of the green text: the Ningxia NCL palette has green at color index `1`, which NCL used for default title, coordinate, and colour-bar text. The renderer now explicitly uses black for all map-interface text.
+- Removed `tiMainString` completely. The NCL product has no map title and uses `mpOutlineBoundarySets = "NoBoundaries"`; only the copied Shangrao nationwide provincial-boundary SHP supplies the black administrative outlines.
+- Before each `6x6` montage, `render_worknx_ningxia_overview.sh` creates a captioned copy of every panel with ImageMagick: a uniform `92px` white top band and a `62px` black bold valid-time label (for example `07-15 20:00-21:00`). This makes labels independent from the rainfall palette and gives all 36 tiles identical dimensions.
+- All five retained runs (`20260715_00`, `20260714_18`, `20260714_12`, `20260714_06`, `20260714_00`) were rerendered with the SHP and captioned montage, then force-published as PNG, normal WebP, and preview WebP.
+- The final `20260715_00` original PNG is `6168x6720`; its public OSS SHA-256 (`03a3b2f8ef3ff970cf4606f8b81dc4f662cc83ff35f8b2e00597f744edcef523`) exactly matches the server output. All 15 public assets across the five retained runs returned `HTTP 200` with image content types.
 
 ## Known Pitfalls
 
