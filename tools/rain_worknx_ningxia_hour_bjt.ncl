@@ -47,6 +47,9 @@ begin
   if (out_dir.eq."") then
     out_dir = "worknx_ningxia_hourly_png"
   end if
+  if (ismissing(shp_file)) then
+    shp_file = ""
+  end if
 
   system("mkdir -p " + out_dir)
   files = systemfunc("ls -1 " + wrf_dir + "/wrfout_d01_*")
@@ -85,6 +88,10 @@ begin
       file_start = bjt_label(times(it-1), 1)
       file_end = bjt_label(times(it), 1)
       rain_h = rain_all(it,:,:) - rain_all(it-1,:,:)
+      ; WORK_nx accumulation fields do not carry a missing-value attribute.
+      ; Define one before masking trace precipitation so NCL does not return an
+      ; attribute-reference error after every hourly panel.
+      rain_h@_FillValue = -9999.0
       rain_h = where(rain_h.lt.0.01, rain_h@_FillValue, rain_h)
       rain_h@lat2d = lat2d
       rain_h@lon2d = lon2d
@@ -120,7 +127,7 @@ begin
       res@tmXBLabelFontHeightF = 0.025
       res@tmYLLabelFontHeightF = 0.025
       res@tmBorderThicknessF = 3
-      res@tiMainString = label
+      res@tiMainString = "Ningxia region " + label
       res@tiMainFontHeightF = 0.050
       res@lbLabelBarOn = True
       res@lbOrientation = "Vertical"
