@@ -130,6 +130,20 @@ For the current Ningxia/WORK_nx workflow, copy the summary image plus its
 data/current/maps/worknx_summary_YYYYMMDD_HH/
 ```
 
+For the Ningxia regional replacement, render from the corresponding
+`wrfout_d01_*` files rather than cropping the existing nationwide sheet:
+
+```bash
+tools/render_worknx_ningxia_overview.sh --recent 5
+```
+
+The renderer drops T01-T12, produces exactly 36 hourly T13-T48 panels, and
+combines them into one Ningxia-only 6x6 overview per initialization. Copy each
+overview through the normal WORK_nx publisher into the matching
+`worknx_summary_YYYYMMDD_HH/` directory. The catalog builder prioritizes that
+`*_combined_overview_6x6_grid` product over a legacy nationwide image when
+both temporarily exist in the same run directory.
+
 Then run `tools/optimize_forecast_images.sh` and
 `python3 tools/build_forecast_catalog.py` before `git add`, so the
 website can expose the new 起报时间 automatically after GitHub Pages deploys.

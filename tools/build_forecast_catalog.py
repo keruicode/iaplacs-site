@@ -264,6 +264,17 @@ def build_ningxia_frames(run_dir: Path, fragment: dict) -> list[dict]:
         fallback = ROOT / fragment["file"].replace("./", "", 1)
         groups.setdefault(fallback.stem, []).append(fallback)
 
+    # A regional 6x6 overview supersedes the legacy nationwide T01-T48 sheet.
+    # Keeping this selection here makes a mixed transition directory render one
+    # Ningxia regional product instead of exposing both products as frames.
+    overview_groups = {
+        key: candidates
+        for key, candidates in groups.items()
+        if "_combined_overview_" in key and "_6x6_" in key
+    }
+    if overview_groups:
+        groups = overview_groups
+
     frames = []
     fragment_file = fragment.get("file", "")
     fragment_stem = Path(fragment_file).stem if fragment_file else ""
@@ -276,7 +287,11 @@ def build_ningxia_frames(run_dir: Path, fragment: dict) -> list[dict]:
         full_path = choose_full_candidate("", existing)
         if not path.exists():
             continue
-        lead_label = lead_label_from_name(path.name)
+        lead_label = (
+            "T13-T48"
+            if "_combined_overview_" in path.stem and "T13_T48" in path.name
+            else lead_label_from_name(path.name)
+        )
         frame = {
             "id": path.stem.lower().replace("-", "_"),
             "lead": lead_value_from_label(lead_label),

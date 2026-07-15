@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+
+# Render a Ningxia-only T13-T48 hourly precipitation overview from WORK_nx.
+# Thirty-six hourly panels remain after the first 12 spin-up hours, so the
+# product is intentionally one 6x6 image with no detail pages.
+set -Eeuo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORK_NX_ROOT="${WORK_NX_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK_nx}"
+OUTPUT_ROOT="${OUTPUT_ROOT:-$SCRIPT_DIR/worknx_ningxia_overview}"
+NCL_SCRIPT="${NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_ningxia_hour_bjt.ncl}"
+MIN_FILE_AGE_SECONDS="${MIN_FILE_AGE_SECONDS:-1200}"
+NINGXIA_SHP_FILE="${NINGXIA_SHP_FILE:-}"
+
+usage() {
+  cat <<'EOF'
+Usage: render_worknx_ningxia_overview.sh [--latest | --recent COUNT]
+
+Reads stable WORK_nx T01-T48 source products, renders only hourly T13-T48
+Ningxia panels, and writes one *_combined_overview_6x6_grid.png per run.
+EOF
+}
+
+mode="--latest"
+count=1
+if [[ "${1:-}" == "--recent" ]]; then
+  mode="--recent"
+  count="${2:-5}"
+elif [[ -n "${1:-}" && "${1:-}" != "--latest" ]]; then
+  usage >&2
+  exit 64
+fi
+
+if ! [[ "$count" =~ ^[1-9][0-9]*$ ]]; then
+  echo "ERROR: recent count must be a positive integer" >&2
+  exit 64
+fi
+if [[ ! -d "$WORK_NX_ROOT" ]]; then
+  echo "ERROR: WORK_NX_ROOT not found: $WORK_NX_ROOT" >&2
+  exit 1
+fi
+if [[ ! -f "$NCL_SCRIPT" ]]; then
+  echo "ERROR: NCL script not found: $NCL_SCRIPT" >&2
+  exit 1
+fi
+command -v ncl >/dev/null || { echo "ERROR: ncl is required" >&2; exit 127; }
+command -v montage >/dev/null || { echo "ERROR: ImageMagick montage is required" >&2; exit 127; }
+
+mkdir -p "$OUTPUT_ROOT"
+now_epoch="$(date +%s)"
+sources=()
+while IFS= read -r line; do
+  source_path="${line#* }"
+  source_epoch="${line%% *}"
+  source_epoch="${source_epoch%.*}"
+  if (( now_epoch - source_epoch < MIN_FILE_AGE_SECONDS )); then
+    continue
+  fi
+  sources+=("$source_path")
+  [[ "${#sources[@]}" -ge "$count" ]] && break
+done < <(
+  find "$WORK_NX_ROOT" -maxdepth 4 -type f \
+    -name 'Precip_hourly_WRF_AllRain_T01_T48_InitUTC_*.png' -printf '%T@ %p\n' \
+    | sort -nr
+)
+
+if [[ "${#sources[@]}" -eq 0 ]]; then
+  echo "ERROR: no stable WORK_nx T01-T48 source image found" >&2
+  exit 1
+fi
+
+render_source() {
+  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir overview
+  base="$(basename "$source_path")"
+  if [[ ! "$base" =~ InitUTC_([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2})_[0-9]{2} ]]; then
+    echo "ERROR: cannot parse InitUTC from $base" >&2
+    return 1
+  fi
+  run_date="${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]}"
+  run_hour="${BASH_REMATCH[4]}"
+  run_prefix="${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3]}_${run_hour}"
+  wrf_dir="$(dirname "$source_path")"
+  run_dir="$OUTPUT_ROOT/$run_prefix"
+  panel_dir="$run_dir/hourly_t13_t48"
+  overview="$run_dir/Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_${run_date}_${run_hour}_00_combined_overview_6x6_grid.png"
+
+  if ! compgen -G "$wrf_dir/wrfout_d01_*" >/dev/null; then
+    echo "ERROR: wrfout_d01 files are unavailable beside $source_path" >&2
+    return 1
+  fi
+
+  mkdir -p "$panel_dir"
+  echo "Rendering Ningxia T13-T48 panels for $run_prefix from $wrf_dir"
+  WORK_NX_WRF_DIR="$wrf_dir" \
+    WORK_NX_NINGXIA_PNG_DIR="$panel_dir" \
+    NINGXIA_SHP_FILE="$NINGXIA_SHP_FILE" \
+    ncl "$NCL_SCRIPT"
+
+  local panels=()
+  mapfile -t panels < <(find "$panel_dir" -maxdepth 1 -type f -name '*_rain_hour_*_BJT.png' -print | sort)
+  if [[ "${#panels[@]}" -ne 36 ]]; then
+    echo "ERROR: expected 36 T13-T48 panels, found ${#panels[@]} for $run_prefix" >&2
+    return 1
+  fi
+
+  montage "${panels[@]}" -tile 6x6 -geometry '100%x100%+2+2' -background white "$overview"
+  touch -r "$source_path" "$overview"
+  echo "Rendered $overview"
+}
+
+for source_path in "${sources[@]}"; do
+  render_source "$source_path"
+done
