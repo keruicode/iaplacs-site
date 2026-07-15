@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-15 17:40 CST
+Last updated: 2026-07-15 18:20 CST
 
 ## Resume Commands
 
@@ -976,6 +976,15 @@ Official references checked during planning:
   - `forecast-runs.json` reports exactly five Ningxia runs; each has exactly one frame, whose `lead_label` is `T13-T48` and whose files are `Precip_hourly_WRF_Ningxia_T13_T48_*_combined_overview_6x6_grid`.
   - All 15 public OSS assets (five preview WebPs, five 3200px WebPs, and five original PNGs) returned `HTTP 200` with the expected image content type.
   - `https://iaplacs.xyz/data/current/forecast-runs.json?ningxia-region=bc2c73d` returned `HTTP/2 200`, `Content-Type: application/json`, and the current data commit timestamp.
+
+## Ningxia Provincial Boundary Overlay
+
+- The Shangrao plotting source `/Volumes/storage/江西VPN-每日预报/local/SHP/省界_region.{dbf,prj,sbn,sbx,shp,shx}` is a nationwide provincial-boundary dataset (WGS84), not a Jiangxi-only layer. All six sidecar files were copied to `login02:/data1/elpt_2022_00083/kerui/Website/SHP/`.
+- `tools/render_worknx_ningxia_overview.sh` now defaults `NINGXIA_SHP_FILE` to `$SCRIPT_DIR/SHP/省界_region.shp`; the NCL renderer overlays its province boundaries on each Ningxia panel. A live `6168x6168` 6x6 render was visually checked after the overlay.
+- The active Ningxia wrapper now forces rebuild of normal and preview WebPs, and forces the active-run OSS upload. The maintained and runtime publishers were patched so the force flag also reaches server02 and only reuploads the current run rather than every retained map.
+- The cron remains at minute 55 and invokes `publish_worknx_ningxia_to_github.sh`.
+- Public PNG SHA-256 values exactly matched the freshly rendered server files for `20260715_00`, `20260714_18`, `20260714_12`, `20260714_06`, and `20260714_00`; their five PNGs plus five normal and five preview WebPs all returned `HTTP 200` on OSS.
+- Site code commit `d57042e846fd4fd457b3a800e9edff2b404a3bff` (`Overlay provincial boundaries on Ningxia forecasts`) was pushed to `main`.
 
 ## Known Pitfalls
 
