@@ -32,12 +32,24 @@ codex resume 019f5ef8-ca95-7bd0-b4dd-0945145df7f0
 code resume 019f5ef8-ca95-7bd0-b4dd-0945145df7f0
 ```
 
+Current Ningxia boundary-overlay follow-up:
+
+```bash
+codex resume 019f5ef8-ca95-7bd0-b4dd-0945145df7f0
+```
+
+```bash
+code resume 019f5ef8-ca95-7bd0-b4dd-0945145df7f0
+```
+
 ## Thread
 
 - Thread ID: `019f472c-9bd3-7222-9160-5fa0162a1249`
 - Session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/09/rollout-2026-07-09T21-58-53-019f472c-9bd3-7222-9160-5fa0162a1249.jsonl`
 - Latest diagnostic follow-up thread ID: `019f54bd-2333-7323-a89d-92bf699aec95`
 - Latest diagnostic session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/12/rollout-2026-07-12T13-11-49-019f54bd-2333-7323-a89d-92bf699aec95.jsonl`
+- Current Ningxia boundary-overlay follow-up thread ID: `019f5ef8-ca95-7bd0-b4dd-0945145df7f0`
+- Current Ningxia boundary-overlay session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/14/rollout-2026-07-14T12-53-10-019f5ef8-ca95-7bd0-b4dd-0945145df7f0.jsonl`
 - Working directory: `/Users/xiaoxiaotu/_01_IAP/Website`
 
 ## User Goal
