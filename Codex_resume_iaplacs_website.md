@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-14 14:19 CST
+Last updated: 2026-07-15 17:13 CST
 
 ## Resume Commands
 
@@ -939,6 +939,24 @@ Official references checked during planning:
   - Temporary-index diff confirmed only `app.js`, `styles.css`, and the four HTML entry points changed.
   - Computer Use GUI recheck could not start because the Sky native pipe failed; use a normal browser refresh to visually confirm the new toolbar action if needed.
 - Current status: production serves the fitted medium-WebP viewer, idle warmup, and two original-download entry points through `app.js?v=20260714-07`. Do not stage concurrent `data/current` changes.
+
+## Ningxia Regional 6x6 Overview Preparation
+
+- User requested that the root `/` (and the matching `/ningxia/` service) stop using the nationwide WORK_nx T01--T48 sheet. The required product is one Ningxia-region overview per initial time, with no Shangrao-style detail-page splitting.
+- Confirmed layout: omitting T01--T12 leaves T13--T48 inclusive, exactly 36 hourly panels, so the requested overview is a single 6x6 grid.
+- Existing source sheets such as `Precip_hourly_WRF_AllRain_T01_T48_InitUTC_*.png` are nationwide 48-hour products. Replacing them correctly requires rendering from the corresponding `wrfout_d01_*` fields on `login02`; CSS or catalog-only cropping would be inaccurate.
+- Commit `781d0a445f9faae102863016471a06956a6e01f9` (`Prepare Ningxia regional precipitation overview`) was pushed to `origin/main`. It contains only:
+  - `tools/rain_worknx_ningxia_hour_bjt.ncl`: computes hourly precipitation from WORK_nx WRF output, crops to the Ningxia domain (104.0--107.8E, 35.0--39.7N), and writes T13--T48 panels.
+  - `tools/render_worknx_ningxia_overview.sh`: locates stable WORK_nx source/run files, invokes the NCL renderer, validates 36 panels, and assembles one `*_Ningxia_T13_T48_*_combined_overview_6x6_grid.png` image. It accepts `--latest` or `--recent COUNT`; default is one run.
+  - `tools/build_forecast_catalog.py`: when a `worknx_summary_<run>` directory contains the new Ningxia overview, it selects that overview rather than the legacy nationwide raw sheet and labels the lead time `T13-T48`.
+  - `docs/deployment.md`: documents running `tools/render_worknx_ningxia_overview.sh --recent 5` before the normal publisher/catalog rebuild.
+- Local verification passed: `bash -n tools/render_worknx_ningxia_overview.sh`, `python3 -m py_compile tools/build_forecast_catalog.py`, `git diff --check`, and a fixture-based catalog test selecting the `T13-T48` regional overview in preference to the legacy sheet. Local NCL is unavailable, so WRF rendering was not simulated locally.
+- Blocking condition at closeout: `ssh -tt -o BatchMode=yes -o ConnectTimeout=8 10.64.201.2 ...` timed out on port 22 repeatedly. Therefore the actual remote WRF fields could not be inspected, no Ningxia shapefile path could be confirmed, no PNGs were generated, and the latest five run directories were not replaced. The production site still displays the existing nationwide images until this remote operation is performed.
+- Once `login02` connectivity is restored:
+  1. Inspect the actual `wrfout_d01_*` and Ningxia boundary shapefile, set `NINGXIA_SHP_FILE` if present, and copy the NCL/renderer to `/data1/elpt_2022_00083/kerui/Website`.
+  2. Run `tools/render_worknx_ningxia_overview.sh --recent 5` against `/data1/elpt_2022_00083/zhoubj/WORK_nx`.
+  3. Extend the active WORK_nx publisher/cron to publish each generated regional overview (PNG, normal WebP, preview WebP) into its matching `worknx_summary_<UTC-run>` directory, then rebuild the catalog and publish OSS/GitHub Pages.
+  4. Verify the five retained Ningxia runs each expose exactly one `T13-T48` 6x6 regional frame and that the public PNG/WebP/preview URLs return HTTP 200.
 
 ## Known Pitfalls
 
