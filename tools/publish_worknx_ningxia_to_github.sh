@@ -63,7 +63,10 @@ fi
 
 for source in "${sources[@]}"; do
   echo "Publishing Ningxia regional overview: $source"
-  WORK_NX_ROOT="$(dirname "$source")" \
+  IAPLACS_WEBP_FORCE=1 \
+    IAPLACS_PREVIEW_FORCE=1 \
+    IAPLACS_ASSET_FORCE_UPLOAD=1 \
+    WORK_NX_ROOT="$(dirname "$source")" \
     SOURCE_IMAGE_GLOB="$(basename "$source")" \
     MIN_FILE_AGE_SECONDS=0 \
     "$PUBLISHER"

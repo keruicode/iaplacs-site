@@ -151,6 +151,12 @@ prioritizes that `*_combined_overview_6x6_grid` product over a legacy nationwide
 image when both temporarily exist in the same run directory. The hourly cron
 must run this wrapper, not `publish_worknx_summary_to_github.sh` directly.
 
+Deploy the nationwide provincial-boundary Shapefile from the Shangrao workflow
+to `login02:/data1/elpt_2022_00083/kerui/Website/SHP/` as
+`省界_region.{shp,shx,dbf,prj,sbn,sbx}`. It includes Ningxia and neighboring
+province outlines; the Ningxia renderer uses
+`$SCRIPT_DIR/SHP/省界_region.shp` by default.
+
 Then run `tools/optimize_forecast_images.sh` and
 `python3 tools/build_forecast_catalog.py` before `git add`, so the
 website can expose the new 起报时间 automatically after GitHub Pages deploys.
