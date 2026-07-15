@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-15 18:43 CST
+Last updated: 2026-07-15 18:48 CST
 
 ## Resume Commands
 
@@ -1011,6 +1011,7 @@ Official references checked during planning:
 - The updated Ningxia images were present in the live catalog and OSS, including a newly generated `2937x3200` normal WebP. The apparent stale page was browser caching, not a failed publication: OSS serves these fixed object URLs with `Cache-Control: public,max-age=604800` (seven days).
 - `app.js` had a versioned asset URL helper, but it only used `frame.version` or `run.published_at`. The renderer deliberately preserves the source mtime, so rerendering an existing run retains `published_at` and leaves the browser cache key unchanged.
 - `frameAssetSource()` now adds all available main, preview, and full asset sizes to the version token. Any regenerated derivative therefore receives a distinct query URL even when its forecast publication timestamp is intentionally unchanged. The four HTML entry points now load `app.js?v=20260715-09` to force rollout of this client fix.
+- Commit `da7b9f5bed1d09cf60a08fa04feeeb4422cf7c47` was pushed and GitHub Pages was verified live: the plain homepage references `app.js?v=20260715-09`, the deployed script contains `assetSizes`, and the resulting versioned Ningxia WebP URL returns `HTTP 200`.
 
 ## Known Pitfalls
 
