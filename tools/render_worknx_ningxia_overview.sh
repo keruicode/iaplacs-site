@@ -86,11 +86,11 @@ caption_panel() {
   convert "$panel_path" \
     -gravity North \
     -background white \
-    -splice 0x92 \
+    -splice 0x78 \
     -fill black \
     -font Helvetica-Bold \
-    -pointsize 62 \
-    -annotate +0+12 "$panel_date" \
+    -pointsize 70 \
+    -annotate +0+7 "$panel_date" \
     "$caption_path"
 }
 

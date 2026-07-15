@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-15 18:48 CST
+Last updated: 2026-07-15 19:58 CST
 
 ## Resume Commands
 
@@ -1012,6 +1012,13 @@ Official references checked during planning:
 - `app.js` had a versioned asset URL helper, but it only used `frame.version` or `run.published_at`. The renderer deliberately preserves the source mtime, so rerendering an existing run retains `published_at` and leaves the browser cache key unchanged.
 - `frameAssetSource()` now adds all available main, preview, and full asset sizes to the version token. Any regenerated derivative therefore receives a distinct query URL even when its forecast publication timestamp is intentionally unchanged. The four HTML entry points now load `app.js?v=20260715-09` to force rollout of this client fix.
 - Commit `da7b9f5bed1d09cf60a08fa04feeeb4422cf7c47` was pushed and GitHub Pages was verified live: the plain homepage references `app.js?v=20260715-09`, the deployed script contains `assetSizes`, and the resulting versioned Ningxia WebP URL returns `HTTP 200`.
+
+## Ningxia Caption Size and OSS Revalidation
+
+- The Ningxia caption montage now uses a `70px` bold black valid-time label in a `78px` white top band (previously `62px` in `92px`). The label is closer to the map frame while all tiles retain identical dimensions.
+- All five retained Ningxia runs were rerendered and republished with the larger caption, black labels, and provincial boundary SHP. The current public normal WebP was visually checked at `2974x3200`.
+- The operational publisher was found to set `Cache-Control: public,max-age=604800` on every OSS image, which can mask a replaced object for seven days even when the website catalog changes. Both the `login02` runtime publisher and the maintained `/Volumes/storage/江西VPN-每日预报/remote/publish_worknx_summary_to_github.sh` now set `Cache-Control: no-cache` instead.
+- Existing PNG, normal WebP, and preview WebP objects for all five retained runs were force-uploaded with the new metadata. Public verification for the current normal WebP returned `HTTP 200`, a new ETag, and `Cache-Control: no-cache`; all 15 image URLs returned `HTTP 200`.
 
 ## Known Pitfalls
 
