@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-15 18:35 CST
+Last updated: 2026-07-15 18:43 CST
 
 ## Resume Commands
 
@@ -1005,6 +1005,12 @@ Official references checked during planning:
 - Before each `6x6` montage, `render_worknx_ningxia_overview.sh` creates a captioned copy of every panel with ImageMagick: a uniform `92px` white top band and a `62px` black bold valid-time label (for example `07-15 20:00-21:00`). This makes labels independent from the rainfall palette and gives all 36 tiles identical dimensions.
 - All five retained runs (`20260715_00`, `20260714_18`, `20260714_12`, `20260714_06`, `20260714_00`) were rerendered with the SHP and captioned montage, then force-published as PNG, normal WebP, and preview WebP.
 - The final `20260715_00` original PNG is `6168x6720`; its public OSS SHA-256 (`03a3b2f8ef3ff970cf4606f8b81dc4f662cc83ff35f8b2e00597f744edcef523`) exactly matches the server output. All 15 public assets across the five retained runs returned `HTTP 200` with image content types.
+
+## Forecast Asset Cache Invalidation
+
+- The updated Ningxia images were present in the live catalog and OSS, including a newly generated `2937x3200` normal WebP. The apparent stale page was browser caching, not a failed publication: OSS serves these fixed object URLs with `Cache-Control: public,max-age=604800` (seven days).
+- `app.js` had a versioned asset URL helper, but it only used `frame.version` or `run.published_at`. The renderer deliberately preserves the source mtime, so rerendering an existing run retains `published_at` and leaves the browser cache key unchanged.
+- `frameAssetSource()` now adds all available main, preview, and full asset sizes to the version token. Any regenerated derivative therefore receives a distinct query URL even when its forecast publication timestamp is intentionally unchanged. The four HTML entry points now load `app.js?v=20260715-09` to force rollout of this client fix.
 
 ## Known Pitfalls
 

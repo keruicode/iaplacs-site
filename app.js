@@ -635,9 +635,13 @@ function highQualityFrameSource(run, frame) {
 }
 
 function frameAssetSource(run, frame, file) {
+  const assetSizes = [frame?.bytes, frame?.preview_bytes, frame?.full_bytes]
+    .filter((value) => Number.isFinite(Number(value)))
+    .join("-");
+  const assetVersion = [frame?.version, assetSizes].filter(Boolean).join("-");
   return withAssetVersion(
     resolveAssetPath(file),
-    frame?.version || run?.published_at || state.catalog?.published_at,
+    assetVersion || run?.published_at || state.catalog?.published_at,
   );
 }
 
