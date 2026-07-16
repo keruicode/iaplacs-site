@@ -9,6 +9,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORK_NX_ROOT="${WORK_NX_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK_nx}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-$SCRIPT_DIR/worknx_ningxia_overview}"
 NCL_SCRIPT="${NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_ningxia_hour_bjt.ncl}"
+NCL_BIN="${NCL_BIN:-/public/software/apps/ncl_ncarg/ncl630/bin/ncl}"
+NCL_ROOT="${NCL_ROOT:-/public/software/apps/ncl_ncarg/ncl630}"
 MIN_FILE_AGE_SECONDS="${MIN_FILE_AGE_SECONDS:-1200}"
 NINGXIA_SHP_FILE="${NINGXIA_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
 
@@ -43,9 +45,11 @@ if [[ ! -f "$NCL_SCRIPT" ]]; then
   echo "ERROR: NCL script not found: $NCL_SCRIPT" >&2
   exit 1
 fi
-command -v ncl >/dev/null || { echo "ERROR: ncl is required" >&2; exit 127; }
+[[ -x "$NCL_BIN" ]] || { echo "ERROR: ncl is required: $NCL_BIN" >&2; exit 127; }
+[[ -d "$NCL_ROOT/lib/ncarg" ]] || { echo "ERROR: NCARG_ROOT is invalid: $NCL_ROOT" >&2; exit 127; }
 command -v montage >/dev/null || { echo "ERROR: ImageMagick montage is required" >&2; exit 127; }
 command -v convert >/dev/null || { echo "ERROR: ImageMagick convert is required" >&2; exit 127; }
+export NCARG_ROOT="$NCL_ROOT"
 
 mkdir -p "$OUTPUT_ROOT"
 now_epoch="$(date +%s)"
@@ -120,7 +124,7 @@ render_source() {
   WORK_NX_WRF_DIR="$wrf_dir" \
     WORK_NX_NINGXIA_PNG_DIR="$panel_dir" \
     NINGXIA_SHP_FILE="$NINGXIA_SHP_FILE" \
-    ncl "$NCL_SCRIPT"
+    "$NCL_BIN" "$NCL_SCRIPT"
 
   local panels=()
   mapfile -t panels < <(find "$panel_dir" -maxdepth 1 -type f -name '*_rain_hour_*_BJT.png' -print | sort)

@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-15 21:24 CST
+Last updated: 2026-07-16 08:00 CST
 
 ## Resume Commands
 
@@ -1025,6 +1025,17 @@ Official references checked during planning:
 - The Ningxia precipitation palette was replaced with the exact Shangrao thresholds: `0`, `1.5`, `7`, `15`, `40`, and `50 mm`. It now uses Shangrao's white, light-green, green, light-blue, deep-blue, magenta, and brown-red sequence.
 - This corrects the previous Ningxia palette, whose different levels and fill-index sequence could make the top category appear green. The maximum class now renders brown-red and the colour-bar labels match Shangrao exactly.
 - All five retained Ningxia runs were rerendered and force-published as PNG, normal WebP, and preview WebP. A public `20260715_00` WebP was visually checked: it has the brown-red top colour, `0/1.5/7/15/40/50` labels, black enlarged dates, and the provincial boundary overlay. It returned `HTTP 200` with `Cache-Control: no-cache`.
+
+## Ningxia Scheduled Publishing Recovery
+
+- Follow-up thread: `019f5ef8-ca95-7bd0-b4dd-0945145df7f0`.
+- Session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/14/rollout-2026-07-14T12-53-10-019f5ef8-ca95-7bd0-b4dd-0945145df7f0.jsonl`.
+- On 2026-07-16, WORK_nx already contained stable source sheets and adjacent `wrfout_d01_*` fields for `20260715_06` and `20260715_12`, but the public Ningxia catalogue remained at `20260715_00`.
+- Root cause: the minute-55 cron job starts with a minimal `PATH` and no `NCARG_ROOT`; the renderer used `command -v ncl`, so the job stopped with `ERROR: ncl is required` before drawing or uploading.
+- `tools/render_worknx_ningxia_overview.sh` now defaults to the installed server paths `NCL_BIN=/public/software/apps/ncl_ncarg/ncl630/bin/ncl` and `NCL_ROOT=/public/software/apps/ncl_ncarg/ncl630`, verifies both, exports `NCARG_ROOT`, and invokes the absolute NCL binary. Overrides remain available through the two environment variables.
+- The repaired renderer was deployed to `login02:/data1/elpt_2022_00083/kerui/Website/` and passed a real cron-like test using `env -i HOME="$HOME" PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin ./render_worknx_ningxia_overview.sh --recent 1`; it rendered the regional `20260715_12` T13--T48 6x6 overview successfully.
+- The normal publisher then processed `20260715_06` and `20260715_12`. Remote `origin/main` contains the updated catalogue with Ningxia `latest_run: 20260715_12`; the latest public catalogue check also reports `20260715_12`.
+- Public OSS verification for the new normal WebP returned `HTTP 200`, `Content-Type: image/webp`, `Content-Length: 1633021`, and `Cache-Control: no-cache`. The image is therefore uploaded and publicly readable; the home page now has a catalogue entry for it.
 
 ## Known Pitfalls
 
