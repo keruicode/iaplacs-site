@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-18 20:39 CST
+Last updated: 2026-07-18 20:52 CST
 
 ## Resume Commands
 
@@ -1163,6 +1163,24 @@ Notes for deployment:
   - `git diff --name-only -- . ':!data/current'` and `git diff --cached --name-only -- . ':!data/current'` were both empty after alignment.
   - The original local checkout still contains `data/current` forecast-image churn because the server/GitHub data tree has advanced while the local image tree is incomplete; future code changes should continue to avoid `git add .` unless the data state is intentionally refreshed.
 - Live homepage verification after the code push confirmed `https://iaplacs.xyz/` contains `styles.css?v=20260718-01`, `上饶服务`, `机场服务`, `./shangrao/`, and `./airpots/`.
+
+## Service Entry Button Cleanup
+
+- User requested consistent service options across the three service pages, with only two options shown on each page, and asked to remove the text content from the two airport `服务说明` blocks while retaining the `服务说明` label/header.
+- Updated service entry buttons:
+  - Root Ningxia page `/`: `上饶服务` and `机场服务`.
+  - `/ningxia/`: `上饶服务` and `机场服务`.
+  - `/shangrao/`: `宁夏服务` and `机场服务`.
+  - `/airpots/`: `宁夏服务` and `上饶服务`.
+- Bumped all four entry pages to `styles.css?v=20260718-02` so the service-button styling is fetched consistently on non-root pages.
+- Airport page cleanup:
+  - Removed the dynamic `sourceNote` paragraph from the left `服务说明` block.
+  - Removed the `Airport` sublabel and dynamic `productNote` paragraph from the right `服务说明` block.
+  - `app.js` already guards missing elements through `setText(element, text)`, so removing the airport IDs is safe.
+- Verification:
+  - `node --check app.js`: passed.
+  - `git diff --check -- index.html ningxia/index.html shangrao/index.html airpots/index.html`: passed.
+  - `rg -n "styles.css\\?v=|home-service-link|宁夏服务|上饶服务|机场服务|id=\"sourceNote\"|id=\"productNote\"|服务说明" index.html ningxia/index.html shangrao/index.html airpots/index.html`: confirmed service links and confirmed airport no longer has `sourceNote` / `productNote` IDs.
 
 ## Known Pitfalls
 
