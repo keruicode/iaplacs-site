@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-18 20:52 CST
+Last updated: 2026-07-18 21:07 CST
 
 ## Resume Commands
 
@@ -1181,6 +1181,9 @@ Notes for deployment:
   - `node --check app.js`: passed.
   - `git diff --check -- index.html ningxia/index.html shangrao/index.html airpots/index.html`: passed.
   - `rg -n "styles.css\\?v=|home-service-link|宁夏服务|上饶服务|机场服务|id=\"sourceNote\"|id=\"productNote\"|服务说明" index.html ningxia/index.html shangrao/index.html airpots/index.html`: confirmed service links and confirmed airport no longer has `sourceNote` / `productNote` IDs.
+  - Local file-content check confirmed all four entry pages contain the expected two service links; airport page no longer contains `id="sourceNote"`, `id="productNote"`, `Airport`, `正在读取机场服务清单`, or `正在读取机场产品说明`.
+  - Code commit: `3f94290` (`Align service entry links`), pushed to `origin/main`.
+  - Online checks with cache-busting URLs confirmed deployed HTML for `/`, `/ningxia/`, `/shangrao/`, and `/airpots/`; `/airpots/?v=3f94290` returned the new service links and did not contain the removed airport service-note IDs/text.
 
 ## Known Pitfalls
 
