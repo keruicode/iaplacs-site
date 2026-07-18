@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-18 20:33 CST
+Last updated: 2026-07-18 20:36 CST
 
 ## Resume Commands
 
@@ -1155,7 +1155,11 @@ Notes for deployment:
 - Public OSS HEAD checks returned `HTTP 200`:
   - Ningxia latest normal WebP: `Content-Type: image/webp`, `Content-Length: 1631387`, `Cache-Control: no-cache`.
   - Shangrao latest overview WebP: `Content-Type: image/webp`, `Content-Length: 3568776`, `Cache-Control: public,max-age=604800`.
-- Local `origin/main` was refreshed to `b678e147d854b04fe4e9adae0c69300804d2af71` after server publishing. The original local checkout still contains pre-existing `data/current` staged/unstaged churn, so code sync must continue through a clean temporary worktree or targeted staging.
+- Local/GitHub code sync was completed from a clean temporary worktree at `/private/tmp/iaplacs-code-sync-20260718-2032`.
+  - Code/docs/SHP commit: `ebae4f12efcc2276fedbf83df56c1d14ae3d60ab` (`Add county boundary overlays`), pushed to `origin/main`.
+  - Commit contents intentionally excluded `data/current`; server-published forecast data commits remain separate.
+  - Local file-level verification compared all 37 `origin/main` tracked files outside `data/current/` against the original workspace and found `missing=[]`, `different=[]`.
+  - The original local checkout still contains pre-existing `data/current` staged/unstaged churn, so future code changes should continue to avoid `git add .` unless the data state is intentionally refreshed.
 
 ## Known Pitfalls
 
