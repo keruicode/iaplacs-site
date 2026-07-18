@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-18 20:36 CST
+Last updated: 2026-07-18 20:39 CST
 
 ## Resume Commands
 
@@ -1159,7 +1159,10 @@ Notes for deployment:
   - Code/docs/SHP commit: `ebae4f12efcc2276fedbf83df56c1d14ae3d60ab` (`Add county boundary overlays`), pushed to `origin/main`.
   - Commit contents intentionally excluded `data/current`; server-published forecast data commits remain separate.
   - Local file-level verification compared all 37 `origin/main` tracked files outside `data/current/` against the original workspace and found `missing=[]`, `different=[]`.
-  - The original local checkout still contains pre-existing `data/current` staged/unstaged churn, so future code changes should continue to avoid `git add .` unless the data state is intentionally refreshed.
+  - The original local `main` pointer/index was then aligned to `origin/main` with `git reset --mixed origin/main` after creating backup branch `backup-main-before-county-sync-20260718` at the old local HEAD. Working tree files were not overwritten.
+  - `git diff --name-only -- . ':!data/current'` and `git diff --cached --name-only -- . ':!data/current'` were both empty after alignment.
+  - The original local checkout still contains `data/current` forecast-image churn because the server/GitHub data tree has advanced while the local image tree is incomplete; future code changes should continue to avoid `git add .` unless the data state is intentionally refreshed.
+- Live homepage verification after the code push confirmed `https://iaplacs.xyz/` contains `styles.css?v=20260718-01`, `上饶服务`, `机场服务`, `./shangrao/`, and `./airpots/`.
 
 ## Known Pitfalls
 
