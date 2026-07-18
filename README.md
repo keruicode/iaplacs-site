@@ -102,6 +102,17 @@ tools/optimize_forecast_images.sh
 python3 tools/build_forecast_catalog.py
 ```
 
+The regional administrative overlays used during image rendering live under:
+
+```text
+tools/SHP/ningxia_city_county.*
+tools/SHP/shangrao_city_county.*
+```
+
+These are server-side rendering inputs. They are filtered to the two active
+service regions only and should be copied to the server runtime `SHP/` directory
+before rerendering the Ningxia and Shangrao products.
+
 Keep images small and web-friendly:
 
 - WebP preferred for maps;

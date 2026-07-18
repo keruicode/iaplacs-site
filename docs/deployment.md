@@ -151,11 +151,28 @@ prioritizes that `*_combined_overview_6x6_grid` product over a legacy nationwide
 image when both temporarily exist in the same run directory. The hourly cron
 must run this wrapper, not `publish_worknx_summary_to_github.sh` directly.
 
-Deploy the nationwide provincial-boundary Shapefile from the Shangrao workflow
-to `login02:/data1/elpt_2022_00083/kerui/Website/SHP/` as
-`省界_region.{shp,shx,dbf,prj,sbn,sbx}`. It includes Ningxia and neighboring
-province outlines; the Ningxia renderer uses
-`$SCRIPT_DIR/SHP/省界_region.shp` by default.
+Deploy the required administrative-boundary Shapefiles to
+`login02:/data1/elpt_2022_00083/kerui/Website/SHP/`:
+
+```text
+省界_region.{shp,shx,dbf,prj,sbn,sbx}
+ningxia_city_county.{shp,shx,dbf,prj,cpg}
+shangrao_city_county.{shp,shx,dbf,prj,cpg}
+```
+
+The Ningxia renderer draws `ningxia_city_county.shp` as the thin city/county
+layer and `省界_region.shp` as the thicker province outline. The deployable
+Shangrao NCL script is `tools/rain_wrf_shangrao_hour_bjt.ncl`; when copied into
+the server WRF montage workflow, run it with:
+
+```bash
+SHANGRAO_PROVINCE_SHP_FILE="$PWD/SHP/省界_region.shp" \
+SHANGRAO_COUNTY_SHP_FILE="$PWD/SHP/shangrao_city_county.shp" \
+ncl rain_wrf_shangrao_hour_bjt.ncl
+```
+
+Do not use a nationwide county layer in these two products. The committed
+county Shapefiles are filtered to Ningxia and Shangrao only.
 
 Then run `tools/optimize_forecast_images.sh` and
 `python3 tools/build_forecast_catalog.py` before `git add`, so the

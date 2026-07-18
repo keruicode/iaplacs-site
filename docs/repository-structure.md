@@ -29,6 +29,8 @@ data/current/manifest.json       旧版 fallback 清单
 data/current/maps/              GitHub 里的图像副本和本地 fallback
 tools/build_forecast_catalog.py  从图像目录生成 forecast-runs.json
 tools/optimize_forecast_images.sh 图像优化脚本
+tools/rain_wrf_shangrao_hour_bjt.ncl 上饶 WRF 出图脚本，可部署到服务器
+tools/SHP/                    宁夏、上饶服务区市县边界 shp
 docs/                       运维、部署和结构说明
 Codex_resume_iaplacs_website.md  Codex 断点恢复 handoff
 ```

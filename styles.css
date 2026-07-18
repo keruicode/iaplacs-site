@@ -236,6 +236,48 @@ button {
   flex: 0 0 auto;
 }
 
+.home-service-links {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.home-service-link {
+  display: inline-grid;
+  place-items: center;
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  background: #f8fafb;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 760;
+  white-space: nowrap;
+}
+
+.home-service-link.primary {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #fff;
+}
+
+.home-service-link:hover,
+.home-service-link:focus-visible {
+  border-color: #8cb9ee;
+  background: var(--blue-soft);
+  color: var(--blue-deep);
+  outline: none;
+}
+
+.home-service-link.primary:hover,
+.home-service-link.primary:focus-visible {
+  background: var(--blue-deep);
+  color: #fff;
+}
+
 .status-dot {
   width: 9px;
   height: 9px;
@@ -1114,6 +1156,15 @@ button {
   .topbar-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .home-service-links {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .home-service-link {
+    flex: 1 1 126px;
   }
 
   .run-state {

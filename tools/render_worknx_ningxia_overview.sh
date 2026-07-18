@@ -13,6 +13,8 @@ NCL_BIN="${NCL_BIN:-/public/software/apps/ncl_ncarg/ncl630/bin/ncl}"
 NCL_ROOT="${NCL_ROOT:-/public/software/apps/ncl_ncarg/ncl630}"
 MIN_FILE_AGE_SECONDS="${MIN_FILE_AGE_SECONDS:-1200}"
 NINGXIA_SHP_FILE="${NINGXIA_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
+NINGXIA_PROVINCE_SHP_FILE="${NINGXIA_PROVINCE_SHP_FILE:-$NINGXIA_SHP_FILE}"
+NINGXIA_COUNTY_SHP_FILE="${NINGXIA_COUNTY_SHP_FILE:-$SCRIPT_DIR/SHP/ningxia_city_county.shp}"
 
 usage() {
   cat <<'EOF'
@@ -50,6 +52,13 @@ fi
 command -v montage >/dev/null || { echo "ERROR: ImageMagick montage is required" >&2; exit 127; }
 command -v convert >/dev/null || { echo "ERROR: ImageMagick convert is required" >&2; exit 127; }
 export NCARG_ROOT="$NCL_ROOT"
+
+if [[ -n "$NINGXIA_PROVINCE_SHP_FILE" && ! -f "$NINGXIA_PROVINCE_SHP_FILE" ]]; then
+  echo "WARNING: Ningxia province SHP not found, province outline will be skipped: $NINGXIA_PROVINCE_SHP_FILE" >&2
+fi
+if [[ -n "$NINGXIA_COUNTY_SHP_FILE" && ! -f "$NINGXIA_COUNTY_SHP_FILE" ]]; then
+  echo "WARNING: Ningxia city/county SHP not found, city/county outline will be skipped: $NINGXIA_COUNTY_SHP_FILE" >&2
+fi
 
 mkdir -p "$OUTPUT_ROOT"
 now_epoch="$(date +%s)"
@@ -123,7 +132,9 @@ render_source() {
   echo "Rendering Ningxia T13-T48 panels for $run_prefix from $wrf_dir"
   WORK_NX_WRF_DIR="$wrf_dir" \
     WORK_NX_NINGXIA_PNG_DIR="$panel_dir" \
-    NINGXIA_SHP_FILE="$NINGXIA_SHP_FILE" \
+    NINGXIA_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
+    NINGXIA_PROVINCE_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
+    NINGXIA_COUNTY_SHP_FILE="$NINGXIA_COUNTY_SHP_FILE" \
     "$NCL_BIN" "$NCL_SCRIPT"
 
   local panels=()

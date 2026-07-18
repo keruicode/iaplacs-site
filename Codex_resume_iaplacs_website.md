@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-16 08:00 CST
+Last updated: 2026-07-18 20:33 CST
 
 ## Resume Commands
 
@@ -40,6 +40,16 @@ codex resume 019f5ef8-ca95-7bd0-b4dd-0945145df7f0
 
 ```bash
 code resume 019f5ef8-ca95-7bd0-b4dd-0945145df7f0
+```
+
+Current homepage service-button and county-SHP follow-up:
+
+```bash
+codex resume 019f472c-9bd3-7222-9160-5fa0162a1249
+```
+
+```bash
+code resume 019f472c-9bd3-7222-9160-5fa0162a1249
 ```
 
 ## Thread
@@ -180,6 +190,13 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - `/Users/xiaoxiaotu/_01_IAP/Website/airpots/index.html`
 - `/Users/xiaoxiaotu/_01_IAP/Website/tools/build_forecast_catalog.py`
 - `/Users/xiaoxiaotu/_01_IAP/Website/tools/optimize_forecast_images.sh`
+- `/Users/xiaoxiaotu/_01_IAP/Website/tools/render_worknx_ningxia_overview.sh`
+- `/Users/xiaoxiaotu/_01_IAP/Website/tools/publish_worknx_ningxia_to_github.sh`
+- `/Users/xiaoxiaotu/_01_IAP/Website/tools/rain_worknx_ningxia_hour_bjt.ncl`
+- `/Users/xiaoxiaotu/_01_IAP/Website/tools/rain_wrf_shangrao_hour_bjt.ncl`
+- `/Users/xiaoxiaotu/_01_IAP/Website/tools/SHP/ningxia_city_county.*`
+- `/Users/xiaoxiaotu/_01_IAP/Website/tools/SHP/shangrao_city_county.*`
+- `/Users/xiaoxiaotu/_01_IAP/Website/docs/repository-structure.md`
 - Remote GitHub Pages repo, pushed from `server02`:
   - `data/current/maps/wrf_montage_20260709_02/`
   - `data/current/maps/worknx_summary_20260709_00/`
@@ -1037,6 +1054,109 @@ Official references checked during planning:
 - The normal publisher then processed `20260715_06` and `20260715_12`. Remote `origin/main` contains the updated catalogue with Ningxia `latest_run: 20260715_12`; the latest public catalogue check also reports `20260715_12`.
 - Public OSS verification for the new normal WebP returned `HTTP 200`, `Content-Type: image/webp`, `Content-Length: 1633021`, and `Cache-Control: no-cache`. The image is therefore uploaded and publicly readable; the home page now has a catalogue entry for it.
 
+## Homepage Buttons And County SHP Overlays
+
+- Follow-up thread: `019f472c-9bd3-7222-9160-5fa0162a1249`.
+- Session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/09/rollout-2026-07-09T21-58-53-019f472c-9bd3-7222-9160-5fa0162a1249.jsonl`.
+- Working directory: `/Users/xiaoxiaotu/_01_IAP/Website`.
+- User requested homepage buttons for Shangrao service and airport service, and city/county SHP overlays for Ningxia and Shangrao only.
+- `index.html` now shows two homepage service-entry buttons in the topbar: `上饶服务` linking to `./shangrao/` and `机场服务` linking to `./airpots/`. The homepage stylesheet cache key was bumped to `styles.css?v=20260718-01`.
+- `styles.css` now includes responsive `home-service-links` / `home-service-link` styles. On mobile, the buttons wrap as full-width topbar controls.
+- Generated two filtered SHP datasets under `tools/SHP/`:
+  - `ningxia_city_county.*`: 21 Ningxia city/county features, bbox `[104.2790756225586, 35.23535537719738, 107.65174865722668, 39.38087844848633]`.
+  - `shangrao_city_county.*`: 12 Shangrao county/district/city features, bbox `[116.22401717600007, 27.803600632000013, 118.4821187980001, 29.701984072000016]`.
+- `tools/render_worknx_ningxia_overview.sh` now passes both `NINGXIA_PROVINCE_SHP_FILE` and `NINGXIA_COUNTY_SHP_FILE` to NCL. The county default is `$SCRIPT_DIR/SHP/ningxia_city_county.shp`; `NINGXIA_SHP_FILE` remains a compatibility alias for the province outline.
+- `tools/rain_worknx_ningxia_hour_bjt.ncl` now draws a thin city/county boundary layer first, then a thicker province outline layer.
+- Added deployable `tools/rain_wrf_shangrao_hour_bjt.ncl`, based on the Shangrao WRF workflow, with `SHANGRAO_COUNTY_SHP_FILE` defaulting to `./SHP/shangrao_city_county.shp` and `SHANGRAO_PROVINCE_SHP_FILE` defaulting to `./SHP/省界_region.shp`.
+- Updated `README.md`, `docs/deployment.md`, and `docs/repository-structure.md` so the server operator copies only the filtered Ningxia and Shangrao SHPs, not nationwide or full-Jiangxi county layers, into the server runtime `SHP/` directory.
+- Local preview server was started at `http://127.0.0.1:5182/`. The process is listening on `127.0.0.1:5182`, but this sandbox refused same-host client connections from separate commands with `PermissionError [Errno 1] Operation not permitted`, so preview verification used static HTML checks plus `lsof`.
+
+Verification commands/results:
+
+```bash
+bash -n tools/render_worknx_ningxia_overview.sh tools/publish_worknx_ningxia_to_github.sh tools/optimize_forecast_images.sh
+```
+
+Result: passed.
+
+```bash
+python3 - <<'PY'
+from pathlib import Path
+import shapefile
+expected = {
+    'tools/SHP/ningxia_city_county.shp': 21,
+    'tools/SHP/shangrao_city_county.shp': 12,
+}
+for file_name, count in expected.items():
+    reader = shapefile.Reader(file_name, encoding='utf-8', encodingErrors='replace')
+    actual = len(reader.shapes())
+    print(file_name, actual, reader.bbox)
+    if actual != count:
+        raise SystemExit(f'{file_name}: expected {count}, got {actual}')
+PY
+```
+
+Result: Ningxia SHP has `21` features; Shangrao SHP has `12` features.
+
+```bash
+rg -n "home-service-link|上饶服务|机场服务|20260718-01" index.html styles.css
+```
+
+Result: homepage contains the two service buttons and the new stylesheet cache key.
+
+```bash
+git diff --check -- index.html styles.css tools/render_worknx_ningxia_overview.sh tools/rain_worknx_ningxia_hour_bjt.ncl README.md docs/deployment.md docs/repository-structure.md
+```
+
+Result: passed.
+
+Notes for deployment:
+
+- NCL is not installed in this local environment, so actual map rendering was not executed locally. Run the Ningxia and Shangrao NCL workflows on the IAP server after copying the SHP sidecar files.
+- The active Shangrao production workflow currently lives outside this GitHub Pages repo under `/Volumes/storage/江西VPN-每日预报/shared/` and on `login02`; copy or replace its rainfall NCL with `tools/rain_wrf_shangrao_hour_bjt.ncl` before rerendering Shangrao products.
+- Existing dirty `data/current` changes were present before this work and were not cleaned or reverted.
+
+## IAP Server County-SHP Deployment And Publication
+
+- User confirmed the IAP server was open and asked that real plotting be adjusted on the IAP server while local and GitHub code remain consistent.
+- Connected to `login02` at `10.64.201.2` and used runtime directory `/data1/elpt_2022_00083/kerui/Website`.
+- Backed up runtime plotting scripts to `/data1/elpt_2022_00083/kerui/Website/backups/county-shp-20260718_195024/`.
+- Copied the filtered SHP sidecars and updated NCL/render scripts into the server runtime:
+  - `SHP/ningxia_city_county.*`
+  - `SHP/shangrao_city_county.*`
+  - `rain_worknx_ningxia_hour_bjt.ncl`
+  - `render_worknx_ningxia_overview.sh`
+  - `rain_wrf_shangrao_hour_bjt.ncl`
+  - runtime `rain_wrf_hour_bjt.ncl` was replaced with the deployable Shangrao county-SHP version.
+- Remote checks passed:
+  - `bash -n render_worknx_ningxia_overview.sh publish_worknx_ningxia_to_github.sh publish_wrf_montage_to_github.sh submit_wrf_pipeline.sh auto_pipeline_server.sh`
+  - `ncl -V` returned `6.3.0` from `/public/software/apps/ncl_ncarg/ncl630/bin/ncl`.
+  - Runtime script greps confirmed both Ningxia and Shangrao draw a thin county layer plus thicker province outline.
+- Published the latest Ningxia regional run with `./publish_worknx_ningxia_to_github.sh --latest`.
+  - Rendered and published `20260718_00`.
+  - Public OSS image verified by the publisher:
+    `https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260718_00/Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_2026-07-18_00_00_combined_overview_6x6_grid.png`.
+  - GitHub data commit: `93fba94 Update WORK_nx summary 20260718_00`.
+- Submitted the Shangrao WRF pipeline with `./submit_wrf_pipeline.sh`.
+  - Slurm job: `38238417`.
+  - Finished successfully at `2026-07-18 20:18:22 CST`.
+  - The run also produced a partial `20260718_14` 6x1 output; it was intentionally excluded from publishing because it was not a complete 6x6 overview plus three detail sheets.
+- Published the latest five complete Shangrao WRF runs from `wrf_hourly_png` using `PREFIX_FILE=/tmp/iaplacs_latest5_full_wrf_prefixes.txt ./publish_wrf_montage_to_github.sh --all-current`.
+  - Published runs: `20260717_08`, `20260717_14`, `20260717_20`, `20260718_02`, and `20260718_08`.
+  - GitHub data commits: `aea89ef`, `3d5c25b`, `8241889`, `6c1346f`, and `b678e14`.
+  - OSS retention kept exactly five `worknx_summary_*` and five `wrf_montage_*` families; no retained objects were deleted.
+- Live catalog verification at `https://iaplacs.xyz/data/current/forecast-runs.json`:
+  - `published_at`: `2026-07-18T20:18:20+08:00`
+  - `ningxia.latest_run`: `20260718_00`
+  - Ningxia runs: `20260718_00`, `20260717_18`, `20260717_12`, `20260717_06`, `20260717_00`
+  - `shangrao.latest_run`: `20260718_08`
+  - Shangrao runs: `20260718_08`, `20260718_02`, `20260717_20`, `20260717_14`, `20260717_08`
+  - No partial `20260718_14` run appears in the live Shangrao catalog.
+- Public OSS HEAD checks returned `HTTP 200`:
+  - Ningxia latest normal WebP: `Content-Type: image/webp`, `Content-Length: 1631387`, `Cache-Control: no-cache`.
+  - Shangrao latest overview WebP: `Content-Type: image/webp`, `Content-Length: 3568776`, `Cache-Control: public,max-age=604800`.
+- Local `origin/main` was refreshed to `b678e147d854b04fe4e9adae0c69300804d2af71` after server publishing. The original local checkout still contains pre-existing `data/current` staged/unstaged churn, so code sync must continue through a clean temporary worktree or targeted staging.
+
 ## Known Pitfalls
 
 - If the target server is in mainland China and `iaplacs.xyz` resolves to it, ICP filing is required before normal public access.
@@ -1074,9 +1194,10 @@ Official references checked during planning:
 
 1. Add `www` separately as a CNAME to `keruicode.github.io`. In Aliyun quick-add this can be done by choosing `将网站域名解析到另外的目标域名`, selecting only `www.iaplacs.xyz`, and entering `keruicode.github.io`.
 2. Confirm GitHub Pages HTTPS remains enabled for `iaplacs.xyz` after DNS/certificate provisioning.
-3. Monitor the `login02` publishing helpers after the next forecast cycles: confirm the new OSS readability repair path does not report failures, generated catalogs still contain only five runs per family, and retained OSS image URLs return public `HTTP 200`.
-4. Add real airport service products to replace the current samples under `/airpots/`.
-5. Later, extend `tools/build_forecast_catalog.py` with additional product scanners when the server starts publishing more product families beyond WRF rainfall montage and WORK_nx summary.
-6. Keep GitHub Pages for the app/catalog and OSS for forecast images; move to an additional CDN only if traffic or latency later requires it.
-7. Perform one real iPhone/Android check after the `20260710-08` deploy: switch every Ningxia and Shangrao run, switch all four Shangrao frames, then test pinch zoom, drag, reset, and close; repeat at desktop width with wheel zoom.
-8. When the local GitHub route is responsive, fast-forward this clean clone after future server commits; do not overwrite concurrent forecast data commits.
+3. Monitor the next scheduled Ningxia and Shangrao publish cycles after the county-SHP deployment; confirm new products still publish exactly five retained runs per service and that public OSS URLs return `HTTP 200`.
+4. Monitor the `login02` publishing helpers after the next forecast cycles: confirm the new OSS readability repair path does not report failures, generated catalogs still contain only five runs per family, and retained OSS image URLs return public `HTTP 200`.
+5. Add real airport service products to replace the current samples under `/airpots/`.
+6. Later, extend `tools/build_forecast_catalog.py` with additional product scanners when the server starts publishing more product families beyond WRF rainfall montage and WORK_nx summary.
+7. Keep GitHub Pages for the app/catalog and OSS for forecast images; move to an additional CDN only if traffic or latency later requires it.
+8. Perform one real iPhone/Android check after the `20260710-08` deploy: switch every Ningxia and Shangrao run, switch all four Shangrao frames, then test pinch zoom, drag, reset, and close; repeat at desktop width with wheel zoom.
+9. When the local GitHub route is responsive, fast-forward this clean clone after future server commits; do not overwrite concurrent forecast data commits.
