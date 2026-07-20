@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-20 20:14 CST
+Last updated: 2026-07-20 22:35 CST
 
 ## Resume Commands
 
@@ -1430,6 +1430,110 @@ Notes for deployment:
   - Visual inspection of `.tmp/yunnan_city_preview_9b1355c.webp` confirmed Yunnan now shows city-level boundaries only and lowered time labels.
   - Visual inspection of `.tmp/shangrao_thick_preview_9b1355c.webp` confirmed Shangrao still shows only Shangrao city/county boundaries and the boundary lines are thicker.
 - Current local state after this work before the resume-only commit: `main` equals `origin/main` at `9b1355c`; `.gitignore` has an unstaged user change adding `.tmp`.
+
+## 2026-07-20 Airport Metric Text and Five Airport Runs
+
+- User requested:
+  - Airport rainfall metric text should not show `最大小时 0.0 mm 时间`; instead use `最大小时降水 X mm 时间`, and omit the maximum-hour part entirely when the maximum is `0.0`.
+  - Airport service should show five forecast initial times like Ningxia and Shangrao.
+- Local code/data commit:
+  - `b2c3f31 Refine Yunnan airport rainfall metrics`
+- Server data backfill commits created by `./publish_worknx_yunnan_airports_to_github.sh --recent 5`:
+  - `c933455 Update Yunnan airport forecast 20260719_18`
+  - `e92e46a Update Yunnan airport forecast 20260719_12`
+  - `8e65441 Update Yunnan airport forecast 20260719_06`
+  - `7ca7b93 Update Yunnan airport forecast 20260719_00`
+- Implemented changes:
+  - Updated `tools/build_forecast_catalog.py`:
+    - `yunnan_airport_metric_value()` now emits `累计 X mm` first.
+    - It appends `最大小时降水 Y mm MM-DD HH:00-HH:00` only when `max_hourly_mm > 0`.
+    - It normalizes historical merged airport run metrics via `normalize_yunnan_airport_run_metrics()` so old catalog entries also drop zero maximum-hour text.
+  - Regenerated `data/current/forecast-runs.json` after preserving the newly backfilled five airport runs from `origin/main`.
+  - Synced the fixed `build_forecast_catalog.py` to the IAP runtime root `/data1/elpt_2022_00083/kerui/Website/build_forecast_catalog.py` so direct server-side catalog builds use the same logic.
+- Verification:
+  - `PYTHONPYCACHEPREFIX=/private/tmp/iaplacs_pycache python3 -m py_compile tools/build_forecast_catalog.py tools/extract_yunnan_airport_precip.py`: passed.
+  - `git diff --check -- tools/build_forecast_catalog.py data/current/forecast-runs.json`: passed.
+  - Public catalog check from `https://iaplacs.xyz/data/current/forecast-runs.json?v=b2c3f31-2`:
+    - `airport=5`: `airport_yunnan_20260720_00`, `airport_yunnan_20260719_18`, `airport_yunnan_20260719_12`, `airport_yunnan_20260719_06`, `airport_yunnan_20260719_00`
+    - `ningxia=5`: `20260720_00`, `20260719_18`, `20260719_12`, `20260719_06`, `20260719_00`
+    - `shangrao=5`: `20260720_08`, `20260720_02`, `20260719_20`, `20260719_14`, `20260719_08`
+    - Latest airport metrics:
+      - 德宏芒市机场: `累计 0.0 mm`
+      - 西双版纳嘎洒机场: `累计 1.7 mm；最大小时降水 0.5 mm 07-21 02:00-03:00`
+      - 普洱澜沧景迈机场: `累计 0.1 mm`
+  - OSS preview image checks for all five airport runs returned `HTTP/1.1 200 OK`.
+- Current local state after this work:
+  - `main` equals `origin/main` at `b2c3f31`.
+  - `.gitignore` remains an unstaged pre-existing user change and was not included.
+
+## 2026-07-20 Airport Metrics Peak-Only Display
+
+- User requested removing `累计 xxx mm` from airport rainfall metrics and keeping only `最大小时降水`.
+- Code/data commit:
+  - `84a90ce Show only peak airport rainfall`
+- Implemented changes:
+  - Updated `tools/build_forecast_catalog.py` so airport precipitation metrics now only emit `最大小时降水 X mm MM-DD HH:00-HH:00`.
+  - Airport metrics with zero or missing hourly peak are omitted from the metrics list entirely.
+  - Historical merged airport run metrics are normalized the same way, so previously generated `累计 ...` strings are removed from all five retained airport runs.
+  - Regenerated `data/current/forecast-runs.json`.
+  - Synced the final `build_forecast_catalog.py` to `login02:/data1/elpt_2022_00083/kerui/Website/build_forecast_catalog.py`.
+- Verification:
+  - `PYTHONPYCACHEPREFIX=/private/tmp/iaplacs_pycache python3 -m py_compile tools/build_forecast_catalog.py tools/extract_yunnan_airport_precip.py`: passed.
+  - `git diff --check -- tools/build_forecast_catalog.py data/current/forecast-runs.json`: passed.
+  - Server syntax check passed: `ssh 10.64.201.2 'cd /data1/elpt_2022_00083/kerui/Website && PYTHONPYCACHEPREFIX=/tmp/iaplacs_pycache python3 -m py_compile build_forecast_catalog.py extract_yunnan_airport_precip.py'`.
+  - Public catalog check from `https://iaplacs.xyz/data/current/forecast-runs.json?v=84a90ce-2`:
+    - `airport=5`, `ningxia=5`, `shangrao=5`.
+    - Latest airport run metrics now show only:
+      - 西双版纳嘎洒机场: `最大小时降水 0.5 mm 07-21 02:00-03:00`
+    - Zero-peak 德宏芒市机场 and 普洱澜沧景迈机场 rows are omitted in the latest run.
+    - Checked all five airport runs; no airport metric value contains `累计`.
+- Current local state after this work:
+  - `main` equals `origin/main` at `84a90ce`.
+  - `.gitignore` remains an unstaged pre-existing user change and was not included.
+  - `Codex_resume_iaplacs_website.md` is updated locally as the handoff file.
+
+## 2026-07-20 Ningxia Regional/National Toggle
+
+- User requested:
+  - The homepage is now the Ningxia service, so the main page and `/ningxia/` should show the current Ningxia regional precipitation first.
+  - Add the WORK_nx nationwide simulated precipitation image as another selectable frame, similar to Shangrao frame buttons.
+  - Default selection must remain the Ningxia regional product.
+- Code commit:
+  - `17f8100 Add national WORK_nx view to Ningxia`
+- Server data commits from rerunning latest Ningxia:
+  - `ea1a5d6 Update WORK_nx summary 20260720_00`: intermediate commit after publishing the national WORK_nx image.
+  - `56ca95c Update WORK_nx summary 20260720_00`: final commit after publishing the Ningxia regional image as the manifest-leading image.
+- Implemented changes:
+  - `tools/render_worknx_ningxia_overview.sh` now copies the source `Precip_hourly_WRF_AllRain_T01_T48...png` into the rendered `worknx_ningxia_overview/YYYYMMDD_HH/` output directory beside the Ningxia regional 6x6 overview.
+  - `tools/publish_worknx_ningxia_to_github.sh` now publishes the WORK_nx national image first, then the Ningxia regional overview. This keeps both image families in the same `worknx_summary_YYYYMMDD_HH` OSS/catalog directory while leaving the regional image as the default/current frame.
+  - `tools/build_forecast_catalog.py` now keeps both Ningxia frame groups:
+    - `ningxia_region`, lead `0`, label `宁夏区域`;
+    - `worknx_national`, lead `1`, label `全国`.
+  - `app.js` Ningxia product description now says `默认显示宁夏区域图，可切换 WORK_nx 全国模拟图。`
+  - All pages now load `app.js?v=20260720-02` to bypass browser cache.
+- Server deployment:
+  - Synced `build_forecast_catalog.py`, `render_worknx_ningxia_overview.sh`, and `publish_worknx_ningxia_to_github.sh` to `login02:/data1/elpt_2022_00083/kerui/Website/`.
+  - Server syntax check passed:
+    `PYTHONPYCACHEPREFIX=/tmp/iaplacs_pycache python3 -m py_compile build_forecast_catalog.py && bash -n render_worknx_ningxia_overview.sh publish_worknx_ningxia_to_github.sh`.
+  - Ran `./publish_worknx_ningxia_to_github.sh --latest`; it rendered `20260720_00`, published the national image, then published the regional image.
+- Verification:
+  - Local syntax checks passed:
+    - `PYTHONPYCACHEPREFIX=/private/tmp/iaplacs_pycache python3 -m py_compile tools/build_forecast_catalog.py`
+    - `bash -n tools/render_worknx_ningxia_overview.sh tools/publish_worknx_ningxia_to_github.sh`
+    - `git diff --check`
+  - Local function check using `worknx_summary_20260714_00` returned frames in order:
+    - `('ningxia_region', 0, '宁夏区域', '当前显示：宁夏区域', ...)`
+    - `('worknx_national', 1, '全国', '当前显示：WORK_nx 全国模拟图', ...)`
+  - Public catalog downloaded from `https://iaplacs.xyz/data/current/forecast-runs.json?v=56ca95c` shows latest Ningxia run `20260720_00` with exactly two frames in that order.
+  - WORK_nx national WebP for `20260720_00` changed from `HTTP 403` before republish to `HTTP 200`, `Content-Type: image/webp`, `Content-Length: 3185091`.
+  - Visual inspection:
+    - `.tmp/ningxia_region_preview_56ca95c.webp` shows the Ningxia regional 36-panel product.
+    - `.tmp/worknx_national_preview_56ca95c.webp` shows the WORK_nx nationwide simulated precipitation sheet.
+  - `https://iaplacs.xyz/app.js?v=20260720-02` returned `HTTP/2 200` once after deployment; later `iaplacs.xyz` HTML/JS checks intermittently failed DNS resolution in this environment, while OSS and catalog checks had already succeeded.
+- Current local state before final resume commit:
+  - `main` equals `origin/main` at `56ca95c`.
+  - `.gitignore` remains an unstaged pre-existing user change adding `.tmp`.
+  - `Codex_resume_iaplacs_website.md` contains previous uncommitted resume sections plus this Ningxia toggle section.
 
 ## Known Pitfalls
 
