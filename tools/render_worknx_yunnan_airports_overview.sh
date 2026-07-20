@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-# Render a Yunnan airport T13-T48 hourly precipitation overview from WORK_nx.
+# Render a Yunnan airport hourly precipitation overview from WORK_yn.
 # Thirty-six hourly panels remain after the first 12 spin-up hours, so the
 # product is intentionally one 6x6 image with airport markers.
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORK_NX_ROOT="${WORK_NX_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK_nx}"
+WORK_YN_ROOT="${WORK_YN_ROOT:-${WORK_NX_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK_yn}}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-$SCRIPT_DIR/worknx_yunnan_airports_overview}"
 NCL_SCRIPT="${NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_yunnan_airport_hour_bjt.ncl}"
 POINT_SCRIPT="${POINT_SCRIPT:-$SCRIPT_DIR/extract_yunnan_airport_precip.py}"
@@ -14,15 +14,16 @@ NCL_BIN="${NCL_BIN:-/public/software/apps/ncl_ncarg/ncl630/bin/ncl}"
 NCL_ROOT="${NCL_ROOT:-/public/software/apps/ncl_ncarg/ncl630}"
 PYTHON_BIN="${PYTHON_BIN:-$(command -v python3 || command -v python)}"
 MIN_FILE_AGE_SECONDS="${MIN_FILE_AGE_SECONDS:-1200}"
+MIN_WRFOUT_BYTES="${MIN_WRFOUT_BYTES:-20000000000}"
 YUNNAN_PROVINCE_SHP_FILE="${YUNNAN_PROVINCE_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
 
 usage() {
   cat <<'EOF'
 Usage: render_worknx_yunnan_airports_overview.sh [--latest | --recent COUNT]
 
-Reads stable WORK_nx T01-T48 source products, renders only hourly T13-T48
-Yunnan panels with airport markers, and writes one *_combined_overview_6x6_grid.png
-per run plus airport point-precipitation totals.
+Reads stable WORK_yn wrfout files, renders the 36-hour Yunnan panels with
+airport markers, and writes one *_combined_overview_6x6_grid.png per run plus
+airport point-precipitation totals.
 EOF
 }
 
@@ -40,8 +41,8 @@ if ! [[ "$count" =~ ^[1-9][0-9]*$ ]]; then
   echo "ERROR: recent count must be a positive integer" >&2
   exit 64
 fi
-if [[ ! -d "$WORK_NX_ROOT" ]]; then
-  echo "ERROR: WORK_NX_ROOT not found: $WORK_NX_ROOT" >&2
+if [[ ! -d "$WORK_YN_ROOT" ]]; then
+  echo "ERROR: WORK_YN_ROOT not found: $WORK_YN_ROOT" >&2
   exit 1
 fi
 if [[ ! -f "$NCL_SCRIPT" ]]; then
@@ -66,22 +67,27 @@ mkdir -p "$OUTPUT_ROOT"
 now_epoch="$(date +%s)"
 sources=()
 while IFS= read -r line; do
-  source_path="${line#* }"
   source_epoch="${line%% *}"
+  rest="${line#* }"
+  source_size="${rest%% *}"
+  source_path="${rest#* }"
   source_epoch="${source_epoch%.*}"
   if (( now_epoch - source_epoch < MIN_FILE_AGE_SECONDS )); then
+    continue
+  fi
+  if (( source_size < MIN_WRFOUT_BYTES )); then
     continue
   fi
   sources+=("$source_path")
   [[ "${#sources[@]}" -ge "$count" ]] && break
 done < <(
-  find "$WORK_NX_ROOT" -maxdepth 4 -type f \
-    -name 'Precip_hourly_WRF_AllRain_T01_T48_InitUTC_*.png' -printf '%T@ %p\n' \
+  find "$WORK_YN_ROOT" -maxdepth 4 -type f \
+    -name 'wrfout_d01_*' -printf '%T@ %s %p\n' \
     | sort -nr
 )
 
 if [[ "${#sources[@]}" -eq 0 ]]; then
-  echo "ERROR: no stable WORK_nx T01-T48 source image found" >&2
+  echo "ERROR: no stable WORK_yn wrfout source found" >&2
   exit 1
 fi
 
@@ -144,13 +150,18 @@ PY
 render_source() {
   local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview totals_json manifest_json
   base="$(basename "$source_path")"
-  if [[ ! "$base" =~ InitUTC_([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2})_[0-9]{2} ]]; then
-    echo "ERROR: cannot parse InitUTC from $base" >&2
+  if [[ "$base" =~ wrfout_d01_([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2}):[0-9]{2}:[0-9]{2} ]]; then
+    run_date="${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]}"
+    run_hour="${BASH_REMATCH[4]}"
+    run_prefix="${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3]}_${run_hour}"
+  elif [[ "$base" =~ InitUTC_([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2})_[0-9]{2} ]]; then
+    run_date="${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]}"
+    run_hour="${BASH_REMATCH[4]}"
+    run_prefix="${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3]}_${run_hour}"
+  else
+    echo "ERROR: cannot parse run time from $base" >&2
     return 1
   fi
-  run_date="${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]}"
-  run_hour="${BASH_REMATCH[4]}"
-  run_prefix="${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3]}_${run_hour}"
   wrf_dir="$(dirname "$source_path")"
   run_dir="$OUTPUT_ROOT/$run_prefix"
   panel_dir="$run_dir/hourly_t13_t48"
@@ -165,16 +176,16 @@ render_source() {
   fi
 
   mkdir -p "$panel_dir" "$caption_dir"
-  echo "Rendering Yunnan airport T13-T48 panels for $run_prefix from $wrf_dir"
-  WORK_NX_WRF_DIR="$wrf_dir" \
-    WORK_NX_YUNNAN_AIRPORT_PNG_DIR="$panel_dir" \
+  echo "Rendering Yunnan airport 36-hour panels for $run_prefix from $wrf_dir"
+  WORK_YN_WRF_DIR="$wrf_dir" \
+    WORK_YN_YUNNAN_AIRPORT_PNG_DIR="$panel_dir" \
     YUNNAN_PROVINCE_SHP_FILE="$YUNNAN_PROVINCE_SHP_FILE" \
     "$NCL_BIN" "$NCL_SCRIPT"
 
   local panels=()
   mapfile -t panels < <(find "$panel_dir" -maxdepth 1 -type f -name '*_rain_hour_*_BJT.png' -print | sort)
   if [[ "${#panels[@]}" -ne 36 ]]; then
-    echo "ERROR: expected 36 T13-T48 panels, found ${#panels[@]} for $run_prefix" >&2
+    echo "ERROR: expected 36 panels, found ${#panels[@]} for $run_prefix" >&2
     return 1
   fi
 

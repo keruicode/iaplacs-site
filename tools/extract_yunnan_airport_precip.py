@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extract T13-T48 point precipitation totals for Yunnan airport products."""
+"""Extract 36-hour point precipitation totals for Yunnan airport products."""
 
 from __future__ import annotations
 
@@ -98,7 +98,7 @@ def extract_file(path: Path, start: int, end: int, max_distance_deg: float) -> d
                         "status": "nearest_grid",
                         "total_mm": total_mm,
                         "max_hourly_mm": max_hourly_mm,
-                        "note": "机场点超出当前 WORK_nx d01 网格覆盖范围，数值取最近网格",
+                        "note": "机场点超出当前 WORK_yn d01 网格覆盖范围，数值取最近网格",
                     }
                 )
                 continue

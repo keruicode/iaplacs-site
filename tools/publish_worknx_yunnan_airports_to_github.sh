@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Render WORK_nx to a Yunnan airport T13-T48 6x6 product, upload images to OSS,
+# Render WORK_yn to a Yunnan airport 36-hour 6x6 product, upload images to OSS,
 # then publish only the JSON catalog to GitHub Pages.
 set -Eeuo pipefail
 
@@ -24,7 +24,7 @@ usage() {
   cat <<'EOF'
 Usage: publish_worknx_yunnan_airports_to_github.sh [--latest | --recent COUNT]
 
-Renders Yunnan airport T13-T48 regional 6x6 products, uploads PNG/WebP/preview
+Renders Yunnan airport 36-hour regional 6x6 products, uploads PNG/WebP/preview
 assets to OSS, and commits only data/current/forecast-runs.json to GitHub.
 EOF
 }

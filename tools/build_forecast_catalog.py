@@ -51,7 +51,7 @@ def main() -> None:
         airport_runs + ningxia_runs + shangrao_runs
     )
     airport_note = (
-        "机场服务页展示 WORK_nx 云南区域 T13-T48 降水拼图，并单独列出德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点的36小时累计降水；2米气温和10米风场入口继续保留。"
+        "机场服务页展示 WORK_yn 云南区域36小时降水拼图，并单独列出德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点的累计降水；2米气温和10米风场入口继续保留。"
         if airport_yunnan_runs
         else "主页作为机场服务入口，当前保留降水、2米气温和10米风场样例产品；后续可替换为机场实况、短临和专用模式产品。"
     )
@@ -162,7 +162,7 @@ def build_yunnan_airport_frames(run_dir: Path, fragment: dict) -> list[dict]:
         full_path = choose_full_candidate("_combined_overview", existing)
         lead_label = lead_label_from_name(path.name)
         if lead_label == path.stem and "T13_T48" in path.name:
-            lead_label = "T13-T48"
+            lead_label = "36小时拼图"
         frame = {
             "id": "overview",
             "lead": lead_value_from_label(lead_label),
@@ -196,7 +196,7 @@ def build_yunnan_airport_product(
         "category": "机场服务",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": "WORK_nx 云南区域 T13-T48 逐小时降水 6x6 拼图，标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场位置。",
+        "description": "WORK_yn 云南区域逐小时降水 6x6 拼图，标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场位置。",
         "metrics": metrics,
         "frames": frames,
     }
@@ -252,7 +252,7 @@ def build_airport_sample_products(include_precip: bool = True) -> list[dict]:
             category="机场服务",
             unit="degC",
             color="#b73b3b",
-            description="近地面气温分布样例产品，用于识别机场周边冷暖区和边界层温度变化。",
+            description="",
             metrics=[
                 {"label": "区域最高", "value": "36.2 degC"},
                 {"label": "区域最低", "value": "17.4 degC"},
@@ -269,7 +269,7 @@ def build_airport_sample_products(include_precip: bool = True) -> list[dict]:
             category="机场服务",
             unit="m/s",
             color="#2c5f9e",
-            description="近地面风速和风向样例产品，用于展示机场风场保障产品入口。",
+            description="",
             metrics=[
                 {"label": "最大风速", "value": "15.8 m/s"},
                 {"label": "主导风向", "value": "SE"},

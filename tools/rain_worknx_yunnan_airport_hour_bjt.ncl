@@ -1,6 +1,6 @@
 ;============================================================
-; WORK_nx Yunnan airport hourly precipitation panels, BJT labels.
-; Produces T13-T48 only: 36 hourly panels for a 6x6 overview.
+; WORK_yn Yunnan airport hourly precipitation panels, BJT labels.
+; Produces 36 hourly panels for a 6x6 overview.
 ;============================================================
 
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
@@ -37,10 +37,16 @@ begin
 end
 
 begin
-  wrf_dir = getenv("WORK_NX_WRF_DIR")
-  out_dir = getenv("WORK_NX_YUNNAN_AIRPORT_PNG_DIR")
+  wrf_dir = getenv("WORK_YN_WRF_DIR")
+  out_dir = getenv("WORK_YN_YUNNAN_AIRPORT_PNG_DIR")
   province_shp_file = getenv("YUNNAN_PROVINCE_SHP_FILE")
 
+  if (wrf_dir.eq."") then
+    wrf_dir = getenv("WORK_NX_WRF_DIR")
+  end if
+  if (out_dir.eq."") then
+    out_dir = getenv("WORK_NX_YUNNAN_AIRPORT_PNG_DIR")
+  end if
   if (wrf_dir.eq."") then
     wrf_dir = "."
   end if
@@ -66,9 +72,8 @@ begin
 
   airport_lons = (/98.533300, 100.762222, 99.783889/)
   airport_lats = (/24.400000, 21.973611, 22.417778/)
-  airport_codes = (/"LUM", "JHG", "JMJ"/)
-  plane_scale_outer = 0.160
-  plane_scale_inner = 0.105
+  plane_scale_outer = 0.185
+  plane_scale_inner = 0.145
 
   ; Keep the precipitation thresholds and palette identical to the regional products.
   rain_levs = (/0, 1.5, 7.0, 15.0, 40.0, 50.0/)
@@ -155,8 +160,6 @@ begin
 
       plane_back = new(3, graphic)
       plane_face = new(3, graphic)
-      airport_label_back = new(3, graphic)
-      airport_label_face = new(3, graphic)
       plane_x_template = (/1.8, -1.1, -0.35, -1.35, 0.1, -1.1, 1.8/)
       plane_y_template = (/0.0, 0.34, 0.08, 0.86, 0.0, -0.34, 0.0/)
 
@@ -166,16 +169,6 @@ begin
       plane_face_res = True
       plane_face_res@gsFillColor = "black"
       plane_face_res@gsEdgesOn = False
-      label_back_res = True
-      label_back_res@txFontColor = "white"
-      label_back_res@txFontHeightF = 0.024
-      label_back_res@txFontThicknessF = 8
-      label_back_res@txJust = "CenterLeft"
-      label_face_res = True
-      label_face_res@txFontColor = "black"
-      label_face_res@txFontHeightF = 0.024
-      label_face_res@txFontThicknessF = 4
-      label_face_res@txJust = "CenterLeft"
 
       do ia = 0, 2
         plane_x_outer = airport_lons(ia) + plane_scale_outer * plane_x_template
@@ -184,8 +177,6 @@ begin
         plane_y_inner = airport_lats(ia) + plane_scale_inner * plane_y_template
         plane_back(ia) = gsn_add_polygon(wks, plot, plane_x_outer, plane_y_outer, plane_back_res)
         plane_face(ia) = gsn_add_polygon(wks, plot, plane_x_inner, plane_y_inner, plane_face_res)
-        airport_label_back(ia) = gsn_add_text(wks, plot, airport_codes(ia), airport_lons(ia) + 0.22, airport_lats(ia) + 0.15, label_back_res)
-        airport_label_face(ia) = gsn_add_text(wks, plot, airport_codes(ia), airport_lons(ia) + 0.22, airport_lats(ia) + 0.15, label_face_res)
       end do
 
       draw(plot)
