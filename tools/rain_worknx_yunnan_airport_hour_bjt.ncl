@@ -67,8 +67,8 @@ begin
   airport_lons = (/98.533300, 100.762222, 99.783889/)
   airport_lats = (/24.400000, 21.973611, 22.417778/)
   airport_codes = (/"LUM", "JHG", "JMJ"/)
-  plane_scale_outer = 0.115
-  plane_scale_inner = 0.075
+  plane_scale_outer = 0.160
+  plane_scale_inner = 0.105
 
   ; Keep the precipitation thresholds and palette identical to the regional products.
   rain_levs = (/0, 1.5, 7.0, 15.0, 40.0, 50.0/)
@@ -168,12 +168,12 @@ begin
       plane_face_res@gsEdgesOn = False
       label_back_res = True
       label_back_res@txFontColor = "white"
-      label_back_res@txFontHeightF = 0.018
+      label_back_res@txFontHeightF = 0.024
       label_back_res@txFontThicknessF = 8
       label_back_res@txJust = "CenterLeft"
       label_face_res = True
       label_face_res@txFontColor = "black"
-      label_face_res@txFontHeightF = 0.018
+      label_face_res@txFontHeightF = 0.024
       label_face_res@txFontThicknessF = 4
       label_face_res@txJust = "CenterLeft"
 
@@ -184,8 +184,8 @@ begin
         plane_y_inner = airport_lats(ia) + plane_scale_inner * plane_y_template
         plane_back(ia) = gsn_add_polygon(wks, plot, plane_x_outer, plane_y_outer, plane_back_res)
         plane_face(ia) = gsn_add_polygon(wks, plot, plane_x_inner, plane_y_inner, plane_face_res)
-        airport_label_back(ia) = gsn_add_text(wks, plot, airport_codes(ia), airport_lons(ia) + 0.16, airport_lats(ia) + 0.11, label_back_res)
-        airport_label_face(ia) = gsn_add_text(wks, plot, airport_codes(ia), airport_lons(ia) + 0.16, airport_lats(ia) + 0.11, label_face_res)
+        airport_label_back(ia) = gsn_add_text(wks, plot, airport_codes(ia), airport_lons(ia) + 0.22, airport_lats(ia) + 0.15, label_back_res)
+        airport_label_face(ia) = gsn_add_text(wks, plot, airport_codes(ia), airport_lons(ia) + 0.22, airport_lats(ia) + 0.15, label_face_res)
       end do
 
       draw(plot)
