@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-20 19:43 CST
+Last updated: 2026-07-20 20:14 CST
 
 ## Resume Commands
 
@@ -1395,6 +1395,41 @@ Notes for deployment:
   - `server02` transient image-cache check `find ~/iaplacs-site/data/current/maps -maxdepth 1 -type d -name "airport_yunnan_*"` returned no directories after publish.
   - Visual inspection of `.tmp/yunnan_airport_preview_c6070a5.webp` confirmed larger time labels, Yunnan city/county boundaries, and no airport text labels.
 - Current local state after this work: `main` equals `origin/main` at `c6070a5`; only `.tmp/` is untracked.
+
+## 2026-07-20 City-Level Yunnan and Thicker Shangrao Boundaries
+
+- User requested another rendering adjustment:
+  - Yunnan SHP should draw city-level boundaries only, not all counties;
+  - Shangrao should still draw only Shangrao city/county boundaries, but with thicker lines;
+  - montage time labels should move downward so they sit closer to each panel image.
+- Code commit: `d65b957 Use city-level Yunnan boundaries`.
+- Server data commits after rerendering:
+  - `0afb387 Update Yunnan airport forecast 20260720_00`: Yunnan airport rerender with city-level boundaries and lowered montage labels.
+  - `50502db Update WRF montage 20260720_08`: intermediate Shangrao publish that rebuilt montages from old panels after an incorrect source symlink; superseded by the next commit.
+  - `9b1355c Update WRF montage 20260720_08`: final Shangrao rerender after NCL successfully regenerated all 36 hourly panels.
+- Implemented changes:
+  - Generated `tools/SHP/yunnan_city.*` from GADM 4.1 China level-2 boundaries filtered to Yunnan. Verification: 16 city/prefecture features, bounds `[97.5341, 21.1394, 106.1942, 29.2511]`.
+  - Removed the tracked `tools/SHP/yunnan_city_county.*` files. Server runtime `SHP/` now has `yunnan_city.*`; `find SHP -name "yunnan_city_county.*"` returned no files.
+  - Updated `tools/render_worknx_yunnan_airports_overview.sh` to default to `YUNNAN_CITY_SHP_FILE="$SCRIPT_DIR/SHP/yunnan_city.shp"` and move ImageMagick labels from `-annotate +0+0` to `-annotate +0+24`.
+  - Updated `tools/rain_worknx_yunnan_airport_hour_bjt.ncl` to draw the Yunnan city layer at `gsLineThicknessF = 1.8`; the old `YUNNAN_COUNTY_SHP_FILE` env var remains only as a compatibility fallback.
+  - Updated `tools/rain_wrf_shangrao_hour_bjt.ncl` to draw Shangrao city/county boundaries at `gsLineThicknessF = 2.8` and set `tiMainOffsetYF = -0.018` so NCL titles sit lower.
+  - Synced the same Shangrao script to the actual server runtime entry `rain_wrf_hour_bjt.ncl`, because `run_full_montage_test_once.sh` and the current WRF montage workflow call that filename, not only `rain_wrf_shangrao_hour_bjt.ncl`.
+- Rerender/publish details:
+  - Yunnan rerender command: `./publish_workyn_yunnan_airports_if_new.sh --force`.
+  - Shangrao final rerender used a hard link from `wrfout_d01_20260720_00_rain_vars.nc` into `.tmp/shangrao_rerender_20260720_08/`, then ran `ncl rain_wrf_hour_bjt.ncl`, `bash make_wrf_montages.sh wrf_hourly_png 20260720_08`, and `./publish_wrf_montage_to_github.sh 20260720_08`.
+  - The failed symlink path originally pointed one directory too shallow; NCL reported a file-open fatal. The corrected hard link had the same inode as the source file and the final NCL run printed all 36 `drawing:` lines without fatal errors.
+- Final online catalog verification from `https://iaplacs.xyz/data/current/forecast-runs.json?v=9b1355c`:
+  - Services retained: `airport=1`, `ningxia=5`, `shangrao=5`.
+  - Airport metrics retained: 德宏芒市 `累计 0.0 mm；最大小时 0.0 mm 07-20 20:00-21:00`; 西双版纳嘎洒 `累计 1.7 mm；最大小时 0.5 mm 07-21 02:00-03:00`; 普洱澜沧景迈 `累计 0.1 mm；最大小时 0.0 mm 07-20 21:00-22:00`.
+  - Latest Shangrao run: `20260720_08`.
+- Verification:
+  - `bash -n tools/render_worknx_yunnan_airports_overview.sh tools/publish_worknx_yunnan_airports_to_github.sh tools/publish_workyn_yunnan_airports_if_new.sh`: passed.
+  - `python3 -m py_compile tools/build_forecast_catalog.py tools/extract_yunnan_airport_precip.py`: passed.
+  - `git diff --check`: passed before the code commit.
+  - OSS Shangrao preview returned `HTTP 200`, `Content-Type: image/webp`, `Content-Length: 816659`.
+  - Visual inspection of `.tmp/yunnan_city_preview_9b1355c.webp` confirmed Yunnan now shows city-level boundaries only and lowered time labels.
+  - Visual inspection of `.tmp/shangrao_thick_preview_9b1355c.webp` confirmed Shangrao still shows only Shangrao city/county boundaries and the boundary lines are thicker.
+- Current local state after this work before the resume-only commit: `main` equals `origin/main` at `9b1355c`; `.gitignore` has an unstaged user change adding `.tmp`.
 
 ## Known Pitfalls
 
