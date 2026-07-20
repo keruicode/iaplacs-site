@@ -76,8 +76,8 @@ begin
 
   airport_lons = (/98.533300, 100.762222, 99.783889/)
   airport_lats = (/24.400000, 21.973611, 22.417778/)
-  plane_scale_outer = 0.185
-  plane_scale_inner = 0.145
+  plane_scale_outer = 0.245
+  plane_scale_inner = 0.195
 
   ; Keep the precipitation thresholds and palette identical to the regional products.
   rain_levs = (/0, 1.5, 7.0, 15.0, 40.0, 50.0/)
