@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-20 18:52 CST
+Last updated: 2026-07-20 19:12 CST
 
 ## Resume Commands
 
@@ -1317,6 +1317,37 @@ Notes for deployment:
   - Public catalog `https://iaplacs.xyz/data/current/forecast-runs.json?v=38d76ac-2` shows airport products `云南机场降水预报图集`, `机场 2 米气温`, and `机场 10 米风场`.
   - Public airport precipitation metrics now show `德宏芒市机场降水 = 0.1 mm`, `西双版纳嘎洒机场降水 = 0.0 mm (近邻网格)`, and `普洱澜沧景迈机场降水 = 0.0 mm (近邻网格)`.
 - Current local state after this work: `main` equals `origin/main` at `38d76ac`; only `.tmp/` is untracked.
+
+## 2026-07-20 WORK_yn Source and Airport Display Cleanup
+
+- User requested cleanup for the Yunnan airport product:
+  - remove visible `T13-T48`;
+  - explain and correct why the product said `WORK_nx` when it should use `WORK_yn`;
+  - darken airplane symbols and remove the characters beside them;
+  - remove the descriptions under `机场 2 米气温` and `机场 10 米风场`.
+- Explanation and code change:
+  - The first implementation reused the Ningxia `WORK_nx` pipeline because `WORK_nx` had a ready-made `Precip_hourly_WRF_AllRain_T01_T48...png` discovery file, while `WORK_yn` only has large `wrfout_d01_*` outputs.
+  - This was corrected in commit `f5b4a1f Use WORK_yn for Yunnan airport product`: the Yunnan airport renderer now defaults to `/data1/elpt_2022_00083/zhoubj/WORK_yn`, selects stable complete `wrfout_d01_*` files directly, and skips new/incomplete files via age and size checks.
+  - The 2026072006 `WORK_yn` wrfout was only about 3.2 GB and was skipped as incomplete; the publisher correctly selected complete `WORK_yn/2026072000/gfs/wrf`.
+- Display changes:
+  - Removed the `LUM/JHG/JMJ` text labels from the NCL map and enlarged/darkened the airplane markers.
+  - Updated airport catalog note/description from `WORK_nx` to `WORK_yn`.
+  - Replaced the airport lead label with `36小时拼图`; follow-up commit `019a83a Hide Yunnan airport lead range label` fixed the remaining catalog generation branch.
+  - Cleared the product descriptions for `机场 2 米气温` and `机场 10 米风场`.
+- Server publication:
+  - Synced the updated renderer, publisher, NCL, and point-extraction scripts to `login02:/data1/elpt_2022_00083/kerui/Website/`.
+  - Ran `./publish_worknx_yunnan_airports_to_github.sh --latest` twice: first to switch data source and redraw the map, then to regenerate the catalog after the lead-label fix.
+  - Server data commits: `67c95d0 Update Yunnan airport forecast 20260720_00` and final `096f4f6 Update Yunnan airport forecast 20260720_00`.
+- Verification:
+  - `python3 -m py_compile tools/build_forecast_catalog.py tools/extract_yunnan_airport_precip.py`: passed.
+  - `bash -n tools/render_worknx_yunnan_airports_overview.sh tools/publish_worknx_yunnan_airports_to_github.sh`: passed.
+  - `git diff --check -- ...`: passed for the touched scripts.
+  - Public catalog `https://iaplacs.xyz/data/current/forecast-runs.json?v=096f4f6-2` shows airport note using `WORK_yn`, `lead_label = 36小时拼图`, and no visible `T13-T48` inside the airport service object.
+  - Public airport products remain `云南机场降水预报图集`, `机场 2 米气温`, and `机场 10 米风场`; the temperature and wind product descriptions are empty strings.
+  - Public airport metrics after switching to `WORK_yn`: 德宏芒市机场降水 `0.0 mm`, 西双版纳嘎洒机场降水 `1.7 mm`, 普洱澜沧景迈机场降水 `0.1 mm`.
+  - OSS latest WebP returned `HTTP 200`, `Content-Type: image/webp`, `Content-Length: 1885269`, and ETag `99FCF19E694503B012C1B597B816C754`.
+  - Visual inspection of `.tmp/yunnan_airport_preview_no_labels.webp` confirmed the adjacent airport text labels are gone; the airplane markers remain on the map.
+- Current local state after this work: `main` equals `origin/main` at `096f4f6`; only `.tmp/` is untracked.
 
 ## Known Pitfalls
 
