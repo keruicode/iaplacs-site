@@ -161,7 +161,7 @@ def build_yunnan_airport_frames(run_dir: Path, fragment: dict) -> list[dict]:
         preview_path = choose_preview_candidate(existing)
         full_path = choose_full_candidate("_combined_overview", existing)
         lead_label = lead_label_from_name(path.name)
-        if lead_label == path.stem and "T13_T48" in path.name:
+        if "T13_T48" in path.name:
             lead_label = "36小时拼图"
         frame = {
             "id": "overview",
