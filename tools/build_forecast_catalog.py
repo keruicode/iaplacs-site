@@ -43,6 +43,7 @@ def main() -> None:
         "airport",
         id_prefix="airport_yunnan_",
     )
+    airport_yunnan_runs = normalize_yunnan_airport_run_metrics(airport_yunnan_runs)
     airport_runs = airport_yunnan_runs or build_airport_sample_runs()
     wrf_runs = merge_existing_runs(build_wrf_runs(), existing_catalog, "shangrao")
     ningxia_runs = merge_existing_runs(build_ningxia_runs(), existing_catalog, "ningxia")
@@ -218,13 +219,56 @@ def yunnan_airport_precip_metrics(fragment: dict) -> list[dict]:
     return metrics
 
 
+def normalize_yunnan_airport_run_metrics(runs: list[dict]) -> list[dict]:
+    for run in runs:
+        for product in run.get("products", []):
+            if product.get("id") != "airport_yunnan_precip_series":
+                continue
+            for metric in product.get("metrics", []):
+                if metric.get("label") in {airport["label"] for airport in YUNNAN_AIRPORTS}:
+                    metric["value"] = normalize_yunnan_airport_metric_text(
+                        str(metric.get("value") or "")
+                    )
+    return runs
+
+
+def normalize_yunnan_airport_metric_text(value: str) -> str:
+    if not value or "最大小时" not in value:
+        return value
+
+    parts = [part.strip() for part in value.split("；") if part.strip()]
+    normalized = []
+    nearest_grid = False
+    for part in parts:
+        if part == "近邻网格":
+            nearest_grid = True
+            continue
+        if part.startswith("累计 "):
+            normalized.append(part)
+            continue
+        match = re.match(r"最大小时(?:降水)?\s+([0-9.]+)\s*mm(?:\s+(.+))?$", part)
+        if not match:
+            normalized.append(part)
+            continue
+        peak_mm = numeric_value(match.group(1))
+        if peak_mm is not None and peak_mm > 0:
+            peak_time = (match.group(2) or "时间未定").strip()
+            normalized.append(f"最大小时降水 {format_mm(peak_mm)} {peak_time}")
+    if nearest_grid:
+        normalized.append("近邻网格")
+    return "；".join(normalized) or value
+
+
 def yunnan_airport_metric_value(total: dict) -> str:
     if total.get("status") == "outside_domain":
         return "无网格覆盖"
     total_value = format_mm(total.get("total_mm"))
-    peak_value = format_mm(total.get("max_hourly_mm"))
-    peak_time = total.get("max_hourly_time") or "时间未定"
-    parts = [f"累计 {total_value}", f"最大小时 {peak_value} {peak_time}"]
+    parts = [f"累计 {total_value}"]
+    peak_mm = numeric_value(total.get("max_hourly_mm"))
+    if peak_mm is not None and peak_mm > 0:
+        peak_value = format_mm(peak_mm)
+        peak_time = total.get("max_hourly_time") or "时间未定"
+        parts.append(f"最大小时降水 {peak_value} {peak_time}")
     if total.get("status") == "nearest_grid" and total.get("total_mm") is not None:
         parts.append("近邻网格")
     return "；".join(parts)
@@ -681,6 +725,13 @@ def format_mm(value: object) -> str:
         return f"{float(value):.1f} mm"
     except (TypeError, ValueError):
         return "--"
+
+
+def numeric_value(value: object) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def read_existing_catalog() -> dict:
