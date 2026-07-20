@@ -29,9 +29,9 @@ AIRPORT_YUNNAN_DIR_RE = re.compile(r"^airport_yunnan_(\d{8}_\d{2})$")
 DETAIL_RE = re.compile(r"_combined_detail_p(\d{2})_")
 LEAD_RANGE_RE = re.compile(r"T(\d{2})_T(\d{2})", re.IGNORECASE)
 YUNNAN_AIRPORTS = [
-    {"id": "dehong_mangshi", "label": "德宏芒市 36h"},
-    {"id": "xishuangbanna_gasa", "label": "西双版纳嘎洒 36h"},
-    {"id": "puer_lancang_jingmai", "label": "普洱澜沧景迈 36h"},
+    {"id": "dehong_mangshi", "label": "德宏芒市机场降水"},
+    {"id": "xishuangbanna_gasa", "label": "西双版纳嘎洒机场降水"},
+    {"id": "puer_lancang_jingmai", "label": "普洱澜沧景迈机场降水"},
 ]
 
 
@@ -51,7 +51,7 @@ def main() -> None:
         airport_runs + ningxia_runs + shangrao_runs
     )
     airport_note = (
-        "机场服务页展示 WORK_nx 云南区域 T13-T48 降水拼图，并单独列出德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点的36小时累计降水。"
+        "机场服务页展示 WORK_nx 云南区域 T13-T48 降水拼图，并单独列出德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点的36小时累计降水；2米气温和10米风场入口继续保留。"
         if airport_yunnan_runs
         else "主页作为机场服务入口，当前保留降水、2米气温和10米风场样例产品；后续可替换为机场实况、短临和专用模式产品。"
     )
@@ -132,7 +132,8 @@ def build_yunnan_airport_runs() -> list[dict]:
                 "published_at": generated_at,
                 "summary": "云南机场降水预报图集，覆盖德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点。",
                 "products": [
-                    build_yunnan_airport_product(run_id, frames, generated_at, fragment)
+                    build_yunnan_airport_product(run_id, frames, generated_at, fragment),
+                    *build_airport_sample_products(include_precip=False),
                 ],
             }
         )
@@ -220,10 +221,13 @@ def yunnan_airport_precip_metrics(fragment: dict) -> list[dict]:
 def yunnan_airport_metric_value(total: dict) -> str:
     if total.get("status") == "outside_domain":
         return "无网格覆盖"
-    return format_mm(total.get("total_mm"))
+    value = format_mm(total.get("total_mm"))
+    if total.get("status") == "nearest_grid" and total.get("total_mm") is not None:
+        return f"{value} (近邻网格)"
+    return value
 
 
-def build_airport_sample_runs() -> list[dict]:
+def build_airport_sample_products(include_precip: bool = True) -> list[dict]:
     products = [
         build_airport_product(
             product_id="airport_precip",
@@ -277,7 +281,13 @@ def build_airport_sample_runs() -> list[dict]:
             ],
         ),
     ]
-    products = [product for product in products if product["frames"]]
+    if not include_precip:
+        products = [product for product in products if product["id"] != "airport_precip"]
+    return [product for product in products if product["frames"]]
+
+
+def build_airport_sample_runs() -> list[dict]:
+    products = build_airport_sample_products(include_precip=True)
     if not products:
         return []
     return [

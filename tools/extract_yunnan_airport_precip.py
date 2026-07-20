@@ -82,30 +82,33 @@ def extract_file(path: Path, start: int, end: int, max_distance_deg: float) -> d
                 "grid_y": y,
                 "grid_x": x,
             }
-            if distance_deg > max_distance_deg:
-                results.append(
-                    {
-                        **point,
-                        "status": "outside_domain",
-                        "total_mm": None,
-                        "max_hourly_mm": None,
-                        "note": "机场点超出当前 WORK_nx d01 网格覆盖范围",
-                    }
-                )
-                continue
-
             accum = (
                 ds.variables["RAINNC"][:, y, x].astype("float64")
                 + ds.variables["RAINC"][:, y, x].astype("float64")
             )
             hourly = accum[start : end_idx + 1] - accum[start - 1 : end_idx]
             hourly = np.maximum(hourly, 0.0)
+            total_mm = round(float(np.sum(hourly)), 1)
+            max_hourly_mm = round(float(np.max(hourly)), 1)
+
+            if distance_deg > max_distance_deg:
+                results.append(
+                    {
+                        **point,
+                        "status": "nearest_grid",
+                        "total_mm": total_mm,
+                        "max_hourly_mm": max_hourly_mm,
+                        "note": "机场点超出当前 WORK_nx d01 网格覆盖范围，数值取最近网格",
+                    }
+                )
+                continue
+
             results.append(
                 {
                     **point,
                     "status": "ok",
-                    "total_mm": round(float(np.sum(hourly)), 1),
-                    "max_hourly_mm": round(float(np.max(hourly)), 1),
+                    "total_mm": total_mm,
+                    "max_hourly_mm": max_hourly_mm,
                 }
             )
 
