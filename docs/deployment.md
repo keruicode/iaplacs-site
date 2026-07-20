@@ -8,15 +8,15 @@ The IAP server only needs a scheduled publishing job:
 
 1. read model/observation products;
 2. render maps and JSON into a temporary release directory;
-3. validate `forecast-runs.json` and image paths;
-4. copy the result to `data/current`;
-5. commit and push to GitHub.
+3. upload optimized image assets to OSS and validate public URLs;
+4. generate `data/current/forecast-runs.json` with OSS image URLs;
+5. commit and push the small catalog files to GitHub.
 
 In production, GitHub Pages is the page and catalog origin. Forecast PNG/WebP
 images plus small `.preview.webp` first-screen images are uploaded to Alibaba
 OSS before the catalog is generated, and `forecast-runs.json` points Ningxia and
-Shangrao frames to the OSS origin. The GitHub image copies remain useful as
-repository fallback, but normal browser image requests should go to OSS.
+Shangrao frames to the OSS origin. GitHub no longer tracks routine generated
+forecast images; `data/current/maps/*` is a server-local build cache.
 
 After the first image renders, the frontend uses `requestIdleCallback` (with a
 timer fallback) to warm the active service's preview and medium viewer images
@@ -98,23 +98,26 @@ mkdir -p data/current/maps
 rsync -a "$PRODUCT_DIR"/ data/current/maps/
 
 tools/optimize_forecast_images.sh
+# Upload PNG/WebP/preview WebP files from data/current/maps/ to OSS here.
+# The catalog builder defaults to the production OSS prefix.
 python3 tools/build_forecast_catalog.py
 test -f data/current/forecast-runs.json
 find data/current/maps -type f | head -n 1 >/dev/null
 
-git add data/current tools/build_forecast_catalog.py
+git add data/current/forecast-runs.json data/current/manifest.json
 git commit -m "Update forecast products $(date +%Y%m%d_%H%M)" || exit 0
 git push
 ```
 
-Do not remove `data/current` during each publish. The run-specific directories already
-stored there are what let the Ningxia and Shangrao pages expose several initial times.
-Keep only the newest five run directories for each product family. The production
-publisher applies this separately to `worknx_summary_*` (Ningxia) and `wrf_montage_*`
-(Shangrao), so each page exposes at most five initial times and OSS does not retain
-older forecast prefixes.
+Do not remove the server-local `data/current/maps` cache during each publish. The
+run-specific directories stored there are what let the catalog builder expose
+several initial times. Keep only the newest five run directories for each product
+family. The production publisher applies this separately to `worknx_summary_*`
+(Ningxia) and `wrf_montage_*` (Shangrao), so each page exposes at most five
+initial times and OSS does not retain older forecast prefixes.
 
-For production, finish each timestamped run directory before copying it into the repository.
+For production, finish each timestamped run directory before copying it into the
+server-local `data/current/maps` cache and uploading it to OSS.
 
 For the current Shangrao WRF montage workflow, the server publishing helper should copy
 `*_combined_*_grid.png` files into:
@@ -174,13 +177,14 @@ ncl rain_wrf_shangrao_hour_bjt.ncl
 Do not use a nationwide county layer in these two products. The committed
 county Shapefiles are filtered to Ningxia and Shangrao only.
 
-Then run `tools/optimize_forecast_images.sh` and
-`python3 tools/build_forecast_catalog.py` before `git add`, so the
+Then run `tools/optimize_forecast_images.sh`, upload the generated assets to
+OSS, and run `python3 tools/build_forecast_catalog.py` before `git add`, so the
 website can expose the new 起报时间 automatically after GitHub Pages deploys.
 With the production OSS setup, keep `IAPLACS_MAX_RUNS=5` and
 `IAPLACS_ASSET_BASE_URL` set to the OSS prefix (the catalog builder now defaults to
 the production OSS prefix). Verify the public OSS object and CORS response before
-publishing the catalog.
+publishing the catalog. Do not `git add data/current/maps`; those generated image
+directories are intentionally ignored by Git.
 The generated catalog keeps `/` and `/ningxia/` on the Ningxia WORK_nx product
 service, `/shangrao/` on the Shangrao product service, and `/airpots/` on the
 airport sample product service.

@@ -7,7 +7,7 @@ The first version is designed for GitHub Pages:
 - no backend server is required for the website itself;
 - forecast products are pre-rendered as web assets;
 - the browser loads `data/current/forecast-runs.json`, with `manifest.json` kept as a fallback;
-- forecast map images are delivered from the Alibaba OSS origin; GitHub Pages carries the app, catalog, and fallback copies;
+- forecast map images are delivered from the Alibaba OSS origin; GitHub Pages carries the app and catalog JSON, not generated map images;
 - the IAP server can later update files on a schedule and push them here.
 
 Current service routes:
@@ -61,12 +61,13 @@ The website only depends on:
 ```text
 data/current/forecast-runs.json
 data/current/manifest.json
-data/current/maps/*
 data/current/stations/*
 tools/build_forecast_catalog.py
 ```
 
-The IAP server should generate or copy a complete new run directory first, validate it, run the catalog builder, then commit both the images and JSON catalog. Current server-published directory patterns are:
+The IAP server should generate a complete new run directory first, upload the
+optimized assets to OSS, validate the public URLs, run the catalog builder, then
+commit only the JSON catalog. Current server-side working directory patterns are:
 
 ```text
 data/current/maps/wrf_montage_YYYYMMDD_HH/
@@ -85,15 +86,18 @@ unchanged products remain reusable. The warmup is skipped for Save-Data and
 2G connections. The full-screen viewer can move left/right through every image
 in the current service, including images from other retained runs.
 
-Keep the existing run directories when publishing a new one. Removing
-`data/current` before every publish leaves only one selectable initial time; the catalog
-builder exposes at most five retained Ningxia runs and five retained Shangrao runs.
+Keep the existing run directories on the server-side working disk when publishing
+a new one. Removing the local build cache before every publish leaves only one
+selectable initial time in the regenerated catalog; the catalog builder exposes at
+most five retained Ningxia runs and five retained Shangrao runs.
 
 The production image path is the OSS origin
 `https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/`.
-The server publisher uploads the optimized PNG/WebP assets first, then generates the
-catalog with those OSS URLs. OSS retention is also limited to the newest five run
-directories per product family: `worknx_summary_*` and `wrf_montage_*`.
+The server publisher uploads the optimized PNG/WebP assets first, then generates
+the catalog with those OSS URLs. OSS retention is also limited to the newest five
+run directories per product family: `worknx_summary_*` and `wrf_montage_*`.
+`data/current/maps/*` is ignored by Git and should stay a server-local build
+cache unless a tiny static sample asset is intentionally added.
 
 Then run:
 
@@ -121,7 +125,7 @@ Keep images small and web-friendly:
 - run `tools/optimize_forecast_images.sh` before building the catalog;
 - keep decoded dimensions bounded for mobile browsers, not only compressed file size;
 - target roughly 300 KB to 1.2 MB per product image for smooth loading;
-- keep only a small number of recent releases in Git.
+- keep only catalog JSON in Git for routine forecast releases.
 
 For a heavier public service, keep the website and catalog on GitHub Pages while
 continuing to serve large images from OSS or a CDN.

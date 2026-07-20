@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-18 21:07 CST
+Last updated: 2026-07-20 17:45 CST
 
 ## Resume Commands
 
@@ -1185,6 +1185,24 @@ Notes for deployment:
   - Code commit: `3f94290` (`Align service entry links`), pushed to `origin/main`.
   - Online checks with cache-busting URLs confirmed deployed HTML for `/`, `/ningxia/`, `/shangrao/`, and `/airpots/`; `/airpots/?v=3f94290` returned the new service links and did not contain the removed airport service-note IDs/text.
 
+## 2026-07-20 Lightweight Sync Discussion
+
+- The user asked how to keep local and GitHub repositories synchronized without downloading or checking out the large forecast image set on every code change.
+- The user chose option 2: move routine forecast images out of the GitHub repository and keep GitHub Pages as the app/catalog host while OSS serves images.
+- Current local state before choosing a strategy:
+  - `main` is behind `origin/main` by 65 commits because the server has continued publishing forecast-image/data commits.
+  - The code paths outside `data/current` are clean.
+  - `data/current` contains local generated-data churn from earlier work and should not be blindly committed or restored unless intentionally refreshing forecast data.
+  - A binary patch backup of the pre-Yunnan `data/current` diff was saved at `/private/tmp/iaplacs_data_current_pre_yunnan.patch`.
+  - A long `git restore --source=origin/main -- data/current` was interrupted; the resulting stale `.git/index.lock` was removed.
+- Implemented repository policy changes in `.gitignore`, `README.md`, `docs/repository-structure.md`, and `docs/deployment.md`:
+  - generated forecast directories under `data/current/maps/worknx_summary_*`, `data/current/maps/wrf_montage_*`, and future `data/current/maps/airport_yunnan_*` are ignored by Git;
+  - server-generated `.png` and `.webp` files directly under `data/current/maps/` are ignored;
+  - the server should upload PNG/WebP/preview WebP files to OSS, build `forecast-runs.json` with OSS URLs, and commit only small catalog files;
+  - small static sample SVGs under `data/current/maps/` can remain temporarily until the airport service is replaced by real OSS-backed products.
+- While trying to align the local worktree, `git reset --mixed origin/main` exited with status `139` and left `.git/index.lock`; the stale lock was removed and the final image-removal commit was built through a temporary index at `/private/tmp/iaplacs_oss_only_index` instead of checking out image files.
+- Recommended direction: keep the server as the data publisher and local development as a code/catalog workflow. GitHub should no longer receive routine generated forecast image blobs.
+
 ## Known Pitfalls
 
 - If the target server is in mainland China and `iaplacs.xyz` resolves to it, ICP filing is required before normal public access.
@@ -1209,6 +1227,8 @@ Notes for deployment:
 - `tools/build_forecast_catalog.py` intentionally uses product file mtimes for `published_at`, not wall-clock time, so repeated server runs do not create false Git changes when images are unchanged.
 - For the WORK_nx/Ningxia forecast, "time" means the image file generation/modification time (`mtime`). Do not substitute the WRF `Times` variable or directory name when deciding the publication time.
 - Keep product ownership separate: root `/` and `/ningxia/` are WORK_nx/NX Ningxia products, `/airpots/` is the airport sample service, and `/shangrao/` is Shangrao products. Do not merge these service catalogs.
+- Avoid using a normal full `git pull` in a checkout that includes historical forecast image blobs. After the OSS-only cleanup, future pulls should be much lighter because generated forecast map directories are no longer tracked.
+- Git LFS is not the preferred fix for this GitHub Pages site because Pages delivery and LFS pointers can be awkward; object storage or sparse/partial Git checkout is cleaner for this forecast-image workload.
 - Shangrao products must be regional `wrf_montage_*` outputs generated from WORK wrfout through `batch_ncks.sh`, NCL, and montage. Do not publish ready-made `Precip_hourly_Fog_TargetT07_T48_ActualT07_T48_*.png` nationwide products to `/shangrao/`.
 - The password gate is client-side because the site is on GitHub Pages. It hides the UI and persists access through localStorage, but anyone inspecting static assets can bypass it. Use a real backend, Cloudflare Access, Netlify/Vercel auth, or another edge/access-control layer if real access control becomes necessary.
 - In-app browser verification was attempted but no in-app browser backend was available (`agent.browsers.list()` returned `[]`). Verification was completed via local HTTP checks and image inspection instead.
@@ -1225,7 +1245,8 @@ Notes for deployment:
 3. Monitor the next scheduled Ningxia and Shangrao publish cycles after the county-SHP deployment; confirm new products still publish exactly five retained runs per service and that public OSS URLs return `HTTP 200`.
 4. Monitor the `login02` publishing helpers after the next forecast cycles: confirm the new OSS readability repair path does not report failures, generated catalogs still contain only five runs per family, and retained OSS image URLs return public `HTTP 200`.
 5. Add real airport service products to replace the current samples under `/airpots/`.
-6. Later, extend `tools/build_forecast_catalog.py` with additional product scanners when the server starts publishing more product families beyond WRF rainfall montage and WORK_nx summary.
-7. Keep GitHub Pages for the app/catalog and OSS for forecast images; move to an additional CDN only if traffic or latency later requires it.
-8. Perform one real iPhone/Android check after the `20260710-08` deploy: switch every Ningxia and Shangrao run, switch all four Shangrao frames, then test pinch zoom, drag, reset, and close; repeat at desktop width with wheel zoom.
-9. When the local GitHub route is responsive, fast-forward this clean clone after future server commits; do not overwrite concurrent forecast data commits.
+6. Add the Yunnan airport service as an OSS-backed product family, not as committed GitHub map images.
+7. Later, extend `tools/build_forecast_catalog.py` with additional product scanners when the server starts publishing more product families beyond WRF rainfall montage and WORK_nx summary.
+8. Keep GitHub Pages for the app/catalog and OSS for forecast images; move to an additional CDN only if traffic or latency later requires it.
+9. Perform one real iPhone/Android check after the `20260710-08` deploy: switch every Ningxia and Shangrao run, switch all four Shangrao frames, then test pinch zoom, drag, reset, and close; repeat at desktop width with wheel zoom.
+10. When the local GitHub route is responsive, fast-forward this clean clone after future server commits; do not overwrite concurrent forecast data commits.
