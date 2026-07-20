@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-20 17:45 CST
+Last updated: 2026-07-20 18:09 CST
 
 ## Resume Commands
 
@@ -156,6 +156,68 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - Code/data commit: `c2667fb Fix forecast image switching and web delivery`.
 - Pushed the code/data and resume commits through `930e65c Update resume for forecast image delivery`. After Pages cache propagation, all three deployed pages loaded `v07`, the online catalog used WebP for every Ningxia/Shangrao frame, and all 19 optimized image URLs returned `HTTP 200 image/webp`.
 
+## Latest Work Session: 2026-07-20 Yunnan Airport Precipitation
+
+- User request: add a Yunnan precipitation product to the airport service page, using the same WORK_nx T13-T48 36-hour 6x6 layout as Ningxia/Shangrao, show only the Yunnan regional view, mark 德宏芒市国际机场、西双版纳嘎洒国际机场、普洱澜沧景迈机场 with mini airplane markers, and show the three airport point precipitation amounts separately on the webpage.
+- Implemented code commit `ba732a9 Add Yunnan airport precipitation product`:
+  - Added `tools/rain_worknx_yunnan_airport_hour_bjt.ncl` for Yunnan T13-T48 hourly precipitation panels with airplane markers.
+  - Added `tools/render_worknx_yunnan_airports_overview.sh` to render 36 panels, caption them, montage them into one 6x6 overview, and write `manifest_fragment.json`.
+  - Added `tools/extract_yunnan_airport_precip.py` to calculate three airport T13-T48 point precipitation totals from `RAINNC + RAINC`.
+  - Added `tools/publish_worknx_yunnan_airports_to_github.sh` to publish the airport Yunnan image set to OSS and commit only JSON catalog changes.
+  - Updated `tools/build_forecast_catalog.py` to read `airport_yunnan_YYYYMMDD_HH/` directories and expose the product on `airport`/`main`.
+  - Updated `tools/optimize_forecast_images.sh`, README, `docs/deployment.md`, and `docs/repository-structure.md`.
+- Implemented safety commit `8a5b442 Preserve forecast services when rebuilding catalog`: `build_forecast_catalog.py` now merges current catalog runs with recent Git catalog versions so missing local image caches do not drop other services when rebuilding.
+- Implemented point-coverage commit `4e6e80b Mark uncovered Yunnan airport points`: airport point extraction now marks stations whose nearest WRF grid point is too far away as `outside_domain`; the page metric shows `无网格覆盖`.
+- Server publication:
+  - Runtime directory: `login02:/data1/elpt_2022_00083/kerui/Website/`.
+  - Source WORK_nx run: `/data1/elpt_2022_00083/zhoubj/WORK_nx/2026072000/gfs/wrf/`.
+  - Rendered output directory: `/data1/elpt_2022_00083/kerui/Website/worknx_yunnan_airports_overview/20260720_00/`.
+  - Published image prefix: `data/current/maps/airport_yunnan_20260720_00/`.
+  - Server data commits during this work: `e5c4e0b Update Yunnan airport forecast 20260720_00`, `8c4ec0b Update WORK_nx summary 20260720_00`, `084bcba Update Yunnan airport forecast 20260720_00`.
+  - Final repair commit: `a477346 Restore retained runs after latest publishes`.
+- Final online catalog state verified from `https://iaplacs.xyz/data/current/forecast-runs.json?v=a477346-2`:
+  - `airport`: 1 run, latest `airport_yunnan_20260720_00`.
+  - `ningxia`: 5 runs, latest `20260720_00`.
+  - `shangrao`: 5 runs, latest `20260720_02`.
+  - Airport metrics: 德宏芒市 36h `0.1 mm`; 西双版纳嘎洒 36h `无网格覆盖`; 普洱澜沧景迈 36h `无网格覆盖`.
+- OSS verification:
+  - Main WebP URL returned `HTTP 200`, `Content-Type: image/webp`, `Content-Length: 1776716`.
+  - Preview WebP URL returned `HTTP 200`, `Content-Type: image/webp`, `Content-Length: 380800`.
+  - The local visual preview `.tmp/yunnan_airport_preview.webp` was inspected; it shows a 6x6 Yunnan-region precipitation montage with airport markers.
+- Important pitfall: the current WORK_nx d01 grid does not cover 西双版纳嘎洒 and 普洱澜沧景迈 at their actual coordinates. The extraction script therefore marks those two airports as `无网格覆盖` instead of publishing misleading `0.0 mm` values. A different domain/source file is needed if true point precipitation for the two southern airports is required.
+- Server script compatibility patched directly in `/data1/elpt_2022_00083/kerui/Website/`:
+  - `publish_worknx_summary_to_github.sh` and `publish_wrf_montage_to_github.sh` no longer `git add` generated map directories.
+  - `prune_iaplacs_oss.sh` now recognizes `airport_yunnan_*` prefixes.
+- Final local state after this work: branch `main` equals `origin/main` at `a477346`; `git status --short --branch --untracked-files=no` reports clean.
+
+Verification commands/results from this session:
+
+```bash
+python3 -m py_compile tools/build_forecast_catalog.py tools/extract_yunnan_airport_precip.py
+bash -n tools/render_worknx_yunnan_airports_overview.sh tools/publish_worknx_yunnan_airports_to_github.sh tools/optimize_forecast_images.sh
+git diff --check -- ...
+```
+
+Result: all passed.
+
+```bash
+tools/build_forecast_catalog.py
+```
+
+Final local rebuild result before publishing final catalog: `wrote data/current/forecast-runs.json with 1 airport run(s), 5 ningxia run(s), 5 shangrao run(s)`.
+
+```bash
+ssh 10.64.201.2 'cd /data1/elpt_2022_00083/kerui/Website && ./publish_worknx_yunnan_airports_to_github.sh --latest'
+```
+
+Result: rendered and uploaded `airport_yunnan_20260720_00`; final successful run pushed `084bcba`, then local repair pushed `a477346`.
+
+```bash
+curl --noproxy iaplacs.xyz -fsS 'https://iaplacs.xyz/data/current/forecast-runs.json?v=a477346-2'
+```
+
+Result: online JSON returned `airport=1`, `ningxia=5`, `shangrao=5` with the airport point metrics listed above.
+
 ## Important Changed Files
 
 - `/Users/xiaoxiaotu/_01_IAP/Website/IAPLACS_website_step0_plan.md`
@@ -190,6 +252,10 @@ The user bought `iaplacs.xyz` on Alibaba Cloud/万网 and wants to build a websi
 - `/Users/xiaoxiaotu/_01_IAP/Website/airpots/index.html`
 - `/Users/xiaoxiaotu/_01_IAP/Website/tools/build_forecast_catalog.py`
 - `/Users/xiaoxiaotu/_01_IAP/Website/tools/optimize_forecast_images.sh`
+- `/Users/xiaoxiaotu/_01_IAP/Website/tools/extract_yunnan_airport_precip.py`
+- `/Users/xiaoxiaotu/_01_IAP/Website/tools/render_worknx_yunnan_airports_overview.sh`
+- `/Users/xiaoxiaotu/_01_IAP/Website/tools/publish_worknx_yunnan_airports_to_github.sh`
+- `/Users/xiaoxiaotu/_01_IAP/Website/tools/rain_worknx_yunnan_airport_hour_bjt.ncl`
 - `/Users/xiaoxiaotu/_01_IAP/Website/tools/render_worknx_ningxia_overview.sh`
 - `/Users/xiaoxiaotu/_01_IAP/Website/tools/publish_worknx_ningxia_to_github.sh`
 - `/Users/xiaoxiaotu/_01_IAP/Website/tools/rain_worknx_ningxia_hour_bjt.ncl`
