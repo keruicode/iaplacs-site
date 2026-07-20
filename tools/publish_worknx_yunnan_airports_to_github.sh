@@ -169,6 +169,20 @@ REMOTE_SITE_REPO="${REMOTE_SITE_REPO:-}"
 SITE_REPO="${REMOTE_SITE_REPO:-$HOME/iaplacs-site}"
 INCOMING="$HOME/incoming/airport_yunnan_${RUN_PREFIX}"
 DEST="$SITE_REPO/data/current/maps/airport_yunnan_${RUN_PREFIX}"
+IAPLACS_CLEAN_SITE_IMAGES="${IAPLACS_CLEAN_SITE_IMAGES:-1}"
+
+cleanup_site_images() {
+  if [ "$IAPLACS_CLEAN_SITE_IMAGES" = "1" ] && [ -n "${DEST:-}" ] && [ -d "$DEST" ]; then
+    rm -rf "$DEST"
+  fi
+}
+cleanup_remote_publish() {
+  cleanup_site_images
+  if [ -n "${GIT_SSH_WRAPPER:-}" ]; then
+    rm -f "$GIT_SSH_WRAPPER"
+  fi
+}
+trap cleanup_remote_publish EXIT
 
 publish_oss_assets() {
   if [ "${IAPLACS_OSS_ENABLED:-0}" != "1" ]; then
@@ -256,7 +270,6 @@ unset LD_LIBRARY_PATH LIBRARY_PATH
 exec ssh -i "$GITHUB_KEY" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no "\$@"
 EOF
 chmod 700 "$GIT_SSH_WRAPPER"
-trap 'rm -f "$GIT_SSH_WRAPPER"' EXIT
 export GIT_SSH="$GIT_SSH_WRAPPER"
 
 if [ ! -d "$SITE_REPO/.git" ]; then

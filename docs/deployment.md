@@ -133,7 +133,7 @@ For the current Ningxia/WORK_nx workflow, copy the summary image plus its
 data/current/maps/worknx_summary_YYYYMMDD_HH/
 ```
 
-For the Yunnan airport/WORK_nx workflow, copy the regional overview image,
+For the Yunnan airport/WORK_yn workflow, copy the regional overview image,
 `manifest_fragment.json`, and `airport_precip_totals.json` into:
 
 ```text
@@ -161,17 +161,19 @@ prioritizes that `*_combined_overview_6x6_grid` product over a legacy nationwide
 image when both temporarily exist in the same run directory. The hourly cron
 must run this wrapper, not `publish_worknx_summary_to_github.sh` directly.
 
-For the airport service, render the same WORK_nx initialization over the Yunnan
-bounding box, draw the three airport markers, calculate point precipitation
-totals, and publish the latest run with:
+For the airport service, render the latest complete `WORK_yn` initialization
+over the Yunnan bounding box, draw the three airport markers, calculate point
+precipitation totals, and publish the latest run with:
 
 ```bash
 tools/publish_worknx_yunnan_airports_to_github.sh --latest
 ```
 
-This wrapper produces one T13-T48 6x6 overview, creates WebP and preview WebP
+This wrapper produces one 36-hour 6x6 overview, creates WebP and preview WebP
 derivatives, uploads them to OSS, and commits only `data/current/forecast-runs.json`
-plus `data/current/manifest.json`.
+plus `data/current/manifest.json`. It uses the image files inside the GitHub
+worktree only as a transient catalog-building cache and removes that cache on
+exit; routine forecast images must not be committed to GitHub.
 
 Deploy the required administrative-boundary Shapefiles to
 `login02:/data1/elpt_2022_00083/kerui/Website/SHP/`:
@@ -180,6 +182,7 @@ Deploy the required administrative-boundary Shapefiles to
 省界_region.{shp,shx,dbf,prj,sbn,sbx}
 ningxia_city_county.{shp,shx,dbf,prj,cpg}
 shangrao_city_county.{shp,shx,dbf,prj,cpg}
+yunnan_city_county.{shp,shx,dbf,prj,cpg}
 ```
 
 The Ningxia renderer draws `ningxia_city_county.shp` as the thin city/county
@@ -196,9 +199,17 @@ ncl rain_wrf_shangrao_hour_bjt.ncl
 Do not use a nationwide county layer in these two products. The committed
 county Shapefiles are filtered to Ningxia and Shangrao only.
 
-The Yunnan airport renderer currently uses `省界_region.shp` for the regional
-province outline and fixed point coordinates for 德宏芒市、西双版纳嘎洒、普洱澜沧
-景迈. It intentionally does not require a nationwide county layer.
+The Yunnan airport renderer draws `yunnan_city_county.shp` as the thin
+city/county layer and `省界_region.shp` as the thicker province outline. Do not
+use a nationwide county layer in the operational product.
+
+For cron, install the incremental Yunnan checker instead of the heavyweight
+publisher. It checks for a new complete `WORK_yn` wrfout and only then renders
+and publishes:
+
+```bash
+tools/publish_workyn_yunnan_airports_if_new.sh
+```
 
 Then run `tools/optimize_forecast_images.sh`, upload the generated assets to
 OSS, and run `python3 tools/build_forecast_catalog.py` before `git add`, so the
@@ -207,7 +218,8 @@ With the production OSS setup, keep `IAPLACS_MAX_RUNS=5` and
 `IAPLACS_ASSET_BASE_URL` set to the OSS prefix (the catalog builder now defaults to
 the production OSS prefix). Verify the public OSS object and CORS response before
 publishing the catalog. Do not `git add data/current/maps`; those generated image
-directories are intentionally ignored by Git.
+directories are intentionally ignored by Git. Keep historical raster archives on
+the IAP server output directory and OSS, not in the Mac checkout or GitHub.
 The generated catalog keeps `/` and `/ningxia/` on the Ningxia WORK_nx product
 service, `/shangrao/` on the Shangrao product service, and `/airpots/` on the
 Yunnan airport product service when available.

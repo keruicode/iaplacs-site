@@ -114,18 +114,27 @@ The regional administrative overlays used during image rendering live under:
 ```text
 tools/SHP/ningxia_city_county.*
 tools/SHP/shangrao_city_county.*
+tools/SHP/yunnan_city_county.*
 ```
 
-These are server-side rendering inputs. They are filtered to the two active
-service regions only and should be copied to the server runtime `SHP/` directory
-before rerendering the Ningxia and Shangrao products.
+These are server-side rendering inputs. They are filtered to the active service
+regions only and should be copied to the server runtime `SHP/` directory before
+rerendering the Ningxia, Shangrao, and Yunnan airport products.
 
-The Yunnan airport product uses the server-side `SHP/省界_region.*` province
-boundary layer plus fixed airport coordinates for 德宏芒市、西双版纳嘎洒、普洱澜沧
-景迈. Publish the latest airport precipitation overview from `login02` with:
+The Yunnan airport product reads `WORK_yn`, draws both `SHP/yunnan_city_county.*`
+and the province boundary layer, and uses fixed airport coordinates for 德宏芒市、
+西双版纳嘎洒、普洱澜沧景迈. Publish the latest airport precipitation overview
+from `login02` manually with:
 
 ```bash
 tools/publish_worknx_yunnan_airports_to_github.sh --latest
+```
+
+For cron, use the incremental checker so a reboot or hourly check only publishes
+when a newer complete `WORK_yn` run exists:
+
+```bash
+tools/publish_workyn_yunnan_airports_if_new.sh
 ```
 
 Keep images small and web-friendly:

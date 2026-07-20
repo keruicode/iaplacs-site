@@ -5,10 +5,15 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 from netCDF4 import Dataset
+
+
+BJT = timezone(timedelta(hours=8))
 
 
 AIRPORTS = [
@@ -58,6 +63,32 @@ def read_times(ds: Dataset) -> list[str]:
     return ["".join(chars.astype(str)).strip() for chars in times[:]]
 
 
+def parse_wrf_time(value: str) -> Optional[datetime]:
+    if not value:
+        return None
+    for fmt in ("%Y-%m-%d_%H:%M:%S", "%Y-%m-%d %H:%M:%S"):
+        try:
+            return datetime.strptime(value, fmt).replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+    return None
+
+
+def bjt_iso(value: str) -> str:
+    parsed = parse_wrf_time(value)
+    return parsed.astimezone(BJT).isoformat() if parsed else ""
+
+
+def bjt_interval_label(start_value: str, end_value: str) -> str:
+    start_dt = parse_wrf_time(start_value)
+    end_dt = parse_wrf_time(end_value)
+    if not start_dt or not end_dt:
+        return ""
+    start_bjt = start_dt.astimezone(BJT)
+    end_bjt = end_dt.astimezone(BJT)
+    return f"{start_bjt:%m-%d %H}:00-{end_bjt:%H}:00"
+
+
 def extract_file(path: Path, start: int, end: int, max_distance_deg: float) -> dict:
     with Dataset(path) as ds:
         time_count = len(ds.dimensions["Time"])
@@ -89,7 +120,18 @@ def extract_file(path: Path, start: int, end: int, max_distance_deg: float) -> d
             hourly = accum[start : end_idx + 1] - accum[start - 1 : end_idx]
             hourly = np.maximum(hourly, 0.0)
             total_mm = round(float(np.sum(hourly)), 1)
-            max_hourly_mm = round(float(np.max(hourly)), 1)
+            max_hourly_offset = int(np.argmax(hourly))
+            max_hourly_mm = round(float(hourly[max_hourly_offset]), 1)
+            max_start_idx = start - 1 + max_hourly_offset
+            max_end_idx = start + max_hourly_offset
+            max_start = times[max_start_idx] if len(times) > max_start_idx else ""
+            max_end = times[max_end_idx] if len(times) > max_end_idx else ""
+            hourly_peak = {
+                "max_hourly_mm": max_hourly_mm,
+                "max_hourly_start": bjt_iso(max_start),
+                "max_hourly_end": bjt_iso(max_end),
+                "max_hourly_time": bjt_interval_label(max_start, max_end),
+            }
 
             if distance_deg > max_distance_deg:
                 results.append(
@@ -97,7 +139,7 @@ def extract_file(path: Path, start: int, end: int, max_distance_deg: float) -> d
                         **point,
                         "status": "nearest_grid",
                         "total_mm": total_mm,
-                        "max_hourly_mm": max_hourly_mm,
+                        **hourly_peak,
                         "note": "机场点超出当前 WORK_yn d01 网格覆盖范围，数值取最近网格",
                     }
                 )
@@ -108,7 +150,7 @@ def extract_file(path: Path, start: int, end: int, max_distance_deg: float) -> d
                     **point,
                     "status": "ok",
                     "total_mm": total_mm,
-                    "max_hourly_mm": max_hourly_mm,
+                    **hourly_peak,
                 }
             )
 

@@ -16,6 +16,7 @@ PYTHON_BIN="${PYTHON_BIN:-$(command -v python3 || command -v python)}"
 MIN_FILE_AGE_SECONDS="${MIN_FILE_AGE_SECONDS:-1200}"
 MIN_WRFOUT_BYTES="${MIN_WRFOUT_BYTES:-20000000000}"
 YUNNAN_PROVINCE_SHP_FILE="${YUNNAN_PROVINCE_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
+YUNNAN_COUNTY_SHP_FILE="${YUNNAN_COUNTY_SHP_FILE:-$SCRIPT_DIR/SHP/yunnan_city_county.shp}"
 
 usage() {
   cat <<'EOF'
@@ -62,6 +63,9 @@ export NCARG_ROOT="$NCL_ROOT"
 if [[ -n "$YUNNAN_PROVINCE_SHP_FILE" && ! -f "$YUNNAN_PROVINCE_SHP_FILE" ]]; then
   echo "WARNING: Yunnan province SHP not found, province outline will be skipped: $YUNNAN_PROVINCE_SHP_FILE" >&2
 fi
+if [[ -n "$YUNNAN_COUNTY_SHP_FILE" && ! -f "$YUNNAN_COUNTY_SHP_FILE" ]]; then
+  echo "WARNING: Yunnan city/county SHP not found, city/county outline will be skipped: $YUNNAN_COUNTY_SHP_FILE" >&2
+fi
 
 mkdir -p "$OUTPUT_ROOT"
 now_epoch="$(date +%s)"
@@ -104,11 +108,11 @@ caption_panel() {
   convert "$panel_path" \
     -gravity North \
     -background white \
-    -splice 0x78 \
+    -splice 0x92 \
     -fill black \
     -font Helvetica-Bold \
-    -pointsize 70 \
-    -annotate +0+7 "$panel_date" \
+    -pointsize 92 \
+    -annotate +0+0 "$panel_date" \
     "$caption_path"
 }
 
@@ -180,6 +184,7 @@ render_source() {
   WORK_YN_WRF_DIR="$wrf_dir" \
     WORK_YN_YUNNAN_AIRPORT_PNG_DIR="$panel_dir" \
     YUNNAN_PROVINCE_SHP_FILE="$YUNNAN_PROVINCE_SHP_FILE" \
+    YUNNAN_COUNTY_SHP_FILE="$YUNNAN_COUNTY_SHP_FILE" \
     "$NCL_BIN" "$NCL_SCRIPT"
 
   local panels=()

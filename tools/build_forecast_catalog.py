@@ -29,9 +29,9 @@ AIRPORT_YUNNAN_DIR_RE = re.compile(r"^airport_yunnan_(\d{8}_\d{2})$")
 DETAIL_RE = re.compile(r"_combined_detail_p(\d{2})_")
 LEAD_RANGE_RE = re.compile(r"T(\d{2})_T(\d{2})", re.IGNORECASE)
 YUNNAN_AIRPORTS = [
-    {"id": "dehong_mangshi", "label": "德宏芒市机场降水"},
-    {"id": "xishuangbanna_gasa", "label": "西双版纳嘎洒机场降水"},
-    {"id": "puer_lancang_jingmai", "label": "普洱澜沧景迈机场降水"},
+    {"id": "dehong_mangshi", "label": "德宏芒市机场"},
+    {"id": "xishuangbanna_gasa", "label": "西双版纳嘎洒机场"},
+    {"id": "puer_lancang_jingmai", "label": "普洱澜沧景迈机场"},
 ]
 
 
@@ -221,10 +221,13 @@ def yunnan_airport_precip_metrics(fragment: dict) -> list[dict]:
 def yunnan_airport_metric_value(total: dict) -> str:
     if total.get("status") == "outside_domain":
         return "无网格覆盖"
-    value = format_mm(total.get("total_mm"))
+    total_value = format_mm(total.get("total_mm"))
+    peak_value = format_mm(total.get("max_hourly_mm"))
+    peak_time = total.get("max_hourly_time") or "时间未定"
+    parts = [f"累计 {total_value}", f"最大小时 {peak_value} {peak_time}"]
     if total.get("status") == "nearest_grid" and total.get("total_mm") is not None:
-        return f"{value} (近邻网格)"
-    return value
+        parts.append("近邻网格")
+    return "；".join(parts)
 
 
 def build_airport_sample_products(include_precip: bool = True) -> list[dict]:
