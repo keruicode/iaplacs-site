@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-20 19:12 CST
+Last updated: 2026-07-20 19:43 CST
 
 ## Resume Commands
 
@@ -1349,6 +1349,53 @@ Notes for deployment:
   - Visual inspection of `.tmp/yunnan_airport_preview_no_labels.webp` confirmed the adjacent airport text labels are gone; the airplane markers remain on the map.
 - Current local state after this work: `main` equals `origin/main` at `096f4f6`; only `.tmp/` is untracked.
 
+## 2026-07-20 Yunnan Airport Archive and Scheduler Cleanup
+
+- User requested a broader cleanup for the Yunnan airport product:
+  - enlarge the 36-panel montage time labels and move them closer to each panel;
+  - show each airport's maximum hourly precipitation time and value on the webpage;
+  - add Yunnan city/county SHP boundaries;
+  - keep generated forecast images out of Mac local Git and GitHub, with historical images archived on the IAP server/OSS instead;
+  - add scheduled checks and restart recovery for the IAP server publishing workflow.
+- Code/data commits:
+  - `d8c9633 Archive Yunnan airport images outside Git`
+  - `356c669 Update Yunnan airport forecast 20260720_00`
+  - `b65ff6f Enlarge Yunnan airport markers`
+  - `c6070a5 Update Yunnan airport forecast 20260720_00`
+- Implemented changes:
+  - Added `tools/SHP/yunnan_city_county.*`, generated from GADM 4.1 China level-3 boundaries and filtered to Yunnan. Local verification found 125 features and bounds `[97.5341, 21.1394, 106.1942, 29.2511]`.
+  - Updated `tools/rain_worknx_yunnan_airport_hour_bjt.ncl` to overlay Yunnan city/county boundaries plus the province outline and to use larger black airplane markers without text labels.
+  - Updated `tools/render_worknx_yunnan_airports_overview.sh` so montage labels use larger type and sit closer to the top of each panel.
+  - Updated `tools/extract_yunnan_airport_precip.py` to compute total precipitation plus `max_hourly_mm` and the BJT maximum-hour interval for each airport.
+  - Updated `tools/build_forecast_catalog.py` so the airport metrics read like `累计 ... mm；最大小时 ... mm MM-DD HH:00-HH:00`.
+  - Updated `tools/publish_worknx_yunnan_airports_to_github.sh` so `server02` image folders under `data/current/maps/airport_yunnan_*` are transient and removed after publish; GitHub receives catalog JSON, not generated airport images.
+  - Added `tools/publish_workyn_yunnan_airports_if_new.sh` to select the latest stable complete `WORK_yn` wrfout, skip already-published runs using `state/yunnan_airport_last_published.txt`, and support `--force`/`--dry-run`.
+  - Updated README and deployment docs to document the WORK_yn source, Yunnan SHP, OSS-backed images, and GitHub catalog-only publishing model.
+- Server state:
+  - Runtime directory: `login02:/data1/elpt_2022_00083/kerui/Website/`.
+  - Current source run: `/data1/elpt_2022_00083/zhoubj/WORK_yn/2026072000/gfs/wrf/`.
+  - IAP archive/output directory: `/data1/elpt_2022_00083/kerui/Website/worknx_yunnan_airports_overview/20260720_00/`.
+  - Published-run stamp: `/data1/elpt_2022_00083/kerui/Website/state/yunnan_airport_last_published.txt`, value `20260720_00`.
+  - Crontab backup before editing: `/data1/elpt_2022_00083/kerui/Website/crontab_archive/crontab-before-yunnan-airport-20260720_193415.txt`.
+  - Installed cron entries:
+    - `25 * * * * /data1/elpt_2022_00083/kerui/Website/publish_workyn_yunnan_airports_if_new.sh >> /data1/elpt_2022_00083/kerui/Website/logs/yunnan-airport-publish.log 2>&1`
+    - `@reboot /bin/sleep 600 && /data1/elpt_2022_00083/kerui/Website/publish_workyn_yunnan_airports_if_new.sh >> /data1/elpt_2022_00083/kerui/Website/logs/yunnan-airport-publish.log 2>&1`
+- Final online catalog verification from `https://iaplacs.xyz/data/current/forecast-runs.json?v=c6070a5`:
+  - Services retained: `airport=1`, `ningxia=5`, `shangrao=5`.
+  - Airport products retained: `云南机场降水预报图集`, `机场 2 米气温`, `机场 10 米风场`.
+  - 德宏芒市机场: `累计 0.0 mm；最大小时 0.0 mm 07-20 20:00-21:00`.
+  - 西双版纳嘎洒机场: `累计 1.7 mm；最大小时 0.5 mm 07-21 02:00-03:00`.
+  - 普洱澜沧景迈机场: `累计 0.1 mm；最大小时 0.0 mm 07-20 21:00-22:00`.
+- Verification commands/results:
+  - `python3 -m py_compile tools/build_forecast_catalog.py tools/extract_yunnan_airport_precip.py`: passed.
+  - `bash -n tools/render_worknx_yunnan_airports_overview.sh tools/publish_worknx_yunnan_airports_to_github.sh tools/publish_workyn_yunnan_airports_if_new.sh`: passed.
+  - `git diff --check`: passed.
+  - `git ls-files data/current/maps`: only the six static sample SVGs are tracked; no generated forecast PNG/WebP directories are tracked.
+  - OSS preview WebP returned `HTTP 200`, `Content-Type: image/webp`, `Content-Length: 534292`.
+  - `server02` transient image-cache check `find ~/iaplacs-site/data/current/maps -maxdepth 1 -type d -name "airport_yunnan_*"` returned no directories after publish.
+  - Visual inspection of `.tmp/yunnan_airport_preview_c6070a5.webp` confirmed larger time labels, Yunnan city/county boundaries, and no airport text labels.
+- Current local state after this work: `main` equals `origin/main` at `c6070a5`; only `.tmp/` is untracked.
+
 ## Known Pitfalls
 
 - If the target server is in mainland China and `iaplacs.xyz` resolves to it, ICP filing is required before normal public access.
@@ -1391,7 +1438,7 @@ Notes for deployment:
 3. Monitor the next scheduled Ningxia and Shangrao publish cycles after the county-SHP deployment; confirm new products still publish exactly five retained runs per service and that public OSS URLs return `HTTP 200`.
 4. Monitor the `login02` publishing helpers after the next forecast cycles: confirm the new OSS readability repair path does not report failures, generated catalogs still contain only five runs per family, and retained OSS image URLs return public `HTTP 200`.
 5. Add real airport service products to replace the current samples under `/airpots/`.
-6. Add the Yunnan airport service as an OSS-backed product family, not as committed GitHub map images.
+6. Monitor the new WORK_yn Yunnan airport cron after the next complete wrfout appears; confirm it publishes once, updates `state/yunnan_airport_last_published.txt`, and leaves no `airport_yunnan_*` image directory in the `server02` GitHub worktree.
 7. Later, extend `tools/build_forecast_catalog.py` with additional product scanners when the server starts publishing more product families beyond WRF rainfall montage and WORK_nx summary.
 8. Keep GitHub Pages for the app/catalog and OSS for forecast images; move to an additional CDN only if traffic or latency later requires it.
 9. Perform one real iPhone/Android check after the `20260710-08` deploy: switch every Ningxia and Shangrao run, switch all four Shangrao frames, then test pinch zoom, drag, reset, and close; repeat at desktop width with wheel zoom.
