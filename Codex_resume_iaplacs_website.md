@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-20 18:09 CST
+Last updated: 2026-07-20 18:35 CST
 
 ## Resume Commands
 
@@ -1268,6 +1268,32 @@ Notes for deployment:
   - small static sample SVGs under `data/current/maps/` can remain temporarily until the airport service is replaced by real OSS-backed products.
 - While trying to align the local worktree, `git reset --mixed origin/main` exited with status `139` and left `.git/index.lock`; the stale lock was removed and the final image-removal commit was built through a temporary index at `/private/tmp/iaplacs_oss_only_index` instead of checking out image files.
 - Recommended direction: keep the server as the data publisher and local development as a code/catalog workflow. GitHub should no longer receive routine generated forecast image blobs.
+
+## 2026-07-20 Yunnan Airport Coordinate Correction
+
+- User asked to verify the real coordinates for 西双版纳嘎洒国际机场、普洱澜沧景迈机场、德宏芒市国际机场 from official/authoritative sources because the manually supplied values might be wrong, then mark airport icons on the map.
+- Coordinate source review:
+  - 西双版纳嘎洒国际机场: 云南机场集团西双版纳机场 official notice for the phase-IV expansion states the airport datum coordinate as `N21°58′25″ E100°45′44″`; implemented as `21.973611, 100.762222`.
+  - 德宏芒市国际机场: the official airport page confirms the airport profile but does not publish coordinates. Used aviation ARP data `24.4000, 98.5333`; implemented as `24.400000, 98.533300`.
+  - 普洱澜沧景迈机场: 云南机场集团/CAAC pages confirm the airport identity and operation context but do not publish coordinates. Used aviation data `N22°25′4″ E99°47′2″`; implemented as `22.417778, 99.783889`.
+- Code commits pushed:
+  - `f744bc8 Correct Yunnan airport coordinates`: updated `tools/extract_yunnan_airport_precip.py` and `tools/rain_worknx_yunnan_airport_hour_bjt.ncl`.
+  - `e3fd828 Enlarge Yunnan airport map markers`: enlarged the airplane markers and IATA labels `LUM/JHG/JMJ` on the NCL map.
+  - `1b32202 Force Yunnan airport WebP refresh`: made the Yunnan airport publisher force-refresh WebP and preview derivatives after rerendering so the static site does not continue serving old WebP images when PNG mtimes are preserved.
+  - `33e698f Update Yunnan airport forecast 20260720_00`: final server-generated catalog update after the forced WebP refresh.
+- Server actions:
+  - Synced updated local scripts to `login02:/data1/elpt_2022_00083/kerui/Website/`.
+  - Ran `./publish_worknx_yunnan_airports_to_github.sh --latest` several times while correcting marker visibility and WebP refresh behavior.
+  - Final published prefix remains `airport_yunnan_20260720_00`.
+- Verification:
+  - `python3 -m py_compile tools/extract_yunnan_airport_precip.py tools/build_forecast_catalog.py`: passed.
+  - `bash -n tools/render_worknx_yunnan_airports_overview.sh tools/publish_worknx_yunnan_airports_to_github.sh tools/optimize_forecast_images.sh`: passed.
+  - `git diff --check -- tools/extract_yunnan_airport_precip.py tools/rain_worknx_yunnan_airport_hour_bjt.ncl tools/publish_worknx_yunnan_airports_to_github.sh`: passed for the relevant patches.
+  - OSS latest WebP URL returned `HTTP 200`, `Content-Type: image/webp`, `Content-Length: 1808640`, and new ETag `9667513A1EE918DD26FD0322A5A048B4`.
+  - Online catalog `https://iaplacs.xyz/data/current/forecast-runs.json?v=33e698f` returned `airport=1`, `ningxia=5`, `shangrao=5`.
+  - Airport metrics remain: 德宏芒市 `0.1 mm`, 西双版纳嘎洒 `无网格覆盖`, 普洱澜沧景迈 `无网格覆盖`.
+  - Visual check of `.tmp/yunnan_airport_preview_marker_refresh.webp` and a cropped full-WebP view confirmed the airport markers and labels are present at the corrected positions.
+- Current local state after this work: `main` equals `origin/main` at `33e698f`; only `.tmp/` is untracked.
 
 ## Known Pitfalls
 
