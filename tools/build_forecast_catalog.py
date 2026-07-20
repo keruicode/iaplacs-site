@@ -210,9 +210,17 @@ def yunnan_airport_precip_metrics(fragment: dict) -> list[dict]:
     }
     metrics = []
     for airport in YUNNAN_AIRPORTS:
-        total = by_id.get(airport["id"], {}).get("total_mm")
-        metrics.append({"label": airport["label"], "value": format_mm(total)})
+        total = by_id.get(airport["id"], {})
+        metrics.append(
+            {"label": airport["label"], "value": yunnan_airport_metric_value(total)}
+        )
     return metrics
+
+
+def yunnan_airport_metric_value(total: dict) -> str:
+    if total.get("status") == "outside_domain":
+        return "无网格覆盖"
+    return format_mm(total.get("total_mm"))
 
 
 def build_airport_sample_runs() -> list[dict]:

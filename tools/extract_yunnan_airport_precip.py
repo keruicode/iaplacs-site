@@ -39,13 +39,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--start", default=13, type=int)
     parser.add_argument("--end", default=48, type=int)
+    parser.add_argument("--max-distance-deg", default=0.35, type=float)
     return parser.parse_args()
 
 
-def nearest_grid(lat2d: np.ndarray, lon2d: np.ndarray, lat: float, lon: float) -> tuple[int, int]:
+def nearest_grid(
+    lat2d: np.ndarray, lon2d: np.ndarray, lat: float, lon: float
+) -> tuple[int, int, float]:
     distance = (lat2d - lat) ** 2 + (lon2d - lon) ** 2
     y, x = np.unravel_index(np.nanargmin(distance), distance.shape)
-    return int(y), int(x)
+    return int(y), int(x), float(np.sqrt(distance[y, x]))
 
 
 def read_times(ds: Dataset) -> list[str]:
@@ -55,7 +58,7 @@ def read_times(ds: Dataset) -> list[str]:
     return ["".join(chars.astype(str)).strip() for chars in times[:]]
 
 
-def extract_file(path: Path, start: int, end: int) -> dict:
+def extract_file(path: Path, start: int, end: int, max_distance_deg: float) -> dict:
     with Dataset(path) as ds:
         time_count = len(ds.dimensions["Time"])
         if time_count <= start:
@@ -68,7 +71,29 @@ def extract_file(path: Path, start: int, end: int) -> dict:
 
         results = []
         for airport in AIRPORTS:
-            y, x = nearest_grid(lat2d, lon2d, airport["lat"], airport["lon"])
+            y, x, distance_deg = nearest_grid(
+                lat2d, lon2d, airport["lat"], airport["lon"]
+            )
+            point = {
+                **airport,
+                "nearest_lat": round(float(lat2d[y, x]), 6),
+                "nearest_lon": round(float(lon2d[y, x]), 6),
+                "nearest_distance_deg": round(distance_deg, 3),
+                "grid_y": y,
+                "grid_x": x,
+            }
+            if distance_deg > max_distance_deg:
+                results.append(
+                    {
+                        **point,
+                        "status": "outside_domain",
+                        "total_mm": None,
+                        "max_hourly_mm": None,
+                        "note": "机场点超出当前 WORK_nx d01 网格覆盖范围",
+                    }
+                )
+                continue
+
             accum = (
                 ds.variables["RAINNC"][:, y, x].astype("float64")
                 + ds.variables["RAINC"][:, y, x].astype("float64")
@@ -77,11 +102,8 @@ def extract_file(path: Path, start: int, end: int) -> dict:
             hourly = np.maximum(hourly, 0.0)
             results.append(
                 {
-                    **airport,
-                    "nearest_lat": round(float(lat2d[y, x]), 6),
-                    "nearest_lon": round(float(lon2d[y, x]), 6),
-                    "grid_y": y,
-                    "grid_x": x,
+                    **point,
+                    "status": "ok",
                     "total_mm": round(float(np.sum(hourly)), 1),
                     "max_hourly_mm": round(float(np.max(hourly)), 1),
                 }
@@ -104,7 +126,7 @@ def main() -> None:
     if not wrf_files:
         raise SystemExit(f"no wrfout_d01_* files in {args.wrf_dir}")
 
-    payload = extract_file(wrf_files[0], args.start, args.end)
+    payload = extract_file(wrf_files[0], args.start, args.end, args.max_distance_deg)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
