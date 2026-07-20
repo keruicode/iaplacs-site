@@ -1379,7 +1379,7 @@
     "ningxia": {
       "title": "宁夏预报",
       "subtitle": "Ningxia forecast",
-      "note": "宁夏页面集中展示 WORK_nx 发布的宁夏区域预报图。新起报时次推送到仓库后，会自动出现在顶部起报时间选择区。",
+      "note": "宁夏页面集中展示 WORK_nx 发布的宁夏区域预报图，并可切换同一时次的全国模拟图。新起报时次推送到仓库后，会自动出现在顶部起报时间选择区。",
       "latest_run": "20260720_00",
       "runs": [
         {
@@ -1387,7 +1387,7 @@
           "label": "2026-07-20 08:00 BJT",
           "run_time": "2026-07-20T08:00:00+08:00",
           "published_at": "2026-07-20T16:48:19+08:00",
-          "summary": "宁夏区域预报图集，共 1 张图",
+          "summary": "宁夏区域与全国预报图集，共 2 张图",
           "products": [
             {
               "id": "ningxia_precip_series",
@@ -1395,7 +1395,7 @@
               "category": "宁夏预报",
               "unit": "mm",
               "color": "#0f68c8",
-              "description": "WORK_nx 目录下的降水预报图集，按起报时次手动归档。",
+              "description": "默认显示宁夏区域图，可切换 WORK_nx 全国模拟图。",
               "metrics": [
                 {
                   "label": "起报时次",
@@ -1407,20 +1407,33 @@
                 },
                 {
                   "label": "图像数量",
-                  "value": "1"
+                  "value": "2"
                 }
               ],
               "frames": [
                 {
-                  "id": "precip_hourly_wrf_ningxia_t13_t48_initutc_2026_07_20_00_00_combined_overview_6x6_grid",
-                  "lead": 48,
-                  "lead_label": "T13-T48",
+                  "id": "ningxia_region",
+                  "lead": 0,
+                  "lead_label": "宁夏区域",
+                  "valid_label": "当前显示：宁夏区域",
                   "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260720_00/Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_2026-07-20_00_00_combined_overview_6x6_grid.webp",
                   "bytes": 1869789,
                   "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260720_00/Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_2026-07-20_00_00_combined_overview_6x6_grid.preview.webp",
                   "preview_bytes": 392291,
                   "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260720_00/Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_2026-07-20_00_00_combined_overview_6x6_grid.png",
-                  "full_bytes": 1382099,
+                  "full_bytes": 1382099
+                },
+                {
+                  "id": "worknx_national",
+                  "lead": 1,
+                  "lead_label": "全国",
+                  "valid_label": "当前显示：WORK_nx 全国模拟图",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260720_00/Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-20_00_00.webp",
+                  "bytes": 3185091,
+                  "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260720_00/Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-20_00_00.preview.webp",
+                  "preview_bytes": 447344,
+                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260720_00/Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-20_00_00.png",
+                  "full_bytes": 5577262,
                   "valid_time": "2026-07-22T08:00:00+08:00"
                 }
               ]
