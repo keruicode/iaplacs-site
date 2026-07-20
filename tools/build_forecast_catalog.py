@@ -213,27 +213,33 @@ def yunnan_airport_precip_metrics(fragment: dict) -> list[dict]:
     metrics = []
     for airport in YUNNAN_AIRPORTS:
         total = by_id.get(airport["id"], {})
-        metrics.append(
-            {"label": airport["label"], "value": yunnan_airport_metric_value(total)}
-        )
+        value = yunnan_airport_metric_value(total)
+        if value:
+            metrics.append({"label": airport["label"], "value": value})
     return metrics
 
 
 def normalize_yunnan_airport_run_metrics(runs: list[dict]) -> list[dict]:
+    airport_labels = {airport["label"] for airport in YUNNAN_AIRPORTS}
     for run in runs:
         for product in run.get("products", []):
             if product.get("id") != "airport_yunnan_precip_series":
                 continue
+            normalized_metrics = []
             for metric in product.get("metrics", []):
-                if metric.get("label") in {airport["label"] for airport in YUNNAN_AIRPORTS}:
+                if metric.get("label") in airport_labels:
                     metric["value"] = normalize_yunnan_airport_metric_text(
                         str(metric.get("value") or "")
                     )
+                    if not metric["value"]:
+                        continue
+                normalized_metrics.append(metric)
+            product["metrics"] = normalized_metrics
     return runs
 
 
 def normalize_yunnan_airport_metric_text(value: str) -> str:
-    if not value or "最大小时" not in value:
+    if not value:
         return value
 
     parts = [part.strip() for part in value.split("；") if part.strip()]
@@ -244,7 +250,6 @@ def normalize_yunnan_airport_metric_text(value: str) -> str:
             nearest_grid = True
             continue
         if part.startswith("累计 "):
-            normalized.append(part)
             continue
         match = re.match(r"最大小时(?:降水)?\s+([0-9.]+)\s*mm(?:\s+(.+))?$", part)
         if not match:
@@ -256,14 +261,13 @@ def normalize_yunnan_airport_metric_text(value: str) -> str:
             normalized.append(f"最大小时降水 {format_mm(peak_mm)} {peak_time}")
     if nearest_grid:
         normalized.append("近邻网格")
-    return "；".join(normalized) or value
+    return "；".join(normalized)
 
 
 def yunnan_airport_metric_value(total: dict) -> str:
     if total.get("status") == "outside_domain":
         return "无网格覆盖"
-    total_value = format_mm(total.get("total_mm"))
-    parts = [f"累计 {total_value}"]
+    parts = []
     peak_mm = numeric_value(total.get("max_hourly_mm"))
     if peak_mm is not None and peak_mm > 0:
         peak_value = format_mm(peak_mm)
