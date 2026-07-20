@@ -78,7 +78,7 @@ def main() -> None:
             "ningxia": {
                 "title": "宁夏预报",
                 "subtitle": "Ningxia forecast",
-                "note": "宁夏页面集中展示 WORK_nx 发布的宁夏区域预报图。新起报时次推送到仓库后，会自动出现在顶部起报时间选择区。",
+                "note": "宁夏页面集中展示 WORK_nx 发布的宁夏区域预报图，并可切换同一时次的全国模拟图。新起报时次推送到仓库后，会自动出现在顶部起报时间选择区。",
                 "latest_run": ningxia_runs[0]["id"] if ningxia_runs else None,
                 "runs": ningxia_runs,
             },
@@ -447,7 +447,7 @@ def build_ningxia_runs() -> list[dict]:
                 "label": f"{format_run_label(run_time)} BJT",
                 "run_time": run_time,
                 "published_at": generated_at,
-                "summary": f"宁夏区域预报图集，共 {len(frames)} 张图",
+                "summary": f"宁夏区域与全国预报图集，共 {len(frames)} 张图",
                 "products": [build_ningxia_product(run_id, frames, generated_at)],
             }
         )
@@ -467,21 +467,22 @@ def build_ningxia_frames(run_dir: Path, fragment: dict) -> list[dict]:
         fallback = ROOT / fragment["file"].replace("./", "", 1)
         groups.setdefault(fallback.stem, []).append(fallback)
 
-    # A regional 6x6 overview supersedes the legacy nationwide T01-T48 sheet.
-    # Keeping this selection here makes a mixed transition directory render one
-    # Ningxia regional product instead of exposing both products as frames.
-    overview_groups = {
+    regional_groups = {
         key: candidates
         for key, candidates in groups.items()
         if "_combined_overview_" in key and "_6x6_" in key
     }
-    if overview_groups:
-        groups = overview_groups
+    national_groups = {
+        key: candidates for key, candidates in groups.items() if "_WRF_AllRain_" in key
+    }
+    primary_groups = {**regional_groups, **national_groups}
+    if primary_groups:
+        groups = primary_groups
 
     frames = []
     fragment_file = fragment.get("file", "")
     fragment_stem = Path(fragment_file).stem if fragment_file else ""
-    for _, candidates in sorted(groups.items()):
+    for key, candidates in sorted(groups.items(), key=ningxia_frame_sort_key):
         existing = [path for path in candidates if path.exists()]
         if not existing:
             continue
@@ -490,15 +491,12 @@ def build_ningxia_frames(run_dir: Path, fragment: dict) -> list[dict]:
         full_path = choose_full_candidate("", existing)
         if not path.exists():
             continue
-        lead_label = (
-            "T13-T48"
-            if "_combined_overview_" in path.stem and "T13_T48" in path.name
-            else lead_label_from_name(path.name)
-        )
+        frame_id, lead_value, lead_label, valid_label = ningxia_frame_meta(key, path)
         frame = {
-            "id": path.stem.lower().replace("-", "_"),
-            "lead": lead_value_from_label(lead_label),
+            "id": frame_id,
+            "lead": lead_value,
             "lead_label": lead_label,
+            "valid_label": valid_label,
             "file": forecast_asset_url(path),
             "bytes": path.stat().st_size,
         }
@@ -513,6 +511,29 @@ def build_ningxia_frames(run_dir: Path, fragment: dict) -> list[dict]:
     return frames
 
 
+def ningxia_frame_sort_key(item: tuple[str, list[Path]]) -> tuple[int, str]:
+    key = item[0]
+    if "_combined_overview_" in key and "_6x6_" in key:
+        return (0, key)
+    if "_WRF_AllRain_" in key:
+        return (1, key)
+    return (2, key)
+
+
+def ningxia_frame_meta(key: str, path: Path) -> tuple[str, int, str, str]:
+    if "_combined_overview_" in key and "_6x6_" in key:
+        return ("ningxia_region", 0, "宁夏区域", "当前显示：宁夏区域")
+    if "_WRF_AllRain_" in key:
+        return ("worknx_national", 1, "全国", "当前显示：WORK_nx 全国模拟图")
+
+    lead_label = (
+        "T13-T48"
+        if "_combined_overview_" in path.stem and "T13_T48" in path.name
+        else lead_label_from_name(path.name)
+    )
+    return (path.stem.lower().replace("-", "_"), lead_value_from_label(lead_label), lead_label, "")
+
+
 def build_ningxia_product(run_id: str, frames: list[dict], generated_at: str) -> dict:
     return {
         "id": "ningxia_precip_series",
@@ -520,7 +541,7 @@ def build_ningxia_product(run_id: str, frames: list[dict], generated_at: str) ->
         "category": "宁夏预报",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": "WORK_nx 目录下的降水预报图集，按起报时次手动归档。",
+        "description": "默认显示宁夏区域图，可切换 WORK_nx 全国模拟图。",
         "metrics": [
             {"label": "起报时次", "value": run_id.replace("_", " ") + " UTC"},
             {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},

@@ -8,7 +8,7 @@ const ACCESS_PASSWORD = "123";
 const ACCESS_TOKEN_KEY = "iaplacs_access_token";
 const ACCESS_TOKEN_VALUE = "iaplacs_access_granted_v1";
 const NINGXIA_PRODUCT_TITLE = "降水预报图集";
-const NINGXIA_PRODUCT_DESCRIPTION = "WORK_nx 目录下的降水预报图集，按起报时次手动归档。";
+const NINGXIA_PRODUCT_DESCRIPTION = "默认显示宁夏区域图，可切换 WORK_nx 全国模拟图。";
 
 const pageConfig = {
   service: document.body.dataset.service || "airport",

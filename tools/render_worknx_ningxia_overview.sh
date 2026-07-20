@@ -108,7 +108,7 @@ caption_panel() {
 }
 
 render_source() {
-  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview
+  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview national_copy
   base="$(basename "$source_path")"
   if [[ ! "$base" =~ InitUTC_([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2})_[0-9]{2} ]]; then
     echo "ERROR: cannot parse InitUTC from $base" >&2
@@ -122,6 +122,7 @@ render_source() {
   panel_dir="$run_dir/hourly_t13_t48"
   caption_dir="$run_dir/captioned_t13_t48"
   overview="$run_dir/Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_${run_date}_${run_hour}_00_combined_overview_6x6_grid.png"
+  national_copy="$run_dir/$base"
 
   if ! compgen -G "$wrf_dir/wrfout_d01_*" >/dev/null; then
     echo "ERROR: wrfout_d01 files are unavailable beside $source_path" >&2
@@ -152,6 +153,9 @@ render_source() {
 
   montage "${captioned_panels[@]}" -tile 6x6 -geometry '100%x100%+2+2' -background white "$overview"
   touch -r "$source_path" "$overview"
+  if [[ "$source_path" != "$national_copy" ]]; then
+    cp -p "$source_path" "$national_copy"
+  fi
   echo "Rendered $overview"
 }
 

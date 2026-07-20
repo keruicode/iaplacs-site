@@ -62,11 +62,30 @@ if [[ "${#sources[@]}" -ne "$count" ]]; then
 fi
 
 for source in "${sources[@]}"; do
+  source_dir="$(dirname "$source")"
+  mapfile -t national_sources < <(
+    find "$source_dir" -maxdepth 1 -type f \
+      -name 'Precip_hourly_WRF_AllRain_T01_T48_InitUTC_*.png' \
+      | sort
+  )
+  if [[ "${#national_sources[@]}" -gt 0 ]]; then
+    echo "Publishing WORK_nx national overview: ${national_sources[0]}"
+    IAPLACS_WEBP_FORCE=1 \
+      IAPLACS_PREVIEW_FORCE=1 \
+      IAPLACS_ASSET_FORCE_UPLOAD=1 \
+      WORK_NX_ROOT="$source_dir" \
+      SOURCE_IMAGE_GLOB="$(basename "${national_sources[0]}")" \
+      MIN_FILE_AGE_SECONDS=0 \
+      "$PUBLISHER"
+  else
+    echo "WARNING: no WORK_nx national overview found beside $source" >&2
+  fi
+
   echo "Publishing Ningxia regional overview: $source"
   IAPLACS_WEBP_FORCE=1 \
     IAPLACS_PREVIEW_FORCE=1 \
     IAPLACS_ASSET_FORCE_UPLOAD=1 \
-    WORK_NX_ROOT="$(dirname "$source")" \
+    WORK_NX_ROOT="$source_dir" \
     SOURCE_IMAGE_GLOB="$(basename "$source")" \
     MIN_FILE_AGE_SECONDS=0 \
     "$PUBLISHER"
