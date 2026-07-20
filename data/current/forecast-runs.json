@@ -9,7 +9,7 @@
     "airport": {
       "title": "机场气象服务",
       "subtitle": "Airport weather service",
-      "note": "机场服务页展示 WORK_nx 云南区域 T13-T48 降水拼图，并单独列出德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点的36小时累计降水。",
+      "note": "机场服务页展示 WORK_nx 云南区域 T13-T48 降水拼图，并单独列出德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点的36小时累计降水；2米气温和10米风场入口继续保留。",
       "latest_run": "airport_yunnan_20260720_00",
       "runs": [
         {
@@ -40,16 +40,16 @@
                   "value": "1"
                 },
                 {
-                  "label": "德宏芒市 36h",
+                  "label": "德宏芒市机场降水",
                   "value": "0.1 mm"
                 },
                 {
-                  "label": "西双版纳嘎洒 36h",
-                  "value": "无网格覆盖"
+                  "label": "西双版纳嘎洒机场降水",
+                  "value": "0.0 mm (近邻网格)"
                 },
                 {
-                  "label": "普洱澜沧景迈 36h",
-                  "value": "无网格覆盖"
+                  "label": "普洱澜沧景迈机场降水",
+                  "value": "0.0 mm (近邻网格)"
                 }
               ],
               "frames": [
@@ -66,6 +66,86 @@
                   "full_bytes": 1149147
                 }
               ]
+            },
+            {
+              "id": "airport_temperature",
+              "title": "机场 2 米气温",
+              "category": "机场服务",
+              "unit": "degC",
+              "color": "#b73b3b",
+              "description": "近地面气温分布样例产品，用于识别机场周边冷暖区和边界层温度变化。",
+              "metrics": [
+                {
+                  "label": "区域最高",
+                  "value": "36.2 degC"
+                },
+                {
+                  "label": "区域最低",
+                  "value": "17.4 degC"
+                },
+                {
+                  "label": "产品状态",
+                  "value": "样例接入"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "f024",
+                  "lead": 24,
+                  "lead_label": "F024",
+                  "valid_time": "2026-07-10T08:00:00+08:00",
+                  "file": "./data/current/maps/temp_f024.svg",
+                  "bytes": 1544
+                },
+                {
+                  "id": "f048",
+                  "lead": 48,
+                  "lead_label": "F048",
+                  "valid_time": "2026-07-11T08:00:00+08:00",
+                  "file": "./data/current/maps/temp_f048.svg",
+                  "bytes": 1544
+                }
+              ]
+            },
+            {
+              "id": "airport_wind",
+              "title": "机场 10 米风场",
+              "category": "机场服务",
+              "unit": "m/s",
+              "color": "#2c5f9e",
+              "description": "近地面风速和风向样例产品，用于展示机场风场保障产品入口。",
+              "metrics": [
+                {
+                  "label": "最大风速",
+                  "value": "15.8 m/s"
+                },
+                {
+                  "label": "主导风向",
+                  "value": "SE"
+                },
+                {
+                  "label": "产品状态",
+                  "value": "样例接入"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "f024",
+                  "lead": 24,
+                  "lead_label": "F024",
+                  "valid_time": "2026-07-10T08:00:00+08:00",
+                  "file": "./data/current/maps/wind_f024.svg",
+                  "bytes": 2150
+                },
+                {
+                  "id": "f048",
+                  "lead": 48,
+                  "lead_label": "F048",
+                  "valid_time": "2026-07-11T08:00:00+08:00",
+                  "file": "./data/current/maps/wind_f048.svg",
+                  "bytes": 2141
+                }
+              ]
             }
           ]
         }
@@ -74,7 +154,7 @@
     "main": {
       "title": "机场气象服务",
       "subtitle": "Airport weather service",
-      "note": "机场服务页展示 WORK_nx 云南区域 T13-T48 降水拼图，并单独列出德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点的36小时累计降水。",
+      "note": "机场服务页展示 WORK_nx 云南区域 T13-T48 降水拼图，并单独列出德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点的36小时累计降水；2米气温和10米风场入口继续保留。",
       "latest_run": "airport_yunnan_20260720_00",
       "runs": [
         {
@@ -105,16 +185,16 @@
                   "value": "1"
                 },
                 {
-                  "label": "德宏芒市 36h",
+                  "label": "德宏芒市机场降水",
                   "value": "0.1 mm"
                 },
                 {
-                  "label": "西双版纳嘎洒 36h",
-                  "value": "无网格覆盖"
+                  "label": "西双版纳嘎洒机场降水",
+                  "value": "0.0 mm (近邻网格)"
                 },
                 {
-                  "label": "普洱澜沧景迈 36h",
-                  "value": "无网格覆盖"
+                  "label": "普洱澜沧景迈机场降水",
+                  "value": "0.0 mm (近邻网格)"
                 }
               ],
               "frames": [
@@ -129,6 +209,86 @@
                   "preview_bytes": 384973,
                   "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260720_00/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-20_00_00_combined_overview_6x6_grid.png",
                   "full_bytes": 1149147
+                }
+              ]
+            },
+            {
+              "id": "airport_temperature",
+              "title": "机场 2 米气温",
+              "category": "机场服务",
+              "unit": "degC",
+              "color": "#b73b3b",
+              "description": "近地面气温分布样例产品，用于识别机场周边冷暖区和边界层温度变化。",
+              "metrics": [
+                {
+                  "label": "区域最高",
+                  "value": "36.2 degC"
+                },
+                {
+                  "label": "区域最低",
+                  "value": "17.4 degC"
+                },
+                {
+                  "label": "产品状态",
+                  "value": "样例接入"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "f024",
+                  "lead": 24,
+                  "lead_label": "F024",
+                  "valid_time": "2026-07-10T08:00:00+08:00",
+                  "file": "./data/current/maps/temp_f024.svg",
+                  "bytes": 1544
+                },
+                {
+                  "id": "f048",
+                  "lead": 48,
+                  "lead_label": "F048",
+                  "valid_time": "2026-07-11T08:00:00+08:00",
+                  "file": "./data/current/maps/temp_f048.svg",
+                  "bytes": 1544
+                }
+              ]
+            },
+            {
+              "id": "airport_wind",
+              "title": "机场 10 米风场",
+              "category": "机场服务",
+              "unit": "m/s",
+              "color": "#2c5f9e",
+              "description": "近地面风速和风向样例产品，用于展示机场风场保障产品入口。",
+              "metrics": [
+                {
+                  "label": "最大风速",
+                  "value": "15.8 m/s"
+                },
+                {
+                  "label": "主导风向",
+                  "value": "SE"
+                },
+                {
+                  "label": "产品状态",
+                  "value": "样例接入"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "f024",
+                  "lead": 24,
+                  "lead_label": "F024",
+                  "valid_time": "2026-07-10T08:00:00+08:00",
+                  "file": "./data/current/maps/wind_f024.svg",
+                  "bytes": 2150
+                },
+                {
+                  "id": "f048",
+                  "lead": 48,
+                  "lead_label": "F048",
+                  "valid_time": "2026-07-11T08:00:00+08:00",
+                  "file": "./data/current/maps/wind_f048.svg",
+                  "bytes": 2141
                 }
               ]
             }
