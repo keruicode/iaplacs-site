@@ -182,7 +182,7 @@ Deploy the required administrative-boundary Shapefiles to
 省界_region.{shp,shx,dbf,prj,sbn,sbx}
 ningxia_city_county.{shp,shx,dbf,prj,cpg}
 shangrao_city_county.{shp,shx,dbf,prj,cpg}
-yunnan_city_county.{shp,shx,dbf,prj,cpg}
+yunnan_city.{shp,shx,dbf,prj,cpg}
 ```
 
 The Ningxia renderer draws `ningxia_city_county.shp` as the thin city/county
@@ -199,9 +199,9 @@ ncl rain_wrf_shangrao_hour_bjt.ncl
 Do not use a nationwide county layer in these two products. The committed
 county Shapefiles are filtered to Ningxia and Shangrao only.
 
-The Yunnan airport renderer draws `yunnan_city_county.shp` as the thin
-city/county layer and `省界_region.shp` as the thicker province outline. Do not
-use a nationwide county layer in the operational product.
+The Yunnan airport renderer draws `yunnan_city.shp` as the city-level layer and
+`省界_region.shp` as the thicker province outline. Do not use a nationwide county
+layer in the operational product.
 
 For cron, install the incremental Yunnan checker instead of the heavyweight
 publisher. It checks for a new complete `WORK_yn` wrfout and only then renders

@@ -40,7 +40,8 @@ begin
   wrf_dir = getenv("WORK_YN_WRF_DIR")
   out_dir = getenv("WORK_YN_YUNNAN_AIRPORT_PNG_DIR")
   province_shp_file = getenv("YUNNAN_PROVINCE_SHP_FILE")
-  county_shp_file = getenv("YUNNAN_COUNTY_SHP_FILE")
+  city_shp_file = getenv("YUNNAN_CITY_SHP_FILE")
+  legacy_county_shp_file = getenv("YUNNAN_COUNTY_SHP_FILE")
 
   if (wrf_dir.eq."") then
     wrf_dir = getenv("WORK_NX_WRF_DIR")
@@ -57,8 +58,14 @@ begin
   if (ismissing(province_shp_file)) then
     province_shp_file = ""
   end if
-  if (ismissing(county_shp_file)) then
-    county_shp_file = ""
+  if (ismissing(city_shp_file)) then
+    city_shp_file = ""
+  end if
+  if (ismissing(legacy_county_shp_file)) then
+    legacy_county_shp_file = ""
+  end if
+  if (city_shp_file.eq."" .and. legacy_county_shp_file.ne."") then
+    city_shp_file = legacy_county_shp_file
   end if
 
   system("mkdir -p " + out_dir)
@@ -155,11 +162,11 @@ begin
 
       plot = gsn_csm_contour_map(wks, rain_h, res)
 
-      if (county_shp_file.ne."" .and. fileexists(county_shp_file)) then
-        county_shp_res = True
-        county_shp_res@gsLineColor = "black"
-        county_shp_res@gsLineThicknessF = 1.1
-        county_shp_line = gsn_add_shapefile_polylines(wks, plot, county_shp_file, county_shp_res)
+      if (city_shp_file.ne."" .and. fileexists(city_shp_file)) then
+        city_shp_res = True
+        city_shp_res@gsLineColor = "black"
+        city_shp_res@gsLineThicknessF = 1.8
+        city_shp_line = gsn_add_shapefile_polylines(wks, plot, city_shp_file, city_shp_res)
       end if
 
       if (province_shp_file.ne."" .and. fileexists(province_shp_file)) then

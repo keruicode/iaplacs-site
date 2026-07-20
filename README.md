@@ -114,15 +114,15 @@ The regional administrative overlays used during image rendering live under:
 ```text
 tools/SHP/ningxia_city_county.*
 tools/SHP/shangrao_city_county.*
-tools/SHP/yunnan_city_county.*
+tools/SHP/yunnan_city.*
 ```
 
 These are server-side rendering inputs. They are filtered to the active service
 regions only and should be copied to the server runtime `SHP/` directory before
 rerendering the Ningxia, Shangrao, and Yunnan airport products.
 
-The Yunnan airport product reads `WORK_yn`, draws both `SHP/yunnan_city_county.*`
-and the province boundary layer, and uses fixed airport coordinates for 德宏芒市、
+The Yunnan airport product reads `WORK_yn`, draws `SHP/yunnan_city.*`
+as the city-level layer plus the province boundary layer, and uses fixed airport coordinates for 德宏芒市、
 西双版纳嘎洒、普洱澜沧景迈. Publish the latest airport precipitation overview
 from `login02` manually with:
 

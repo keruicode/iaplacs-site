@@ -32,7 +32,7 @@ tools/optimize_forecast_images.sh 图像优化脚本
 tools/rain_wrf_shangrao_hour_bjt.ncl 上饶 WRF 出图脚本，可部署到服务器
 tools/rain_worknx_yunnan_airport_hour_bjt.ncl 云南机场 WORK_yn 出图脚本
 tools/publish_workyn_yunnan_airports_if_new.sh 云南机场增量定时发布检查
-tools/SHP/                    宁夏、上饶、云南服务区市县边界 shp
+tools/SHP/                    宁夏、上饶服务区市县边界，以及云南市级边界 shp
 docs/                       运维、部署和结构说明
 Codex_resume_iaplacs_website.md  Codex 断点恢复 handoff
 ```
