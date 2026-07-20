@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
@@ -662,12 +663,74 @@ def format_mm(value: object) -> str:
 
 
 def read_existing_catalog() -> dict:
-    if not CATALOG_PATH.exists():
+    catalog = read_catalog_file(CATALOG_PATH)
+    for ref in ("HEAD", "HEAD~1", "HEAD~2"):
+        catalog = merge_catalog_service_runs(catalog, read_git_catalog(ref))
+    return catalog
+
+
+def read_catalog_file(path: Path) -> dict:
+    if not path.exists():
         return {}
     try:
-        return json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+        return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return {}
+
+
+def read_git_catalog(ref: str) -> dict:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(ROOT), "show", f"{ref}:data/current/forecast-runs.json"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return {}
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return {}
+
+
+def merge_catalog_service_runs(primary: dict, fallback: dict) -> dict:
+    if not primary:
+        return fallback
+    if not fallback:
+        return primary
+
+    services = primary.setdefault("services", {})
+    fallback_services = fallback.get("services") or {}
+    for service_key, fallback_service in fallback_services.items():
+        if not isinstance(fallback_service, dict):
+            continue
+        current_service = services.get(service_key)
+        if not isinstance(current_service, dict):
+            services[service_key] = fallback_service
+            continue
+
+        current_runs = current_service.get("runs") or []
+        fallback_runs = fallback_service.get("runs") or []
+        merged_runs: dict[str, dict] = {}
+        for run in fallback_runs + current_runs:
+            run_id = str(run.get("id", ""))
+            if run_id:
+                merged_runs[run_id] = run
+
+        if len(merged_runs) <= len(current_runs):
+            continue
+
+        runs = list(merged_runs.values())
+        runs.sort(key=lambda item: item.get("run_time", ""), reverse=True)
+        preserved = {**fallback_service, **current_service}
+        preserved["runs"] = runs[:MAX_RUNS]
+        latest_run = current_service.get("latest_run")
+        if not any(run.get("id") == latest_run for run in preserved["runs"]):
+            latest_run = preserved["runs"][0].get("id") if preserved["runs"] else None
+        preserved["latest_run"] = latest_run
+        services[service_key] = preserved
+    return primary
 
 
 def merge_existing_runs(
