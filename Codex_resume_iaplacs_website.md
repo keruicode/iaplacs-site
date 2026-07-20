@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-20 18:35 CST
+Last updated: 2026-07-20 18:52 CST
 
 ## Resume Commands
 
@@ -1294,6 +1294,29 @@ Notes for deployment:
   - Airport metrics remain: 德宏芒市 `0.1 mm`, 西双版纳嘎洒 `无网格覆盖`, 普洱澜沧景迈 `无网格覆盖`.
   - Visual check of `.tmp/yunnan_airport_preview_marker_refresh.webp` and a cropped full-WebP view confirmed the airport markers and labels are present at the corrected positions.
 - Current local state after this work: `main` equals `origin/main` at `33e698f`; only `.tmp/` is untracked.
+
+## 2026-07-20 Yunnan Airport Values and Product Retention
+
+- User requested that all three Yunnan airport precipitation values be modified and shown on the webpage, and that the previous wind and temperature product options remain available.
+- Code commit `b8dc26d Show Yunnan airport precip values with retained products`:
+  - `tools/extract_yunnan_airport_precip.py` now calculates nearest-grid precipitation for airports outside the current WORK_nx d01 coverage instead of returning `None`.
+  - Outside-grid airport metrics are labeled as nearest-grid values, e.g. `0.0 mm (近邻网格)`.
+  - `tools/build_forecast_catalog.py` keeps the real Yunnan airport precipitation product first, then appends the existing `机场 2 米气温` and `机场 10 米风场` products to the airport service product list.
+  - Airport metric labels are now explicit: `德宏芒市机场降水`, `西双版纳嘎洒机场降水`, and `普洱澜沧景迈机场降水`.
+- Server publication:
+  - Synced `tools/extract_yunnan_airport_precip.py` to `login02:/data1/elpt_2022_00083/kerui/Website/`.
+  - Ran `./publish_worknx_yunnan_airports_to_github.sh --latest`.
+  - Server data commit: `38d76ac Update Yunnan airport forecast 20260720_00`.
+- Verification:
+  - `python3 -m py_compile tools/extract_yunnan_airport_precip.py tools/build_forecast_catalog.py`: passed.
+  - `git diff --check -- tools/extract_yunnan_airport_precip.py tools/build_forecast_catalog.py`: passed.
+  - Server `airport_precip_totals.json` values:
+    - 德宏芒市国际机场: `0.1 mm`, status `ok`, nearest grid distance `0.044` degrees.
+    - 西双版纳嘎洒国际机场: `0.0 mm`, status `nearest_grid`, nearest grid distance `1.439` degrees.
+    - 普洱澜沧景迈机场: `0.0 mm`, status `nearest_grid`, nearest grid distance `0.935` degrees.
+  - Public catalog `https://iaplacs.xyz/data/current/forecast-runs.json?v=38d76ac-2` shows airport products `云南机场降水预报图集`, `机场 2 米气温`, and `机场 10 米风场`.
+  - Public airport precipitation metrics now show `德宏芒市机场降水 = 0.1 mm`, `西双版纳嘎洒机场降水 = 0.0 mm (近邻网格)`, and `普洱澜沧景迈机场降水 = 0.0 mm (近邻网格)`.
+- Current local state after this work: `main` equals `origin/main` at `38d76ac`; only `.tmp/` is untracked.
 
 ## Known Pitfalls
 
