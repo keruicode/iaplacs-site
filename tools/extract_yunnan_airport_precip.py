@@ -16,19 +16,19 @@ AIRPORTS = [
         "id": "dehong_mangshi",
         "name": "德宏芒市国际机场",
         "lat": 24.400000,
-        "lon": 98.533333,
+        "lon": 98.533300,
     },
     {
         "id": "xishuangbanna_gasa",
         "name": "西双版纳嘎洒国际机场",
-        "lat": 21.975000,
-        "lon": 100.761667,
+        "lat": 21.973611,
+        "lon": 100.762222,
     },
     {
         "id": "puer_lancang_jingmai",
         "name": "普洱澜沧景迈机场",
-        "lat": 22.416944,
-        "lon": 99.784444,
+        "lat": 22.417778,
+        "lon": 99.783889,
     },
 ]
 
