@@ -65,6 +65,11 @@ done < <(find "$MAPS_DIR" -type f -path "*/worknx_summary_*/*.png" -print0)
 while IFS= read -r -d '' source; do
   optimize_image "$source" 3200
   make_preview_image "$source"
+done < <(find "$MAPS_DIR" -type f -path "*/airport_yunnan_*/*.png" -print0)
+
+while IFS= read -r -d '' source; do
+  optimize_image "$source" 3200
+  make_preview_image "$source"
 done < <(find "$MAPS_DIR" -type f -path "*/wrf_montage_*/*overview*.png" -print0)
 
 while IFS= read -r -d '' source; do

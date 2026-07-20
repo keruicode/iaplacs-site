@@ -72,10 +72,12 @@ commit only the JSON catalog. Current server-side working directory patterns are
 ```text
 data/current/maps/wrf_montage_YYYYMMDD_HH/
 data/current/maps/worknx_summary_YYYYMMDD_HH/
+data/current/maps/airport_yunnan_YYYYMMDD_HH/
 ```
 
 `worknx_summary_*` is exposed on `/` and `/ningxia/`; `wrf_montage_*` is exposed
-only on `/shangrao/`. The airport service catalog is available at `/airpots/`.
+only on `/shangrao/`; `airport_yunnan_*` is exposed on `/airpots/` and the
+compatibility `airport` service catalog.
 
 After the first forecast image is shown, the frontend uses the browser's idle
 time to warm the current service's image URLs one at a time. It prioritizes the
@@ -95,7 +97,8 @@ The production image path is the OSS origin
 `https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/`.
 The server publisher uploads the optimized PNG/WebP assets first, then generates
 the catalog with those OSS URLs. OSS retention is also limited to the newest five
-run directories per product family: `worknx_summary_*` and `wrf_montage_*`.
+run directories per product family: `worknx_summary_*`, `wrf_montage_*`, and
+`airport_yunnan_*`.
 `data/current/maps/*` is ignored by Git and should stay a server-local build
 cache unless a tiny static sample asset is intentionally added.
 
@@ -116,6 +119,14 @@ tools/SHP/shangrao_city_county.*
 These are server-side rendering inputs. They are filtered to the two active
 service regions only and should be copied to the server runtime `SHP/` directory
 before rerendering the Ningxia and Shangrao products.
+
+The Yunnan airport product uses the server-side `SHP/省界_region.*` province
+boundary layer plus fixed airport coordinates for 德宏芒市、西双版纳嘎洒、普洱澜沧
+景迈. Publish the latest airport precipitation overview from `login02` with:
+
+```bash
+tools/publish_worknx_yunnan_airports_to_github.sh --latest
+```
 
 Keep images small and web-friendly:
 
