@@ -1633,3 +1633,4 @@ Notes for deployment:
   - `tools/render_worknx_yunnan_airports_overview.sh` now explicitly prefers `/public/software/apps/conda/latest/bin/python3`, falls back only to `python3`, and fails fast unless it is Python 3.
   - Deployed this fix to IAP and force-published the latest complete WORK_yn run. IAP state is now `20260721_18`; its overview PNG/WebP/preview WebP and airport totals JSON were created successfully.
   - GitHub data commit `0315988 Update Yunnan airport forecast 20260721_18` is on `origin/main`. The airport catalog uses `products[*].frames` (not a top-level `run.frames`) and exposes the new OSS WebP product.
+- The code/documentation commit was rebased on the airport data update and pushed as `8f61601 Repair airport publishing and relay Tianhe backup`; local `main` equals `origin/main` apart from the intentionally preserved unstaged `.gitignore` entry for `.tmp`.
