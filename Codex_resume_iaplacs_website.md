@@ -1613,3 +1613,4 @@ Notes for deployment:
   ./sync_iap_runtime_to_tianhe.sh
   ```
   Before any Tianhe cron is installed, provide Tianhe locations for `WORK_nx`, `WORK_yn`, WRF preprocessing inputs, Slurm partition/account, NCL/ImageMagick environment, GitHub publisher host/key, and Tianhe-specific OSS credentials.
+- The recovery-tool commit was rebased onto the current server forecast history and pushed as `e89fccc Add IAP runtime backup and Tianhe staging`. The local `.gitignore` change adding `.tmp` remains unstaged and was intentionally preserved.
