@@ -38,6 +38,14 @@ It creates these Tianhe paths without enabling a Tianhe cron job:
 /fs1/home/sunjm/kerui/iaplacs-runtime/current -> releases/<timestamp>/
 ```
 
+If IAP cannot route to Tianhe but the local Mac can reach both systems, use
+the local relay instead. It uses SFTP for the file transfer, verifies the
+archive checksum on both ends, and deletes its local temporary directory:
+
+```bash
+tools/relay_iap_runtime_to_tianhe.sh
+```
+
 Before using the staged code on Tianhe, provide the Tianhe paths for `WORK_nx`,
 `WORK_yn`, the WRF preprocessing source, Slurm partition/account, NCL and
 ImageMagick environments, the GitHub publishing host/key, and OSS credentials.

@@ -12,7 +12,7 @@ NCL_SCRIPT="${NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_yunnan_airport_hour_bjt.ncl}"
 POINT_SCRIPT="${POINT_SCRIPT:-$SCRIPT_DIR/extract_yunnan_airport_precip.py}"
 NCL_BIN="${NCL_BIN:-/public/software/apps/ncl_ncarg/ncl630/bin/ncl}"
 NCL_ROOT="${NCL_ROOT:-/public/software/apps/ncl_ncarg/ncl630}"
-PYTHON_BIN="${PYTHON_BIN:-$(command -v python3 || command -v python)}"
+PYTHON_BIN="${PYTHON_BIN:-}"
 MIN_FILE_AGE_SECONDS="${MIN_FILE_AGE_SECONDS:-1200}"
 MIN_WRFOUT_BYTES="${MIN_WRFOUT_BYTES:-20000000000}"
 YUNNAN_PROVINCE_SHP_FILE="${YUNNAN_PROVINCE_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
@@ -27,6 +27,26 @@ airport markers, and writes one *_combined_overview_6x6_grid.png per run plus
 airport point-precipitation totals.
 EOF
 }
+
+if [[ -z "$PYTHON_BIN" ]]; then
+  for candidate in /public/software/apps/conda/latest/bin/python3; do
+    if [[ -x "$candidate" ]]; then
+      PYTHON_BIN="$candidate"
+      break
+    fi
+  done
+fi
+if [[ -z "$PYTHON_BIN" ]]; then
+  PYTHON_BIN="$(command -v python3 || true)"
+fi
+if [[ -z "$PYTHON_BIN" || ! -x "$PYTHON_BIN" ]]; then
+  echo "ERROR: Python 3 is required for airport precipitation extraction" >&2
+  exit 127
+fi
+if ! "$PYTHON_BIN" -c 'import sys; raise SystemExit(0 if sys.version_info[0] >= 3 else 1)'; then
+  echo "ERROR: Python 3 is required, got: $PYTHON_BIN" >&2
+  exit 127
+fi
 
 mode="--latest"
 count=1

@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-20 22:35 CST
+Last updated: 2026-07-22 17:16 CST
 
 ## Resume Commands
 
@@ -1614,3 +1614,22 @@ Notes for deployment:
   ```
   Before any Tianhe cron is installed, provide Tianhe locations for `WORK_nx`, `WORK_yn`, WRF preprocessing inputs, Slurm partition/account, NCL/ImageMagick environment, GitHub publisher host/key, and Tianhe-specific OSS credentials.
 - The recovery-tool commit was rebased onto the current server forecast history and pushed as `e89fccc Add IAP runtime backup and Tianhe staging`. The local `.gitignore` change adding `.tmp` remains unstaged and was intentionally preserved.
+
+## 2026-07-22 Tianhe Relay and Airport Publishing Repair
+
+- Tianhe is reachable from the local Mac when SSH is allocated a PTY (`ssh -tt sunjm@192.168.4.11`); it identifies as `th-hpc4-ln1`. Noninteractive direct SSH is reset and IAP-to-Tianhe port 22 still times out, so direct IAP synchronization remains unavailable.
+- The target directory was confirmed as `/fs1/home/sunjm/kerui`.
+- Successfully staged the IAP runtime with a local relay that uses SFTP for bytes and PTY SSH only for remote commands:
+  - IAP source archive: `/data1/elpt_2022_00083/kerui/Website/backups/runtime/iaplacs-runtime-20260722_170446.tar.gz` (7,650,427 bytes).
+  - Tianhe archive: `/fs1/home/sunjm/kerui/iaplacs-runtime/backups/iaplacs-runtime-20260722_170446.tar.gz`.
+  - Remote SHA-256 verification passed.
+  - Expanded release: `/fs1/home/sunjm/kerui/iaplacs-runtime/releases/iaplacs-runtime-20260722_170446/`.
+  - Active link: `/fs1/home/sunjm/kerui/iaplacs-runtime/current -> releases/iaplacs-runtime-20260722_170446`.
+  - Verified through `current` that the Ningxia/Yunnan publishers, WRF NCL code, Yunnan city SHP, and `iap-home/batch_ncks.sh` are present.
+- Added local relay helper `tools/relay_iap_runtime_to_tianhe.sh`; it creates a fresh IAP archive, receives it into a system temporary directory, verifies its checksum, uploads with SFTP, verifies/extracts on Tianhe, updates `current`, and removes its local temporary directory. Do not enable a Tianhe cron until the Tianhe data/module/Slurm/publisher paths are supplied.
+- Removed this session's local temporary archive directories `.tmp/iap-runtime-backup-test`, `.tmp/iap-runtime-backup-test2`, and the `/private/tmp/iaplacs-tianhe-stage.*` relay directory after the Tianhe verification.
+- Airport service diagnosis and repair:
+  - The IAP cron was present and working (`25 * * * *` plus `@reboot`), but its cron-minimal environment resolved `python` to Python 2. `extract_yunnan_airport_precip.py` contains Chinese strings and Python 3 syntax, causing the repeated `Non-ASCII character` error and leaving `state/yunnan_airport_last_published.txt` at `20260720_00`.
+  - `tools/render_worknx_yunnan_airports_overview.sh` now explicitly prefers `/public/software/apps/conda/latest/bin/python3`, falls back only to `python3`, and fails fast unless it is Python 3.
+  - Deployed this fix to IAP and force-published the latest complete WORK_yn run. IAP state is now `20260721_18`; its overview PNG/WebP/preview WebP and airport totals JSON were created successfully.
+  - GitHub data commit `0315988 Update Yunnan airport forecast 20260721_18` is on `origin/main`. The airport catalog uses `products[*].frames` (not a top-level `run.frames`) and exposes the new OSS WebP product.
