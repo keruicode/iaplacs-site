@@ -1582,3 +1582,34 @@ Notes for deployment:
 8. Keep GitHub Pages for the app/catalog and OSS for forecast images; move to an additional CDN only if traffic or latency later requires it.
 9. Perform one real iPhone/Android check after the `20260710-08` deploy: switch every Ningxia and Shangrao run, switch all four Shangrao frames, then test pinch zoom, drag, reset, and close; repeat at desktop width with wheel zoom.
 10. When the local GitHub route is responsive, fast-forward this clean clone after future server commits; do not overwrite concurrent forecast data commits.
+
+## 2026-07-22 IAP Runtime Backup and Tianhe Staging
+
+- User requested a recovery-oriented IAP crontab backup because `login02` may stop in the next few days, and asked to transfer the IAP automation runtime to Tianhe at `sunjm@192.168.4.11:/fs1/home/sunjm/kerui` without enabling the still-unconfigured Tianhe workflow.
+- Added versioned source helpers:
+  - `tools/backup_iap_runtime.sh`: packages the runtime scripts, Python/NCL code, SHP inputs, publish state, `batch_ncks.sh`, active crontab, and Git state into `iaplacs-runtime-YYYYMMDD_HHMMSS.tar.gz`, with a SHA-256 sidecar. It excludes SSH keys, OSS credentials, Git metadata, logs, raw WRF files, rendered images, and previous build caches. It retains the latest 14 archives by default.
+  - `tools/install_iap_backup_cron.sh`: preserves the current crontab in `crontab_archive/` and installs/updates the managed daily backup job without changing the existing forecast jobs.
+  - `tools/sync_iap_runtime_to_tianhe.sh`: creates a fresh snapshot, transfers it to `/fs1/home/sunjm/kerui/iaplacs-runtime/backups/`, expands it under `releases/`, checks SHA-256 remotely, and updates `current` only when the destination `current` is a symlink. It uses batch SSH and strict host-key checking; it does not install a Tianhe cron.
+  - `docs/tianhe-migration.md`: recovery scope, exact paths, and the Tianhe prerequisites still needed before compute/publish scheduling.
+- Deployed the three helpers to IAP runtime root:
+  `/data1/elpt_2022_00083/kerui/Website/`.
+- Installed and verified the new IAP cron entry:
+  ```cron
+  15 3 * * * /data1/elpt_2022_00083/kerui/Website/backup_iap_runtime.sh >> /data1/elpt_2022_00083/kerui/Website/logs/iap-runtime-backup.log 2>&1
+  ```
+  Existing WRF pipeline, Ningxia, and Yunnan airport cron entries were retained unchanged.
+- The original crontab before this edit is stored on IAP at:
+  `/data1/elpt_2022_00083/kerui/Website/crontab_archive/crontab-before-runtime-backup-20260722_164714.txt`.
+- Initial verified IAP archive:
+  `/data1/elpt_2022_00083/kerui/Website/backups/runtime/iaplacs-runtime-20260722_164714.tar.gz`.
+  Its SHA-256 check passed and archive inspection confirmed `backup_iap_runtime.sh`, the Ningxia publisher, WRF NCL script, and all required SHP inputs.
+- Tianhe transfer was attempted without relaxing SSH security:
+  - IAP to `192.168.4.11:22` timed out after 20 seconds.
+  - Direct local SSH to `192.168.4.11:22` was reset by the peer during key exchange.
+  - No automation package was transferred to Tianhe yet. The IAP archive and sync script remain ready.
+- To complete the Tianhe stage later, obtain a reachable SSH route (possibly a jump host/VPN/allowed source IP), server port, and SSH key authorization for `sunjm`. Then on IAP run:
+  ```bash
+  cd /data1/elpt_2022_00083/kerui/Website
+  ./sync_iap_runtime_to_tianhe.sh
+  ```
+  Before any Tianhe cron is installed, provide Tianhe locations for `WORK_nx`, `WORK_yn`, WRF preprocessing inputs, Slurm partition/account, NCL/ImageMagick environment, GitHub publisher host/key, and Tianhe-specific OSS credentials.
