@@ -4,14 +4,151 @@
     "name": "IAP-LACS Forecast",
     "domain": "iaplacs.xyz"
   },
-  "published_at": "2026-07-22T11:26:37+08:00",
+  "published_at": "2026-07-22T16:40:57+08:00",
   "services": {
     "airport": {
       "title": "机场气象服务",
       "subtitle": "Airport weather service",
       "note": "机场服务页展示 WORK_yn 云南区域36小时降水拼图，并单独列出德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点的累计降水；2米气温和10米风场入口继续保留。",
-      "latest_run": "airport_yunnan_20260721_18",
+      "latest_run": "airport_yunnan_20260722_00",
       "runs": [
+        {
+          "id": "airport_yunnan_20260722_00",
+          "label": "2026-07-22 08:00 BJT",
+          "run_time": "2026-07-22T08:00:00+08:00",
+          "published_at": "2026-07-22T16:40:57+08:00",
+          "summary": "云南机场降水预报图集，覆盖德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点。",
+          "products": [
+            {
+              "id": "airport_yunnan_precip_series",
+              "title": "云南机场降水预报图集",
+              "category": "机场服务",
+              "unit": "mm",
+              "color": "#0f68c8",
+              "description": "WORK_yn 云南区域逐小时降水 6x6 拼图，标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场位置。",
+              "metrics": [
+                {
+                  "label": "起报时次",
+                  "value": "20260722 00 UTC"
+                },
+                {
+                  "label": "生成时间",
+                  "value": "2026-07-22 16:40 BJT"
+                },
+                {
+                  "label": "图像数量",
+                  "value": "1"
+                },
+                {
+                  "label": "德宏芒市机场",
+                  "value": "最大小时降水 0.5 mm 07-24 06:00-07:00"
+                },
+                {
+                  "label": "西双版纳嘎洒机场",
+                  "value": "最大小时降水 1.5 mm 07-22 20:00-21:00"
+                },
+                {
+                  "label": "普洱澜沧景迈机场",
+                  "value": "最大小时降水 1.0 mm 07-24 07:00-08:00"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "overview",
+                  "lead": 36,
+                  "lead_label": "36小时拼图",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260722_00/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-22_00_00_combined_overview_6x6_grid.webp",
+                  "bytes": 2485436,
+                  "valid_time": "2026-07-24T08:00:00+08:00",
+                  "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260722_00/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-22_00_00_combined_overview_6x6_grid.preview.webp",
+                  "preview_bytes": 617696,
+                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260722_00/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-22_00_00_combined_overview_6x6_grid.png",
+                  "full_bytes": 1740717
+                }
+              ]
+            },
+            {
+              "id": "airport_temperature",
+              "title": "机场 2 米气温",
+              "category": "机场服务",
+              "unit": "degC",
+              "color": "#b73b3b",
+              "description": "",
+              "metrics": [
+                {
+                  "label": "区域最高",
+                  "value": "36.2 degC"
+                },
+                {
+                  "label": "区域最低",
+                  "value": "17.4 degC"
+                },
+                {
+                  "label": "产品状态",
+                  "value": "样例接入"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "f024",
+                  "lead": 24,
+                  "lead_label": "F024",
+                  "valid_time": "2026-07-10T08:00:00+08:00",
+                  "file": "./data/current/maps/temp_f024.svg",
+                  "bytes": 1544
+                },
+                {
+                  "id": "f048",
+                  "lead": 48,
+                  "lead_label": "F048",
+                  "valid_time": "2026-07-11T08:00:00+08:00",
+                  "file": "./data/current/maps/temp_f048.svg",
+                  "bytes": 1544
+                }
+              ]
+            },
+            {
+              "id": "airport_wind",
+              "title": "机场 10 米风场",
+              "category": "机场服务",
+              "unit": "m/s",
+              "color": "#2c5f9e",
+              "description": "",
+              "metrics": [
+                {
+                  "label": "最大风速",
+                  "value": "15.8 m/s"
+                },
+                {
+                  "label": "主导风向",
+                  "value": "SE"
+                },
+                {
+                  "label": "产品状态",
+                  "value": "样例接入"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "f024",
+                  "lead": 24,
+                  "lead_label": "F024",
+                  "valid_time": "2026-07-10T08:00:00+08:00",
+                  "file": "./data/current/maps/wind_f024.svg",
+                  "bytes": 2150
+                },
+                {
+                  "id": "f048",
+                  "lead": 48,
+                  "lead_label": "F048",
+                  "valid_time": "2026-07-11T08:00:00+08:00",
+                  "file": "./data/current/maps/wind_f048.svg",
+                  "bytes": 2141
+                }
+              ]
+            }
+          ]
+        },
         {
           "id": "airport_yunnan_20260721_18",
           "label": "2026-07-22 02:00 BJT",
@@ -459,143 +596,6 @@
                   "preview_bytes": 525008,
                   "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260719_12/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-19_12_00_combined_overview_6x6_grid.png",
                   "full_bytes": 1574806
-                }
-              ]
-            },
-            {
-              "id": "airport_temperature",
-              "title": "机场 2 米气温",
-              "category": "机场服务",
-              "unit": "degC",
-              "color": "#b73b3b",
-              "description": "",
-              "metrics": [
-                {
-                  "label": "区域最高",
-                  "value": "36.2 degC"
-                },
-                {
-                  "label": "区域最低",
-                  "value": "17.4 degC"
-                },
-                {
-                  "label": "产品状态",
-                  "value": "样例接入"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f024.svg",
-                  "bytes": 1544
-                },
-                {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f048.svg",
-                  "bytes": 1544
-                }
-              ]
-            },
-            {
-              "id": "airport_wind",
-              "title": "机场 10 米风场",
-              "category": "机场服务",
-              "unit": "m/s",
-              "color": "#2c5f9e",
-              "description": "",
-              "metrics": [
-                {
-                  "label": "最大风速",
-                  "value": "15.8 m/s"
-                },
-                {
-                  "label": "主导风向",
-                  "value": "SE"
-                },
-                {
-                  "label": "产品状态",
-                  "value": "样例接入"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f024.svg",
-                  "bytes": 2150
-                },
-                {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f048.svg",
-                  "bytes": 2141
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "airport_yunnan_20260719_06",
-          "label": "2026-07-19 14:00 BJT",
-          "run_time": "2026-07-19T14:00:00+08:00",
-          "published_at": "2026-07-19T23:10:00+08:00",
-          "summary": "云南机场降水预报图集，覆盖德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点。",
-          "products": [
-            {
-              "id": "airport_yunnan_precip_series",
-              "title": "云南机场降水预报图集",
-              "category": "机场服务",
-              "unit": "mm",
-              "color": "#0f68c8",
-              "description": "WORK_yn 云南区域逐小时降水 6x6 拼图，标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场位置。",
-              "metrics": [
-                {
-                  "label": "起报时次",
-                  "value": "20260719 06 UTC"
-                },
-                {
-                  "label": "生成时间",
-                  "value": "2026-07-19 23:10 BJT"
-                },
-                {
-                  "label": "图像数量",
-                  "value": "1"
-                },
-                {
-                  "label": "德宏芒市机场",
-                  "value": "最大小时降水 0.3 mm 07-20 02:00-03:00"
-                },
-                {
-                  "label": "西双版纳嘎洒机场",
-                  "value": "最大小时降水 0.5 mm 07-20 17:00-18:00"
-                },
-                {
-                  "label": "普洱澜沧景迈机场",
-                  "value": "最大小时降水 0.4 mm 07-20 20:00-21:00"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "overview",
-                  "lead": 36,
-                  "lead_label": "36小时拼图",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260719_06/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-19_06_00_combined_overview_6x6_grid.webp",
-                  "bytes": 2041703,
-                  "valid_time": "2026-07-21T14:00:00+08:00",
-                  "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260719_06/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-19_06_00_combined_overview_6x6_grid.preview.webp",
-                  "preview_bytes": 518318,
-                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260719_06/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-19_06_00_combined_overview_6x6_grid.png",
-                  "full_bytes": 1564986
                 }
               ]
             },
@@ -687,8 +687,145 @@
       "title": "机场气象服务",
       "subtitle": "Airport weather service",
       "note": "机场服务页展示 WORK_yn 云南区域36小时降水拼图，并单独列出德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点的累计降水；2米气温和10米风场入口继续保留。",
-      "latest_run": "airport_yunnan_20260721_18",
+      "latest_run": "airport_yunnan_20260722_00",
       "runs": [
+        {
+          "id": "airport_yunnan_20260722_00",
+          "label": "2026-07-22 08:00 BJT",
+          "run_time": "2026-07-22T08:00:00+08:00",
+          "published_at": "2026-07-22T16:40:57+08:00",
+          "summary": "云南机场降水预报图集，覆盖德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点。",
+          "products": [
+            {
+              "id": "airport_yunnan_precip_series",
+              "title": "云南机场降水预报图集",
+              "category": "机场服务",
+              "unit": "mm",
+              "color": "#0f68c8",
+              "description": "WORK_yn 云南区域逐小时降水 6x6 拼图，标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场位置。",
+              "metrics": [
+                {
+                  "label": "起报时次",
+                  "value": "20260722 00 UTC"
+                },
+                {
+                  "label": "生成时间",
+                  "value": "2026-07-22 16:40 BJT"
+                },
+                {
+                  "label": "图像数量",
+                  "value": "1"
+                },
+                {
+                  "label": "德宏芒市机场",
+                  "value": "最大小时降水 0.5 mm 07-24 06:00-07:00"
+                },
+                {
+                  "label": "西双版纳嘎洒机场",
+                  "value": "最大小时降水 1.5 mm 07-22 20:00-21:00"
+                },
+                {
+                  "label": "普洱澜沧景迈机场",
+                  "value": "最大小时降水 1.0 mm 07-24 07:00-08:00"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "overview",
+                  "lead": 36,
+                  "lead_label": "36小时拼图",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260722_00/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-22_00_00_combined_overview_6x6_grid.webp",
+                  "bytes": 2485436,
+                  "valid_time": "2026-07-24T08:00:00+08:00",
+                  "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260722_00/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-22_00_00_combined_overview_6x6_grid.preview.webp",
+                  "preview_bytes": 617696,
+                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260722_00/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-22_00_00_combined_overview_6x6_grid.png",
+                  "full_bytes": 1740717
+                }
+              ]
+            },
+            {
+              "id": "airport_temperature",
+              "title": "机场 2 米气温",
+              "category": "机场服务",
+              "unit": "degC",
+              "color": "#b73b3b",
+              "description": "",
+              "metrics": [
+                {
+                  "label": "区域最高",
+                  "value": "36.2 degC"
+                },
+                {
+                  "label": "区域最低",
+                  "value": "17.4 degC"
+                },
+                {
+                  "label": "产品状态",
+                  "value": "样例接入"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "f024",
+                  "lead": 24,
+                  "lead_label": "F024",
+                  "valid_time": "2026-07-10T08:00:00+08:00",
+                  "file": "./data/current/maps/temp_f024.svg",
+                  "bytes": 1544
+                },
+                {
+                  "id": "f048",
+                  "lead": 48,
+                  "lead_label": "F048",
+                  "valid_time": "2026-07-11T08:00:00+08:00",
+                  "file": "./data/current/maps/temp_f048.svg",
+                  "bytes": 1544
+                }
+              ]
+            },
+            {
+              "id": "airport_wind",
+              "title": "机场 10 米风场",
+              "category": "机场服务",
+              "unit": "m/s",
+              "color": "#2c5f9e",
+              "description": "",
+              "metrics": [
+                {
+                  "label": "最大风速",
+                  "value": "15.8 m/s"
+                },
+                {
+                  "label": "主导风向",
+                  "value": "SE"
+                },
+                {
+                  "label": "产品状态",
+                  "value": "样例接入"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "f024",
+                  "lead": 24,
+                  "lead_label": "F024",
+                  "valid_time": "2026-07-10T08:00:00+08:00",
+                  "file": "./data/current/maps/wind_f024.svg",
+                  "bytes": 2150
+                },
+                {
+                  "id": "f048",
+                  "lead": 48,
+                  "lead_label": "F048",
+                  "valid_time": "2026-07-11T08:00:00+08:00",
+                  "file": "./data/current/maps/wind_f048.svg",
+                  "bytes": 2141
+                }
+              ]
+            }
+          ]
+        },
         {
           "id": "airport_yunnan_20260721_18",
           "label": "2026-07-22 02:00 BJT",
@@ -1136,143 +1273,6 @@
                   "preview_bytes": 525008,
                   "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260719_12/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-19_12_00_combined_overview_6x6_grid.png",
                   "full_bytes": 1574806
-                }
-              ]
-            },
-            {
-              "id": "airport_temperature",
-              "title": "机场 2 米气温",
-              "category": "机场服务",
-              "unit": "degC",
-              "color": "#b73b3b",
-              "description": "",
-              "metrics": [
-                {
-                  "label": "区域最高",
-                  "value": "36.2 degC"
-                },
-                {
-                  "label": "区域最低",
-                  "value": "17.4 degC"
-                },
-                {
-                  "label": "产品状态",
-                  "value": "样例接入"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f024.svg",
-                  "bytes": 1544
-                },
-                {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f048.svg",
-                  "bytes": 1544
-                }
-              ]
-            },
-            {
-              "id": "airport_wind",
-              "title": "机场 10 米风场",
-              "category": "机场服务",
-              "unit": "m/s",
-              "color": "#2c5f9e",
-              "description": "",
-              "metrics": [
-                {
-                  "label": "最大风速",
-                  "value": "15.8 m/s"
-                },
-                {
-                  "label": "主导风向",
-                  "value": "SE"
-                },
-                {
-                  "label": "产品状态",
-                  "value": "样例接入"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f024.svg",
-                  "bytes": 2150
-                },
-                {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f048.svg",
-                  "bytes": 2141
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "airport_yunnan_20260719_06",
-          "label": "2026-07-19 14:00 BJT",
-          "run_time": "2026-07-19T14:00:00+08:00",
-          "published_at": "2026-07-19T23:10:00+08:00",
-          "summary": "云南机场降水预报图集，覆盖德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点。",
-          "products": [
-            {
-              "id": "airport_yunnan_precip_series",
-              "title": "云南机场降水预报图集",
-              "category": "机场服务",
-              "unit": "mm",
-              "color": "#0f68c8",
-              "description": "WORK_yn 云南区域逐小时降水 6x6 拼图，标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场位置。",
-              "metrics": [
-                {
-                  "label": "起报时次",
-                  "value": "20260719 06 UTC"
-                },
-                {
-                  "label": "生成时间",
-                  "value": "2026-07-19 23:10 BJT"
-                },
-                {
-                  "label": "图像数量",
-                  "value": "1"
-                },
-                {
-                  "label": "德宏芒市机场",
-                  "value": "最大小时降水 0.3 mm 07-20 02:00-03:00"
-                },
-                {
-                  "label": "西双版纳嘎洒机场",
-                  "value": "最大小时降水 0.5 mm 07-20 17:00-18:00"
-                },
-                {
-                  "label": "普洱澜沧景迈机场",
-                  "value": "最大小时降水 0.4 mm 07-20 20:00-21:00"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "overview",
-                  "lead": 36,
-                  "lead_label": "36小时拼图",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260719_06/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-19_06_00_combined_overview_6x6_grid.webp",
-                  "bytes": 2041703,
-                  "valid_time": "2026-07-21T14:00:00+08:00",
-                  "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260719_06/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-19_06_00_combined_overview_6x6_grid.preview.webp",
-                  "preview_bytes": 518318,
-                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260719_06/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-19_06_00_combined_overview_6x6_grid.png",
-                  "full_bytes": 1564986
                 }
               ]
             },
