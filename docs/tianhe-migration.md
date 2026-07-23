@@ -55,4 +55,31 @@ its own least-privilege credentials and then install a separate Tianhe crontab.
 When using the Tianhe login environment, run Git through
 `/fs1/home/sunjm/kerui/bin/git-system`. It unsets the injected dynamic-library
 paths before invoking `/usr/bin/git`, avoiding the system `libssh` and Spack
-OpenSSL ABI conflict. DNS or proxy access still has to be supplied by Tianhe.
+OpenSSL ABI conflict.
+
+## One-week GitHub-only transition
+
+The Tianhe transition can publish directly to GitHub Pages without OSS. After
+the initial HTTPS clone has completed, run the publisher from that checkout for
+each completed run directory:
+
+```bash
+cd /fs1/home/sunjm/kerui/iaplacs-site
+GIT_BIN=/fs1/home/sunjm/kerui/bin/git-system \
+  tools/publish_forecast_to_github_pages.sh \
+  --source-dir /path/to/completed/worknx-or-wrf-run \
+  --family worknx_summary \
+  --run-prefix 20260723_00
+```
+
+Use `wrf_montage` for Shangrao and `airport_yunnan` for the Yunnan airport
+product. The script copies only top-level product images and JSON, creates WebP
+and preview WebP assets where PNG is supplied, removes PNG by default, retains
+at most five directories for each product family, rebuilds the catalog with
+relative GitHub Pages URLs, and commits both additions and old-run deletions in
+one push. Historical PNG output remains in the compute/output directories and
+is never deleted by this publisher.
+
+During gradual migration, the catalog preserves older existing entries until a
+family has five GitHub-hosted runs. Once all active families have been seeded,
+add `--local-only` to remove remaining legacy OSS-only catalog entries.

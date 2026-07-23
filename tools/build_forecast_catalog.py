@@ -22,6 +22,13 @@ MAX_RUNS = int(os.environ.get("IAPLACS_MAX_RUNS", "5"))
 ASSET_BASE_URL = os.environ.get(
     "IAPLACS_ASSET_BASE_URL", DEFAULT_ASSET_BASE_URL
 ).strip().rstrip("/")
+MERGE_EXISTING_RUNS = os.environ.get("IAPLACS_MERGE_EXISTING_RUNS", "1") not in {
+    "0",
+    "false",
+    "False",
+    "no",
+    "NO",
+}
 
 
 RUN_DIR_RE = re.compile(r"^wrf_montage_(\d{8}_\d{2})$")
@@ -36,7 +43,7 @@ YUNNAN_AIRPORTS = [
 
 
 def main() -> None:
-    existing_catalog = read_existing_catalog()
+    existing_catalog = read_existing_catalog() if MERGE_EXISTING_RUNS else {}
     airport_yunnan_runs = merge_existing_runs(
         build_yunnan_airport_runs(),
         existing_catalog,

@@ -1653,3 +1653,29 @@ Notes for deployment:
   ```
   A domestic mirror cannot bypass the current absence of DNS; use one only if GitHub access remains policy-blocked after DNS is working.
 - The wrapper/docs/resume commit was rebased onto the latest server forecast history and pushed as `37c338c Add Tianhe system Git wrapper`. The only local working-tree difference remains the intentionally preserved `.gitignore` entry for `.tmp`.
+
+## 2026-07-23 Rootless DNS Workaround Assessment
+
+- Without administrator access, a user cannot persistently repair the system resolver because `/etc/resolv.conf` is managed by NetworkManager and contains no `nameserver` entries.
+- Git supports the user-space `http.curloptResolve` setting. It can pin the HTTPS hostname to an IP for one command, bypassing DNS without disabling certificate verification, for example:
+  ```bash
+  /fs1/home/sunjm/kerui/bin/git-system \
+    -c http.curloptResolve=github.com:443:20.205.243.166 \
+    clone https://github.com/joshmedeski/dotfiles.git
+  ```
+  The GitHub IP is not permanent and must be refreshed from a machine with working DNS when it changes.
+- A domestic mirror does not solve the current resolver failure because it also needs DNS. A user-owned HTTPS/SOCKS proxy is another rootless route if Tianhe support provides one; the proxy can resolve hostnames upstream.
+
+## 2026-07-23 GitHub Proxy Follow-up
+
+- User tested `git-system -c http.curloptResolve=github.com:443:20.205.243.166 clone ...` on Tianhe. The OpenSSL mismatch stayed resolved, but Git returned `HTTP code 503 from proxy after CONNECT`.
+- This shows a Git HTTP proxy setting still intercepts the request. The next no-admin test must explicitly clear both environment and Git proxy settings before running `ls-remote`; use `env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY -u all_proxy`, plus `-c http.proxy= -c https.proxy=` and the GitHub `http.curloptResolve` entry.
+- If direct HTTPS remains blocked, use user-owned GitHub SSH authentication through port 443 with a fixed IP/host-key fingerprint as documented by GitHub. This bypasses both the broken resolver and the HTTP proxy but requires an SSH public key added to the user's GitHub account.
+- Do not switch the forecast publisher to Git-only delivery until one direct GitHub transport test succeeds. The future Git-only migration must retain at most five run directories in `data/current/maps/`, rebuild the catalog, stage generated images deliberately, and commit deletions of older runs in the same publish transaction.
+
+## 2026-07-23 GitHub HTTPS Confirmed and Transition Publisher
+
+- User ran `/fs1/home/sunjm/kerui/bin/git-system clone https://github.com/keruicode/iaplacs-site.git` on Tianhe. GitHub responded with object enumeration/counting/compression and began receiving 4,615 objects at about 4.72 MiB/s. This confirms the HTTPS GitHub route works through the current Tianhe environment; the earlier SSH DNS failure and the pinned-IP proxy 503 are no longer blockers for HTTPS publishing. The pasted output stopped at 20%, so completion of that particular clone still needs confirmation before use.
+- Added `tools/publish_forecast_to_github_pages.sh` for the one-week Tianhe-only transition. It accepts one completed top-level product directory, explicitly supports `worknx_summary`, `wrf_montage`, and `airport_yunnan`, retains five timestamped directories per family in the Git checkout, converts PNG to WebP/preview WebP then removes PNG by default, rebuilds the catalog with relative GitHub Pages URLs, force-adds only the retained forecast directories, commits deletions and additions together, and pushes via configurable `GIT_BIN`.
+- `tools/build_forecast_catalog.py` now supports `IAPLACS_MERGE_EXISTING_RUNS=0` for the final cutover. The default remains merge enabled so existing OSS catalog entries remain visible while each service family is seeded with GitHub-hosted maps. Pass `--local-only` to the new publisher only after the active families have been seeded.
+- Updated `docs/tianhe-migration.md` and `docs/repository-structure.md` with the scoped temporary procedure. Historical rendered output remains on IAP/Tianhe compute storage and this Git publisher never removes it.

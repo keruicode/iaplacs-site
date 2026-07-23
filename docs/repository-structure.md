@@ -29,6 +29,7 @@ data/current/manifest.json       旧版 fallback 清单
 data/current/maps/              服务器本地出图/上传缓存，生成预报图不进 Git
 tools/build_forecast_catalog.py  从图像目录生成 forecast-runs.json
 tools/optimize_forecast_images.sh 图像优化脚本
+tools/publish_forecast_to_github_pages.sh 天河短期 GitHub Pages 图像发布器
 tools/rain_wrf_shangrao_hour_bjt.ncl 上饶 WRF 出图脚本，可部署到服务器
 tools/rain_worknx_yunnan_airport_hour_bjt.ncl 云南机场 WORK_yn 出图脚本
 tools/publish_workyn_yunnan_airports_if_new.sh 云南机场增量定时发布检查
@@ -72,6 +73,11 @@ GitHub 仓库不再跟踪服务器生成的 `data/current/maps/worknx_summary_*`
 `data/current/maps/wrf_montage_*`、`data/current/maps/airport_yunnan_*` 等预报图目录。这些目录只作为服务器本地
 出图、优化、上传 OSS 和生成 catalog 的工作缓存。浏览器依赖
 `forecast-runs.json` 中的 OSS URL 读图。
+
+天河一周过渡期间例外：`tools/publish_forecast_to_github_pages.sh` 会把每类
+最近五个产品目录强制加入 Git，用相对 GitHub Pages URL 读图，并在同一提交中
+删除第六个及更早时次。该脚本只应在专用的天河站点克隆中使用，不应用于 IAP
+日常 OSS 发布工作树。
 
 ## IAP 服务器发布流程
 
