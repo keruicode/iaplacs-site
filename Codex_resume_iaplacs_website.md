@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-22 17:16 CST
+Last updated: 2026-07-23 CST
 
 ## Resume Commands
 
@@ -1679,3 +1679,6 @@ Notes for deployment:
 - Added `tools/publish_forecast_to_github_pages.sh` for the one-week Tianhe-only transition. It accepts one completed top-level product directory, explicitly supports `worknx_summary`, `wrf_montage`, and `airport_yunnan`, retains five timestamped directories per family in the Git checkout, converts PNG to WebP/preview WebP then removes PNG by default, rebuilds the catalog with relative GitHub Pages URLs, force-adds only the retained forecast directories, commits deletions and additions together, and pushes via configurable `GIT_BIN`.
 - `tools/build_forecast_catalog.py` now supports `IAPLACS_MERGE_EXISTING_RUNS=0` for the final cutover. The default remains merge enabled so existing OSS catalog entries remain visible while each service family is seeded with GitHub-hosted maps. Pass `--local-only` to the new publisher only after the active families have been seeded.
 - Updated `docs/tianhe-migration.md` and `docs/repository-structure.md` with the scoped temporary procedure. Historical rendered output remains on IAP/Tianhe compute storage and this Git publisher never removes it.
+- Verification completed locally: `bash -n tools/publish_forecast_to_github_pages.sh`, `python3 -m py_compile tools/build_forecast_catalog.py`, and `git diff --check` all passed. An isolated Git repository test published a six-run Ningxia fixture, committed deletion of the oldest run, retained exactly five `worknx_summary_*` directories, produced a relative `./data/current/maps/...` catalog URL, and retained zero PNG files.
+- The implementation was rebased onto automated forecast commits through `2483bf2 Update WORK_nx summary 20260722_18` and pushed as `1a56963 Add Tianhe GitHub-only forecast publisher`. Local `.gitignore` remains modified but intentionally unstaged; it is unrelated and must not be reverted or included in future forecast commits.
+- Next action on Tianhe after its HTTPS clone finishes: `cd /fs1/home/sunjm/kerui/iaplacs-site && /fs1/home/sunjm/kerui/bin/git-system pull --ff-only`. Then provide the actual completed output directories for WORK_nx, Shangrao WRF, and WORK_yn so the three explicit publisher invocations and later cron wrappers can be configured without guessing paths.
