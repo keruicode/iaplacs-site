@@ -1652,3 +1652,4 @@ Notes for deployment:
   /fs1/home/sunjm/kerui/bin/git-system clone https://github.com/joshmedeski/dotfiles.git
   ```
   A domestic mirror cannot bypass the current absence of DNS; use one only if GitHub access remains policy-blocked after DNS is working.
+- The wrapper/docs/resume commit was rebased onto the latest server forecast history and pushed as `37c338c Add Tianhe system Git wrapper`. The only local working-tree difference remains the intentionally preserved `.gitignore` entry for `.tmp`.
