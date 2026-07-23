@@ -83,3 +83,24 @@ is never deleted by this publisher.
 During gradual migration, the catalog preserves older existing entries until a
 family has five GitHub-hosted runs. Once all active families have been seeded,
 add `--local-only` to remove remaining legacy OSS-only catalog entries.
+
+## Tianhe account migration through the Mac
+
+The old Tianhe account is `sunjm@192.168.4.11:/fs1/home/sunjm/kerui`; the new
+account is `junzhang@192.168.10.50:/fs2/home/junzhang/kerui`. Because both VPNs
+are available only on the Mac, run this from the local website checkout:
+
+```bash
+tools/relay_tianhe_kerui_account.sh
+```
+
+The helper creates a temporary archive under `/tmp` on the old account, moves
+it through a local `mktemp` directory with SFTP, verifies SHA-256 both locally
+and on the new account, extracts to a unique target-side staging directory, and
+only then moves `kerui` to its final destination. It never writes below
+`/fs2/home/junzhang/zhoubj`. It removes the local staging directory, the source
+archive, and the target-side archive/staging directory after a successful run;
+on failure it also removes only those uniquely named temporary paths. It refuses
+to overwrite a nonempty `/fs2/home/junzhang/kerui`; an existing empty directory
+is removed only after a complete archive has been verified and extracted into
+the separate staging path.
