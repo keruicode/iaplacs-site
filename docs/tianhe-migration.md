@@ -51,3 +51,8 @@ Before using the staged code on Tianhe, provide the Tianhe paths for `WORK_nx`,
 ImageMagick environments, the GitHub publishing host/key, and OSS credentials.
 Do not copy the IAP credential files into this archive. Configure Tianhe with
 its own least-privilege credentials and then install a separate Tianhe crontab.
+
+When using the Tianhe login environment, run Git through
+`/fs1/home/sunjm/kerui/bin/git-system`. It unsets the injected dynamic-library
+paths before invoking `/usr/bin/git`, avoiding the system `libssh` and Spack
+OpenSSL ABI conflict. DNS or proxy access still has to be supplied by Tianhe.
