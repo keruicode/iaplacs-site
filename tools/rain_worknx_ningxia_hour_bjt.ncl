@@ -101,11 +101,9 @@ begin
       file_start = bjt_label(times(it-1), 1)
       file_end = bjt_label(times(it), 1)
       rain_h = rain_all(it,:,:) - rain_all(it-1,:,:)
-      ; WORK_nx accumulation fields do not carry a missing-value attribute.
-      ; Define one before masking trace precipitation so NCL does not return an
-      ; attribute-reference error after every hourly panel.
-      rain_h@_FillValue = -9999.0
-      rain_h = where(rain_h.lt.0.01, rain_h@_FillValue, rain_h)
+      ; The first explicit interval is below 0.1 mm/h and is white.  Keep
+      ; trace and zero values as real values instead of converting them to a
+      ; spatial missing mask, which can be misinterpreted by NCL's map fill.
       rain_h@lat2d = lat2d
       rain_h@lon2d = lon2d
 
