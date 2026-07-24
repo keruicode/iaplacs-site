@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Run on Tianhe. Publish newly completed WORK_nx and WORK_yn forecast maps
+# Run on Tianhe. Publish completed WORK_nx, WORK_yn, and WORK forecast maps
 # directly to GitHub Pages and retain only five runs per product family.
 set -Eeuo pipefail
 
@@ -19,6 +19,7 @@ fi
 
 WORK_NX_ROOT="${WORK_NX_ROOT:-$TIANHE_HOME/zhoubj/WORK_nx}"
 WORK_YN_ROOT="${WORK_YN_ROOT:-$TIANHE_HOME/zhoubj/WORK_yn}"
+WORK_SHANGRAO_ROOT="${WORK_SHANGRAO_ROOT:-$TIANHE_HOME/zhoubj/WORK}"
 SITE_REPO="${SITE_REPO:-$TIANHE_HOME/kerui/iaplacs-site}"
 GIT_REMOTE_URL="${GIT_REMOTE_URL:-https://github.com/keruicode/iaplacs-site.git}"
 if [[ -n "${GIT_BIN:-}" ]]; then
@@ -36,8 +37,10 @@ NCL_COMMAND_RUNNER="${IAPLACS_TIANHE_NCL_COMMAND_RUNNER:-$SCRIPT_DIR/run_tianhe_
 NINGXIA_NCL_RENDERER="${IAPLACS_TIANHE_NINGXIA_NCL_RENDERER:-$SCRIPT_DIR/render_worknx_ningxia_overview.sh}"
 NATIONAL_NCL_RENDERER="${IAPLACS_TIANHE_NATIONAL_NCL_RENDERER:-$SCRIPT_DIR/render_worknx_national_overview.sh}"
 YUNNAN_NCL_RENDERER="${IAPLACS_TIANHE_YUNNAN_NCL_RENDERER:-$SCRIPT_DIR/render_worknx_yunnan_airports_overview.sh}"
+SHANGRAO_NCL_RENDERER="${IAPLACS_TIANHE_SHANGRAO_NCL_RENDERER:-$SCRIPT_DIR/render_wrf_shangrao_overview.sh}"
 NINGXIA_CITY_SHP_FILE="${NINGXIA_CITY_SHP_FILE:-$SCRIPT_DIR/SHP/ningxia_city_county.shp}"
 YUNNAN_CITY_SHP_FILE="${YUNNAN_CITY_SHP_FILE:-$SCRIPT_DIR/SHP/yunnan_city.shp}"
+SHANGRAO_CITY_SHP_FILE="${SHANGRAO_CITY_SHP_FILE:-$SCRIPT_DIR/SHP/shangrao_city_county.shp}"
 KEEP_RUNS="${IAPLACS_TIANHE_KEEP_RUNS:-5}"
 MIN_FILE_AGE_SECONDS="${IAPLACS_TIANHE_MIN_FILE_AGE_SECONDS:-1200}"
 MIN_WRFOUT_BYTES="${IAPLACS_TIANHE_MIN_WRFOUT_BYTES:-20000000000}"
@@ -51,8 +54,8 @@ usage() {
   cat <<'EOF'
 Usage: tianhe_publish_forecast_to_github.sh [--dry-run] [--force]
 
-Finds the newest stable Tianhe WORK_nx and WORK_yn wrfout files, renders the
-regional precipitation figures, retains five runs per family, rebuilds
+Finds the newest stable Tianhe WORK_nx, WORK_yn, and WORK wrfout files,
+renders the regional precipitation figures, retains five runs per family, rebuilds
 data/tianhe/current/forecast-runs.json, then pushes to origin.
 EOF
 }
@@ -85,11 +88,13 @@ done
 
 [[ -d "$WORK_NX_ROOT" ]] || fail "WORK_nx directory does not exist: $WORK_NX_ROOT"
 [[ -d "$WORK_YN_ROOT" ]] || fail "WORK_yn directory does not exist: $WORK_YN_ROOT"
+[[ -d "$WORK_SHANGRAO_ROOT" ]] || fail "WORK directory does not exist: $WORK_SHANGRAO_ROOT"
 [[ -x "$PYTHON_BIN" ]] || fail "Python environment is not executable: $PYTHON_BIN"
 [[ -x "$NCL_COMMAND_RUNNER" ]] || fail "Tianhe NCL command runner is not executable: $NCL_COMMAND_RUNNER"
 [[ -x "$NINGXIA_NCL_RENDERER" ]] || fail "Ningxia NCL renderer is not executable: $NINGXIA_NCL_RENDERER"
 [[ -x "$NATIONAL_NCL_RENDERER" ]] || fail "Nationwide NCL renderer is not executable: $NATIONAL_NCL_RENDERER"
 [[ -x "$YUNNAN_NCL_RENDERER" ]] || fail "Yunnan NCL renderer is not executable: $YUNNAN_NCL_RENDERER"
+[[ -x "$SHANGRAO_NCL_RENDERER" ]] || fail "Shangrao NCL renderer is not executable: $SHANGRAO_NCL_RENDERER"
 [[ "$KEEP_RUNS" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_KEEP_RUNS must be a positive integer"
 [[ "$MIN_FILE_AGE_SECONDS" =~ ^[0-9]+$ ]] || fail "IAPLACS_TIANHE_MIN_FILE_AGE_SECONDS must be a non-negative integer"
 [[ "$MIN_WRFOUT_BYTES" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_MIN_WRFOUT_BYTES must be a positive integer"
@@ -295,12 +300,20 @@ render_product() {
     renderer="$NATIONAL_NCL_RENDERER"
     work_root="$WORK_NX_ROOT"
     province_shp=""
-  else
+  elif [[ "$mode" == "yunnan" ]]; then
     family="airport_yunnan"
     output_name="Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_${stamp}_combined_overview_6x6_grid.png"
     renderer="$YUNNAN_NCL_RENDERER"
     work_root="$WORK_YN_ROOT"
     province_shp="${YUNNAN_PROVINCE_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
+  elif [[ "$mode" == "shangrao" ]]; then
+    family="shangrao"
+    output_name="${run_id:0:8}_${run_id:8:2}_combined_overview_6x6_grid.png"
+    renderer="$SHANGRAO_NCL_RENDERER"
+    work_root="$WORK_SHANGRAO_ROOT"
+    province_shp="${SHANGRAO_PROVINCE_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
+  else
+    fail "unknown render mode: $mode"
   fi
   run_root="$work_root/$run_id"
   output_dir="$RENDER_ROOT/$family/${run_id:0:8}_${run_id:8:2}"
@@ -328,7 +341,7 @@ render_product() {
         WORK_NX_ROOT="$run_root" \
         OUTPUT_ROOT="$RENDER_ROOT/$family" \
         "$NCL_COMMAND_RUNNER" "$renderer" --latest >&2
-    else
+    elif [[ "$mode" == "yunnan" ]]; then
       MIN_FILE_AGE_SECONDS="$MIN_FILE_AGE_SECONDS" \
         MIN_WRFOUT_BYTES="$MIN_WRFOUT_BYTES" \
         WORK_YN_ROOT="$run_root" \
@@ -336,6 +349,14 @@ render_product() {
         YUNNAN_PROVINCE_SHP_FILE="$province_shp" \
         YUNNAN_CITY_SHP_FILE="$city_shp" \
         PYTHON_BIN="$PYTHON_BIN" \
+        "$NCL_COMMAND_RUNNER" "$renderer" --latest >&2
+    else
+      MIN_FILE_AGE_SECONDS="$MIN_FILE_AGE_SECONDS" \
+        MIN_WRFOUT_BYTES="$MIN_WRFOUT_BYTES" \
+        WORK_SHANGRAO_ROOT="$run_root" \
+        OUTPUT_ROOT="$RENDER_ROOT/$family" \
+        SHANGRAO_PROVINCE_SHP_FILE="$province_shp" \
+        SHANGRAO_COUNTY_SHP_FILE="$city_shp" \
         "$NCL_COMMAND_RUNNER" "$renderer" --latest >&2
     fi
   fi
@@ -373,6 +394,27 @@ else
   echo "no complete WORK_yn run found; waiting for stable WRF output"
 fi
 
+sr_run="$(latest_complete_run "$WORK_SHANGRAO_ROOT" || true)"
+if [[ -n "$sr_run" ]]; then
+  sr_run_root="$WORK_SHANGRAO_ROOT/$sr_run"
+  sr_wrfout="$(matching_wrfout "$sr_run_root")"
+  if [[ -n "$sr_wrfout" ]]; then
+    sr_overview="$(render_product "shangrao" "$sr_run" "$(dirname "$sr_wrfout")" "$SHANGRAO_CITY_SHP_FILE")"
+    sr_output_dir="$(dirname "$sr_overview")"
+    sr_prefix="${sr_run:0:8}_${sr_run:8:2}"
+    sr_detail_1="$sr_output_dir/${sr_prefix}_combined_detail_p01_4x3_grid.png"
+    sr_detail_2="$sr_output_dir/${sr_prefix}_combined_detail_p02_4x3_grid.png"
+    sr_detail_3="$sr_output_dir/${sr_prefix}_combined_detail_p03_4x3_grid.png"
+    [[ -s "$sr_detail_1" && -s "$sr_detail_2" && -s "$sr_detail_3" ]] \
+      || fail "Shangrao renderer did not create all detail mosaics for $sr_run"
+    relay_family "shangrao" "$sr_run" "$sr_overview" "$sr_detail_1" "$sr_detail_2" "$sr_detail_3"
+  else
+    echo "WORK run $sr_run is incomplete; waiting for stable WRF output"
+  fi
+else
+  echo "no complete WORK run found; waiting for stable WRF output"
+fi
+
 if [[ "$DRY_RUN" == "1" ]]; then
   exit 0
 fi
@@ -399,6 +441,7 @@ fi
 
 prune_family "$MAPS_DIR" "worknx_summary"
 prune_family "$MAPS_DIR" "airport_yunnan"
+prune_family "$MAPS_DIR" "shangrao"
 IAPLACS_MAX_RUNS="$KEEP_RUNS" "$PYTHON_BIN" "$SITE_REPO/tools/build_tianhe_forecast_catalog.py"
 "$GIT_BIN" -C "$SITE_REPO" add -A -- data/tianhe/current/maps "$CATALOG_PATH"
 

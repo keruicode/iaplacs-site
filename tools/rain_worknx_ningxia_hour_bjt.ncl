@@ -74,10 +74,8 @@ begin
   lon_max = 107.8
   lat_min = 35.0
   lat_max = 39.7
-  ; Use the same hourly thresholds as the WORK_nx nationwide product.  A
-  ; zero lower bound colored trace accumulation across the entire regional
-  ; domain even when the nationwide product correctly remained white.
-  rain_levs = (/0.1, 1.0, 2.5, 5.0, 10.0, 20.0, 30.0, 50.0/)
+  ; Keep the exact hourly colorbar used by the Huan regional product.
+  rain_levs = (/0.0, 1.5, 7.0, 15.0, 40.0, 50.0/)
 
   do ifile = 0, dimsizes(files)-1
     f = addfile(files(ifile), "r")
@@ -116,16 +114,14 @@ begin
       file_start = bjt_label(times(it-1), 1)
       file_end = bjt_label(times(it), 1)
       rain_h = rain_all(it,:,:) - rain_all(it-1,:,:)
-      ; The first explicit interval is below 0.1 mm/h and is white.  Keep
-      ; trace and zero values as real values instead of converting them to a
-      ; spatial missing mask, which can be misinterpreted by NCL's map fill.
       rain_region = rain_h(row_start:row_end,col_start:col_end)
+      rain_region@_FillValue = -9999.0
+      rain_region = where(rain_region.lt.0.01, rain_region@_FillValue, rain_region)
 
       wks = gsn_open_wks("png", out_dir + "/" + init_bjt + "_rain_hour_" + file_start + "-" + file_end + "_BJT")
       cmap = (/(/1.00,1.00,1.00/), (/0.00,0.00,0.00/), (/1.00,1.00,1.00/), \
-               (/0.65,0.94,0.57/), (/0.18,0.73,0.22/), (/0.35,0.68,0.90/), \
-               (/0.10,0.05,1.00/), (/0.92,0.00,0.92/), (/0.50,0.05,0.20/), \
-               (/0.45,0.05,0.00/)/)
+               (/0.42,0.86,0.40/), (/0.25,0.72,0.25/), (/0.42,0.68,0.90/), \
+               (/0.10,0.05,1.00/), (/0.92,0.00,0.92/), (/116.0/255,30.0/255,7.0/255/)/)
       gsn_define_colormap(wks, cmap)
 
       res = True
@@ -139,7 +135,7 @@ begin
       res@cnInfoLabelOn = False
       res@cnLevelSelectionMode = "ExplicitLevels"
       res@cnLevels = rain_levs
-      res@cnFillColors = (/2,3,4,5,6,7,8,9,9/)
+      res@cnFillColors = (/2,3,4,5,6,7/)
       res@cnConstFEnableFill = True
       res@cnConstFLabelOn = False
       res@cnMissingValFillColor = "white"

@@ -33,7 +33,13 @@ def main() -> None:
         build_yunnan_product,
         "天河 WORK_yn 云南降水预报",
     )
-    published_at = latest_published_at(ningxia_runs + airport_runs)
+    shangrao_runs = scan_runs(
+        "shangrao",
+        build_shangrao_frames,
+        build_shangrao_product,
+        "天河 WORK 上饶降水预报",
+    )
+    published_at = latest_published_at(ningxia_runs + airport_runs + shangrao_runs)
     catalog = {
         "schema_version": 1,
         "site": {"name": "IAP-LACS Forecast", "domain": "iaplacs.xyz"},
@@ -61,8 +67,8 @@ def main() -> None:
             "shangrao": build_service(
                 "上饶专项天气服务",
                 "Shangrao service",
-                "天河上饶产品生成链路已预留，等待首个完成时次后自动发布。",
-                [],
+                "天河 WORK 上饶区域逐小时降水产品。",
+                shangrao_runs,
             ),
         },
     }
@@ -72,7 +78,8 @@ def main() -> None:
     )
     print(
         f"wrote {CATALOG_PATH.relative_to(ROOT)} with "
-        f"{len(ningxia_runs)} Ningxia and {len(airport_runs)} Yunnan run(s)"
+        f"{len(ningxia_runs)} Ningxia, {len(airport_runs)} Yunnan, and "
+        f"{len(shangrao_runs)} Shangrao run(s)"
     )
 
 
@@ -144,6 +151,21 @@ def build_yunnan_product(
         "color": "#0f68c8",
         "description": "WORK_yn 云南区域逐小时降水 6x6 拼图，标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场位置。",
         "metrics": product_metrics,
+        "frames": frames,
+    }
+
+
+def build_shangrao_product(
+    run_id: str, _run_dir: Path, frames: list[dict], published_at: datetime
+) -> dict:
+    return {
+        "id": "tianhe_shangrao_precip_series",
+        "title": "上饶 WRF 逐小时降水拼图",
+        "category": "天河预报",
+        "unit": "mm",
+        "color": "#0f68c8",
+        "description": "WORK 上饶区域逐小时降水图：36 小时总览及三页细节拼图。",
+        "metrics": metrics(run_id, published_at, len(frames)),
         "frames": frames,
     }
 
@@ -245,6 +267,25 @@ def build_yunnan_frames(run_dir: Path) -> list[dict]:
             frame.update({"id": "overview", "lead": 0, "lead_label": "36小时拼图"})
         return self_drawn
     return frames
+
+
+def build_shangrao_frames(run_dir: Path) -> list[dict]:
+    frames = build_frames(run_dir)
+    selected = []
+    for frame in frames:
+        value = f"{frame.get('id', '')} {frame.get('file', '')}".lower()
+        if "combined_overview" in value:
+            frame.update({"id": "overview", "lead": 0, "lead_label": "总览"})
+        elif "detail_p01" in value:
+            frame.update({"id": "detail_p01", "lead": 1, "lead_label": "细节 1/3"})
+        elif "detail_p02" in value:
+            frame.update({"id": "detail_p02", "lead": 2, "lead_label": "细节 2/3"})
+        elif "detail_p03" in value:
+            frame.update({"id": "detail_p03", "lead": 3, "lead_label": "细节 3/3"})
+        else:
+            continue
+        selected.append(frame)
+    return sorted(selected, key=lambda frame: (frame["lead"], frame["file"]))
 
 
 def asset_stem(path: Path) -> str:
