@@ -43,6 +43,23 @@ if ! command -v montage >/dev/null 2>&1; then
   CACHE_LIBRARY_PATH="$(find "$CONDA_BASE/pkgs" -mindepth 2 -maxdepth 2 -type d -name lib -print | paste -sd: -)"
   export PATH="$IMAGEMAGICK_CACHE_DIR/bin:$PATH"
   export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$CACHE_LIBRARY_PATH${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+
+  # The cached package does not have its normal font configuration linked into
+  # the minimal NCL environment.  Preserve the unmodified 寰 script's
+  # Helvetica-Bold request with a local Conda-provided bold font alias.
+  IMAGEMAGICK_FONT_FILE="${TIANHE_IMAGEMAGICK_HELVETICA_FONT:-$(find "$CONDA_BASE/pkgs" -type f -name 'Ubuntu-B.ttf' -print | head -n 1)}"
+  [[ -n "$IMAGEMAGICK_FONT_FILE" && -f "$IMAGEMAGICK_FONT_FILE" ]] || {
+    echo "ERROR: no Conda font is available for ImageMagick Helvetica-Bold" >&2
+    exit 127
+  }
+  IMAGEMAGICK_CONFIG_DIR="${TIANHE_IMAGEMAGICK_CONFIG_DIR:-$HOME/.iaplacs-tianhe/imagemagick-config}"
+  mkdir -p "$IMAGEMAGICK_CONFIG_DIR"
+  printf '%s\n' \
+    '<?xml version="1.0" encoding="UTF-8"?>' \
+    '<typemap>' \
+    "  <type name=\"Helvetica-Bold\" fullname=\"Helvetica Bold\" family=\"Helvetica\" foundry=\"IAP-LACS\" weight=\"700\" style=\"normal\" stretch=\"normal\" format=\"truetype\" glyphs=\"$IMAGEMAGICK_FONT_FILE\" />" \
+    '</typemap>' > "$IMAGEMAGICK_CONFIG_DIR/type.xml"
+  export MAGICK_CONFIGURE_PATH="$IMAGEMAGICK_CONFIG_DIR:$IMAGEMAGICK_CACHE_DIR/etc/ImageMagick-7${MAGICK_CONFIGURE_PATH:+:$MAGICK_CONFIGURE_PATH}"
 fi
 
 command -v convert >/dev/null || {
