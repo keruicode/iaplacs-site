@@ -212,6 +212,9 @@ fi
 if command -v magick >/dev/null 2>&1 || command -v convert >/dev/null 2>&1; then
   IAPLACS_MAPS_DIR="$MAPS_DIR" "$SITE_REPO/tools/optimize_forecast_images.sh"
   find "$MAPS_DIR" -type f -name '*.png' -delete
+elif "$PYTHON_BIN" -c 'import PIL' >/dev/null 2>&1; then
+  "$PYTHON_BIN" "$SITE_REPO/tools/optimize_tianhe_forecast_images.py" --maps-dir "$MAPS_DIR"
+  find "$MAPS_DIR" -type f -name '*.png' -delete
 else
   echo "WARNING: ImageMagick is unavailable; publishing PNG files without WebP optimization" >&2
 fi

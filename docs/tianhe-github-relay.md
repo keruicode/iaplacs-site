@@ -13,6 +13,9 @@ The publisher reads these default Tianhe locations:
 /fs2/home/junzhang/zhoubj/WORK_yn
 ```
 
+It uses ImageMagick when present; otherwise it uses Pillow from the existing
+`wrf-scripts` Conda environment to create bounded WebP and preview WebP files.
+
 After cloning `iaplacs-site` to `/fs2/home/junzhang/kerui/iaplacs-site`,
 verify discovery without changing files:
 
