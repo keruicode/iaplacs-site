@@ -231,6 +231,7 @@ function renderDataSourceSwitch() {
   root.querySelectorAll("[data-source-id]").forEach((button) => {
     const isActive = button.dataset.sourceId === state.sourceId;
     button.classList.toggle("is-active", isActive);
+    button.classList.toggle("primary", isActive);
     button.setAttribute("aria-pressed", String(isActive));
     button.disabled = state.loading;
   });

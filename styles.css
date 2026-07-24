@@ -245,40 +245,17 @@ button {
 }
 
 .data-source-switch {
-  display: inline-grid;
-  grid-template-columns: repeat(2, minmax(48px, 1fr));
-  overflow: hidden;
-  border: 1px solid var(--line);
-  background: #f8fafb;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
 }
 
 .data-source-button {
-  min-width: 50px;
-  min-height: 38px;
-  padding: 0 11px;
-  border: 0;
-  border-right: 1px solid var(--line);
-  background: transparent;
-  color: var(--muted);
+  min-width: 64px;
+  appearance: none;
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 760;
-}
-
-.data-source-button:last-child {
-  border-right: 0;
-}
-
-.data-source-button:hover,
-.data-source-button:focus-visible {
-  background: var(--blue-soft);
-  color: var(--blue-deep);
-  outline: none;
-}
-
-.data-source-button.is-active {
-  background: var(--blue);
-  color: #fff;
+  font: inherit;
 }
 
 .data-source-button:disabled {

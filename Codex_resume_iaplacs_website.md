@@ -1,6 +1,6 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-23 CST
+Last updated: 2026-07-24 CST
 
 ## Resume Commands
 
@@ -1712,3 +1712,24 @@ Notes for deployment:
 - Added `tools/build_tianhe_forecast_catalog.py`, which scans `worknx_summary_*` and `airport_yunnan_*`, retains at most five runs, writes independent Tianhe service keys (`main`, `ningxia`, `airport`, `shangrao`), and emits relative GitHub Pages asset URLs. Current catalog has one Ningxia run, one airport run with two frames, and no Shangrao run.
 - Verification: `node --check app.js`, `python3 -m py_compile tools/build_tianhe_forecast_catalog.py`, `git diff --check`, ImageMagick WebP dimension checks, and HTTP 200 checks for all four routes, both Tianhe catalogs, and a Tianhe preview WebP. The website test was pushed as `fc00b45 Add Tianhe forecast source switch` after rebasing onto automated forecast commit `ac28bea`.
 - Keep the current Tianhe assets as a test snapshot. The next operational step is a Mac-relay publisher that reads the newest `/fs2/home/junzhang/zhoubj/WORK_nx` and `WORK_yn` run directories, keeps five GitHub snapshots, and pushes the catalog; do not install cron until that path and GitHub network route are stable.
+
+## 2026-07-24 Tianhe Native Publisher Follow-up
+
+- Thread ID: `019f9328-ea7c-7b92-a0f3-42cf58743cfc`.
+- Session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/24/rollout-2026-07-24T16-06-00-019f9328-ea7c-7b92-a0f3-42cf58743cfc.jsonl`.
+- Working directory: `/Users/xiaoxiaotu/_01_IAP/Website`.
+- Resume this exact thread with:
+  ```bash
+  codex resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+  ```bash
+  code resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+- Frontend source controls were restyled to use the same control treatment as service links. Inactive service/data-source controls are neutral; `app.js` applies `primary` only to the active source. All four pages now use cache-busted `styles.css` and `app.js` query `20260724-02`.
+- Local browser verification confirmed the root Ningxia page switches between the existing 寰 catalog and `data/tianhe/current/forecast-runs.json`; when 天河 is active the page reports `天河 | 已更新`, shows one Tianhe run, and displays the Tianhe `WORK_nx` figure. The browser session was interrupted after this completed verification.
+- Added `tools/tianhe_publish_forecast_to_github.sh` and `tools/install_tianhe_publisher_cron.sh`. They are designed to run on `junzhang@th-ex-ln0`, read `/fs2/home/junzhang/zhoubj/WORK_nx` and `WORK_yn`, use `/fs2/home/junzhang/zhoubj/conda_envs/wrf-scripts/bin/python`, retain five runs, rebuild the independent Tianhe catalog, and add an hourly Tianhe-local cron at minute 17. No Mac cron installer remains.
+- Verified on Tianhe: the existing model crontab runs 00/06/12/18 UTC, Git is 2.27.0, the Conda Python is 3.10.20, and both latest source directories are `2026072306`.
+- Blocking network fact: this new Tianhe login node has no DNS result for `github.com`, no proxy configured, and direct HTTPS plus GitHub SSH ports 22/443 timed out even with fixed GitHub IPs. The account already has `~/.ssh/id_ed25519_github_tianhe`, so the current blocker is outbound routing rather than GitHub credentials. The publisher now continues to create a local Git commit when pull is unavailable and retries `git push` on each later hourly run.
+- Required next actions: commit/push the current local frontend and Tianhe publisher changes; create a one-time Git bundle from the Mac checkout and transfer it to `/fs2/home/junzhang/kerui/iaplacs-site` so Tianhe has a working local checkout despite its GitHub block; run the new Tianhe publisher once, then install the managed Tianhe cron. The live GitHub update remains impossible until Tianhe support provides a DNS/egress/proxy route or a reachable approved mirror.
+- Verification already passed: `bash -n tools/tianhe_publish_forecast_to_github.sh`, `bash -n tools/install_tianhe_publisher_cron.sh`, `node --check app.js`, `python3 -m py_compile tools/build_tianhe_forecast_catalog.py`, and `git diff --check`.
+- Preserve the user's existing unstaged `.gitignore` change adding `.tmp`; it is unrelated and must not be committed.
