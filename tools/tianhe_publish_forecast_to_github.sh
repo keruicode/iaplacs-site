@@ -30,6 +30,7 @@ else
 fi
 PYTHON_BIN="${PYTHON_BIN:-$TIANHE_HOME/zhoubj/conda_envs/wrf-scripts/bin/python}"
 STATE_DIR="${IAPLACS_TIANHE_STATE_DIR:-$HOME/.iaplacs-tianhe}"
+LOCK_DIR="${IAPLACS_TIANHE_LOCK_DIR:-$TIANHE_HOME/.iaplacs-tianhe/publisher.lock}"
 RENDER_ROOT="${IAPLACS_TIANHE_RENDER_ROOT:-$STATE_DIR/rendered}"
 NCL_COMMAND_RUNNER="${IAPLACS_TIANHE_NCL_COMMAND_RUNNER:-$SCRIPT_DIR/run_tianhe_conda_command.sh}"
 NINGXIA_NCL_RENDERER="${IAPLACS_TIANHE_NINGXIA_NCL_RENDERER:-$SCRIPT_DIR/render_worknx_ningxia_overview.sh}"
@@ -98,7 +99,7 @@ command -v "$GIT_BIN" >/dev/null || fail "git command not found: $GIT_BIN"
   || fail "Tianhe Python is missing matplotlib, netCDF4, Pillow, or pyshp"
 
 mkdir -p "$STATE_DIR"
-LOCK_DIR="$STATE_DIR/publisher.lock"
+mkdir -p "$(dirname "$LOCK_DIR")"
 if ! mkdir "$LOCK_DIR" 2>/dev/null; then
   echo "another Tianhe publisher is already running"
   exit 0
