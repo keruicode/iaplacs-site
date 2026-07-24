@@ -2,7 +2,7 @@
 
 # Run a Tianhe command in the dedicated NCL environment. Cron does not load a
 # login shell, so source the user's Conda bootstrap explicitly before use.
-set -Eeuo pipefail
+set -Eeo pipefail
 
 CONDA_BASHRC="${TIANHE_CONDA_BASHRC:-/fs2/home/junzhang/kerui/bashrc}"
 CONDA_ENV_NAME="${TIANHE_NCL_ENV:-ncl}"
@@ -15,6 +15,7 @@ CONDA_ENV_NAME="${TIANHE_NCL_ENV:-ncl}"
 # shellcheck disable=SC1090
 source "$CONDA_BASHRC"
 conda activate "$CONDA_ENV_NAME"
+set -u
 export NCL_BIN="${NCL_BIN:-$(command -v ncl)}"
 export NCL_ROOT="${NCL_ROOT:-${NCARG_ROOT:-}}"
 [[ -x "$NCL_BIN" ]] || {
