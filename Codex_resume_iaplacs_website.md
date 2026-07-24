@@ -1779,3 +1779,35 @@ Notes for deployment:
   ```
 - Deleted the exact local transfer seed `.tmp/iaplacs-tianhe-seed-ae6f9d0`. Do not delete the user-owned `.tmp` directory wholesale. The only remaining local worktree change is the pre-existing unstaged `.gitignore` addition for `.tmp`.
 - Next recommended actions: wait for a Tianhe network window, then run `GIT_TERMINAL_PROMPT=0 /fs2/home/junzhang/kerui/bin/git-system -C /fs2/home/junzhang/kerui/iaplacs-site pull --ff-only origin main`; verify it reaches `633d4df`, then run `/fs2/home/junzhang/kerui/iaplacs-site/tools/tianhe_publish_forecast_to_github.sh` once and confirm its GitHub push. Do not use a Mac cron or commit `.gitignore`.
+
+## 2026-07-24 Tianhe Product Parity Update
+
+- Current thread ID: `019f9328-ea7c-7b92-a0f3-42cf58743cfc`.
+- Current session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/24/rollout-2026-07-24T16-06-00-019f9328-ea7c-7b92-a0f3-42cf58743cfc.jsonl`.
+- Working directory: `/Users/xiaoxiaotu/_01_IAP/Website`.
+- Resume this exact work with:
+  ```bash
+  codex resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+  ```bash
+  code resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+- User requested Tianhe product parity with the Huan source: Ningxia must expose both a default Ningxia-region image and a nationwide `WORK_nx` image; Yunnan must be self-rendered with three airport icons and point values; Shangrao must remain ready without fabricating an unavailable run.
+- Tianhe has no usable NCL/ImageMagick installation, but its existing `/fs2/home/junzhang/zhoubj/conda_envs/wrf-scripts/bin/python` has `matplotlib 3.10.9`, `netCDF4`, Pillow, and pyshp. NCL installation via a new Conda bootstrap was assessed but stopped before deployment because both the Tianhe DNS route and the one-time installer download were too unstable. The production path therefore has no new package or administrator dependency.
+- Added `tools/render_tianhe_precipitation.py`. It uses that existing Conda Python to draw 36 T13-T48 WRF panels, applies Times New Roman/Songti SC preference, overlays the Tianhe SHP boundaries, makes one 6x6 PNG mosaic, and removes its `.panels` intermediates. Yunnan uses dark, text-free airplane silhouettes for 德宏芒市、嘎洒、景迈 and writes `airport_precip_totals.json`.
+- The renderer was executed against actual Tianhe `2026072306` data:
+  - Ningxia source: `/fs2/home/junzhang/zhoubj/WORK_nx/2026072306/gfs/wrf/wrfout_d01_2026-07-23_06:00:00`.
+  - Yunnan source: `/fs2/home/junzhang/zhoubj/WORK_yn/2026072306/gfs/wrf/wrfout_d01_2026-07-23_06:00:00`.
+  - Retained render cache: `/fs2/home/junzhang/.iaplacs-tianhe/rendered/worknx_summary_20260723_06/Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_2026-07-23_06_00_combined_overview_6x6_grid.png` and `/fs2/home/junzhang/.iaplacs-tianhe/rendered/airport_yunnan_20260723_06/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-23_06_00_combined_overview_6x6_grid.png` plus its `airport_precip_totals.json`.
+  - Current airport maximum hourly values: 德宏芒市 `0.0 mm` at `07-25 13:00-14:00`; 西双版纳嘎洒 `6.7 mm` at `07-25 05:00-06:00`; 普洱澜沧景迈 `5.6 mm` at `07-25 07:00-08:00`.
+- Extended `tools/tianhe_publish_forecast_to_github.sh` so each completed `WORK_nx` run self-renders/copies the Ningxia mosaic plus its completed nationwide mosaic, and each completed `WORK_yn` run self-renders/copies the airport mosaic plus JSON. It retains five runs per family. `--force` rerenders an existing run; a missing Yunnan JSON also forces rerender.
+- `tools/build_tianhe_forecast_catalog.py` now presents Ningxia frames as `宁夏区域` then `全国`; `main` correctly maps to airport/Yunnan instead of Ningxia; airport metrics read the three point peaks; Shangrao has no runs and says its chain is ready.
+- Published GitHub commit after rebasing on concurrent Huan data: `a8a19bfc Align Tianhe regional forecast products`. It contains the current Tianhe WebP/preview assets and removes the obsolete Yunnan domain/local test images. Local catalog assertions passed for the Ningxia frame order, all three airport metrics, airport homepage mapping, and empty Shangrao runs.
+- The Tianhe repository was switched from HTTPS to SSH using the already authorized key:
+  ```text
+  origin git@github.com:keruicode/iaplacs-site.git
+  core.sshCommand=ssh -i /fs2/home/junzhang/.ssh/id_ed25519_github_tianhe -o IdentitiesOnly=yes -o BatchMode=yes
+  ```
+  The cron remains Tianhe-only and explicitly calls `git-system` every 15 minutes. The last pull still failed only at `Could not resolve hostname github.com`; once DNS works, it should fast-forward the clean checkout from `61796b4` to `a8a19bfc` and use the new renderer on later runs.
+- Verification passed: `bash -n tools/tianhe_publish_forecast_to_github.sh`, Python compile for the renderer/catalog, `node --check app.js`, `git diff --check`, a Tianhe publisher `--dry-run` reporting both product families, actual Tianhe WRF rendering, local visual inspection of both mosaics, and committed catalog assertions.
+- Cleanup: local preview copies and temporary remote copies of the test scripts were deleted. The remote render cache is intentionally retained for the publisher. The only local worktree modification remains the user-owned unstaged `.gitignore` change for `.tmp`; it was temporarily stashed during rebase and restored unchanged.
