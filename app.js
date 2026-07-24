@@ -132,9 +132,33 @@ async function loadForecast({ preserveSelection }) {
   const previousLatestRunId = preserveSelection ? state.service?.latest_run : undefined;
 
   try {
-    const raw = await fetchForecastData();
-    const catalog = normalizeForecastData(raw);
-    const service = selectService(catalog);
+    let raw = await fetchForecastData();
+    let catalog = normalizeForecastData(raw);
+    let service = selectService(catalog);
+
+    // Shangrao has no Tianhe product yet. Keep the page useful when a browser
+    // remembers Tianhe from another service by using the available Huan data.
+    if (!serviceHasRenderableFrames(service)) {
+      const fallbackSource = pageConfig.sources.find(
+        (source) => source.id !== state.sourceId,
+      );
+      if (fallbackSource) {
+        try {
+          raw = await fetchForecastDataForSource(fallbackSource);
+          const fallbackCatalog = normalizeForecastData(raw);
+          const fallbackService = selectService(fallbackCatalog);
+          if (serviceHasRenderableFrames(fallbackService)) {
+            catalog = fallbackCatalog;
+            service = fallbackService;
+            state.sourceId = fallbackSource.id;
+            renderDataSourceSwitch();
+          }
+        } catch (error) {
+          console.warn(`forecast fallback failed: ${fallbackSource.manifestUrl}`, error);
+        }
+      }
+    }
+
     const hasNewLatestRun = Boolean(
       previousLatestRunId &&
         service?.latest_run &&
@@ -162,13 +186,26 @@ async function loadForecast({ preserveSelection }) {
 }
 
 async function fetchForecastData() {
-  const source = activeDataSource();
+  return fetchForecastDataForSource(activeDataSource());
+}
+
+async function fetchForecastDataForSource(source) {
   try {
     return await fetchJson(withCacheBuster(source.manifestUrl));
   } catch (error) {
     console.warn(`primary forecast catalog failed: ${source.manifestUrl}`, error);
     return fetchJson(withCacheBuster(source.fallbackManifestUrl));
   }
+}
+
+function serviceHasRenderableFrames(service) {
+  return Boolean(
+    service?.runs?.some((run) =>
+      run?.products?.some((product) =>
+        product?.frames?.some((frame) => frame?.file || frame?.preview_file),
+      ),
+    ),
+  );
 }
 
 function initialSourceId() {

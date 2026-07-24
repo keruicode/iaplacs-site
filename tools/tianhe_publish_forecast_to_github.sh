@@ -34,6 +34,7 @@ LOCK_DIR="${IAPLACS_TIANHE_LOCK_DIR:-$TIANHE_HOME/.iaplacs-tianhe/publisher.lock
 RENDER_ROOT="${IAPLACS_TIANHE_RENDER_ROOT:-$STATE_DIR/rendered}"
 NCL_COMMAND_RUNNER="${IAPLACS_TIANHE_NCL_COMMAND_RUNNER:-$SCRIPT_DIR/run_tianhe_conda_command.sh}"
 NINGXIA_NCL_RENDERER="${IAPLACS_TIANHE_NINGXIA_NCL_RENDERER:-$SCRIPT_DIR/render_worknx_ningxia_overview.sh}"
+NATIONAL_NCL_RENDERER="${IAPLACS_TIANHE_NATIONAL_NCL_RENDERER:-$SCRIPT_DIR/render_worknx_national_overview.sh}"
 YUNNAN_NCL_RENDERER="${IAPLACS_TIANHE_YUNNAN_NCL_RENDERER:-$SCRIPT_DIR/render_worknx_yunnan_airports_overview.sh}"
 NINGXIA_CITY_SHP_FILE="${NINGXIA_CITY_SHP_FILE:-$SCRIPT_DIR/SHP/ningxia_city_county.shp}"
 YUNNAN_CITY_SHP_FILE="${YUNNAN_CITY_SHP_FILE:-$SCRIPT_DIR/SHP/yunnan_city.shp}"
@@ -87,6 +88,7 @@ done
 [[ -x "$PYTHON_BIN" ]] || fail "Python environment is not executable: $PYTHON_BIN"
 [[ -x "$NCL_COMMAND_RUNNER" ]] || fail "Tianhe NCL command runner is not executable: $NCL_COMMAND_RUNNER"
 [[ -x "$NINGXIA_NCL_RENDERER" ]] || fail "Ningxia NCL renderer is not executable: $NINGXIA_NCL_RENDERER"
+[[ -x "$NATIONAL_NCL_RENDERER" ]] || fail "Nationwide NCL renderer is not executable: $NATIONAL_NCL_RENDERER"
 [[ -x "$YUNNAN_NCL_RENDERER" ]] || fail "Yunnan NCL renderer is not executable: $YUNNAN_NCL_RENDERER"
 [[ "$KEEP_RUNS" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_KEEP_RUNS must be a positive integer"
 [[ "$MIN_FILE_AGE_SECONDS" =~ ^[0-9]+$ ]] || fail "IAPLACS_TIANHE_MIN_FILE_AGE_SECONDS must be a non-negative integer"
@@ -287,6 +289,12 @@ render_product() {
     renderer="$NINGXIA_NCL_RENDERER"
     work_root="$WORK_NX_ROOT"
     province_shp="${NINGXIA_PROVINCE_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
+  elif [[ "$mode" == "national" ]]; then
+    family="worknx_national"
+    output_name="Precip_hourly_WRF_AllRain_T13_T48_InitUTC_${stamp}_combined_overview_6x6_grid.png"
+    renderer="$NATIONAL_NCL_RENDERER"
+    work_root="$WORK_NX_ROOT"
+    province_shp=""
   else
     family="airport_yunnan"
     output_name="Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_${stamp}_combined_overview_6x6_grid.png"
@@ -314,6 +322,12 @@ render_product() {
         NINGXIA_PROVINCE_SHP_FILE="$province_shp" \
         NINGXIA_COUNTY_SHP_FILE="$city_shp" \
         "$NCL_COMMAND_RUNNER" "$renderer" --latest >&2
+    elif [[ "$mode" == "national" ]]; then
+      MIN_FILE_AGE_SECONDS="$MIN_FILE_AGE_SECONDS" \
+        MIN_WRFOUT_BYTES="$MIN_WRFOUT_BYTES" \
+        WORK_NX_ROOT="$run_root" \
+        OUTPUT_ROOT="$RENDER_ROOT/$family" \
+        "$NCL_COMMAND_RUNNER" "$renderer" --latest >&2
     else
       MIN_FILE_AGE_SECONDS="$MIN_FILE_AGE_SECONDS" \
         MIN_WRFOUT_BYTES="$MIN_WRFOUT_BYTES" \
@@ -335,7 +349,8 @@ if [[ -n "$nx_run" ]]; then
   nx_wrfout="$(matching_wrfout "$nx_run_root")"
   if [[ -n "$nx_wrfout" ]]; then
     nx_region="$(render_product "ningxia" "$nx_run" "$(dirname "$nx_wrfout")" "$NINGXIA_CITY_SHP_FILE")"
-    relay_family "worknx_summary" "$nx_run" "$nx_region"
+    nx_national="$(render_product "national" "$nx_run" "$(dirname "$nx_wrfout")" "")"
+    relay_family "worknx_summary" "$nx_run" "$nx_region" "$nx_national"
   else
     echo "WORK_nx run $nx_run is incomplete; waiting for stable WRF output"
   fi
