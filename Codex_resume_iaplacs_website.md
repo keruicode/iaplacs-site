@@ -1733,3 +1733,18 @@ Notes for deployment:
 - Required next actions: commit/push the current local frontend and Tianhe publisher changes; create a one-time Git bundle from the Mac checkout and transfer it to `/fs2/home/junzhang/kerui/iaplacs-site` so Tianhe has a working local checkout despite its GitHub block; run the new Tianhe publisher once, then install the managed Tianhe cron. The live GitHub update remains impossible until Tianhe support provides a DNS/egress/proxy route or a reachable approved mirror.
 - Verification already passed: `bash -n tools/tianhe_publish_forecast_to_github.sh`, `bash -n tools/install_tianhe_publisher_cron.sh`, `node --check app.js`, `python3 -m py_compile tools/build_tianhe_forecast_catalog.py`, and `git diff --check`.
 - Preserve the user's existing unstaged `.gitignore` change adding `.tmp`; it is unrelated and must not be committed.
+
+### Completion Update
+
+- Website/frontend and Tianhe publisher commits were pushed from the Mac in order: `4a56fb4 Add Tianhe native forecast publisher`, `057facf Optimize Tianhe forecast images with Pillow`, and `61796b4 Bound Tianhe Git network retries`.
+- The public frontend now has neutral service/data-source controls and only the selected data source is blue. Local browser verification confirmed both directions: switching to 天河 loads the Tianhe catalog, reports `天河 | 已更新`, changes the run list to the Tianhe run, and displays the Tianhe `WORK_nx` map; switching back restores the 寰 catalog.
+- Created a clean shallow publisher checkout at `/fs2/home/junzhang/kerui/iaplacs-site`, then fast-forwarded it to `61796b4` with a 2.4 KB local bundle. The checkout is clean and its `origin/main` tracking ref is set to `61796b4` so it will not repeatedly attempt to push code that is already on GitHub.
+- Installed the Tianhe-native publisher cron while preserving all four existing model launch entries:
+  ```cron
+  17 * * * * /fs2/home/junzhang/kerui/iaplacs-site/tools/tianhe_publish_forecast_to_github.sh >> /fs2/home/junzhang/.iaplacs-tianhe/logs/github-publisher.log 2>&1
+  ```
+  The previous crontab was archived at `/fs2/home/junzhang/.iaplacs-tianhe/crontab-before-tianhe-publisher-20260724_165716.txt`.
+- The installed publisher reads the latest Tianhe `WORK_nx` and `WORK_yn` rendered figures, locks itself to avoid overlap, retains exactly five directories per family, writes `data/tianhe/current/forecast-runs.json`, uses Pillow 12.3 when ImageMagick is absent to create WebP plus preview WebP files, then commits/pushes only Tianhe map/catalog changes.
+- A normal Tianhe test completed safely: it found current `worknx_summary_20260723_06` and `airport_yunnan_20260723_06` already published. GitHub pull failed quickly at the node's unresolved `github.com` hostname, emitted a warning, and the publisher completed without hanging. GitHub pull/push are guarded by `IAPLACS_TIANHE_GIT_NETWORK_TIMEOUT` (default 120 seconds); on every hourly run any locally committed forecast update will be retried automatically.
+- Current external blocker remains: `th-ex-ln0` has no usable DNS/egress to GitHub. Direct HTTPS to fixed GitHub IPs and SSH ports 22/443 also timed out. The cron and local publication workflow are operational, but the public GitHub Pages data will not advance until Tianhe support provides a permitted DNS server, HTTPS proxy, or outbound GitHub/mirror route. This is not a Mac scheduling dependency.
+- Cleanup verified: no local `.tmp/iaplacs-tianhe-*` transfer artifacts remain; no `/fs2/home/junzhang/kerui/.iaplacs-tianhe-*` or staging artifacts remain; the Tianhe checkout is clean. The only local working-tree change is the user's pre-existing unstaged `.gitignore` entry for `.tmp`.
