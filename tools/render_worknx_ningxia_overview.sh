@@ -12,6 +12,7 @@ NCL_SCRIPT="${NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_ningxia_hour_bjt.ncl}"
 NCL_BIN="${NCL_BIN:-/public/software/apps/ncl_ncarg/ncl630/bin/ncl}"
 NCL_ROOT="${NCL_ROOT:-/public/software/apps/ncl_ncarg/ncl630}"
 MIN_FILE_AGE_SECONDS="${MIN_FILE_AGE_SECONDS:-1200}"
+MIN_WRFOUT_BYTES="${MIN_WRFOUT_BYTES:-20000000000}"
 NINGXIA_SHP_FILE="${NINGXIA_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
 NINGXIA_PROVINCE_SHP_FILE="${NINGXIA_PROVINCE_SHP_FILE:-$NINGXIA_SHP_FILE}"
 NINGXIA_COUNTY_SHP_FILE="${NINGXIA_COUNTY_SHP_FILE:-$SCRIPT_DIR/SHP/ningxia_city_county.shp}"
@@ -20,8 +21,8 @@ usage() {
   cat <<'EOF'
 Usage: render_worknx_ningxia_overview.sh [--latest | --recent COUNT]
 
-Reads stable WORK_nx T01-T48 source products, renders only hourly T13-T48
-Ningxia panels, and writes one *_combined_overview_6x6_grid.png per run.
+Reads stable WORK_nx wrfout files, renders only hourly T13-T48 Ningxia
+panels, and writes one *_combined_overview_6x6_grid.png per run.
 EOF
 }
 
@@ -64,22 +65,27 @@ mkdir -p "$OUTPUT_ROOT"
 now_epoch="$(date +%s)"
 sources=()
 while IFS= read -r line; do
-  source_path="${line#* }"
   source_epoch="${line%% *}"
+  rest="${line#* }"
+  source_size="${rest%% *}"
+  source_path="${rest#* }"
   source_epoch="${source_epoch%.*}"
   if (( now_epoch - source_epoch < MIN_FILE_AGE_SECONDS )); then
+    continue
+  fi
+  if (( source_size < MIN_WRFOUT_BYTES )); then
     continue
   fi
   sources+=("$source_path")
   [[ "${#sources[@]}" -ge "$count" ]] && break
 done < <(
   find "$WORK_NX_ROOT" -maxdepth 4 -type f \
-    -name 'Precip_hourly_WRF_AllRain_T01_T48_InitUTC_*.png' -printf '%T@ %p\n' \
+    -name 'wrfout_d01_*' -printf '%T@ %s %p\n' \
     | sort -nr
 )
 
 if [[ "${#sources[@]}" -eq 0 ]]; then
-  echo "ERROR: no stable WORK_nx T01-T48 source image found" >&2
+  echo "ERROR: no stable WORK_nx wrfout source found" >&2
   exit 1
 fi
 
@@ -108,10 +114,10 @@ caption_panel() {
 }
 
 render_source() {
-  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview national_copy
+  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview
   base="$(basename "$source_path")"
-  if [[ ! "$base" =~ InitUTC_([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2})_[0-9]{2} ]]; then
-    echo "ERROR: cannot parse InitUTC from $base" >&2
+  if [[ ! "$base" =~ wrfout_d01_([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2}):[0-9]{2}:[0-9]{2} ]]; then
+    echo "ERROR: cannot parse run time from $base" >&2
     return 1
   fi
   run_date="${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]}"
@@ -122,12 +128,6 @@ render_source() {
   panel_dir="$run_dir/hourly_t13_t48"
   caption_dir="$run_dir/captioned_t13_t48"
   overview="$run_dir/Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_${run_date}_${run_hour}_00_combined_overview_6x6_grid.png"
-  national_copy="$run_dir/$base"
-
-  if ! compgen -G "$wrf_dir/wrfout_d01_*" >/dev/null; then
-    echo "ERROR: wrfout_d01 files are unavailable beside $source_path" >&2
-    return 1
-  fi
 
   mkdir -p "$panel_dir" "$caption_dir"
   echo "Rendering Ningxia T13-T48 panels for $run_prefix from $wrf_dir"
@@ -153,9 +153,6 @@ render_source() {
 
   montage "${captioned_panels[@]}" -tile 6x6 -geometry '100%x100%+2+2' -background white "$overview"
   touch -r "$source_path" "$overview"
-  if [[ "$source_path" != "$national_copy" ]]; then
-    cp -p "$source_path" "$national_copy"
-  fi
   echo "Rendered $overview"
 }
 

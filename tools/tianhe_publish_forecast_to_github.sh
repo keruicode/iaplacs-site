@@ -37,6 +37,8 @@ YUNNAN_NCL_RENDERER="${IAPLACS_TIANHE_YUNNAN_NCL_RENDERER:-$SCRIPT_DIR/render_wo
 NINGXIA_CITY_SHP_FILE="${NINGXIA_CITY_SHP_FILE:-$SCRIPT_DIR/SHP/ningxia_city_county.shp}"
 YUNNAN_CITY_SHP_FILE="${YUNNAN_CITY_SHP_FILE:-$SCRIPT_DIR/SHP/yunnan_city.shp}"
 KEEP_RUNS="${IAPLACS_TIANHE_KEEP_RUNS:-5}"
+MIN_FILE_AGE_SECONDS="${IAPLACS_TIANHE_MIN_FILE_AGE_SECONDS:-1200}"
+MIN_WRFOUT_BYTES="${IAPLACS_TIANHE_MIN_WRFOUT_BYTES:-20000000000}"
 GIT_NETWORK_TIMEOUT="${IAPLACS_TIANHE_GIT_NETWORK_TIMEOUT:-120}"
 GIT_NETWORK_ATTEMPTS="${IAPLACS_TIANHE_GIT_NETWORK_ATTEMPTS:-2}"
 GIT_NETWORK_RETRY_DELAY="${IAPLACS_TIANHE_GIT_NETWORK_RETRY_DELAY:-20}"
@@ -47,9 +49,9 @@ usage() {
   cat <<'EOF'
 Usage: tianhe_publish_forecast_to_github.sh [--dry-run] [--force]
 
-Finds the newest complete Tianhe WORK_nx and WORK_yn rendered precipitation
-figures, publishes them into the GitHub Pages checkout, retains five runs per
-family, rebuilds data/tianhe/current/forecast-runs.json, then pushes to origin.
+Finds the newest stable Tianhe WORK_nx and WORK_yn wrfout files, renders the
+regional precipitation figures, retains five runs per family, rebuilds
+data/tianhe/current/forecast-runs.json, then pushes to origin.
 EOF
 }
 
@@ -86,6 +88,8 @@ done
 [[ -x "$NINGXIA_NCL_RENDERER" ]] || fail "Ningxia NCL renderer is not executable: $NINGXIA_NCL_RENDERER"
 [[ -x "$YUNNAN_NCL_RENDERER" ]] || fail "Yunnan NCL renderer is not executable: $YUNNAN_NCL_RENDERER"
 [[ "$KEEP_RUNS" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_KEEP_RUNS must be a positive integer"
+[[ "$MIN_FILE_AGE_SECONDS" =~ ^[0-9]+$ ]] || fail "IAPLACS_TIANHE_MIN_FILE_AGE_SECONDS must be a non-negative integer"
+[[ "$MIN_WRFOUT_BYTES" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_MIN_WRFOUT_BYTES must be a positive integer"
 [[ "$GIT_NETWORK_TIMEOUT" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_GIT_NETWORK_TIMEOUT must be a positive integer"
 [[ "$GIT_NETWORK_ATTEMPTS" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_GIT_NETWORK_ATTEMPTS must be a positive integer"
 [[ "$GIT_NETWORK_RETRY_DELAY" =~ ^[0-9]+$ ]] || fail "IAPLACS_TIANHE_GIT_NETWORK_RETRY_DELAY must be a non-negative integer"
@@ -152,13 +156,11 @@ latest_run() {
 
 latest_complete_run() {
   local work_root="$1"
-  local figure_pattern="$2"
   local run_id run_root
 
   while IFS= read -r run_id; do
     run_root="$work_root/$run_id"
-    if [[ -n "$(matching_figure "$run_root" "$figure_pattern")" ]] && \
-      [[ -n "$(matching_wrfout "$run_root")" ]]; then
+    if [[ -n "$(matching_wrfout "$run_root")" ]]; then
       printf '%s\n' "$run_id"
       return 0
     fi
@@ -170,19 +172,23 @@ latest_complete_run() {
   return 1
 }
 
-matching_figure() {
-  local run_root="$1"
-  local file_pattern="$2"
-  find "$run_root/gfs/wrf" -maxdepth 1 -type f -name "$file_pattern" -size +0c -printf '%p\n' 2>/dev/null \
-    | LC_ALL=C sort \
-    | head -n 1
-}
-
 matching_wrfout() {
   local run_root="$1"
-  find "$run_root/gfs/wrf" -maxdepth 1 -type f -name 'wrfout_d01_*' -size +0c -printf '%p\n' 2>/dev/null \
-    | LC_ALL=C sort \
-    | head -n 1
+  local candidate now_epoch source_epoch source_size
+  now_epoch="$(date +%s)"
+  while IFS= read -r candidate; do
+    source_epoch="$(stat -c '%Y' "$candidate")"
+    source_size="$(stat -c '%s' "$candidate")"
+    if (( now_epoch - source_epoch >= MIN_FILE_AGE_SECONDS )) && \
+      (( source_size >= MIN_WRFOUT_BYTES )); then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done < <(
+    find "$run_root/gfs/wrf" -maxdepth 1 -type f -name 'wrfout_d01_*' -size +0c -printf '%p\n' 2>/dev/null \
+      | LC_ALL=C sort
+  )
+  return 1
 }
 
 complete_run_present() {
@@ -272,7 +278,7 @@ render_product() {
   local wrf_dir="$3"
   local city_shp="$4"
   local stamp="${run_id:0:4}-${run_id:4:2}-${run_id:6:2}_${run_id:8:2}_00"
-  local family output_name output_dir output renderer work_root province_shp
+  local family output_name output_dir output renderer work_root run_root province_shp
 
   if [[ "$mode" == "ningxia" ]]; then
     family="worknx_summary"
@@ -287,6 +293,7 @@ render_product() {
     work_root="$WORK_YN_ROOT"
     province_shp="${YUNNAN_PROVINCE_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
   fi
+  run_root="$work_root/$run_id"
   output_dir="$RENDER_ROOT/$family/${run_id:0:8}_${run_id:8:2}"
   output="$output_dir/$output_name"
 
@@ -299,13 +306,17 @@ render_product() {
   if [[ ! -s "$output" || "$FORCE" == "1" || ( "$mode" == "yunnan" && ! -s "$output_dir/airport_precip_totals.json" ) ]]; then
     mkdir -p "$output_dir"
     if [[ "$mode" == "ningxia" ]]; then
-      WORK_NX_ROOT="$work_root" \
+      MIN_FILE_AGE_SECONDS="$MIN_FILE_AGE_SECONDS" \
+        MIN_WRFOUT_BYTES="$MIN_WRFOUT_BYTES" \
+        WORK_NX_ROOT="$run_root" \
         OUTPUT_ROOT="$RENDER_ROOT/$family" \
         NINGXIA_PROVINCE_SHP_FILE="$province_shp" \
         NINGXIA_COUNTY_SHP_FILE="$city_shp" \
         "$NCL_COMMAND_RUNNER" "$renderer" --latest >&2
     else
-      WORK_YN_ROOT="$work_root" \
+      MIN_FILE_AGE_SECONDS="$MIN_FILE_AGE_SECONDS" \
+        MIN_WRFOUT_BYTES="$MIN_WRFOUT_BYTES" \
+        WORK_YN_ROOT="$run_root" \
         OUTPUT_ROOT="$RENDER_ROOT/$family" \
         YUNNAN_PROVINCE_SHP_FILE="$province_shp" \
         YUNNAN_CITY_SHP_FILE="$city_shp" \
@@ -317,35 +328,33 @@ render_product() {
   printf '%s\n' "$output"
 }
 
-nx_run="$(latest_complete_run "$WORK_NX_ROOT" 'Precip_hourly_WRF_AllRain_T01_T48_InitUTC_*.png' || true)"
+nx_run="$(latest_complete_run "$WORK_NX_ROOT" || true)"
 if [[ -n "$nx_run" ]]; then
   nx_run_root="$WORK_NX_ROOT/$nx_run"
-  nx_figure="$(matching_figure "$nx_run_root" 'Precip_hourly_WRF_AllRain_T01_T48_InitUTC_*.png')"
   nx_wrfout="$(matching_wrfout "$nx_run_root")"
-  if [[ -n "$nx_figure" && -n "$nx_wrfout" ]]; then
+  if [[ -n "$nx_wrfout" ]]; then
     nx_region="$(render_product "ningxia" "$nx_run" "$(dirname "$nx_wrfout")" "$NINGXIA_CITY_SHP_FILE")"
-    relay_family "worknx_summary" "$nx_run" "$nx_region" "$nx_figure"
+    relay_family "worknx_summary" "$nx_run" "$nx_region"
   else
-    echo "WORK_nx run $nx_run is incomplete; waiting for WRF output and nationwide precipitation figure"
+    echo "WORK_nx run $nx_run is incomplete; waiting for stable WRF output"
   fi
 else
-  echo "no complete WORK_nx run found; waiting for WRF output and nationwide precipitation figure"
+  echo "no complete WORK_nx run found; waiting for stable WRF output"
 fi
 
-yn_run="$(latest_complete_run "$WORK_YN_ROOT" 'Precip_hourly_YunnanDomain_TargetT07_T48_ActualT07_T48_InitUTC_*.png' || true)"
+yn_run="$(latest_complete_run "$WORK_YN_ROOT" || true)"
 if [[ -n "$yn_run" ]]; then
   yn_run_root="$WORK_YN_ROOT/$yn_run"
-  yn_ready="$(matching_figure "$yn_run_root" 'Precip_hourly_YunnanDomain_TargetT07_T48_ActualT07_T48_InitUTC_*.png')"
   yn_wrfout="$(matching_wrfout "$yn_run_root")"
-  if [[ -n "$yn_ready" && -n "$yn_wrfout" ]]; then
+  if [[ -n "$yn_wrfout" ]]; then
     yn_overview="$(render_product "yunnan" "$yn_run" "$(dirname "$yn_wrfout")" "$YUNNAN_CITY_SHP_FILE")"
     yn_totals="$(dirname "$yn_overview")/airport_precip_totals.json"
     relay_family "airport_yunnan" "$yn_run" "$yn_overview" "$yn_totals"
   else
-    echo "WORK_yn run $yn_run is incomplete; waiting for WRF output and Yunnan completion marker"
+    echo "WORK_yn run $yn_run is incomplete; waiting for stable WRF output"
   fi
 else
-  echo "no complete WORK_yn run found; waiting for WRF output and Yunnan completion marker"
+  echo "no complete WORK_yn run found; waiting for stable WRF output"
 fi
 
 if [[ "$DRY_RUN" == "1" ]]; then
