@@ -140,6 +140,8 @@ begin
       res@cnLevelSelectionMode = "ExplicitLevels"
       res@cnLevels = rain_levs
       res@cnFillColors = (/2,3,4,5,6,7,8,9,9/)
+      res@cnConstFEnableFill = True
+      res@cnConstFLabelOn = False
       res@cnMissingValFillColor = "white"
       res@cnFillDrawOrder = "PreDraw"
       ; Administrative boundaries are supplied by SHP overlays below. Do not
