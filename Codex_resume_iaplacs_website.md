@@ -1861,3 +1861,57 @@ Notes for deployment:
 - The Huan scripts warn that `tools/SHP/省界_region.shp` is absent on the Tianhe checkout; the available `ningxia_city_county` and `yunnan_city` SHPs are still rendered. Do not fabricate a province SHP. Locate the original Huan `省界_region.*` files before adding a separate province-outline overlay.
 - Verification passed: `bash -n tools/tianhe_publish_forecast_to_github.sh tools/run_tianhe_conda_command.sh`, `python3 -m py_compile tools/build_tianhe_forecast_catalog.py`, `git diff --check`, actual Tianhe NCL + ImageMagick execution for both regions, local visual inspection of both resulting WebP previews, catalog inspection, and GitHub push from the Mac.
 - Preserve the only local working-tree modification: the user-owned unstaged `.gitignore` entry for `.tmp`. Do not commit or discard it.
+
+## 2026-07-24 Tianhe Direct GitHub Publishing and Ningxia Repair
+
+- Current thread ID: `019f9328-ea7c-7b92-a0f3-42cf58743cfc`.
+- Current session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/24/rollout-2026-07-24T16-06-00-019f9328-ea7c-7b92-a0f3-42cf58743cfc.jsonl`.
+- Working directory: `/Users/xiaoxiaotu/_01_IAP/Website`.
+- Resume this exact work with:
+  ```bash
+  codex resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+  ```bash
+  code resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+
+### Current Status
+
+- Tianhe GitHub publishing is now direct and does not depend on the Mac. The working transport is the authorized `id_ed25519_github_tianhe` key through the Tianhe HTTP proxy to `ssh.github.com:443`; `~/.ssh/config` maps `github.com` to that route. A direct `git push --dry-run` succeeded and the actual Tianhe publisher pushed data commit `83410270 Publish Tianhe forecasts worknx_summary_2026072406 airport_yunnan_2026072406` to `origin/main`.
+- The difference between earlier download and upload behavior was environmental: sourcing `/fs2/home/junzhang/kerui/bashrc` supplies the required HTTP(S) proxy. HTTPS clone/fetch can then work but HTTPS push still needs a token. The SSH key route supplies noninteractive write authentication. `tools/tianhe_publish_forecast_to_github.sh` now sources that bashrc itself, so cron inherits the proxy.
+- The Tianhe crontab is active and Tianhe-only:
+  ```cron
+  7,22,37,52 * * * * GIT_BIN=/fs2/home/junzhang/kerui/bin/git-system /fs2/home/junzhang/kerui/iaplacs-site/tools/tianhe_publish_forecast_to_github.sh >> /fs2/home/junzhang/.iaplacs-tianhe/logs/github-publisher.log 2>&1
+  ```
+  The publisher now uses fixed shared lock `/fs2/home/junzhang/.iaplacs-tianhe/publisher.lock`, preventing cron/manual overlap. A final `--dry-run` confirmed the lock releases and existing published data is not duplicated.
+- The publisher no longer waits for a nationwide PNG. It waits for a stable `wrfout_d01_*` file (default at least 20 GB and at least 20 minutes old), locks the chosen run directory, renders via NCL, keeps at most five `worknx_summary_*` and `airport_yunnan_*` directories, rebuilds `data/tianhe/current/forecast-runs.json`, then commits and pushes.
+- Root homepage `index.html` now forces the initial source to Tianhe and includes the public maintenance notice: `2026年7月24日（周五）20:00至2026年7月29日（周三）09:00，地球系统数值模拟装置基础设施进行年度检修维护，期间停机并停止所有服务。网站图件目前由天河临时环境生成。` Asset query strings are `20260724-03` so cached browsers receive the new source-selection code.
+
+### Ningxia Diagnosis and Result
+
+- The original Tianhe regional NCL map inherited from Huan plotted the complete 400x400 WRF field without reliable geographic coordinates. It produced full green/red panels although raw data were near zero. Direct NetCDF inspection of `/fs2/home/junzhang/zhoubj/WORK_nx/2026072406/gfs/wrf/wrfout_d01_2026-07-24_06:00:00` found 2,043 Ningxia cells and a 36-hour maximum of only `3.53887 mm/h`; therefore full-map `>50 mm/h` colors were a rendering error, not a model result.
+- Passing full two-dimensional `sfXArray/sfYArray` to Tianhe Conda NCL 6.6.2 caused a segmentation fault. `tools/rain_worknx_ningxia_hour_bjt.ncl` now selects the Ningxia rectangular WRF subset dynamically, uses one-dimensional local latitude/longitude axes, uses national-style thresholds `0.1, 1, 2.5, 5, 10, 20, 30, 50`, colors trace/zero rainfall white, disables grid lines, and hides NCL constant-field labels.
+- Visual validation of the final `2026072406` WebP confirms blank/zero hours are white; only actual low-intensity northern precipitation appears in green/blue. The incorrect full green/deep-red panels and `CONSTANT FIELD` text are absent.
+- Latest public catalog and image were verified at `https://iaplacs.xyz/data/tianhe/current/forecast-runs.json`; the latest Ningxia image is `data/tianhe/current/maps/worknx_summary_20260724_06/Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_2026-07-24_06_00_combined_overview_6x6_grid.webp` (543,398 bytes). Its byte-size version token changes the image URL, so browsers that cached the faulty image fetch this corrected file.
+
+### Important Changed Files
+
+- `index.html`, `app.js`, `styles.css`, `ningxia/index.html`, `shangrao/index.html`, `airpots/index.html`
+- `tools/rain_worknx_ningxia_hour_bjt.ncl`
+- `tools/rain_worknx_yunnan_airport_hour_bjt.ncl`
+- `tools/render_worknx_ningxia_overview.sh`
+- `tools/tianhe_publish_forecast_to_github.sh`
+- `data/tianhe/current/forecast-runs.json` and current 20260724_06 WebP assets
+
+### Verification and Pitfalls
+
+- Passed locally: `bash -n tools/render_worknx_ningxia_overview.sh tools/render_worknx_yunnan_airports_overview.sh tools/tianhe_publish_forecast_to_github.sh`, `node --check app.js`, and `git diff --check`.
+- Passed on Tianhe: real NCL+ImageMagick render for Ningxia/Yunnan, WebP optimization/catalog generation, direct GitHub push, and final publisher `--dry-run`.
+- Passed publicly: `https://iaplacs.xyz/?v=20260724-final` contains the notice and Tianhe force-default flags; the Tianhe JSON contains the corrected 20260724_06 image.
+- `tools/SHP/省界_region.shp` is still absent on Tianhe, so its warning is expected. Available Ningxia city/county and Yunnan city boundaries remain rendered. Do not fabricate the missing provincial SHP.
+- Keep the user-owned unstaged `.gitignore` addition for `.tmp`; do not commit or discard it. At this handoff it is the only local working-tree modification.
+
+### Next Recommended Actions
+
+- Let the Tianhe cron publish later complete model runs; inspect `/fs2/home/junzhang/.iaplacs-tianhe/logs/github-publisher.log` only if a run is missing from the public catalog.
+- When the IAP outage ends, remove `data-force-default-source="true"` from `index.html` to restore saved source selection behavior, and remove or update the maintenance notice.
