@@ -1770,6 +1770,7 @@ Notes for deployment:
   ```
   It runs only on Tianhe every 15 minutes. The explicit environment variable makes the still-old remote checkout use `git-system` immediately; after the first successful `pull`, it receives the newer retry implementation.
 - At the last live test, `git-system ls-remote` and `git fetch` again failed at `Could not resolve host: github.com`; fixed GitHub IP HTTPS probes also timed out. This is intermittent Tianhe DNS/egress, not a Git/OpenSSL issue. The job preserves locally committed map/catalog updates and retries a pending push after connectivity returns.
+- The remote currently uses HTTPS `origin` but has no detected `~/.git-credentials`, `~/.netrc`, credential helper, or local credential store. Public HTTPS cloning does not prove that unattended `push` is authorized. A dedicated Tianhe SSH key exists with public fingerprint `SHA256:daGm9Jz/GEiPTvOUGwf5r6+gKv8Nh0U2oQEYCyMHKuQ` (`zhangjun@tianhe`); its SSH config has no GitHub-specific entry. Add that public key to the GitHub account, verify `ssh -T git@github.com` during the next network window, then change both fetch/push origin URLs to `git@github.com:keruicode/iaplacs-site.git`. Do not put a PAT into a tracked file or cron line.
 - Local verification after the final script changes passed:
   ```bash
   bash -n tools/tianhe_publish_forecast_to_github.sh tools/install_tianhe_publisher_cron.sh
