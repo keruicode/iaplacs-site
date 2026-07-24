@@ -34,7 +34,7 @@ awk '
 cat >> "$CRON_TMP" <<EOF
 
 # IAPLACS Tianhe GitHub publisher begin
-17 * * * * $PUBLISHER >> $LOG_DIR/github-publisher.log 2>&1
+7,22,37,52 * * * * $PUBLISHER >> $LOG_DIR/github-publisher.log 2>&1
 # IAPLACS Tianhe GitHub publisher end
 EOF
 

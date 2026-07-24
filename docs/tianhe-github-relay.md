@@ -31,8 +31,11 @@ Install or refresh the managed Tianhe cron entry:
 tools/install_tianhe_publisher_cron.sh
 ```
 
-The cron entry runs at minute 17 each hour and logs to
+The cron entry runs every 15 minutes (minutes 07, 22, 37, and 52) and logs to
 `~/.iaplacs-tianhe/logs/github-publisher.log`. It requires Tianhe to reach
 GitHub and to have GitHub push authentication configured for the repository.
 If GitHub is temporarily unreachable, the publisher still creates the local
-catalog commit and retries the push on its next hourly run.
+catalog commit and retries the push on its next scheduled run. Each Git network
+operation has two attempts by default; adjust
+`IAPLACS_TIANHE_GIT_NETWORK_ATTEMPTS` or
+`IAPLACS_TIANHE_GIT_NETWORK_RETRY_DELAY` only when needed.

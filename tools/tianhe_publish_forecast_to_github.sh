@@ -21,6 +21,8 @@ PYTHON_BIN="${PYTHON_BIN:-$TIANHE_HOME/zhoubj/conda_envs/wrf-scripts/bin/python}
 STATE_DIR="${IAPLACS_TIANHE_STATE_DIR:-$HOME/.iaplacs-tianhe}"
 KEEP_RUNS="${IAPLACS_TIANHE_KEEP_RUNS:-5}"
 GIT_NETWORK_TIMEOUT="${IAPLACS_TIANHE_GIT_NETWORK_TIMEOUT:-120}"
+GIT_NETWORK_ATTEMPTS="${IAPLACS_TIANHE_GIT_NETWORK_ATTEMPTS:-2}"
+GIT_NETWORK_RETRY_DELAY="${IAPLACS_TIANHE_GIT_NETWORK_RETRY_DELAY:-20}"
 DRY_RUN=0
 FORCE=0
 
@@ -65,6 +67,8 @@ done
 [[ -x "$PYTHON_BIN" ]] || fail "Python environment is not executable: $PYTHON_BIN"
 [[ "$KEEP_RUNS" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_KEEP_RUNS must be a positive integer"
 [[ "$GIT_NETWORK_TIMEOUT" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_GIT_NETWORK_TIMEOUT must be a positive integer"
+[[ "$GIT_NETWORK_ATTEMPTS" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_GIT_NETWORK_ATTEMPTS must be a positive integer"
+[[ "$GIT_NETWORK_RETRY_DELAY" =~ ^[0-9]+$ ]] || fail "IAPLACS_TIANHE_GIT_NETWORK_RETRY_DELAY must be a non-negative integer"
 command -v "$GIT_BIN" >/dev/null || fail "git command not found: $GIT_BIN"
 
 mkdir -p "$STATE_DIR"
@@ -89,11 +93,29 @@ ensure_site_checkout() {
 }
 
 run_git_network() {
-  if command -v timeout >/dev/null 2>&1; then
-    timeout "$GIT_NETWORK_TIMEOUT" "$GIT_BIN" "$@"
-  else
-    "$GIT_BIN" "$@"
-  fi
+  local attempt=1
+  local status=0
+
+  while (( attempt <= GIT_NETWORK_ATTEMPTS )); do
+    if command -v timeout >/dev/null 2>&1; then
+      if timeout "$GIT_NETWORK_TIMEOUT" "$GIT_BIN" "$@"; then
+        return 0
+      fi
+      status=$?
+    else
+      if "$GIT_BIN" "$@"; then
+        return 0
+      fi
+      status=$?
+    fi
+
+    if (( attempt == GIT_NETWORK_ATTEMPTS )); then
+      return "$status"
+    fi
+    echo "Git network attempt $attempt/$GIT_NETWORK_ATTEMPTS failed; retrying in ${GIT_NETWORK_RETRY_DELAY}s" >&2
+    sleep "$GIT_NETWORK_RETRY_DELAY"
+    attempt=$((attempt + 1))
+  done
 }
 
 latest_run() {
