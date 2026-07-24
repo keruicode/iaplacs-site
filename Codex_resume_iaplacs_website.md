@@ -1949,3 +1949,38 @@ Notes for deployment:
 - `tools/SHP/省界_region.shp` is still absent from the Tianhe checkout, producing an expected warning. Existing Ningxia city/county and Yunnan city overlays are still rendered. Do not invent a replacement provincial boundary file.
 - The only local uncommitted change is the user's pre-existing `.gitignore` entry for `.tmp`; keep it unstaged and do not discard it.
 - Next recommended action: allow cron to publish the next fully stable model run. If Shangrao begins producing Tianhe assets, put them through the existing catalog/publisher pipeline; the UI will automatically use Tianhe once that catalog contains frames.
+
+## 2026-07-25 Tianhe Shangrao Product and Ningxia Colorbar Correction
+
+- Current thread ID: `019f9328-ea7c-7b92-a0f3-42cf58743cfc`.
+- Current session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/24/rollout-2026-07-24T16-06-00-019f9328-ea7c-7b92-a0f3-42cf58743cfc.jsonl`.
+- Working directory: `/Users/xiaoxiaotu/_01_IAP/Website`.
+- Resume this exact work with:
+  ```bash
+  codex resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+  ```bash
+  code resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+
+### Completed Work
+
+- User clarified that the Tianhe nationwide Ningxia product must use `WORK_nx`, and Shangrao results already exist in `zhoubj/WORK`. Live inspection found no pre-rendered image file under `WORK_nx`; its nationwide mosaic is therefore correctly rendered directly from `WORK_nx/<run>/gfs/wrf/wrfout_d01_*`, without using another model or an old image. The latest stable `WORK_nx` source used is `2026072406`.
+- User also identified the Ningxia regional colorbar mismatch. `tools/rain_worknx_ningxia_hour_bjt.ncl` now uses the exact Huan thresholds `0, 1.5, 7, 15, 40, 50`, matching the regional Huan NCL palette. Values below `0.01 mm` are missing/white, retaining a clean no-rain background and administrative boundaries.
+- Added `tools/render_wrf_shangrao_overview.sh`. It runs the existing `tools/rain_wrf_shangrao_hour_bjt.ncl` on a stable `WORK` WRF file, outputs a 6x6 36-hour overview plus three 4x3 detail mosaics, and leaves only rendered cache data on Tianhe.
+- Extended `tools/tianhe_publish_forecast_to_github.sh` and `tools/build_tianhe_forecast_catalog.py` for the `WORK`/Shangrao family. It detects stable complete WRF files, renders, WebP-optimizes, publishes, catalogs, and retains at most five `shangrao_*` runs exactly like Ningxia/Yunnan. The browser no longer falls back to Huan when Tianhe Shangrao frames exist.
+- Replaced all page favicon declarations with a newly fingerprinted IAPLACS icon asset, `assets/brand/iaplacs-favicon-512.png?v=20260725-02`, plus a versioned ICO fallback. This bypasses stale browser favicon cache and removes the generic arrow icon.
+- Code commit `5725bb28 Publish Tianhe Shangrao and restore Ningxia styling` is pushed. Tianhe completed a real forced render and directly pushed `e803dce Publish Tianhe forecasts worknx_summary_2026072406 airport_yunnan_2026072412 shangrao_2026072406`.
+
+### Verified Results
+
+- Tianhe source data: `WORK/2026072406/gfs/wrf/wrfout_d01_2026-07-24_06:00:00` is complete (about 102 GB); `WORK/2026072412` was still incomplete and was not used for Shangrao.
+- Latest Tianhe Shangrao catalog run is `tianhe_shangrao_20260724_06`, with frames `总览`, `细节 1/3`, `细节 2/3`, and `细节 3/3`. Published image files are in `data/tianhe/current/maps/shangrao_20260724_06/`.
+- Local visual inspection confirmed the Ningxia 6x6 map shows labeled thresholds `0, 1.5, 7, 15, 40, 50` and white no-rain panels; visual inspection also confirmed the Shangrao 6x6 product has 36 valid BJT hourly panels and the Shangrao city/county overlay.
+- Public verification passed: the new favicon asset, Tianhe catalog, Ningxia page icon reference, and the Shangrao overview WebP all return HTTP 200 from `https://iaplacs.xyz/`.
+
+### Current Status and Pitfalls
+
+- Tianhe cron remains Tianhe-only. Its forced run completed and direct GitHub push succeeded; no Mac cron or relay is used.
+- The warning for missing `tools/SHP/省界_region.shp` remains expected. The available Ningxia city/county and Shangrao city/county overlays are still present. Do not fabricate the missing provincial SHP.
+- The only local uncommitted change remains the user's `.gitignore` entry for `.tmp`; do not stage, commit, or discard it.
