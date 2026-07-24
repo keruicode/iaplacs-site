@@ -1811,3 +1811,20 @@ Notes for deployment:
   The cron remains Tianhe-only and explicitly calls `git-system` every 15 minutes. The last pull still failed only at `Could not resolve hostname github.com`; once DNS works, it should fast-forward the clean checkout from `61796b4` to `a8a19bfc` and use the new renderer on later runs.
 - Verification passed: `bash -n tools/tianhe_publish_forecast_to_github.sh`, Python compile for the renderer/catalog, `node --check app.js`, `git diff --check`, a Tianhe publisher `--dry-run` reporting both product families, actual Tianhe WRF rendering, local visual inspection of both mosaics, and committed catalog assertions.
 - Cleanup: local preview copies and temporary remote copies of the test scripts were deleted. The remote render cache is intentionally retained for the publisher. The only local worktree modification remains the user-owned unstaged `.gitignore` change for `.tmp`; it was temporarily stashed during rebase and restored unchanged.
+
+### Deployment Completion
+
+- A verified 2.1 MB incremental Git bundle was used once to fast-forward the clean Tianhe checkout without waiting for DNS. Tianhe now runs commit `299013d Update Tianhe product parity handoff`; the local/remote bundle files and temporary incoming directory were deleted immediately after verification.
+- The local `origin/main` tracking ref on Tianhe was advanced to the known GitHub commit before running the publisher, so DNS failure does not cause futile pushes of already-published code commits.
+- A real Tianhe publisher run with the current `2026072306` products completed as expected. GitHub SSH name resolution failed twice, waited 20 seconds between attempts, emitted a pull warning, then reported:
+  ```text
+  already published: worknx_summary_20260723_06
+  already published: airport_yunnan_20260723_06
+  no new Tianhe forecast products to publish
+  ```
+  No model file, map, catalog, or Git history was lost.
+- Verified current Tianhe cron remains:
+  ```cron
+  7,22,37,52 * * * * GIT_BIN=/fs2/home/junzhang/kerui/bin/git-system /fs2/home/junzhang/kerui/iaplacs-site/tools/tianhe_publish_forecast_to_github.sh >> /fs2/home/junzhang/.iaplacs-tianhe/logs/github-publisher.log 2>&1
+  ```
+- Follow-up only: when `github.com` DNS is available, the next scheduled run will SSH-pull normally and use the already authorized key for future data pushes. No Mac cron or manual image relay is required.
