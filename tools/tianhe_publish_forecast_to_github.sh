@@ -299,7 +299,7 @@ render_product() {
     output_name="Precip_hourly_WRF_AllRain_T13_T48_InitUTC_${stamp}_combined_overview_6x6_grid.png"
     renderer="$NATIONAL_NCL_RENDERER"
     work_root="$WORK_NX_ROOT"
-    province_shp=""
+    province_shp="${NATIONAL_PROVINCE_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
   elif [[ "$mode" == "yunnan" ]]; then
     family="airport_yunnan"
     output_name="Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_${stamp}_combined_overview_6x6_grid.png"
@@ -340,6 +340,7 @@ render_product() {
         MIN_WRFOUT_BYTES="$MIN_WRFOUT_BYTES" \
         WORK_NX_ROOT="$run_root" \
         OUTPUT_ROOT="$RENDER_ROOT/$family" \
+        NATIONAL_PROVINCE_SHP_FILE="$province_shp" \
         "$NCL_COMMAND_RUNNER" "$renderer" --latest >&2
     elif [[ "$mode" == "yunnan" ]]; then
       MIN_FILE_AGE_SECONDS="$MIN_FILE_AGE_SECONDS" \

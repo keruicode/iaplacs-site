@@ -11,6 +11,7 @@ NCL_BIN="${NCL_BIN:-/public/software/apps/ncl_ncarg/ncl630/bin/ncl}"
 NCL_ROOT="${NCL_ROOT:-/public/software/apps/ncl_ncarg/ncl630}"
 MIN_FILE_AGE_SECONDS="${MIN_FILE_AGE_SECONDS:-1200}"
 MIN_WRFOUT_BYTES="${MIN_WRFOUT_BYTES:-20000000000}"
+NATIONAL_PROVINCE_SHP_FILE="${NATIONAL_PROVINCE_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
 
 usage() {
   cat <<'EOF'
@@ -37,6 +38,10 @@ fi
 command -v montage >/dev/null || { echo "ERROR: ImageMagick montage is required" >&2; exit 127; }
 command -v convert >/dev/null || { echo "ERROR: ImageMagick convert is required" >&2; exit 127; }
 export NCARG_ROOT="$NCL_ROOT"
+
+if [[ -n "$NATIONAL_PROVINCE_SHP_FILE" && ! -f "$NATIONAL_PROVINCE_SHP_FILE" ]]; then
+  echo "WARNING: nationwide province SHP not found, province outline will be skipped: $NATIONAL_PROVINCE_SHP_FILE" >&2
+fi
 
 mkdir -p "$OUTPUT_ROOT"
 now_epoch="$(date +%s)"
@@ -70,11 +75,11 @@ caption_panel() {
   convert "$panel_path" \
     -gravity North \
     -background white \
-    -splice 0x78 \
+    -splice 0x48 \
     -fill black \
     -font Helvetica-Bold \
-    -pointsize 70 \
-    -annotate +0+7 "$panel_date" \
+    -pointsize 82 \
+    -annotate +0+1 "$panel_date" \
     "$caption_path"
 }
 
@@ -98,6 +103,7 @@ render_source() {
   echo "Rendering nationwide T13-T48 panels for $run_prefix from $wrf_dir"
   WORK_NX_WRF_DIR="$wrf_dir" \
     WORK_NX_NATIONAL_PNG_DIR="$panel_dir" \
+    WORK_NX_NATIONAL_PROVINCE_SHP_FILE="$NATIONAL_PROVINCE_SHP_FILE" \
     "$NCL_BIN" "$NCL_SCRIPT"
 
   local panels=()

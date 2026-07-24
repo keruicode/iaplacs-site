@@ -188,13 +188,13 @@ begin
       if (county_shp_file.ne."" .and. fileexists(county_shp_file)) then
         county_shp_res = True
         county_shp_res@gsLineColor = "black"
-        county_shp_res@gsLineThicknessF = 2.8
+        county_shp_res@gsLineThicknessF = 3.2
         county_shp_line = gsn_add_shapefile_polylines(wks, plot, county_shp_file, county_shp_res)
       end if
       if (province_shp_file.ne."" .and. fileexists(province_shp_file)) then
         province_shp_res = True
         province_shp_res@gsLineColor = "black"
-        province_shp_res@gsLineThicknessF = 4
+        province_shp_res@gsLineThicknessF = 7.0
         province_shp_line = gsn_add_shapefile_polylines(wks, plot, province_shp_file, province_shp_res)
       end if
 

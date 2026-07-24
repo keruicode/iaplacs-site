@@ -33,11 +33,15 @@ end
 begin
   wrf_dir = getenv("WORK_NX_WRF_DIR")
   out_dir = getenv("WORK_NX_NATIONAL_PNG_DIR")
+  province_shp_file = getenv("WORK_NX_NATIONAL_PROVINCE_SHP_FILE")
   if (wrf_dir.eq."") then
     wrf_dir = "."
   end if
   if (out_dir.eq."") then
     out_dir = "worknx_national_hourly_png"
+  end if
+  if (ismissing(province_shp_file)) then
+    province_shp_file = ""
   end if
 
   system("mkdir -p " + out_dir)
@@ -51,7 +55,9 @@ begin
   lon_max = 138.0
   lat_min = 16.0
   lat_max = 55.0
-  rain_levs = (/0.1, 1.0, 2.5, 5.0, 10.0, 20.0, 30.0, 50.0/)
+  ; Use the same thresholds as the Ningxia regional product so switching
+  ; between the two views does not change the precipitation interpretation.
+  rain_levs = (/0.0, 1.5, 7.0, 15.0, 40.0, 50.0/)
 
   do ifile = 0, dimsizes(files)-1
     f = addfile(files(ifile), "r")
@@ -78,12 +84,13 @@ begin
       file_start = bjt_label(times(it-1), 1)
       file_end = bjt_label(times(it), 1)
       rain_h = rain_all(it,:,:) - rain_all(it-1,:,:)
+      rain_h@_FillValue = -9999.0
+      rain_h = where(rain_h.lt.0.01, rain_h@_FillValue, rain_h)
 
       wks = gsn_open_wks("png", out_dir + "/" + init_bjt + "_national_rain_hour_" + file_start + "-" + file_end + "_BJT")
       cmap = (/(/1.00,1.00,1.00/), (/0.00,0.00,0.00/), (/1.00,1.00,1.00/), \
-               (/0.65,0.94,0.57/), (/0.18,0.73,0.22/), (/0.35,0.68,0.90/), \
-               (/0.10,0.05,1.00/), (/0.92,0.00,0.92/), (/0.50,0.05,0.20/), \
-               (/0.45,0.05,0.00/)/)
+               (/0.42,0.86,0.40/), (/0.25,0.72,0.25/), (/0.42,0.68,0.90/), \
+               (/0.10,0.05,1.00/), (/0.92,0.00,0.92/), (/116.0/255,30.0/255,7.0/255/)/)
       gsn_define_colormap(wks, cmap)
 
       res = True
@@ -97,7 +104,7 @@ begin
       res@cnInfoLabelOn = False
       res@cnLevelSelectionMode = "ExplicitLevels"
       res@cnLevels = rain_levs
-      res@cnFillColors = (/2,3,4,5,6,7,8,9,9/)
+      res@cnFillColors = (/2,3,4,5,6,7/)
       res@cnConstFEnableFill = True
       res@cnConstFLabelOn = False
       res@cnMissingValFillColor = "white"
@@ -120,20 +127,28 @@ begin
       res@tmXMinorGrid = False
       res@tmYMinorGrid = False
       res@tmXBLabelFontColor = "black"
-      res@tmXBLabelFontHeightF = 0.020
-      res@tmXBLabelFontThicknessF = 4
+      res@tmXBLabelFontHeightF = 0.030
+      res@tmXBLabelFontThicknessF = 5
       res@tmYLLabelFontColor = "black"
-      res@tmYLLabelFontHeightF = 0.020
-      res@tmYLLabelFontThicknessF = 4
+      res@tmYLLabelFontHeightF = 0.030
+      res@tmYLLabelFontThicknessF = 5
       res@tmBorderLineColor = "black"
-      res@tmBorderThicknessF = 3
+      res@tmBorderThicknessF = 4
       res@lbLabelFontColor = "black"
+      res@lbLabelFontHeightF = 0.030
+      res@lbLabelFontThicknessF = 5
       res@lbLabelBarOn = True
       res@lbOrientation = "Vertical"
       res@pmLabelBarDisplayMode = "Always"
       res@pmLabelBarSide = "Right"
 
       plot = gsn_csm_contour_map(wks, rain_h, res)
+      if (province_shp_file.ne."" .and. fileexists(province_shp_file)) then
+        province_shp_res = True
+        province_shp_res@gsLineColor = "black"
+        province_shp_res@gsLineThicknessF = 4.5
+        province_shp_line = gsn_add_shapefile_polylines(wks, plot, province_shp_file, province_shp_res)
+      end if
       draw(plot)
       frame(wks)
       delete([/plot, wks, rain_h/])
