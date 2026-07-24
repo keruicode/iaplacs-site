@@ -100,13 +100,15 @@ run_git_network() {
     if command -v timeout >/dev/null 2>&1; then
       if timeout "$GIT_NETWORK_TIMEOUT" "$GIT_BIN" "$@"; then
         return 0
+      else
+        status=$?
       fi
-      status=$?
     else
       if "$GIT_BIN" "$@"; then
         return 0
+      else
+        status=$?
       fi
-      status=$?
     fi
 
     if (( attempt == GIT_NETWORK_ATTEMPTS )); then

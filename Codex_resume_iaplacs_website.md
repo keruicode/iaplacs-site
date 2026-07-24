@@ -1764,6 +1764,7 @@ Notes for deployment:
 - User confirmed that a full HTTPS clone of `https://github.com/keruicode/iaplacs-site.git` completed on `th-ex-ln0` through `/fs2/home/junzhang/kerui/bin/git-system` (5,010 objects, 937.28 MiB). This proves that the Git wrapper and HTTPS route can work when the Tianhe network is available.
 - The publisher default now selects `/fs2/home/junzhang/kerui/bin/git-system` when it exists. Code/documentation commit `f584b77 Use Tianhe Git wrapper by default` is pushed to `origin/main`.
 - Git network operations now retry twice by default with a 20-second delay; settings are `IAPLACS_TIANHE_GIT_NETWORK_ATTEMPTS` and `IAPLACS_TIANHE_GIT_NETWORK_RETRY_DELAY`. Commit `633d4df Retry Tianhe GitHub publishing` is pushed to `origin/main`.
+- The retry routine was then corrected to preserve the failed Git exit status inside Bash `if` branches; an isolated `GIT_BIN=false` two-attempt test now returns failure as intended rather than a false success.
 - Tianhe cron was updated without touching the four model cron entries. The effective managed entry is:
   ```cron
   7,22,37,52 * * * * GIT_BIN=/fs2/home/junzhang/kerui/bin/git-system /fs2/home/junzhang/kerui/iaplacs-site/tools/tianhe_publish_forecast_to_github.sh >> /fs2/home/junzhang/.iaplacs-tianhe/logs/github-publisher.log 2>&1
