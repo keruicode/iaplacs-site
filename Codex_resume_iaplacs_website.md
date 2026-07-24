@@ -1915,3 +1915,37 @@ Notes for deployment:
 
 - Let the Tianhe cron publish later complete model runs; inspect `/fs2/home/junzhang/.iaplacs-tianhe/logs/github-publisher.log` only if a run is missing from the public catalog.
 - When the IAP outage ends, remove `data-force-default-source="true"` from `index.html` to restore saved source selection behavior, and remove or update the maintenance notice.
+
+## 2026-07-25 Favicon, Shangrao Fallback, and Tianhe Nationwide Ningxia Repair
+
+- Current thread ID: `019f9328-ea7c-7b92-a0f3-42cf58743cfc`.
+- Current session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/24/rollout-2026-07-24T16-06-00-019f9328-ea7c-7b92-a0f3-42cf58743cfc.jsonl`.
+- Working directory: `/Users/xiaoxiaotu/_01_IAP/Website`.
+- Resume this exact work with:
+  ```bash
+  codex resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+  ```bash
+  code resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+
+### Completed Fixes
+
+- Added a real multi-size IAPLACS `favicon.ico`, generated from the existing official `assets/brand/favicon-512.png`, and made it the primary icon for the root, Ningxia, Shangrao, and airport HTML entries. PNG and Apple-touch variants remain as fallbacks. All frontend asset cache tokens now use `20260725-01`, avoiding the browser's generic fallback/mouse-arrow icon.
+- Fixed the empty Shangrao page after a user has selected Tianhe elsewhere. `app.js` now checks whether the chosen source has a renderable frame. Tianhe intentionally has no Shangrao product yet, so the Shangrao page transparently falls back to the available Huan catalog and makes the Huan source button active for that page, without overwriting the user's global Tianhe selection. The Huan latest Shangrao asset is available; this is a source-availability issue, not a missing frontend image.
+- Restored both required Ningxia views for Tianhe current run `20260724_06`. The new `tools/rain_worknx_national_hour_bjt.ncl` draws the nationwide 36-panel T13--T48 mosaic directly from the stable `WORK_nx` WRF output. `tools/render_worknx_national_overview.sh` captions/montages the panels. `tools/tianhe_publish_forecast_to_github.sh` renders and publishes both the Ningxia regional and nationwide product for each new completed `WORK_nx` run.
+- Code commit `2a22d3ab Restore Tianhe national and Shangrao fallback` is pushed. The live Tianhe forced publish completed and directly pushed data commit `b03d616 Publish Tianhe forecasts worknx_summary_2026072406 airport_yunnan_2026072406`.
+
+### Verification
+
+- Local checks passed: `node --check app.js`, `bash -n tools/tianhe_publish_forecast_to_github.sh tools/render_worknx_national_overview.sh`, and `git diff --check`.
+- Tianhe pulled `2a22d3ab`, then completed a forced publish without a Mac relay. Its log records both `Rendered ...worknx_summary/...Ningxia...png` and `Rendered ...worknx_national/...AllRain...png`, converted six WebPs, rebuilt the catalog, and pushed to GitHub.
+- The current catalog uses `tianhe_worknx_summary_20260724_06`; its first Ningxia product has `宁夏区域` and `全国` frames. Published WebPs are both `2974x3200`; the nationwide WebP is 559,358 bytes and its preview is 107,766 bytes. Local visual inspection confirmed both are a valid 6x6 36-hour mosaic; the regional map retains the corrected white zero-rainfall background.
+- Public verification succeeded: `https://iaplacs.xyz/favicon.ico?v=20260725-01` returns HTTP 200 as `image/vnd.microsoft.icon`; `https://iaplacs.xyz/data/tianhe/current/forecast-runs.json?v=20260725-01` reports `宁夏区域, 全国`; `https://iaplacs.xyz/shangrao/?v=20260725-01` serves `app.js?v=20260725-01`.
+
+### Current Status and Pitfalls
+
+- Tianhe publisher cron remains Tianhe-only and continues to run every 15 minutes; its direct GitHub SSH-through-proxy route succeeded for this run. No Mac scheduled task was introduced.
+- `tools/SHP/省界_region.shp` is still absent from the Tianhe checkout, producing an expected warning. Existing Ningxia city/county and Yunnan city overlays are still rendered. Do not invent a replacement provincial boundary file.
+- The only local uncommitted change is the user's pre-existing `.gitignore` entry for `.tmp`; keep it unstaged and do not discard it.
+- Next recommended action: allow cron to publish the next fully stable model run. If Shangrao begins producing Tianhe assets, put them through the existing catalog/publisher pipeline; the UI will automatically use Tianhe once that catalog contains frames.
