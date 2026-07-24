@@ -18,6 +18,22 @@ It uses ImageMagick when present; otherwise it uses Pillow from the existing
 When available, it runs Git through `/fs2/home/junzhang/kerui/bin/git-system`
 to avoid environment library conflicts from scientific-module shells.
 
+No NCL or ImageMagick installation is required for forecast drawing. The
+existing Tianhe Conda Python reads the completed WRF files directly and creates:
+
+- `WORK_nx`: a Ningxia regional T13-T48 6x6 precipitation mosaic plus the
+  completed nationwide `WORK_nx` mosaic. The Ningxia page defaults to the
+  regional image and exposes the nationwide image as its second frame.
+- `WORK_yn`: a Yunnan airport T13-T48 6x6 precipitation mosaic with the three
+  airport-plane markers and `airport_precip_totals.json`. The catalog shows the
+  maximum hourly precipitation and time for each airport.
+- `WORK_tc`/Shangrao: the catalog remains ready but intentionally has no run
+  until Tianhe produces a completed Shangrao product.
+
+Intermediate 36-panel PNG files are created only below
+`~/.iaplacs-tianhe/rendered/*/.panels` while composing a mosaic, then removed.
+Use `--force` to regenerate an already rendered run after a plotting change.
+
 After cloning `iaplacs-site` to `/fs2/home/junzhang/kerui/iaplacs-site`,
 verify discovery without changing files:
 

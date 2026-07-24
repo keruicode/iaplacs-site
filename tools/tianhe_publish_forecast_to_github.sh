@@ -19,6 +19,10 @@ else
 fi
 PYTHON_BIN="${PYTHON_BIN:-$TIANHE_HOME/zhoubj/conda_envs/wrf-scripts/bin/python}"
 STATE_DIR="${IAPLACS_TIANHE_STATE_DIR:-$HOME/.iaplacs-tianhe}"
+RENDER_ROOT="${IAPLACS_TIANHE_RENDER_ROOT:-$STATE_DIR/rendered}"
+RENDERER="${IAPLACS_TIANHE_RENDERER:-$SCRIPT_DIR/render_tianhe_precipitation.py}"
+NINGXIA_CITY_SHP_FILE="${NINGXIA_CITY_SHP_FILE:-$SCRIPT_DIR/SHP/ningxia_city_county.shp}"
+YUNNAN_CITY_SHP_FILE="${YUNNAN_CITY_SHP_FILE:-$SCRIPT_DIR/SHP/yunnan_city.shp}"
 KEEP_RUNS="${IAPLACS_TIANHE_KEEP_RUNS:-5}"
 GIT_NETWORK_TIMEOUT="${IAPLACS_TIANHE_GIT_NETWORK_TIMEOUT:-120}"
 GIT_NETWORK_ATTEMPTS="${IAPLACS_TIANHE_GIT_NETWORK_ATTEMPTS:-2}"
@@ -65,11 +69,14 @@ done
 [[ -d "$WORK_NX_ROOT" ]] || fail "WORK_nx directory does not exist: $WORK_NX_ROOT"
 [[ -d "$WORK_YN_ROOT" ]] || fail "WORK_yn directory does not exist: $WORK_YN_ROOT"
 [[ -x "$PYTHON_BIN" ]] || fail "Python environment is not executable: $PYTHON_BIN"
+[[ -f "$RENDERER" ]] || fail "Tianhe precipitation renderer is missing: $RENDERER"
 [[ "$KEEP_RUNS" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_KEEP_RUNS must be a positive integer"
 [[ "$GIT_NETWORK_TIMEOUT" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_GIT_NETWORK_TIMEOUT must be a positive integer"
 [[ "$GIT_NETWORK_ATTEMPTS" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_GIT_NETWORK_ATTEMPTS must be a positive integer"
 [[ "$GIT_NETWORK_RETRY_DELAY" =~ ^[0-9]+$ ]] || fail "IAPLACS_TIANHE_GIT_NETWORK_RETRY_DELAY must be a non-negative integer"
 command -v "$GIT_BIN" >/dev/null || fail "git command not found: $GIT_BIN"
+"$PYTHON_BIN" -c 'import matplotlib, netCDF4, PIL, shapefile' >/dev/null \
+  || fail "Tianhe Python is missing matplotlib, netCDF4, Pillow, or pyshp"
 
 mkdir -p "$STATE_DIR"
 LOCK_DIR="$STATE_DIR/publisher.lock"
@@ -136,13 +143,28 @@ matching_figure() {
     | head -n 1
 }
 
+matching_wrfout() {
+  local run_root="$1"
+  find "$run_root/gfs/wrf" -maxdepth 1 -type f -name 'wrfout_d01_*' -size +0c -printf '%p\n' 2>/dev/null \
+    | LC_ALL=C sort \
+    | head -n 1
+}
+
 complete_run_present() {
   local destination="$1"
-  local expected_count="$2"
+  shift
   [[ -d "$destination" ]] || return 1
-  local count
-  count="$(find "$destination" -maxdepth 1 -type f \( \( -name '*.webp' ! -name '*.preview.webp' \) -o -name '*.png' \) | wc -l | tr -d ' ')"
-  [[ "$count" -ge "$expected_count" ]]
+  local source base stem
+  for source in "$@"; do
+    base="$(basename "$source")"
+    if [[ "$base" == *.json ]]; then
+      [[ -s "$destination/$base" ]] || return 1
+      continue
+    fi
+    stem="${base%.*}"
+    compgen -G "$destination/$stem.webp" >/dev/null || \
+      compgen -G "$destination/$stem.png" >/dev/null || return 1
+  done
 }
 
 prune_family() {
@@ -186,37 +208,76 @@ relay_family() {
   local family="$1"
   local run_id="$2"
   shift 2
-  local expected_count="$#"
   local destination="$MAPS_DIR/${family}_${run_id:0:8}_${run_id:8:2}"
   local source
 
   [[ "$run_id" =~ ^[0-9]{10}$ ]] || fail "invalid Tianhe run id: $run_id"
-  (( expected_count > 0 )) || return
-  if [[ "$FORCE" != "1" ]] && complete_run_present "$destination" "$expected_count"; then
+  (( $# > 0 )) || return
+  if [[ "$FORCE" != "1" ]] && complete_run_present "$destination" "$@"; then
     echo "already published: ${destination##*/}"
     return
   fi
   if [[ "$DRY_RUN" == "1" ]]; then
-    printf 'would publish: %s from Tianhe run %s (%d figure(s))\n' "$family" "$run_id" "$expected_count"
+    printf 'would publish: %s from Tianhe run %s (%d source file(s))\n' "$family" "$run_id" "$#"
     return
   fi
 
   mkdir -p "$destination"
-  find "$destination" -maxdepth 1 -type f \( -name '*.png' -o -name '*.webp' \) -delete
+  find "$destination" -maxdepth 1 -type f \( -name '*.png' -o -name '*.webp' -o -name '*.json' \) -delete
   for source in "$@"; do
-    [[ -s "$source" ]] || fail "missing completed figure: $source"
+    [[ -s "$source" ]] || fail "missing completed source: $source"
     cp -p "$source" "$destination/"
   done
   CHANGED_RUNS+=("${family}_${run_id}")
 }
 
+render_product() {
+  local mode="$1"
+  local run_id="$2"
+  local wrf_dir="$3"
+  local city_shp="$4"
+  local stamp="${run_id:0:4}-${run_id:4:2}-${run_id:6:2}_${run_id:8:2}_00"
+  local family output_name output_dir output
+
+  if [[ "$mode" == "ningxia" ]]; then
+    family="worknx_summary"
+    output_name="Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_${stamp}_combined_overview_6x6_grid.png"
+  else
+    family="airport_yunnan"
+    output_name="Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_${stamp}_combined_overview_6x6_grid.png"
+  fi
+  output_dir="$RENDER_ROOT/${family}_${run_id:0:8}_${run_id:8:2}"
+  output="$output_dir/$output_name"
+
+  if [[ "$DRY_RUN" == "1" ]]; then
+    printf 'would render: %s from %s\n' "$output_name" "$wrf_dir" >&2
+    printf '%s\n' "$output"
+    return
+  fi
+
+  if [[ ! -s "$output" || "$FORCE" == "1" || ( "$mode" == "yunnan" && ! -s "$output_dir/airport_precip_totals.json" ) ]]; then
+    mkdir -p "$output_dir"
+    MPLCONFIGDIR="$STATE_DIR/matplotlib" "$PYTHON_BIN" "$RENDERER" \
+      --mode "$mode" \
+      --wrf-dir "$wrf_dir" \
+      --output-dir "$output_dir" \
+      --run-id "$run_id" \
+      --city-shp "$city_shp" >&2
+  fi
+  [[ -s "$output" ]] || fail "Tianhe renderer did not create: $output"
+  printf '%s\n' "$output"
+}
+
 nx_run="$(latest_run "$WORK_NX_ROOT")"
 if [[ -n "$nx_run" ]]; then
-  nx_figure="$(matching_figure "$WORK_NX_ROOT/$nx_run" 'Precip_hourly_WRF_AllRain_T01_T48_InitUTC_*.png')"
-  if [[ -n "$nx_figure" ]]; then
-    relay_family "worknx_summary" "$nx_run" "$nx_figure"
+  nx_run_root="$WORK_NX_ROOT/$nx_run"
+  nx_figure="$(matching_figure "$nx_run_root" 'Precip_hourly_WRF_AllRain_T01_T48_InitUTC_*.png')"
+  nx_wrfout="$(matching_wrfout "$nx_run_root")"
+  if [[ -n "$nx_figure" && -n "$nx_wrfout" ]]; then
+    nx_region="$(render_product "ningxia" "$nx_run" "$(dirname "$nx_wrfout")" "$NINGXIA_CITY_SHP_FILE")"
+    relay_family "worknx_summary" "$nx_run" "$nx_region" "$nx_figure"
   else
-    echo "WORK_nx run $nx_run has no completed precipitation figure"
+    echo "WORK_nx run $nx_run is incomplete; waiting for WRF output and nationwide precipitation figure"
   fi
 else
   echo "no completed WORK_nx run found"
@@ -224,12 +285,15 @@ fi
 
 yn_run="$(latest_run "$WORK_YN_ROOT")"
 if [[ -n "$yn_run" ]]; then
-  yn_domain="$(matching_figure "$WORK_YN_ROOT/$yn_run" 'Precip_hourly_YunnanDomain_TargetT07_T48_ActualT07_T48_InitUTC_*.png')"
-  yn_local="$(matching_figure "$WORK_YN_ROOT/$yn_run" 'Precip_hourly_YunnanLocal_TargetT07_T48_ActualT07_T48_InitUTC_*.png')"
-  if [[ -n "$yn_domain" && -n "$yn_local" ]]; then
-    relay_family "airport_yunnan" "$yn_run" "$yn_domain" "$yn_local"
+  yn_run_root="$WORK_YN_ROOT/$yn_run"
+  yn_ready="$(matching_figure "$yn_run_root" 'Precip_hourly_YunnanDomain_TargetT07_T48_ActualT07_T48_InitUTC_*.png')"
+  yn_wrfout="$(matching_wrfout "$yn_run_root")"
+  if [[ -n "$yn_ready" && -n "$yn_wrfout" ]]; then
+    yn_overview="$(render_product "yunnan" "$yn_run" "$(dirname "$yn_wrfout")" "$YUNNAN_CITY_SHP_FILE")"
+    yn_totals="$(dirname "$yn_overview")/airport_precip_totals.json"
+    relay_family "airport_yunnan" "$yn_run" "$yn_overview" "$yn_totals"
   else
-    echo "WORK_yn run $yn_run is incomplete; waiting for both Yunnan precipitation figures"
+    echo "WORK_yn run $yn_run is incomplete; waiting for WRF output and Yunnan completion marker"
   fi
 else
   echo "no completed WORK_yn run found"
