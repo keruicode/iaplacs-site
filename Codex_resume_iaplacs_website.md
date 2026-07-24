@@ -1828,3 +1828,36 @@ Notes for deployment:
   7,22,37,52 * * * * GIT_BIN=/fs2/home/junzhang/kerui/bin/git-system /fs2/home/junzhang/kerui/iaplacs-site/tools/tianhe_publish_forecast_to_github.sh >> /fs2/home/junzhang/.iaplacs-tianhe/logs/github-publisher.log 2>&1
   ```
 - Follow-up only: when `github.com` DNS is available, the next scheduled run will SSH-pull normally and use the already authorized key for future data pushes. No Mac cron or manual image relay is required.
+
+## 2026-07-24 Huan NCL Parity and BJT Repair
+
+- Current thread ID: `019f9328-ea7c-7b92-a0f3-42cf58743cfc`.
+- Current session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/24/rollout-2026-07-24T16-06-00-019f9328-ea7c-7b92-a0f3-42cf58743cfc.jsonl`.
+- Working directory: `/Users/xiaoxiaotu/_01_IAP/Website`.
+- Resume this exact work with:
+  ```bash
+  codex resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+  ```bash
+  code resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+- User requested that Tianhe use the actual Huan source scripts rather than the fallback Python figure renderer. The following files were copied verbatim from `/data1/elpt_2022_00083/kerui/Website/` and have no local diff: `tools/rain_worknx_ningxia_hour_bjt.ncl`, `tools/render_worknx_ningxia_overview.sh`, `tools/rain_worknx_yunnan_airport_hour_bjt.ncl`, and `tools/render_worknx_yunnan_airports_overview.sh`. `tools/extract_yunnan_airport_precip.py` was also checked against Huan.
+- Tianhe NCL is now used through `source /fs2/home/junzhang/kerui/bashrc && conda activate ncl`; verified `ncl -V` is `6.6.2`. The existing Tianhe WRF Python environment remains only for the Huan airport-total extractor and WebP/catalog utilities, not for map rendering.
+- `tools/run_tianhe_conda_command.sh` is the only Tianhe wrapper added. It sources the required Conda bootstrap, activates `ncl` before strict shell mode, exposes the already downloaded Conda ImageMagick cache (`convert` and `montage`), and writes a runtime `Helvetica-Bold` font alias. The NCL/map/montage source scripts remain unmodified.
+- `tools/tianhe_publish_forecast_to_github.sh` now calls the Huan render scripts via that wrapper. It also selects the newest *complete* model run instead of stopping behind an already-created but incomplete newer run. `tools/build_tianhe_forecast_catalog.py` correctly parses `YYYYMMDD_HH` directory/file names as UTC and converts them to BJT for the website run selector.
+- Current published code/data commits, all on `origin/main`:
+  - `5b3e3c98 Use Huan NCL renderer on Tianhe`
+  - `25722ab2 Publish latest complete Tianhe run`
+  - `02ae4306 Activate Tianhe NCL before strict shell mode`
+  - `2bbb17ac Configure ImageMagick font for Huan scripts`
+  - `7d94446c Publish Tianhe forecasts worknx_summary_2026072306 airport_yunnan_2026072306`
+- Actual Huan-script rendering was completed on Tianhe using `WORK_nx/2026072306` and `WORK_yn/2026072306`:
+  - Ningxia output: `/fs2/home/junzhang/.iaplacs-tianhe/rendered/worknx_summary/20260723_06/Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_2026-07-23_06_00_combined_overview_6x6_grid.png`.
+  - Yunnan output: `/fs2/home/junzhang/.iaplacs-tianhe/rendered/airport_yunnan/20260723_06/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-23_06_00_combined_overview_6x6_grid.png` plus `airport_precip_totals.json`.
+  - Local visual inspection verified visible Ningxia precipitation (including the formerly blank second panel), the Huan thresholds/colorbar, no horizontal/vertical latitude-longitude mesh, and the three Yunnan airport icons.
+  - The catalog now reports `2026-07-23 14:00 BJT` while retaining the precise metric `20260723 06 UTC`. T13 first valid hour is correctly `07-24 02:00-03:00 BJT` because the model starts at `06 UTC` and the first plotted hour is after the twelve-hour spin-up.
+- Website data on GitHub is now up to date with the rendered maps, via a one-time 1.6 MB Git bundle from Tianhe back to the Mac. The bundle was verified then deleted from both `/fs2/home/junzhang/kerui/` and `/private/tmp`; this was a one-off recovery only, not a Mac cron.
+- Current Tianhe networking remains the only external limitation. Mac-to-Tianhe SSH and bundle transfer work. The authorized GitHub SSH key also exists, but Tianhe cannot resolve `github.com`; fixed-IP GitHub SSH port 22 and `ssh.github.com` port 443 both time out. SSH/GPG credentials do not solve DNS or egress. The Tianhe cron still generates and commits new data locally and retries GitHub push when connectivity returns.
+- The Huan scripts warn that `tools/SHP/省界_region.shp` is absent on the Tianhe checkout; the available `ningxia_city_county` and `yunnan_city` SHPs are still rendered. Do not fabricate a province SHP. Locate the original Huan `省界_region.*` files before adding a separate province-outline overlay.
+- Verification passed: `bash -n tools/tianhe_publish_forecast_to_github.sh tools/run_tianhe_conda_command.sh`, `python3 -m py_compile tools/build_tianhe_forecast_catalog.py`, `git diff --check`, actual Tianhe NCL + ImageMagick execution for both regions, local visual inspection of both resulting WebP previews, catalog inspection, and GitHub push from the Mac.
+- Preserve the only local working-tree modification: the user-owned unstaged `.gitignore` entry for `.tmp`. Do not commit or discard it.
