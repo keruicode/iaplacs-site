@@ -14,6 +14,7 @@ GIT_BIN="${GIT_BIN:-git}"
 PYTHON_BIN="${PYTHON_BIN:-$TIANHE_HOME/zhoubj/conda_envs/wrf-scripts/bin/python}"
 STATE_DIR="${IAPLACS_TIANHE_STATE_DIR:-$HOME/.iaplacs-tianhe}"
 KEEP_RUNS="${IAPLACS_TIANHE_KEEP_RUNS:-5}"
+GIT_NETWORK_TIMEOUT="${IAPLACS_TIANHE_GIT_NETWORK_TIMEOUT:-120}"
 DRY_RUN=0
 FORCE=0
 
@@ -57,6 +58,7 @@ done
 [[ -d "$WORK_YN_ROOT" ]] || fail "WORK_yn directory does not exist: $WORK_YN_ROOT"
 [[ -x "$PYTHON_BIN" ]] || fail "Python environment is not executable: $PYTHON_BIN"
 [[ "$KEEP_RUNS" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_KEEP_RUNS must be a positive integer"
+[[ "$GIT_NETWORK_TIMEOUT" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_GIT_NETWORK_TIMEOUT must be a positive integer"
 command -v "$GIT_BIN" >/dev/null || fail "git command not found: $GIT_BIN"
 
 mkdir -p "$STATE_DIR"
@@ -77,7 +79,15 @@ ensure_site_checkout() {
     return
   fi
   mkdir -p "$(dirname "$SITE_REPO")"
-  "$GIT_BIN" clone --branch main --single-branch "$GIT_REMOTE_URL" "$SITE_REPO"
+  run_git_network clone --branch main --single-branch "$GIT_REMOTE_URL" "$SITE_REPO"
+}
+
+run_git_network() {
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "$GIT_NETWORK_TIMEOUT" "$GIT_BIN" "$@"
+  else
+    "$GIT_BIN" "$@"
+  fi
 }
 
 latest_run() {
@@ -136,7 +146,7 @@ CATALOG_PATH="$SITE_REPO/data/tianhe/current/forecast-runs.json"
 if [[ "$DRY_RUN" != "1" ]]; then
   "$GIT_BIN" -C "$SITE_REPO" diff --quiet -- data/tianhe || fail "uncommitted Tianhe data changes in $SITE_REPO"
   "$GIT_BIN" -C "$SITE_REPO" diff --cached --quiet -- data/tianhe || fail "staged Tianhe data changes in $SITE_REPO"
-  if ! "$GIT_BIN" -C "$SITE_REPO" pull --ff-only origin main; then
+  if ! run_git_network -C "$SITE_REPO" pull --ff-only origin main; then
     echo "WARNING: GitHub pull failed; continuing with the local Tianhe checkout" >&2
   fi
 fi
@@ -201,7 +211,7 @@ fi
 
 if (( ${#CHANGED_RUNS[@]} == 0 )); then
   if "$GIT_BIN" -C "$SITE_REPO" log --format=%H origin/main..HEAD | grep -q .; then
-    "$GIT_BIN" -C "$SITE_REPO" push origin main
+    run_git_network -C "$SITE_REPO" push origin main
     echo "pushed a previously committed Tianhe update"
   else
     echo "no new Tianhe forecast products to publish"
@@ -238,5 +248,5 @@ fi
 
 commit_label="${CHANGED_RUNS[*]}"
 "$GIT_BIN" -C "$SITE_REPO" commit -m "Publish Tianhe forecasts $commit_label" -- data/tianhe/current/maps "$CATALOG_PATH"
-"$GIT_BIN" -C "$SITE_REPO" push origin main
+run_git_network -C "$SITE_REPO" push origin main
 echo "published Tianhe forecasts: $commit_label"
