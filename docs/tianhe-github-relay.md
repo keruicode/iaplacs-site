@@ -15,6 +15,8 @@ The publisher reads these default Tianhe locations:
 
 It uses ImageMagick when present; otherwise it uses Pillow from the existing
 `wrf-scripts` Conda environment to create bounded WebP and preview WebP files.
+When available, it runs Git through `/fs2/home/junzhang/kerui/bin/git-system`
+to avoid environment library conflicts from scientific-module shells.
 
 After cloning `iaplacs-site` to `/fs2/home/junzhang/kerui/iaplacs-site`,
 verify discovery without changing files:

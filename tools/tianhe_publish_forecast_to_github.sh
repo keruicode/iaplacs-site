@@ -10,7 +10,13 @@ WORK_NX_ROOT="${WORK_NX_ROOT:-$TIANHE_HOME/zhoubj/WORK_nx}"
 WORK_YN_ROOT="${WORK_YN_ROOT:-$TIANHE_HOME/zhoubj/WORK_yn}"
 SITE_REPO="${SITE_REPO:-$TIANHE_HOME/kerui/iaplacs-site}"
 GIT_REMOTE_URL="${GIT_REMOTE_URL:-https://github.com/keruicode/iaplacs-site.git}"
-GIT_BIN="${GIT_BIN:-git}"
+if [[ -n "${GIT_BIN:-}" ]]; then
+  GIT_BIN="$GIT_BIN"
+elif [[ -x "$TIANHE_HOME/kerui/bin/git-system" ]]; then
+  GIT_BIN="$TIANHE_HOME/kerui/bin/git-system"
+else
+  GIT_BIN="git"
+fi
 PYTHON_BIN="${PYTHON_BIN:-$TIANHE_HOME/zhoubj/conda_envs/wrf-scripts/bin/python}"
 STATE_DIR="${IAPLACS_TIANHE_STATE_DIR:-$HOME/.iaplacs-tianhe}"
 KEEP_RUNS="${IAPLACS_TIANHE_KEEP_RUNS:-5}"
