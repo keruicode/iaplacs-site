@@ -94,6 +94,21 @@ begin
 
     lat2d = f->XLAT(0,:,:)
     lon2d = f->XLONG(0,:,:)
+    ; WORK_nx d01 is nearly regular over Ningxia.  Plot a compact local
+    ; rectangular subset with one-dimensional axes: NCL 6.6.2 can crash when
+    ; the whole 400x400 curvilinear field is supplied as sfXArray/sfYArray.
+    nrows = dimsizes(lat2d(:,0))
+    ncols = dimsizes(lon2d(0,:))
+    mid_row = toint(nrows/2)
+    mid_col = toint(ncols/2)
+    row_ind = ind(lat2d(:,mid_col).ge.lat_min .and. lat2d(:,mid_col).le.lat_max)
+    col_ind = ind(lon2d(mid_row,:).ge.lon_min .and. lon2d(mid_row,:).le.lon_max)
+    row_start = toint(max((/0, min(row_ind)-2/)))
+    row_end = toint(min((/nrows-1, max(row_ind)+2/)))
+    col_start = toint(max((/0, min(col_ind)-2/)))
+    col_end = toint(min((/ncols-1, max(col_ind)+2/)))
+    lat_axis = lat2d(row_start:row_end,mid_col)
+    lon_axis = lon2d(mid_row,col_start:col_end)
     rain_all = f->RAINNC + f->RAINC
     init_bjt = bjt_label(f@START_DATE, 3)
 
@@ -104,8 +119,7 @@ begin
       ; The first explicit interval is below 0.1 mm/h and is white.  Keep
       ; trace and zero values as real values instead of converting them to a
       ; spatial missing mask, which can be misinterpreted by NCL's map fill.
-      rain_h@lat2d = lat2d
-      rain_h@lon2d = lon2d
+      rain_region = rain_h(row_start:row_end,col_start:col_end)
 
       wks = gsn_open_wks("png", out_dir + "/" + init_bjt + "_rain_hour_" + file_start + "-" + file_end + "_BJT")
       cmap = (/(/1.00,1.00,1.00/), (/0.00,0.00,0.00/), (/1.00,1.00,1.00/), \
@@ -137,11 +151,8 @@ begin
       res@mpMaxLonF = lon_max
       res@mpMinLatF = lat_min
       res@mpMaxLatF = lat_max
-      ; XLAT/XLONG are two-dimensional WRF coordinates.  Set the scalar
-      ; field arrays explicitly so NCL clips actual Ningxia grid cells rather
-      ; than treating the 400x400 field as a regular index-space map.
-      res@sfXArray = lon2d
-      res@sfYArray = lat2d
+      res@sfXArray = lon_axis
+      res@sfYArray = lat_axis
       res@pmTickMarkDisplayMode = "Always"
       res@gsnMajorLonSpacing = 1.0
       res@gsnMajorLatSpacing = 1.0
@@ -165,7 +176,7 @@ begin
       res@pmLabelBarDisplayMode = "Always"
       res@pmLabelBarSide = "Right"
 
-      plot = gsn_csm_contour_map(wks, rain_h, res)
+      plot = gsn_csm_contour_map(wks, rain_region, res)
       if (county_shp_file.ne."" .and. fileexists(county_shp_file)) then
         county_shp_res = True
         county_shp_res@gsLineColor = "black"
@@ -180,7 +191,7 @@ begin
       end if
       draw(plot)
       frame(wks)
-      delete([/plot, wks, rain_h/])
+      delete([/plot, wks, rain_h, rain_region/])
     end do
     delete([/f, times, rain_all/])
   end do
