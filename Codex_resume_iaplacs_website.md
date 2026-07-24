@@ -1984,3 +1984,37 @@ Notes for deployment:
 - Tianhe cron remains Tianhe-only. Its forced run completed and direct GitHub push succeeded; no Mac cron or relay is used.
 - The warning for missing `tools/SHP/省界_region.shp` remains expected. The available Ningxia city/county and Shangrao city/county overlays are still present. Do not fabricate the missing provincial SHP.
 - The only local uncommitted change remains the user's `.gitignore` entry for `.tmp`; do not stage, commit, or discard it.
+
+## 2026-07-25 Province Boundary and Nationwide Layout Repair
+
+- Current thread ID: `019f9328-ea7c-7b92-a0f3-42cf58743cfc`.
+- Current session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/24/rollout-2026-07-24T16-06-00-019f9328-ea7c-7b92-a0f3-42cf58743cfc.jsonl`.
+- Working directory: `/Users/xiaoxiaotu/_01_IAP/Website`.
+- Resume this exact work with:
+  ```bash
+  codex resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+  ```bash
+  code resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+
+### Completed Work
+
+- Diagnosed the missing province boundaries: the required `省界_region.*` SHP existed in Tianhe's retained IAP runtime release but was absent from the website checkout. Copied all six SHP components into `tools/SHP/` and committed them, so local, GitHub, and Tianhe use the same 2019 boundary dataset. The main `.shp` is 14,545,508 bytes.
+- Updated Ningxia regional and Shangrao NCL products to draw the city/county layer first, then the province layer with black `gsLineThicknessF = 7.0`; county lines were also increased to remain visible below the outer boundary.
+- Updated the WORK_nx national NCL product to use the same `0, 1.5, 7, 15, 40, 50` colorbar/palette and white `below 0.01 mm` treatment as Ningxia regional. It overlays the same province SHP at line thickness `4.5`, has larger coordinate/colorbar labels, and a thicker panel border.
+- Updated `tools/render_worknx_national_overview.sh` to pass the province SHP into NCL, reduce title splice height from 78 to 48 pixels, increase caption font from 70 to 82 points, and move the caption nearer to the maps. The publisher passes `NATIONAL_PROVINCE_SHP_FILE` for every current/future national render.
+- `shangrao/index.html` now declares `data-default-source="tianhe"` and `data-force-default-source="true"`, so Shangrao always starts on Tianhe even if the browser previously stored Huan as the selected source.
+- Code commit `dd4a943 Strengthen province boundaries in Tianhe maps` is pushed. A real forced Tianhe render pushed data commit `a9f8425 Publish Tianhe forecasts worknx_summary_2026072412 airport_yunnan_2026072412 shangrao_2026072406`.
+
+### Verification
+
+- Local checks passed before deployment: `bash -n tools/render_worknx_national_overview.sh tools/tianhe_publish_forecast_to_github.sh tools/render_wrf_shangrao_overview.sh`, `node --check app.js`, and `git diff --check`.
+- Tianhe pulled the new SHP assets, rendered Ningxia regional/national for the stable `2026072412` WORK_nx run, rendered Shangrao from `WORK/2026072406`, optimized 14 image variants, rebuilt the catalog, and directly pushed to GitHub.
+- Local visual inspection of current WebP previews confirmed: a thick province outline around Ningxia; legible national provincial boundaries and the exact `0, 1.5, 7, 15, 40, 50` scale; tighter/larger nationwide time captions; and clear thick provincial boundaries surrounding the Shangrao city/county overlay.
+- Public verification passed: `/shangrao/` contains the Tianhe force-default attributes; the public catalog reports latest Ningxia `tianhe_worknx_summary_20260724_12` and latest Shangrao `tianhe_shangrao_20260724_06`; both published overview WebPs return HTTP 200.
+
+### Current Status and Pitfalls
+
+- Tianhe cron remains the only scheduler/publisher. It now has the SHP files in its tracked checkout, so future Ningxia regional, nationwide, and Shangrao products retain the same boundary treatment.
+- The only local uncommitted change remains the user's `.gitignore` entry for `.tmp`; do not stage, commit, or discard it.
