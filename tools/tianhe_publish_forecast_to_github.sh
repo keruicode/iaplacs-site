@@ -139,6 +139,26 @@ latest_run() {
     | head -n 1
 }
 
+latest_complete_run() {
+  local work_root="$1"
+  local figure_pattern="$2"
+  local run_id run_root
+
+  while IFS= read -r run_id; do
+    run_root="$work_root/$run_id"
+    if [[ -n "$(matching_figure "$run_root" "$figure_pattern")" ]] && \
+      [[ -n "$(matching_wrfout "$run_root")" ]]; then
+      printf '%s\n' "$run_id"
+      return 0
+    fi
+  done < <(
+    find "$work_root" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' \
+      | LC_ALL=C awk '/^[0-9]{10}$/' \
+      | LC_ALL=C sort -r
+  )
+  return 1
+}
+
 matching_figure() {
   local run_root="$1"
   local file_pattern="$2"
@@ -286,7 +306,7 @@ render_product() {
   printf '%s\n' "$output"
 }
 
-nx_run="$(latest_run "$WORK_NX_ROOT")"
+nx_run="$(latest_complete_run "$WORK_NX_ROOT" 'Precip_hourly_WRF_AllRain_T01_T48_InitUTC_*.png' || true)"
 if [[ -n "$nx_run" ]]; then
   nx_run_root="$WORK_NX_ROOT/$nx_run"
   nx_figure="$(matching_figure "$nx_run_root" 'Precip_hourly_WRF_AllRain_T01_T48_InitUTC_*.png')"
@@ -298,10 +318,10 @@ if [[ -n "$nx_run" ]]; then
     echo "WORK_nx run $nx_run is incomplete; waiting for WRF output and nationwide precipitation figure"
   fi
 else
-  echo "no completed WORK_nx run found"
+  echo "no complete WORK_nx run found; waiting for WRF output and nationwide precipitation figure"
 fi
 
-yn_run="$(latest_run "$WORK_YN_ROOT")"
+yn_run="$(latest_complete_run "$WORK_YN_ROOT" 'Precip_hourly_YunnanDomain_TargetT07_T48_ActualT07_T48_InitUTC_*.png' || true)"
 if [[ -n "$yn_run" ]]; then
   yn_run_root="$WORK_YN_ROOT/$yn_run"
   yn_ready="$(matching_figure "$yn_run_root" 'Precip_hourly_YunnanDomain_TargetT07_T48_ActualT07_T48_InitUTC_*.png')"
@@ -314,7 +334,7 @@ if [[ -n "$yn_run" ]]; then
     echo "WORK_yn run $yn_run is incomplete; waiting for WRF output and Yunnan completion marker"
   fi
 else
-  echo "no completed WORK_yn run found"
+  echo "no complete WORK_yn run found; waiting for WRF output and Yunnan completion marker"
 fi
 
 if [[ "$DRY_RUN" == "1" ]]; then
