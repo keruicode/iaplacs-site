@@ -244,6 +244,47 @@ button {
   flex-wrap: wrap;
 }
 
+.data-source-switch {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(48px, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: #f8fafb;
+}
+
+.data-source-button {
+  min-width: 50px;
+  min-height: 38px;
+  padding: 0 11px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 760;
+}
+
+.data-source-button:last-child {
+  border-right: 0;
+}
+
+.data-source-button:hover,
+.data-source-button:focus-visible {
+  background: var(--blue-soft);
+  color: var(--blue-deep);
+  outline: none;
+}
+
+.data-source-button.is-active {
+  background: var(--blue);
+  color: #fff;
+}
+
+.data-source-button:disabled {
+  cursor: wait;
+}
+
 .home-service-link {
   display: inline-grid;
   place-items: center;
@@ -1163,6 +1204,14 @@ button {
   .home-service-links {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .data-source-switch {
+    width: 100%;
+  }
+
+  .data-source-button {
+    min-height: 40px;
   }
 
   .home-service-link {

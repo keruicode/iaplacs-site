@@ -1,0 +1,189 @@
+{
+  "schema_version": 1,
+  "site": {
+    "name": "IAP-LACS Forecast",
+    "domain": "iaplacs.xyz"
+  },
+  "published_at": "2026-07-24T16:09:21.297076+08:00",
+  "note": "天河模型数据源。图像由天河计算结果经 Mac 中转发布到 GitHub Pages。",
+  "services": {
+    "main": {
+      "title": "天河预报服务",
+      "subtitle": "Tianhe forecast service",
+      "note": "天河 WORK_nx 与 WORK_yn 已开始发布测试产品。",
+      "latest_run": "tianhe_worknx_summary_20260723_06",
+      "runs": [
+        {
+          "id": "tianhe_worknx_summary_20260723_06",
+          "label": "2026-07-23 06:00 BJT",
+          "run_time": "2026-07-23T06:00:00+08:00",
+          "published_at": "2026-07-24T16:09:19.481458+08:00",
+          "summary": "天河 WORK_nx 宁夏降水预报",
+          "products": [
+            {
+              "id": "tianhe_worknx_precip",
+              "title": "天河 WORK_nx 降水预报",
+              "category": "天河预报",
+              "unit": "mm",
+              "color": "#0f68c8",
+              "description": "天河 WORK_nx 已完成 WRF 计算后生成的逐小时降水拼图。",
+              "metrics": [
+                {
+                  "label": "起报时次",
+                  "value": "20260723 06 UTC"
+                },
+                {
+                  "label": "数据源",
+                  "value": "天河"
+                },
+                {
+                  "label": "生成时间",
+                  "value": "2026-07-24 16:09 BJT"
+                },
+                {
+                  "label": "图像数量",
+                  "value": "1"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "precip_hourly_wrf_allrain_t01_t48_initutc_2026-07-23_06_00",
+                  "lead": 0,
+                  "lead_label": "逐小时降水 T01-T48",
+                  "file": "./data/tianhe/current/maps/worknx_summary_20260723_06/Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-23_06_00.webp",
+                  "bytes": 1037320,
+                  "preview_file": "./data/tianhe/current/maps/worknx_summary_20260723_06/Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-23_06_00.preview.webp",
+                  "preview_bytes": 127528
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "ningxia": {
+      "title": "宁夏预报",
+      "subtitle": "Ningxia forecast",
+      "note": "天河 WORK_nx 降水预报测试产品。",
+      "latest_run": "tianhe_worknx_summary_20260723_06",
+      "runs": [
+        {
+          "id": "tianhe_worknx_summary_20260723_06",
+          "label": "2026-07-23 06:00 BJT",
+          "run_time": "2026-07-23T06:00:00+08:00",
+          "published_at": "2026-07-24T16:09:19.481458+08:00",
+          "summary": "天河 WORK_nx 宁夏降水预报",
+          "products": [
+            {
+              "id": "tianhe_worknx_precip",
+              "title": "天河 WORK_nx 降水预报",
+              "category": "天河预报",
+              "unit": "mm",
+              "color": "#0f68c8",
+              "description": "天河 WORK_nx 已完成 WRF 计算后生成的逐小时降水拼图。",
+              "metrics": [
+                {
+                  "label": "起报时次",
+                  "value": "20260723 06 UTC"
+                },
+                {
+                  "label": "数据源",
+                  "value": "天河"
+                },
+                {
+                  "label": "生成时间",
+                  "value": "2026-07-24 16:09 BJT"
+                },
+                {
+                  "label": "图像数量",
+                  "value": "1"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "precip_hourly_wrf_allrain_t01_t48_initutc_2026-07-23_06_00",
+                  "lead": 0,
+                  "lead_label": "逐小时降水 T01-T48",
+                  "file": "./data/tianhe/current/maps/worknx_summary_20260723_06/Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-23_06_00.webp",
+                  "bytes": 1037320,
+                  "preview_file": "./data/tianhe/current/maps/worknx_summary_20260723_06/Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-23_06_00.preview.webp",
+                  "preview_bytes": 127528
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "airport": {
+      "title": "机场气象服务",
+      "subtitle": "Airport weather service",
+      "note": "天河 WORK_yn 云南降水测试产品；当前为区域降水图，机场点专用标识待后续绘图脚本接入。",
+      "latest_run": "tianhe_airport_yunnan_20260723_06",
+      "runs": [
+        {
+          "id": "tianhe_airport_yunnan_20260723_06",
+          "label": "2026-07-23 06:00 BJT",
+          "run_time": "2026-07-23T06:00:00+08:00",
+          "published_at": "2026-07-24T16:09:21.297076+08:00",
+          "summary": "天河 WORK_yn 云南降水预报",
+          "products": [
+            {
+              "id": "tianhe_workyn_precip",
+              "title": "天河 WORK_yn 云南降水预报",
+              "category": "天河预报",
+              "unit": "mm",
+              "color": "#087d7a",
+              "description": "天河 WORK_yn 逐小时降水拼图，包含云南局地和模式全域视图。",
+              "metrics": [
+                {
+                  "label": "起报时次",
+                  "value": "20260723 06 UTC"
+                },
+                {
+                  "label": "数据源",
+                  "value": "天河"
+                },
+                {
+                  "label": "生成时间",
+                  "value": "2026-07-24 16:09 BJT"
+                },
+                {
+                  "label": "图像数量",
+                  "value": "2"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "precip_hourly_yunnanlocal_targett07_t48_actualt07_t48_initutc_2026-07-23_06_00",
+                  "lead": 0,
+                  "lead_label": "云南局地",
+                  "file": "./data/tianhe/current/maps/airport_yunnan_20260723_06/Precip_hourly_YunnanLocal_TargetT07_T48_ActualT07_T48_InitUTC_2026-07-23_06_00.webp",
+                  "bytes": 912196,
+                  "preview_file": "./data/tianhe/current/maps/airport_yunnan_20260723_06/Precip_hourly_YunnanLocal_TargetT07_T48_ActualT07_T48_InitUTC_2026-07-23_06_00.preview.webp",
+                  "preview_bytes": 122712
+                },
+                {
+                  "id": "precip_hourly_yunnandomain_targett07_t48_actualt07_t48_initutc_2026-07-23_06_00",
+                  "lead": 1,
+                  "lead_label": "模式全域",
+                  "file": "./data/tianhe/current/maps/airport_yunnan_20260723_06/Precip_hourly_YunnanDomain_TargetT07_T48_ActualT07_T48_InitUTC_2026-07-23_06_00.webp",
+                  "bytes": 1044770,
+                  "preview_file": "./data/tianhe/current/maps/airport_yunnan_20260723_06/Precip_hourly_YunnanDomain_TargetT07_T48_ActualT07_T48_InitUTC_2026-07-23_06_00.preview.webp",
+                  "preview_bytes": 125354
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "shangrao": {
+      "title": "上饶专项天气服务",
+      "subtitle": "Shangrao service",
+      "note": "天河上饶产品尚未发布。",
+      "latest_run": null,
+      "runs": []
+    }
+  }
+}

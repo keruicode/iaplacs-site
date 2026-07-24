@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-MAPS_DIR="$ROOT/data/current/maps"
+MAPS_DIR="${IAPLACS_MAPS_DIR:-$ROOT/data/current/maps}"
 FORCE="${IAPLACS_OPTIMIZE_FORCE:-0}"
 
 if command -v magick >/dev/null 2>&1; then

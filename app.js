@@ -7,6 +7,7 @@ const IMAGE_PREFETCH_IDLE_TIMEOUT_MS = 3000;
 const ACCESS_PASSWORD = "123";
 const ACCESS_TOKEN_KEY = "iaplacs_access_token";
 const ACCESS_TOKEN_VALUE = "iaplacs_access_granted_v1";
+const DATA_SOURCE_TOKEN_KEY = "iaplacs_forecast_source";
 const NINGXIA_PRODUCT_TITLE = "降水预报图集";
 const NINGXIA_PRODUCT_DESCRIPTION = "默认显示宁夏区域图，可切换 WORK_nx 全国模拟图。";
 
@@ -17,6 +18,31 @@ const pageConfig = {
     document.body.dataset.fallbackManifestUrl || "./data/current/manifest.json",
   assetBase: document.body.dataset.assetBase || "./",
   refreshMs: Number(document.body.dataset.refreshMs || DEFAULT_REFRESH_MS),
+  sources: [
+    {
+      id: "huan",
+      label: "寰",
+      manifestUrl:
+        document.body.dataset.huanManifestUrl ||
+        document.body.dataset.manifestUrl ||
+        "./data/current/forecast-runs.json",
+      fallbackManifestUrl:
+        document.body.dataset.huanFallbackManifestUrl ||
+        document.body.dataset.fallbackManifestUrl ||
+        "./data/current/manifest.json",
+    },
+    {
+      id: "tianhe",
+      label: "天河",
+      manifestUrl:
+        document.body.dataset.tianheManifestUrl ||
+        "./data/tianhe/current/forecast-runs.json",
+      fallbackManifestUrl:
+        document.body.dataset.tianheFallbackManifestUrl ||
+        "./data/tianhe/current/manifest.json",
+    },
+  ],
+  defaultSource: document.body.dataset.defaultSource || "huan",
 };
 
 const state = {
@@ -34,6 +60,7 @@ const state = {
   prefetchSignature: "",
   prefetchTimer: null,
   prefetchIdleId: null,
+  sourceId: initialSourceId(),
 };
 
 const els = {
@@ -45,6 +72,7 @@ const els = {
   runTime: document.querySelector("#runTime"),
   publishedAt: document.querySelector("#publishedAt"),
   sourceNote: document.querySelector("#sourceNote"),
+  dataSourceSwitch: document.querySelector("#dataSourceSwitch"),
   productUnit: document.querySelector("#productUnit"),
   productTitle: document.querySelector("#productTitle"),
   mapStage: document.querySelector(".map-stage"),
@@ -85,6 +113,7 @@ const viewerState = {
 
 async function init() {
   setupImageViewer();
+  setupDataSourceSwitch();
   await loadForecast({ preserveSelection: false });
   if (pageConfig.refreshMs > 0) {
     state.refreshTimer = window.setInterval(
@@ -132,12 +161,79 @@ async function loadForecast({ preserveSelection }) {
 }
 
 async function fetchForecastData() {
+  const source = activeDataSource();
   try {
-    return await fetchJson(withCacheBuster(pageConfig.manifestUrl));
+    return await fetchJson(withCacheBuster(source.manifestUrl));
   } catch (error) {
-    console.warn(`primary forecast catalog failed: ${pageConfig.manifestUrl}`, error);
-    return fetchJson(withCacheBuster(pageConfig.fallbackManifestUrl));
+    console.warn(`primary forecast catalog failed: ${source.manifestUrl}`, error);
+    return fetchJson(withCacheBuster(source.fallbackManifestUrl));
   }
+}
+
+function initialSourceId() {
+  const preferred = readSavedSourceId();
+  return pageConfig.sources.some((source) => source.id === preferred)
+    ? preferred
+    : pageConfig.defaultSource;
+}
+
+function readSavedSourceId() {
+  try {
+    return window.localStorage.getItem(DATA_SOURCE_TOKEN_KEY);
+  } catch (error) {
+    console.warn("forecast source preference unavailable", error);
+    return null;
+  }
+}
+
+function activeDataSource() {
+  return (
+    pageConfig.sources.find((source) => source.id === state.sourceId) ||
+    pageConfig.sources[0]
+  );
+}
+
+function setupDataSourceSwitch() {
+  const root = els.dataSourceSwitch;
+  if (!root) return;
+
+  root.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-source-id]");
+    const sourceId = button?.dataset.sourceId;
+    if (!sourceId || sourceId === state.sourceId || state.loading) return;
+    if (!pageConfig.sources.some((source) => source.id === sourceId)) return;
+
+    closeImageViewer();
+    state.sourceId = sourceId;
+    state.catalog = null;
+    state.service = null;
+    state.prefetchSignature = "";
+    saveSourceId(sourceId);
+    renderDataSourceSwitch();
+    loadForecast({ preserveSelection: false });
+  });
+
+  renderDataSourceSwitch();
+}
+
+function saveSourceId(sourceId) {
+  try {
+    window.localStorage.setItem(DATA_SOURCE_TOKEN_KEY, sourceId);
+  } catch (error) {
+    console.warn("forecast source preference could not be saved", error);
+  }
+}
+
+function renderDataSourceSwitch() {
+  const root = els.dataSourceSwitch;
+  if (!root) return;
+
+  root.querySelectorAll("[data-source-id]").forEach((button) => {
+    const isActive = button.dataset.sourceId === state.sourceId;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+    button.disabled = state.loading;
+  });
 }
 
 async function fetchJson(url) {
@@ -405,7 +501,7 @@ function render() {
   const updatePrefix = state.hasNewLatestRun ? "已切换至新时次" : "已更新";
   setText(
     els.updateLabel,
-    `${updatePrefix} ${formatTime(run.published_at || state.catalog.published_at)}`,
+    `${activeDataSource().label} | ${updatePrefix} ${formatTime(run.published_at || state.catalog.published_at)}`,
   );
   setText(els.runSummary, formatRunSummary(state.service.runs || []));
   setText(els.runTime, run.label || formatTime(run.run_time));
@@ -460,14 +556,19 @@ function updateControls(product) {
 }
 
 function renderEmpty() {
-  setText(els.updateLabel, "暂无数据");
+  setText(els.updateLabel, `${activeDataSource().label} | 暂无数据`);
   setText(els.productTitle, "暂无可显示产品");
   setText(els.productUnit, "--");
   setText(els.leadLabel, "--");
   setText(els.validTime, "--");
+  setText(els.sourceNote, state.service?.note || state.catalog?.note || "");
   if (els.productList) els.productList.innerHTML = "";
   if (els.runList) els.runList.innerHTML = "";
   if (els.leadTabs) els.leadTabs.innerHTML = "";
+  if (els.metricGrid) els.metricGrid.innerHTML = "";
+  if (els.forecastImage) els.forecastImage.removeAttribute("src");
+  if (els.imageLink) els.imageLink.href = "#";
+  if (els.imageDownload) els.imageDownload.href = "#";
   setText(els.runSummary, "暂无起报时次");
 }
 
@@ -850,6 +951,7 @@ function setRefreshState(isLoading) {
   if (!els.refreshCatalog) return;
   els.refreshCatalog.disabled = isLoading;
   els.refreshCatalog.classList.toggle("is-loading", isLoading);
+  renderDataSourceSwitch();
 }
 
 function formatRunSummary(runs) {

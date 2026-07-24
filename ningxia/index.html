@@ -19,6 +19,11 @@
     data-service="ningxia"
     data-manifest-url="../data/current/forecast-runs.json"
     data-fallback-manifest-url="../data/current/manifest.json"
+    data-huan-manifest-url="../data/current/forecast-runs.json"
+    data-huan-fallback-manifest-url="../data/current/manifest.json"
+    data-tianhe-manifest-url="../data/tianhe/current/forecast-runs.json"
+    data-tianhe-fallback-manifest-url="../data/tianhe/current/manifest.json"
+    data-default-source="huan"
     data-asset-base="../"
     data-refresh-ms="120000"
   >
@@ -41,6 +46,10 @@
           <a class="home-service-link primary" href="../shangrao/">上饶服务</a>
           <a class="home-service-link" href="../airpots/">机场服务</a>
         </nav>
+        <div id="dataSourceSwitch" class="data-source-switch" role="group" aria-label="预报数据源">
+          <button class="data-source-button" type="button" data-source-id="huan" aria-pressed="true">寰</button>
+          <button class="data-source-button" type="button" data-source-id="tianhe" aria-pressed="false">天河</button>
+        </div>
         <div class="run-state" aria-live="polite">
           <span class="status-dot"></span>
           <span id="updateLabel">正在读取数据</span>
