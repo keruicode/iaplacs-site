@@ -323,7 +323,12 @@ def asset_url(path: Path) -> str:
 
 def parse_run_time(run_id: str) -> datetime | None:
     try:
-        return datetime.strptime(run_id, "%Y%m%d_%H").replace(tzinfo=BJT)
+        # WORK directory names and InitUTC filenames are UTC.  The website
+        # labels every run in Beijing time, so convert rather than relabeling
+        # the UTC clock value as BJT.
+        return datetime.strptime(run_id, "%Y%m%d_%H").replace(
+            tzinfo=timezone.utc
+        ).astimezone(BJT)
     except ValueError:
         return None
 

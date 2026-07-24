@@ -20,7 +20,9 @@ fi
 PYTHON_BIN="${PYTHON_BIN:-$TIANHE_HOME/zhoubj/conda_envs/wrf-scripts/bin/python}"
 STATE_DIR="${IAPLACS_TIANHE_STATE_DIR:-$HOME/.iaplacs-tianhe}"
 RENDER_ROOT="${IAPLACS_TIANHE_RENDER_ROOT:-$STATE_DIR/rendered}"
-RENDERER="${IAPLACS_TIANHE_RENDERER:-$SCRIPT_DIR/render_tianhe_precipitation.py}"
+NCL_COMMAND_RUNNER="${IAPLACS_TIANHE_NCL_COMMAND_RUNNER:-$SCRIPT_DIR/run_tianhe_conda_command.sh}"
+NINGXIA_NCL_RENDERER="${IAPLACS_TIANHE_NINGXIA_NCL_RENDERER:-$SCRIPT_DIR/render_worknx_ningxia_overview.sh}"
+YUNNAN_NCL_RENDERER="${IAPLACS_TIANHE_YUNNAN_NCL_RENDERER:-$SCRIPT_DIR/render_worknx_yunnan_airports_overview.sh}"
 NINGXIA_CITY_SHP_FILE="${NINGXIA_CITY_SHP_FILE:-$SCRIPT_DIR/SHP/ningxia_city_county.shp}"
 YUNNAN_CITY_SHP_FILE="${YUNNAN_CITY_SHP_FILE:-$SCRIPT_DIR/SHP/yunnan_city.shp}"
 KEEP_RUNS="${IAPLACS_TIANHE_KEEP_RUNS:-5}"
@@ -69,7 +71,9 @@ done
 [[ -d "$WORK_NX_ROOT" ]] || fail "WORK_nx directory does not exist: $WORK_NX_ROOT"
 [[ -d "$WORK_YN_ROOT" ]] || fail "WORK_yn directory does not exist: $WORK_YN_ROOT"
 [[ -x "$PYTHON_BIN" ]] || fail "Python environment is not executable: $PYTHON_BIN"
-[[ -f "$RENDERER" ]] || fail "Tianhe precipitation renderer is missing: $RENDERER"
+[[ -x "$NCL_COMMAND_RUNNER" ]] || fail "Tianhe NCL command runner is not executable: $NCL_COMMAND_RUNNER"
+[[ -x "$NINGXIA_NCL_RENDERER" ]] || fail "Ningxia NCL renderer is not executable: $NINGXIA_NCL_RENDERER"
+[[ -x "$YUNNAN_NCL_RENDERER" ]] || fail "Yunnan NCL renderer is not executable: $YUNNAN_NCL_RENDERER"
 [[ "$KEEP_RUNS" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_KEEP_RUNS must be a positive integer"
 [[ "$GIT_NETWORK_TIMEOUT" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_GIT_NETWORK_TIMEOUT must be a positive integer"
 [[ "$GIT_NETWORK_ATTEMPTS" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_GIT_NETWORK_ATTEMPTS must be a positive integer"
@@ -237,16 +241,22 @@ render_product() {
   local wrf_dir="$3"
   local city_shp="$4"
   local stamp="${run_id:0:4}-${run_id:4:2}-${run_id:6:2}_${run_id:8:2}_00"
-  local family output_name output_dir output
+  local family output_name output_dir output renderer work_root province_shp
 
   if [[ "$mode" == "ningxia" ]]; then
     family="worknx_summary"
     output_name="Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_${stamp}_combined_overview_6x6_grid.png"
+    renderer="$NINGXIA_NCL_RENDERER"
+    work_root="$WORK_NX_ROOT"
+    province_shp="${NINGXIA_PROVINCE_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
   else
     family="airport_yunnan"
     output_name="Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_${stamp}_combined_overview_6x6_grid.png"
+    renderer="$YUNNAN_NCL_RENDERER"
+    work_root="$WORK_YN_ROOT"
+    province_shp="${YUNNAN_PROVINCE_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
   fi
-  output_dir="$RENDER_ROOT/${family}_${run_id:0:8}_${run_id:8:2}"
+  output_dir="$RENDER_ROOT/$family/${run_id:0:8}_${run_id:8:2}"
   output="$output_dir/$output_name"
 
   if [[ "$DRY_RUN" == "1" ]]; then
@@ -257,12 +267,20 @@ render_product() {
 
   if [[ ! -s "$output" || "$FORCE" == "1" || ( "$mode" == "yunnan" && ! -s "$output_dir/airport_precip_totals.json" ) ]]; then
     mkdir -p "$output_dir"
-    MPLCONFIGDIR="$STATE_DIR/matplotlib" "$PYTHON_BIN" "$RENDERER" \
-      --mode "$mode" \
-      --wrf-dir "$wrf_dir" \
-      --output-dir "$output_dir" \
-      --run-id "$run_id" \
-      --city-shp "$city_shp" >&2
+    if [[ "$mode" == "ningxia" ]]; then
+      WORK_NX_ROOT="$work_root" \
+        OUTPUT_ROOT="$RENDER_ROOT/$family" \
+        NINGXIA_PROVINCE_SHP_FILE="$province_shp" \
+        NINGXIA_COUNTY_SHP_FILE="$city_shp" \
+        "$NCL_COMMAND_RUNNER" "$renderer" --latest >&2
+    else
+      WORK_YN_ROOT="$work_root" \
+        OUTPUT_ROOT="$RENDER_ROOT/$family" \
+        YUNNAN_PROVINCE_SHP_FILE="$province_shp" \
+        YUNNAN_CITY_SHP_FILE="$city_shp" \
+        PYTHON_BIN="$PYTHON_BIN" \
+        "$NCL_COMMAND_RUNNER" "$renderer" --latest >&2
+    fi
   fi
   [[ -s "$output" ]] || fail "Tianhe renderer did not create: $output"
   printf '%s\n' "$output"
