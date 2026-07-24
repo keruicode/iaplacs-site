@@ -43,6 +43,7 @@ const pageConfig = {
     },
   ],
   defaultSource: document.body.dataset.defaultSource || "huan",
+  forceDefaultSource: document.body.dataset.forceDefaultSource === "true",
 };
 
 const state = {
@@ -171,6 +172,7 @@ async function fetchForecastData() {
 }
 
 function initialSourceId() {
+  if (pageConfig.forceDefaultSource) return pageConfig.defaultSource;
   const preferred = readSavedSourceId();
   return pageConfig.sources.some((source) => source.id === preferred)
     ? preferred

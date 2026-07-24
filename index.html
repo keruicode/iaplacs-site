@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com" crossorigin />
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/brand/favicon-192.png" />
     <link rel="apple-touch-icon" href="./assets/brand/favicon-512.png" />
-    <link rel="stylesheet" href="./styles.css?v=20260724-02" />
+    <link rel="stylesheet" href="./styles.css?v=20260724-03" />
   </head>
   <body
     class="auth-lock"
@@ -23,7 +23,8 @@
     data-huan-fallback-manifest-url="./data/current/manifest.json"
     data-tianhe-manifest-url="./data/tianhe/current/forecast-runs.json"
     data-tianhe-fallback-manifest-url="./data/tianhe/current/manifest.json"
-    data-default-source="huan"
+    data-default-source="tianhe"
+    data-force-default-source="true"
     data-asset-base="./"
     data-refresh-ms="120000"
   >
@@ -56,6 +57,13 @@
         </div>
       </div>
     </header>
+
+    <section class="maintenance-notice" aria-label="运行公告">
+      <p class="maintenance-notice-label">运行公告</p>
+      <p>
+        2026年7月24日（周五）20:00至2026年7月29日（周三）09:00，地球系统数值模拟装置基础设施进行年度检修维护，期间停机并停止所有服务。网站图件目前由天河临时环境生成。
+      </p>
+    </section>
 
     <section class="run-switchbar" aria-label="宁夏起报时间">
       <div class="run-switch-heading-row">
@@ -133,6 +141,6 @@
       <span>iaplacs.xyz</span>
     </footer>
 
-    <script src="./app.js?v=20260724-02"></script>
+    <script src="./app.js?v=20260724-03"></script>
   </body>
 </html>

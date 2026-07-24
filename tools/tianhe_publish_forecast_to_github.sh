@@ -6,6 +6,17 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TIANHE_HOME="${TIANHE_HOME:-/fs2/home/junzhang}"
+TIANHE_BASHRC="${TIANHE_BASHRC:-$TIANHE_HOME/kerui/bashrc}"
+
+# The Kerui login environment supplies the Tianhe HTTP(S) proxy used for
+# GitHub.  Cron starts with a minimal environment, so load it explicitly.
+if [[ -r "$TIANHE_BASHRC" ]]; then
+  set +u
+  # shellcheck disable=SC1090
+  source "$TIANHE_BASHRC"
+  set -u
+fi
+
 WORK_NX_ROOT="${WORK_NX_ROOT:-$TIANHE_HOME/zhoubj/WORK_nx}"
 WORK_YN_ROOT="${WORK_YN_ROOT:-$TIANHE_HOME/zhoubj/WORK_yn}"
 SITE_REPO="${SITE_REPO:-$TIANHE_HOME/kerui/iaplacs-site}"

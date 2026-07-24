@@ -143,9 +143,15 @@ begin
       res@mpMaxLonF = lon_max
       res@mpMinLatF = lat_min
       res@mpMaxLatF = lat_max
+      res@sfXArray = lon2d
+      res@sfYArray = lat2d
       res@pmTickMarkDisplayMode = "Always"
       res@gsnMajorLonSpacing = 2.0
       res@gsnMajorLatSpacing = 2.0
+      res@tmXMajorGrid = False
+      res@tmYMajorGrid = False
+      res@tmXMinorGrid = False
+      res@tmYMinorGrid = False
       res@tmXBLabelFontColor = "black"
       res@tmXBLabelFontHeightF = 0.025
       res@tmXBLabelFontThicknessF = 4

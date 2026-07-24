@@ -74,8 +74,10 @@ begin
   lon_max = 107.8
   lat_min = 35.0
   lat_max = 39.7
-  ; Keep the precipitation thresholds and palette identical to Shangrao.
-  rain_levs = (/0, 1.5, 7.0, 15.0, 40.0, 50.0/)
+  ; Use the same hourly thresholds as the WORK_nx nationwide product.  A
+  ; zero lower bound colored trace accumulation across the entire regional
+  ; domain even when the nationwide product correctly remained white.
+  rain_levs = (/0.1, 1.0, 2.5, 5.0, 10.0, 20.0, 30.0, 50.0/)
 
   do ifile = 0, dimsizes(files)-1
     f = addfile(files(ifile), "r")
@@ -109,8 +111,9 @@ begin
 
       wks = gsn_open_wks("png", out_dir + "/" + init_bjt + "_rain_hour_" + file_start + "-" + file_end + "_BJT")
       cmap = (/(/1.00,1.00,1.00/), (/0.00,0.00,0.00/), (/1.00,1.00,1.00/), \
-               (/0.42,0.86,0.40/), (/0.25,0.72,0.25/), (/0.42,0.68,0.90/), \
-               (/0.10,0.05,1.00/), (/0.92,0.00,0.92/), (/116.0/255, 30.0/255, 7.0/255/)/)
+               (/0.65,0.94,0.57/), (/0.18,0.73,0.22/), (/0.35,0.68,0.90/), \
+               (/0.10,0.05,1.00/), (/0.92,0.00,0.92/), (/0.50,0.05,0.20/), \
+               (/0.45,0.05,0.00/)/)
       gsn_define_colormap(wks, cmap)
 
       res = True
@@ -124,7 +127,7 @@ begin
       res@cnInfoLabelOn = False
       res@cnLevelSelectionMode = "ExplicitLevels"
       res@cnLevels = rain_levs
-      res@cnFillColors = (/2,3,4,5,6,7/)
+      res@cnFillColors = (/2,3,4,5,6,7,8,9,9/)
       res@cnMissingValFillColor = "white"
       res@cnFillDrawOrder = "PreDraw"
       ; Administrative boundaries are supplied by SHP overlays below. Do not
@@ -136,9 +139,18 @@ begin
       res@mpMaxLonF = lon_max
       res@mpMinLatF = lat_min
       res@mpMaxLatF = lat_max
+      ; XLAT/XLONG are two-dimensional WRF coordinates.  Set the scalar
+      ; field arrays explicitly so NCL clips actual Ningxia grid cells rather
+      ; than treating the 400x400 field as a regular index-space map.
+      res@sfXArray = lon2d
+      res@sfYArray = lat2d
       res@pmTickMarkDisplayMode = "Always"
       res@gsnMajorLonSpacing = 1.0
       res@gsnMajorLatSpacing = 1.0
+      res@tmXMajorGrid = False
+      res@tmYMajorGrid = False
+      res@tmXMinorGrid = False
+      res@tmYMinorGrid = False
       ; The precipitation palette has green at color index 1.  Explicitly use
       ; black for interface text so it never inherits a palette entry.
       res@tmXBLabelFontColor = "black"

@@ -42,6 +42,7 @@ body.viewer-open {
 }
 
 body.auth-lock .topbar,
+body.auth-lock .maintenance-notice,
 body.auth-lock .run-switchbar,
 body.auth-lock .workspace,
 body.auth-lock .site-footer {
@@ -320,6 +321,28 @@ button {
   padding: 14px 18px;
   border-bottom: 1px solid var(--line);
   background: #ffffff;
+}
+
+.maintenance-notice {
+  display: grid;
+  grid-template-columns: minmax(92px, 160px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  padding: 12px 18px;
+  border-bottom: 1px solid #e5cda5;
+  background: #fffaf1;
+  color: #5e4218;
+}
+
+.maintenance-notice p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.maintenance-notice-label {
+  color: var(--amber);
+  font-weight: 800;
 }
 
 .run-switch-heading-row {
@@ -1202,6 +1225,12 @@ button {
   .run-switchbar {
     grid-template-columns: 1fr;
     gap: 10px;
+    padding: 12px;
+  }
+
+  .maintenance-notice {
+    grid-template-columns: 1fr;
+    gap: 4px;
     padding: 12px;
   }
 
