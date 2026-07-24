@@ -1748,3 +1748,32 @@ Notes for deployment:
 - A normal Tianhe test completed safely: it found current `worknx_summary_20260723_06` and `airport_yunnan_20260723_06` already published. GitHub pull failed quickly at the node's unresolved `github.com` hostname, emitted a warning, and the publisher completed without hanging. GitHub pull/push are guarded by `IAPLACS_TIANHE_GIT_NETWORK_TIMEOUT` (default 120 seconds); on every hourly run any locally committed forecast update will be retried automatically.
 - Current external blocker remains: `th-ex-ln0` has no usable DNS/egress to GitHub. Direct HTTPS to fixed GitHub IPs and SSH ports 22/443 also timed out. The cron and local publication workflow are operational, but the public GitHub Pages data will not advance until Tianhe support provides a permitted DNS server, HTTPS proxy, or outbound GitHub/mirror route. This is not a Mac scheduling dependency.
 - Cleanup verified: no local `.tmp/iaplacs-tianhe-*` transfer artifacts remain; no `/fs2/home/junzhang/kerui/.iaplacs-tianhe-*` or staging artifacts remain; the Tianhe checkout is clean. The only local working-tree change is the user's pre-existing unstaged `.gitignore` entry for `.tmp`.
+
+## 2026-07-24 Tianhe Publisher Network Recovery Update
+
+- Current thread ID: `019f9328-ea7c-7b92-a0f3-42cf58743cfc`.
+- Current session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/24/rollout-2026-07-24T16-06-00-019f9328-ea7c-7b92-a0f3-42cf58743cfc.jsonl`.
+- Working directory: `/Users/xiaoxiaotu/_01_IAP/Website`.
+- Resume this exact work with:
+  ```bash
+  codex resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+  ```bash
+  code resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+- User confirmed that a full HTTPS clone of `https://github.com/keruicode/iaplacs-site.git` completed on `th-ex-ln0` through `/fs2/home/junzhang/kerui/bin/git-system` (5,010 objects, 937.28 MiB). This proves that the Git wrapper and HTTPS route can work when the Tianhe network is available.
+- The publisher default now selects `/fs2/home/junzhang/kerui/bin/git-system` when it exists. Code/documentation commit `f584b77 Use Tianhe Git wrapper by default` is pushed to `origin/main`.
+- Git network operations now retry twice by default with a 20-second delay; settings are `IAPLACS_TIANHE_GIT_NETWORK_ATTEMPTS` and `IAPLACS_TIANHE_GIT_NETWORK_RETRY_DELAY`. Commit `633d4df Retry Tianhe GitHub publishing` is pushed to `origin/main`.
+- Tianhe cron was updated without touching the four model cron entries. The effective managed entry is:
+  ```cron
+  7,22,37,52 * * * * GIT_BIN=/fs2/home/junzhang/kerui/bin/git-system /fs2/home/junzhang/kerui/iaplacs-site/tools/tianhe_publish_forecast_to_github.sh >> /fs2/home/junzhang/.iaplacs-tianhe/logs/github-publisher.log 2>&1
+  ```
+  It runs only on Tianhe every 15 minutes. The explicit environment variable makes the still-old remote checkout use `git-system` immediately; after the first successful `pull`, it receives the newer retry implementation.
+- At the last live test, `git-system ls-remote` and `git fetch` again failed at `Could not resolve host: github.com`; fixed GitHub IP HTTPS probes also timed out. This is intermittent Tianhe DNS/egress, not a Git/OpenSSL issue. The job preserves locally committed map/catalog updates and retries a pending push after connectivity returns.
+- Local verification after the final script changes passed:
+  ```bash
+  bash -n tools/tianhe_publish_forecast_to_github.sh tools/install_tianhe_publisher_cron.sh
+  git diff --check
+  ```
+- Deleted the exact local transfer seed `.tmp/iaplacs-tianhe-seed-ae6f9d0`. Do not delete the user-owned `.tmp` directory wholesale. The only remaining local worktree change is the pre-existing unstaged `.gitignore` addition for `.tmp`.
+- Next recommended actions: wait for a Tianhe network window, then run `GIT_TERMINAL_PROMPT=0 /fs2/home/junzhang/kerui/bin/git-system -C /fs2/home/junzhang/kerui/iaplacs-site pull --ff-only origin main`; verify it reaches `633d4df`, then run `/fs2/home/junzhang/kerui/iaplacs-site/tools/tianhe_publish_forecast_to_github.sh` once and confirm its GitHub push. Do not use a Mac cron or commit `.gitignore`.
