@@ -2055,3 +2055,23 @@ Notes for deployment:
 - Local Git policy was configured in `.git/config` only: `pull.rebase=true`, `rebase.autoStash=true`, and `fetch.prune=true`. Tianhe continues to push data on its own cron; do not schedule a Mac auto-pull because it could change a working tree during an edit. Before starting local work, run `git pull`; before pushing local changes, run `git pull` again. The local settings temporarily preserve uncommitted edits while syncing, but a real textual conflict still needs manual resolution.
 - Verified: `git diff --check` passed; commit `9c32cfc5 Version favicon URL for Chrome refresh` is pushed to `origin/main`; and `https://iaplacs.xyz/ningxia/?v=9c32cfc5` returns the `?v=20260725-04` favicon and Apple-touch references. The versioned icon returns `HTTP 200`, `Content-Type: image/png`, and `Content-Length: 87522`.
 - Preserve the user-owned unstaged `.gitignore` entry for `.tmp`; do not commit or discard it.
+
+## 2026-07-25 Tianhe WRF Backup-First Cleanup
+
+- Current thread ID: `019f9328-ea7c-7b92-a0f3-42cf58743cfc`.
+- Current session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/24/rollout-2026-07-24T16-06-00-019f9328-ea7c-7b92-a0f3-42cf58743cfc.jsonl`.
+- Working directory: `/Users/xiaoxiaotu/_01_IAP/Website`.
+- Resume this exact work with:
+  ```bash
+  codex resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+  ```bash
+  code resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+- User requested that completed WRF output be compactly backed up under Kerui and that the previous completed model run be deleted only after the next run is rendered. Do not delete `/fs2/home/junzhang/kerui/iaplacs-site`: the active Tianhe publisher cron runs from that checkout.
+- Tianhe inspection before implementation: `/fs2` was `898.3G / 1T`; full stable WRF files were about `102--130G` each. `WORK_nx/2026072412`, `WORK_yn/2026072412`, and `WORK/2026072412` were complete; `WORK_nx/2026072418` was still awaiting the 20-minute stability threshold; several 2026072406/2026072418 directories had no stable WRF output and must not be removed.
+- Added `tools/extract_tianhe_precip_backup.py`: atomically writes a compressed, streaming NetCDF backup containing only `Times`, `XLAT`, `XLONG`, `RAINC`, and `RAINNC`, records the source metadata, and supports validation without loading an entire WRF output into memory.
+- Extended `tools/tianhe_publish_forecast_to_github.sh`. Its existing every-15-minute Tianhe cron now also: creates backups below `/fs2/home/junzhang/kerui/iaplacs-precip-backups/<WORK family>/<YYYYMMDDHH>_precip.nc`; retains the newest stable model run; removes an older numeric `WORK_nx`, `WORK_yn`, or `WORK` run only when its website products are complete and its backup validates; and keeps the newest 10 lean backups per family. Incomplete/non-stable runs are explicitly retained. `IAPLACS_TIANHE_DELETE_COMPLETED_MODEL_RUNS=0` is an emergency no-delete override.
+- Added the cleanup behavior to `docs/tianhe-github-relay.md`. Local verification passed: `python3 -m py_compile tools/extract_tianhe_precip_backup.py`, `bash -n tools/tianhe_publish_forecast_to_github.sh`, and `git diff --check`.
+- Pending after this entry: commit/push, pull the code into Tianhe, run the publisher `--dry-run`, then test one real precipitation backup before allowing the scheduled cleanup to act.
+- Preserve the user-owned unstaged `.gitignore` entry for `.tmp`; do not commit or discard it.

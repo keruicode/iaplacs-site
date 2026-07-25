@@ -55,3 +55,24 @@ catalog commit and retries the push on its next scheduled run. Each Git network
 operation has two attempts by default; adjust
 `IAPLACS_TIANHE_GIT_NETWORK_ATTEMPTS` or
 `IAPLACS_TIANHE_GIT_NETWORK_RETRY_DELAY` only when needed.
+
+## Completed WRF cleanup
+
+The same 15-minute publisher also manages completed WRF output directories.
+It creates an atomic, compressed precipitation-only NetCDF backup containing
+`Times`, `XLAT`, `XLONG`, `RAINC`, and `RAINNC` below:
+
+```text
+/fs2/home/junzhang/kerui/iaplacs-precip-backups/<WORK family>/<YYYYMMDDHH>_precip.nc
+```
+
+Only after the corresponding web products are complete and the backup validates
+does it remove a superseded stable numeric run directory from `WORK_nx`,
+`WORK_yn`, or `WORK`. The newest completed run is never removed, and incomplete
+runs are retained. This leaves one complete full WRF run per family until the
+next completed run has been rendered and backed up.
+
+The defaults keep 10 precipitation backups per family and enable model cleanup.
+Set `IAPLACS_TIANHE_DELETE_COMPLETED_MODEL_RUNS=0` to inspect backups without
+deleting any WRF output. The `--dry-run` mode reports planned extraction and
+cleanup without modifying files.

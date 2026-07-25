@@ -42,6 +42,10 @@ NINGXIA_CITY_SHP_FILE="${NINGXIA_CITY_SHP_FILE:-$SCRIPT_DIR/SHP/ningxia_city_cou
 YUNNAN_CITY_SHP_FILE="${YUNNAN_CITY_SHP_FILE:-$SCRIPT_DIR/SHP/yunnan_city.shp}"
 SHANGRAO_CITY_SHP_FILE="${SHANGRAO_CITY_SHP_FILE:-$SCRIPT_DIR/SHP/shangrao_city_county.shp}"
 KEEP_RUNS="${IAPLACS_TIANHE_KEEP_RUNS:-5}"
+PRECIP_BACKUP_ROOT="${IAPLACS_TIANHE_PRECIP_BACKUP_ROOT:-$TIANHE_HOME/kerui/iaplacs-precip-backups}"
+PRECIP_BACKUP_KEEP_RUNS="${IAPLACS_TIANHE_PRECIP_BACKUP_KEEP_RUNS:-10}"
+PRECIP_BACKUP_EXTRACTOR="${IAPLACS_TIANHE_PRECIP_BACKUP_EXTRACTOR:-$SCRIPT_DIR/extract_tianhe_precip_backup.py}"
+DELETE_COMPLETED_MODEL_RUNS="${IAPLACS_TIANHE_DELETE_COMPLETED_MODEL_RUNS:-1}"
 MIN_FILE_AGE_SECONDS="${IAPLACS_TIANHE_MIN_FILE_AGE_SECONDS:-1200}"
 MIN_WRFOUT_BYTES="${IAPLACS_TIANHE_MIN_WRFOUT_BYTES:-20000000000}"
 GIT_NETWORK_TIMEOUT="${IAPLACS_TIANHE_GIT_NETWORK_TIMEOUT:-120}"
@@ -55,7 +59,8 @@ usage() {
 Usage: tianhe_publish_forecast_to_github.sh [--dry-run] [--force]
 
 Finds the newest stable Tianhe WORK_nx, WORK_yn, and WORK wrfout files,
-renders the regional precipitation figures, retains five runs per family, rebuilds
+renders the regional precipitation figures, retains five web runs per family, creates
+compact precipitation backups, safely removes superseded completed WRF runs, rebuilds
 data/tianhe/current/forecast-runs.json, then pushes to origin.
 EOF
 }
@@ -96,6 +101,10 @@ done
 [[ -x "$YUNNAN_NCL_RENDERER" ]] || fail "Yunnan NCL renderer is not executable: $YUNNAN_NCL_RENDERER"
 [[ -x "$SHANGRAO_NCL_RENDERER" ]] || fail "Shangrao NCL renderer is not executable: $SHANGRAO_NCL_RENDERER"
 [[ "$KEEP_RUNS" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_KEEP_RUNS must be a positive integer"
+[[ "$PRECIP_BACKUP_KEEP_RUNS" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_PRECIP_BACKUP_KEEP_RUNS must be a positive integer"
+[[ -f "$PRECIP_BACKUP_EXTRACTOR" ]] || fail "missing precipitation backup extractor: $PRECIP_BACKUP_EXTRACTOR"
+[[ "$DELETE_COMPLETED_MODEL_RUNS" == "0" || "$DELETE_COMPLETED_MODEL_RUNS" == "1" ]] \
+  || fail "IAPLACS_TIANHE_DELETE_COMPLETED_MODEL_RUNS must be 0 or 1"
 [[ "$MIN_FILE_AGE_SECONDS" =~ ^[0-9]+$ ]] || fail "IAPLACS_TIANHE_MIN_FILE_AGE_SECONDS must be a non-negative integer"
 [[ "$MIN_WRFOUT_BYTES" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_MIN_WRFOUT_BYTES must be a positive integer"
 [[ "$GIT_NETWORK_TIMEOUT" =~ ^[1-9][0-9]*$ ]] || fail "IAPLACS_TIANHE_GIT_NETWORK_TIMEOUT must be a positive integer"
@@ -214,6 +223,137 @@ complete_run_present() {
     compgen -G "$destination/$stem.webp" >/dev/null || \
       compgen -G "$destination/$stem.png" >/dev/null || return 1
   done
+}
+
+precip_backup_path() {
+  local family="$1"
+  local run_id="$2"
+  printf '%s/%s/%s_precip.nc\n' "$PRECIP_BACKUP_ROOT" "$family" "$run_id"
+}
+
+precip_backup_is_valid() {
+  local backup_path="$1"
+  "$PYTHON_BIN" "$PRECIP_BACKUP_EXTRACTOR" --verify "$backup_path" >/dev/null 2>&1
+}
+
+ensure_precip_backup() {
+  local family="$1"
+  local run_id="$2"
+  local wrfout="$3"
+  local backup_path
+  backup_path="$(precip_backup_path "$family" "$run_id")"
+
+  if precip_backup_is_valid "$backup_path"; then
+    echo "precipitation backup already valid: $backup_path"
+    return 0
+  fi
+
+  if [[ "$DRY_RUN" == "1" ]]; then
+    echo "would create precipitation backup: $backup_path from $wrfout"
+    return 0
+  fi
+
+  mkdir -p "$(dirname "$backup_path")"
+  if ! "$PYTHON_BIN" "$PRECIP_BACKUP_EXTRACTOR" \
+    --input "$wrfout" \
+    --output "$backup_path" \
+    --family "$family" \
+    --run-id "$run_id"; then
+    echo "WARNING: precipitation backup failed for $family/$run_id; retaining WRF output" >&2
+    return 1
+  fi
+  precip_backup_is_valid "$backup_path"
+}
+
+product_ready_for_model_cleanup() {
+  local family="$1"
+  local run_id="$2"
+  local product_dir expected_images actual_images
+
+  case "$family" in
+    WORK_nx)
+      product_dir="$MAPS_DIR/worknx_summary_${run_id:0:8}_${run_id:8:2}"
+      expected_images=2
+      ;;
+    WORK_yn)
+      product_dir="$MAPS_DIR/airport_yunnan_${run_id:0:8}_${run_id:8:2}"
+      expected_images=1
+      [[ -s "$product_dir/airport_precip_totals.json" ]] || return 1
+      ;;
+    WORK)
+      product_dir="$MAPS_DIR/shangrao_${run_id:0:8}_${run_id:8:2}"
+      expected_images=4
+      ;;
+    *)
+      fail "unknown model cleanup family: $family"
+      ;;
+  esac
+
+  [[ -d "$product_dir" ]] || return 1
+  actual_images="$(find "$product_dir" -maxdepth 1 -type f \( -name '*.webp' -o -name '*.png' \) -size +0c -printf '.' | wc -c | tr -d ' ')"
+  (( actual_images >= expected_images ))
+}
+
+cleanup_completed_model_runs() {
+  local family="$1"
+  local work_root="$2"
+  local newest_complete run_id run_root wrfout
+  newest_complete="$(latest_complete_run "$work_root" || true)"
+  [[ -n "$newest_complete" ]] || return 0
+
+  while IFS= read -r run_id; do
+    [[ "$run_id" == "$newest_complete" ]] && continue
+    run_root="$work_root/$run_id"
+    wrfout="$(matching_wrfout "$run_root" || true)"
+    if [[ -z "$wrfout" ]]; then
+      echo "retaining non-stable $family run $run_id"
+      continue
+    fi
+    if ! product_ready_for_model_cleanup "$family" "$run_id"; then
+      echo "retaining $family run $run_id: forecast products are not complete"
+      continue
+    fi
+    if ! ensure_precip_backup "$family" "$run_id" "$wrfout"; then
+      continue
+    fi
+    if [[ "$DELETE_COMPLETED_MODEL_RUNS" == "0" ]]; then
+      echo "model cleanup disabled; retaining $family run $run_id"
+    elif [[ "$DRY_RUN" == "1" ]]; then
+      echo "would remove superseded completed $family run: $run_root"
+    else
+      [[ "$run_id" =~ ^[0-9]{10}$ && "$run_root" == "$work_root/$run_id" ]] \
+        || fail "unsafe model run cleanup path: $run_root"
+      echo "removing superseded completed $family run: $run_root"
+      rm -rf -- "$run_root"
+    fi
+  done < <(
+    find "$work_root" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' \
+      | LC_ALL=C awk '/^[0-9]{10}$/' \
+      | LC_ALL=C sort -r
+  )
+}
+
+prune_precip_backups() {
+  local family="$1"
+  local backup_dir="$PRECIP_BACKUP_ROOT/$family"
+  local count=0 backup_path
+  [[ -d "$backup_dir" ]] || return 0
+
+  while IFS= read -r backup_path; do
+    count=$((count + 1))
+    if (( count > PRECIP_BACKUP_KEEP_RUNS )); then
+      [[ "$backup_path" == "$backup_dir/"* && "${backup_path##*/}" =~ ^[0-9]{10}_precip\.nc$ ]] \
+        || fail "unsafe precipitation backup path: $backup_path"
+      if [[ "$DRY_RUN" == "1" ]]; then
+        echo "would remove old precipitation backup: $backup_path"
+      else
+        echo "removing old precipitation backup: $backup_path"
+        rm -f -- "$backup_path"
+      fi
+    fi
+  done < <(
+    find "$backup_dir" -maxdepth 1 -type f -name '??????????_precip.nc' -printf '%p\n' | LC_ALL=C sort -r
+  )
 }
 
 prune_family() {
@@ -373,6 +513,7 @@ if [[ -n "$nx_run" ]]; then
     nx_region="$(render_product "ningxia" "$nx_run" "$(dirname "$nx_wrfout")" "$NINGXIA_CITY_SHP_FILE")"
     nx_national="$(render_product "national" "$nx_run" "$(dirname "$nx_wrfout")" "")"
     relay_family "worknx_summary" "$nx_run" "$nx_region" "$nx_national"
+    ensure_precip_backup "WORK_nx" "$nx_run" "$nx_wrfout" || true
   else
     echo "WORK_nx run $nx_run is incomplete; waiting for stable WRF output"
   fi
@@ -388,6 +529,7 @@ if [[ -n "$yn_run" ]]; then
     yn_overview="$(render_product "yunnan" "$yn_run" "$(dirname "$yn_wrfout")" "$YUNNAN_CITY_SHP_FILE")"
     yn_totals="$(dirname "$yn_overview")/airport_precip_totals.json"
     relay_family "airport_yunnan" "$yn_run" "$yn_overview" "$yn_totals"
+    ensure_precip_backup "WORK_yn" "$yn_run" "$yn_wrfout" || true
   else
     echo "WORK_yn run $yn_run is incomplete; waiting for stable WRF output"
   fi
@@ -409,12 +551,20 @@ if [[ -n "$sr_run" ]]; then
     [[ -s "$sr_detail_1" && -s "$sr_detail_2" && -s "$sr_detail_3" ]] \
       || fail "Shangrao renderer did not create all detail mosaics for $sr_run"
     relay_family "shangrao" "$sr_run" "$sr_overview" "$sr_detail_1" "$sr_detail_2" "$sr_detail_3"
+    ensure_precip_backup "WORK" "$sr_run" "$sr_wrfout" || true
   else
     echo "WORK run $sr_run is incomplete; waiting for stable WRF output"
   fi
 else
   echo "no complete WORK run found; waiting for stable WRF output"
 fi
+
+cleanup_completed_model_runs "WORK_nx" "$WORK_NX_ROOT"
+cleanup_completed_model_runs "WORK_yn" "$WORK_YN_ROOT"
+cleanup_completed_model_runs "WORK" "$WORK_SHANGRAO_ROOT"
+prune_precip_backups "WORK_nx"
+prune_precip_backups "WORK_yn"
+prune_precip_backups "WORK"
 
 if [[ "$DRY_RUN" == "1" ]]; then
   exit 0
