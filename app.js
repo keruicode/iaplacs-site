@@ -1107,6 +1107,8 @@ function setupImageViewer() {
     event.preventDefault();
     openImageViewer(els.imageLink);
   });
+  els.imageDownload?.addEventListener("click", handleDownloadClick);
+  viewerState.downloadLink?.addEventListener("click", handleDownloadClick);
 }
 
 function viewerEntries() {
@@ -1275,6 +1277,35 @@ function updateViewerDownload(source, name) {
   if (!viewerState.downloadLink) return;
   viewerState.downloadLink.href = source || "#";
   viewerState.downloadLink.download = viewerState.downloadName;
+}
+
+async function handleDownloadClick(event) {
+  event.preventDefault();
+  const link = event.currentTarget;
+  const source = link === viewerState.downloadLink
+    ? viewerState.downloadSource
+    : link?.href;
+  const name = link === viewerState.downloadLink
+    ? viewerState.downloadName
+    : link?.download || "iaplacs-forecast.png";
+  if (!source || source === "#") return;
+
+  try {
+    const response = await fetch(source, { mode: "cors", cache: "no-store" });
+    if (!response.ok) throw new Error(`download failed: ${response.status}`);
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = objectUrl;
+    anchor.download = name;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+  } catch (error) {
+    console.warn("direct download unavailable; opening source", error);
+    window.open(source, "_blank", "noopener");
+  }
 }
 
 function imageDownloadName(run, product, frame, source) {
