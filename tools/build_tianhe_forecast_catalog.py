@@ -190,6 +190,7 @@ def build_frames(run_dir: Path) -> list[dict]:
     for stem, candidates in groups.items():
         main = choose_main(candidates)
         preview = choose_preview(candidates)
+        full = choose_full(candidates)
         if main is None:
             continue
         label, lead = frame_label(stem)
@@ -203,6 +204,9 @@ def build_frames(run_dir: Path) -> list[dict]:
         if preview and preview != main:
             frame["preview_file"] = asset_url(preview)
             frame["preview_bytes"] = preview.stat().st_size
+        if full:
+            frame["full_file"] = asset_url(full)
+            frame["full_bytes"] = full.stat().st_size
         frames.append(frame)
     frames.sort(key=lambda frame: (frame["lead"], frame["lead_label"]))
     return frames
@@ -219,6 +223,7 @@ def build_ningxia_frames(run_dir: Path) -> list[dict]:
     for stem, candidates in groups.items():
         main = choose_main(candidates)
         preview = choose_preview(candidates)
+        full = choose_full(candidates)
         if main is None:
             continue
         lowered = stem.lower()
@@ -249,6 +254,9 @@ def build_ningxia_frames(run_dir: Path) -> list[dict]:
         if preview and preview != main:
             frame["preview_file"] = asset_url(preview)
             frame["preview_bytes"] = preview.stat().st_size
+        if full:
+            frame["full_file"] = asset_url(full)
+            frame["full_bytes"] = full.stat().st_size
         frames.append(frame)
     frames.sort(key=lambda frame: (frame["lead"], frame["file"]))
     return frames
@@ -299,6 +307,15 @@ def choose_preview(candidates: list[Path]) -> Path | None:
     if previews:
         return min(previews, key=lambda path: path.stat().st_size)
     return choose_main(candidates)
+
+
+def choose_full(candidates: list[Path]) -> Path | None:
+    originals = [
+        path
+        for path in candidates
+        if path.suffix.lower() == ".png" and not path.stem.endswith(".preview")
+    ]
+    return originals[0] if originals else None
 
 
 def asset_score(path: Path) -> int:

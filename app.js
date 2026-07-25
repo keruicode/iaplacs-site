@@ -800,14 +800,8 @@ function highQualityFrameFile(frame) {
     frame?.full_file ||
     frame?.download_file ||
     frame?.png_file ||
-    pngVariantOfFile(frame?.file) ||
     frame?.file
   );
-}
-
-function pngVariantOfFile(file) {
-  if (!file || !/\.webp(?:$|[?#])/i.test(file)) return "";
-  return file.replace(/\.webp(?=$|[?#])/i, ".png");
 }
 
 function collectServicePreloadSources(service) {
