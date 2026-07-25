@@ -74,6 +74,17 @@ caption_panel() {
   caption_path="$caption_dir/$panel_name"
   convert "$panel_path" \
     -trim +repage \
+    -fill white \
+    -stroke none \
+    -draw 'rectangle 0,0 141,422' \
+    -stroke black \
+    -strokewidth 2 \
+    -draw 'line 128,69 142,69 line 128,172 142,172 line 128,275 142,275 line 128,378 142,378' \
+    -fill black \
+    -stroke none \
+    -font "times.ttf" \
+    -pointsize 48 \
+    -draw 'text 0,86 "50N" text 0,189 "40N" text 0,292 "30N" text 0,395 "20N"' \
     -gravity North \
     -background white \
     -splice 0x92 \
