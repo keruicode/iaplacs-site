@@ -127,7 +127,7 @@ begin
       ; off. China itself is drawn exclusively by the provincial SHP below.
       res@pmTickMarkDisplayMode = "Always"
       res@gsnMajorLonSpacing = 10.0
-      res@gsnMajorLatSpacing = 5.0
+      res@gsnMajorLatSpacing = 10.0
       res@tmXMajorGrid = False
       res@tmYMajorGrid = False
       res@tmXMinorGrid = False

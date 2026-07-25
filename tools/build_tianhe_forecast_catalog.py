@@ -61,13 +61,13 @@ def main() -> None:
             "airport": build_service(
                 "机场气象服务",
                 "Airport weather service",
-                "天河 WORK_yn 云南区域 36 小时降水拼图，标注三个机场并给出逐机场峰值降水。",
+                "默认显示云南机场区域图，可切换同一时次的 WORK_yn 全国降水图。",
                 airport_runs,
             ),
             "shangrao": build_service(
                 "上饶专项天气服务",
                 "Shangrao service",
-                "天河 WORK 上饶区域逐小时降水产品。",
+                "默认显示上饶区域图，可切换同一时次的 WORK 全国降水图。",
                 shangrao_runs,
             ),
         },
@@ -132,7 +132,7 @@ def build_ningxia_product(
         "category": "天河预报",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": "默认显示宁夏区域图，可切换 WORK_nx 全国模拟图。",
+        "description": "默认显示宁夏区域图，可切换 WORK_nx 全国降水图。",
         "metrics": metrics(run_id, published_at, len(frames)),
         "frames": frames,
     }
@@ -149,7 +149,7 @@ def build_yunnan_product(
         "category": "天河预报",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": "WORK_yn 云南区域逐小时降水 6x6 拼图，标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场位置。",
+        "description": "默认显示云南机场区域图，可切换 WORK_yn 全国降水图。区域图标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈机场位置。",
         "metrics": product_metrics,
         "frames": frames,
     }
@@ -164,7 +164,7 @@ def build_shangrao_product(
         "category": "天河预报",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": "WORK 上饶区域逐小时降水图：36 小时总览及三页细节拼图。",
+        "description": "默认显示上饶区域逐小时降水图，可切换 WORK 全国降水图。",
         "metrics": metrics(run_id, published_at, len(frames)),
         "frames": frames,
     }
@@ -226,7 +226,7 @@ def build_ningxia_frames(run_dir: Path) -> list[dict]:
             frame_id, lead, label, valid_label = (
                 "ningxia_region",
                 0,
-                "宁夏区域",
+                "区域",
                 "当前显示：宁夏区域",
             )
         elif "allrain" in lowered:
@@ -255,33 +255,27 @@ def build_ningxia_frames(run_dir: Path) -> list[dict]:
 
 
 def build_yunnan_frames(run_dir: Path) -> list[dict]:
-    frames = build_frames(run_dir)
-    self_drawn = [
-        frame
-        for frame in frames
-        if "yunnanairports" in str(frame.get("file", "")).lower()
-        and "combined_overview" in str(frame.get("file", "")).lower()
-    ]
-    if self_drawn:
-        for frame in self_drawn:
-            frame.update({"id": "overview", "lead": 0, "lead_label": "36小时拼图"})
-        return self_drawn
-    return frames
+    selected = []
+    for frame in build_frames(run_dir):
+        value = f"{frame.get('id', '')} {frame.get('file', '')}".lower()
+        if "yunnanairports" in value and "combined_overview" in value:
+            frame.update({"id": "airport_region", "lead": 0, "lead_label": "区域"})
+        elif "allrain" in value and "combined_overview" in value:
+            frame.update({"id": "airport_national", "lead": 1, "lead_label": "全国"})
+        else:
+            continue
+        selected.append(frame)
+    return sorted(selected, key=lambda frame: (frame["lead"], frame["file"]))
 
 
 def build_shangrao_frames(run_dir: Path) -> list[dict]:
-    frames = build_frames(run_dir)
     selected = []
-    for frame in frames:
+    for frame in build_frames(run_dir):
         value = f"{frame.get('id', '')} {frame.get('file', '')}".lower()
-        if "combined_overview" in value:
-            frame.update({"id": "overview", "lead": 0, "lead_label": "总览"})
-        elif "detail_p01" in value:
-            frame.update({"id": "detail_p01", "lead": 1, "lead_label": "细节 1/3"})
-        elif "detail_p02" in value:
-            frame.update({"id": "detail_p02", "lead": 2, "lead_label": "细节 2/3"})
-        elif "detail_p03" in value:
-            frame.update({"id": "detail_p03", "lead": 3, "lead_label": "细节 3/3"})
+        if "allrain" in value and "combined_overview" in value:
+            frame.update({"id": "shangrao_national", "lead": 1, "lead_label": "全国"})
+        elif "combined_overview" in value:
+            frame.update({"id": "shangrao_region", "lead": 0, "lead_label": "区域"})
         else:
             continue
         selected.append(frame)

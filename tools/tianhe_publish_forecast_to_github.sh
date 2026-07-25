@@ -290,12 +290,12 @@ product_ready_for_model_cleanup() {
       ;;
     WORK_yn)
       product_dir="$MAPS_DIR/airport_yunnan_${run_id:0:8}_${run_id:8:2}"
-      expected_images=1
+      expected_images=2
       [[ -s "$product_dir/airport_precip_totals.json" ]] || return 1
       ;;
     WORK)
       product_dir="$MAPS_DIR/shangrao_${run_id:0:8}_${run_id:8:2}"
-      expected_images=4
+      expected_images=2
       ;;
     *)
       fail "unknown model cleanup family: $family"
@@ -488,6 +488,12 @@ render_product() {
     renderer="$NATIONAL_NCL_RENDERER"
     work_root="$WORK_NX_ROOT"
     province_shp="${NATIONAL_PROVINCE_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
+  elif [[ "$mode" == "airport-national" ]]; then
+    family="airport_national"
+    output_name="Precip_hourly_WRF_AllRain_T13_T48_InitUTC_${stamp}_combined_overview_6x6_grid.png"
+    renderer="$NATIONAL_NCL_RENDERER"
+    work_root="$WORK_YN_ROOT"
+    province_shp="${NATIONAL_PROVINCE_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
   elif [[ "$mode" == "yunnan" ]]; then
     family="airport_yunnan"
     output_name="Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_${stamp}_combined_overview_6x6_grid.png"
@@ -500,6 +506,12 @@ render_product() {
     renderer="$SHANGRAO_NCL_RENDERER"
     work_root="$WORK_SHANGRAO_ROOT"
     province_shp="${SHANGRAO_PROVINCE_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
+  elif [[ "$mode" == "shangrao-national" ]]; then
+    family="shangrao_national"
+    output_name="Precip_hourly_WRF_AllRain_T13_T48_InitUTC_${stamp}_combined_overview_6x6_grid.png"
+    renderer="$NATIONAL_NCL_RENDERER"
+    work_root="$WORK_SHANGRAO_ROOT"
+    province_shp="${NATIONAL_PROVINCE_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
   else
     fail "unknown render mode: $mode"
   fi
@@ -523,7 +535,7 @@ render_product() {
         NINGXIA_PROVINCE_SHP_FILE="$province_shp" \
         NINGXIA_COUNTY_SHP_FILE="$city_shp" \
         "$NCL_COMMAND_RUNNER" "$renderer" --latest >&2
-    elif [[ "$mode" == "national" ]]; then
+    elif [[ "$mode" == "national" || "$mode" == "airport-national" || "$mode" == "shangrao-national" ]]; then
       MIN_FILE_AGE_SECONDS="$MIN_FILE_AGE_SECONDS" \
         MIN_WRFOUT_BYTES="$MIN_WRFOUT_BYTES" \
         WORK_NX_ROOT="$run_root" \
@@ -575,8 +587,9 @@ if [[ -n "$yn_run" ]]; then
   yn_wrfout="$(matching_wrfout "$yn_run_root")"
   if [[ -n "$yn_wrfout" ]]; then
     yn_overview="$(render_product "yunnan" "$yn_run" "$(dirname "$yn_wrfout")" "$YUNNAN_CITY_SHP_FILE")"
+    yn_national="$(render_product "airport-national" "$yn_run" "$(dirname "$yn_wrfout")" "")"
     yn_totals="$(dirname "$yn_overview")/airport_precip_totals.json"
-    relay_family "airport_yunnan" "$yn_run" "$yn_overview" "$yn_totals"
+    relay_family "airport_yunnan" "$yn_run" "$yn_overview" "$yn_national" "$yn_totals"
     ensure_precip_backup "WORK_yn" "$yn_run" "$yn_wrfout" || true
   else
     echo "WORK_yn run $yn_run is incomplete; waiting for stable WRF output"
@@ -591,14 +604,8 @@ if [[ -n "$sr_run" ]]; then
   sr_wrfout="$(matching_wrfout "$sr_run_root")"
   if [[ -n "$sr_wrfout" ]]; then
     sr_overview="$(render_product "shangrao" "$sr_run" "$(dirname "$sr_wrfout")" "$SHANGRAO_CITY_SHP_FILE")"
-    sr_output_dir="$(dirname "$sr_overview")"
-    sr_prefix="${sr_run:0:8}_${sr_run:8:2}"
-    sr_detail_1="$sr_output_dir/${sr_prefix}_combined_detail_p01_4x3_grid.png"
-    sr_detail_2="$sr_output_dir/${sr_prefix}_combined_detail_p02_4x3_grid.png"
-    sr_detail_3="$sr_output_dir/${sr_prefix}_combined_detail_p03_4x3_grid.png"
-    [[ -s "$sr_detail_1" && -s "$sr_detail_2" && -s "$sr_detail_3" ]] \
-      || fail "Shangrao renderer did not create all detail mosaics for $sr_run"
-    relay_family "shangrao" "$sr_run" "$sr_overview" "$sr_detail_1" "$sr_detail_2" "$sr_detail_3"
+    sr_national="$(render_product "shangrao-national" "$sr_run" "$(dirname "$sr_wrfout")" "")"
+    relay_family "shangrao" "$sr_run" "$sr_overview" "$sr_national"
     ensure_precip_backup "WORK" "$sr_run" "$sr_wrfout" || true
   else
     echo "WORK run $sr_run is incomplete; waiting for stable WRF output"

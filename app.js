@@ -389,6 +389,15 @@ function updateFrameCountMetric(metrics, frameCount) {
 }
 
 function normalizeShangraoFrames(run, frames) {
+  const explicitRegionNational = frames.filter((frame) =>
+    ["shangrao_region", "shangrao_national"].includes(frame?.id),
+  );
+  if (explicitRegionNational.length) {
+    return explicitRegionNational
+      .map((frame) => ({ ...frame, valid_label: "" }))
+      .sort((a, b) => Number(a.lead || 0) - Number(b.lead || 0));
+  }
+
   const overviewFrames = [];
   const detailFrames = new Map();
   const otherFrames = [];

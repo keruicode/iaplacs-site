@@ -76,18 +76,18 @@ caption_panel() {
     -trim +repage \
     -gravity North \
     -background white \
-    -splice 0x118 \
+    -splice 0x92 \
     -fill black \
     -font "Times New Roman" \
     -stroke black \
     -strokewidth 1 \
-    -pointsize 108 \
+    -pointsize 88 \
     -annotate +0+14 "$panel_date" \
     "$caption_path"
 }
 
 render_source() {
-  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview mosaic init_label
+  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview mosaic init_bjt init_label
   base="$(basename "$source_path")"
   if [[ ! "$base" =~ wrfout_d01_([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2}):[0-9]{2}:[0-9]{2} ]]; then
     echo "ERROR: cannot parse run time from $base" >&2
@@ -102,7 +102,8 @@ render_source() {
   caption_dir="$run_dir/captioned_t13_t48"
   overview="$run_dir/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_${run_date}_${run_hour}_00_combined_overview_6x6_grid.png"
   mosaic="$run_dir/.combined_overview_6x6_grid.mosaic.png"
-  init_label="起报时间：${run_date} ${run_hour}:00 UTC"
+  init_bjt="$(TZ=Asia/Shanghai date -d "${run_date} ${run_hour}:00 UTC" '+%Y-%m-%d %H:%M BJT')"
+  init_label="Forecast Initialization: $init_bjt"
 
   mkdir -p "$panel_dir" "$caption_dir"
   echo "Rendering nationwide T13-T48 panels for $run_prefix from $wrf_dir"
@@ -130,7 +131,7 @@ render_source() {
     -background white \
     -splice 0x160 \
     -fill black \
-    -font "Noto Serif CJK SC" \
+    -font "Times New Roman" \
     -stroke black \
     -strokewidth 1 \
     -pointsize 132 \
