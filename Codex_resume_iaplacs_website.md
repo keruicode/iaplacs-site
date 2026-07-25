@@ -19,11 +19,11 @@ code resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
 - Thread ID: `019f9328-ea7c-7b92-a0f3-42cf58743cfc`
 - Session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/24/rollout-2026-07-24T16-06-00-019f9328-ea7c-7b92-a0f3-42cf58743cfc.jsonl`
 - Working directory: `/Users/xiaoxiaotu/_01_IAP/Website`
-- Local branch: `main`; published implementation commit: `d9ce2617 Back up and clear completed WORK_tc runs`.
-- Tianhe checkout: `/fs2/home/junzhang/kerui/iaplacs-site`.
+- Local branch: `main`; published implementation commits: `d9ce2617 Back up and clear completed WORK_tc runs` and `3ab0fabe Hide Tianhe publisher checkout`.
+- Tianhe checkout: `/fs2/home/junzhang/kerui/.iaplacs-site` (deliberately hidden).
 - Tianhe publisher cron:
   ```cron
-  7,22,37,52 * * * * GIT_BIN=/fs2/home/junzhang/kerui/bin/git-system /fs2/home/junzhang/kerui/iaplacs-site/tools/tianhe_publish_forecast_to_github.sh >> /fs2/home/junzhang/.iaplacs-tianhe/logs/github-publisher.log 2>&1
+  7,22,37,52 * * * * /fs2/home/junzhang/kerui/.iaplacs-site/tools/tianhe_publish_forecast_to_github.sh >> /fs2/home/junzhang/.iaplacs-tianhe/logs/github-publisher.log 2>&1
   ```
 
 ### Implementation And Verification
@@ -47,6 +47,17 @@ code resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
   - retained `WORK_tc/2026072412` because its WRF output was only seven minutes
     old. The normal 11:07 CST cron run will handle it once it has been stable
     for 20 minutes.
+- Successful repository hiding migration at 2026-07-25 11:30 CST:
+  - atomically moved `/fs2/home/junzhang/kerui/iaplacs-site` to
+    `/fs2/home/junzhang/kerui/.iaplacs-site` on the same filesystem;
+  - reinstalled only the managed IAPLACS cron block, with its executable path
+    changed to the hidden checkout; a pre-change cron backup is at
+    `/fs2/home/junzhang/.iaplacs-tianhe/crontab-before-tianhe-publisher-20260725_113010.txt`;
+  - the hidden checkout completed a publisher `--dry-run` successfully and the
+    old non-hidden directory no longer exists.
+- At 11:30:47 CST, `WORK_tc/2026072412` had a WRF file modified at 11:30:18,
+  so the 20-minute stability safeguard correctly retained it. Do not manually
+  delete it while its timestamp continues to advance.
 - Local verification passed:
   ```bash
   bash -n tools/tianhe_publish_forecast_to_github.sh
@@ -56,13 +67,13 @@ code resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
 - Tianhe verification passed:
   ```bash
   /fs2/home/junzhang/zhoubj/conda_envs/wrf-scripts/bin/python \
-    /fs2/home/junzhang/kerui/iaplacs-site/tools/extract_tianhe_precip_backup.py \
+    /fs2/home/junzhang/kerui/.iaplacs-site/tools/extract_tianhe_precip_backup.py \
     --verify /fs2/home/junzhang/kerui/iaplacs-precip-backups/WORK_tc/2026072406_precip.nc
   ```
 
 ### Known Pitfalls And Next Actions
 
-- Never delete `/fs2/home/junzhang/kerui/iaplacs-site`; it is the active Tianhe
+- Never delete `/fs2/home/junzhang/kerui/.iaplacs-site`; it is the active Tianhe
   Git checkout and cron publisher.
 - Do not reduce the 20-minute stability threshold merely to reclaim space. A
   run still being written must stay intact.
@@ -70,7 +81,8 @@ code resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
   must not be reverted or committed.
 - On the next follow-up, inspect
   `~/.iaplacs-tianhe/logs/github-publisher.log`, confirm the `2026072412`
-  backup validates and its full directory is gone, then refresh this handoff.
+  file has stopped changing for 20 minutes, then confirm its backup validates
+  and full directory is gone before refreshing this handoff.
 
 ## Resume Commands
 
