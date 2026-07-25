@@ -2037,3 +2037,21 @@ Notes for deployment:
 
 - Tianhe cron remains the only scheduler/publisher. It now has the SHP files in its tracked checkout, so future Ningxia regional, nationwide, and Shangrao products retain the same boundary treatment.
 - The only local uncommitted change remains the user's `.gitignore` entry for `.tmp`; do not stage, commit, or discard it.
+
+## 2026-07-25 Favicon Version Refresh and Local Git Sync Policy
+
+- Current thread ID: `019f9328-ea7c-7b92-a0f3-42cf58743cfc`.
+- Current session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/24/rollout-2026-07-24T16-06-00-019f9328-ea7c-7b92-a0f3-42cf58743cfc.jsonl`.
+- Working directory: `/Users/xiaoxiaotu/_01_IAP/Website`.
+- Resume this exact work with:
+  ```bash
+  codex resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+  ```bash
+  code resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+- Do not delete `/fs2/home/junzhang/kerui/iaplacs-site`: Tianhe cron runs the publisher, pull, and GitHub push from this checkout. It is an active production working directory, not an expendable transfer cache.
+- Chrome can retain favicon records beyond ordinary HTTP caching. All page favicon and Apple-touch references now use the distinct URL `iaplacs-tab-icon-20260725.png?v=20260725-04`, so a page refresh requests a new favicon cache key while retaining the same inspected opaque IAPLACS PNG.
+- Local Git policy was configured in `.git/config` only: `pull.rebase=true`, `rebase.autoStash=true`, and `fetch.prune=true`. Tianhe continues to push data on its own cron; do not schedule a Mac auto-pull because it could change a working tree during an edit. Before starting local work, run `git pull`; before pushing local changes, run `git pull` again. The local settings temporarily preserve uncommitted edits while syncing, but a real textual conflict still needs manual resolution.
+- Pending after this entry: validate, commit/push the favicon query update, then verify the public Ningxia page.
+- Preserve the user-owned unstaged `.gitignore` entry for `.tmp`; do not commit or discard it.
