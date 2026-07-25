@@ -4,7 +4,7 @@
     "name": "IAP-LACS Forecast",
     "domain": "iaplacs.xyz"
   },
-  "published_at": "2026-07-25T22:53:49+08:00",
+  "published_at": "2026-07-25T23:59:34+08:00",
   "note": "天河模型数据源。宁夏与云南图件由天河 WRF 结果生成并发布到 GitHub Pages。",
   "services": {
     "main": {
@@ -948,8 +948,67 @@
       "title": "上饶专项天气服务",
       "subtitle": "Shangrao service",
       "note": "默认显示上饶区域图，可切换同一时次的 WORK 全国降水图。",
-      "latest_run": "tianhe_shangrao_20260725_00",
+      "latest_run": "tianhe_shangrao_20260725_06",
       "runs": [
+        {
+          "id": "tianhe_shangrao_20260725_06",
+          "label": "2026-07-25 14:00 BJT",
+          "run_time": "2026-07-25T14:00:00+08:00",
+          "published_at": "2026-07-25T23:59:34+08:00",
+          "summary": "天河 WORK 上饶降水预报",
+          "products": [
+            {
+              "id": "tianhe_shangrao_precip_series",
+              "title": "上饶 WRF 逐小时降水拼图",
+              "category": "天河预报",
+              "unit": "mm",
+              "color": "#0f68c8",
+              "description": "默认显示上饶区域逐小时降水图，可切换 WORK 全国降水图。",
+              "metrics": [
+                {
+                  "label": "起报时次",
+                  "value": "20260725 06 UTC"
+                },
+                {
+                  "label": "数据源",
+                  "value": "天河"
+                },
+                {
+                  "label": "生成时间",
+                  "value": "2026-07-25 23:59 BJT"
+                },
+                {
+                  "label": "图像数量",
+                  "value": "2"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "shangrao_region",
+                  "lead": 0,
+                  "lead_label": "区域",
+                  "file": "./data/tianhe/current/maps/shangrao_20260725_06/20260725_06_combined_overview_6x6_grid.webp",
+                  "bytes": 1060522,
+                  "preview_file": "./data/tianhe/current/maps/shangrao_20260725_06/20260725_06_combined_overview_6x6_grid.preview.webp",
+                  "preview_bytes": 274072,
+                  "full_file": "./data/tianhe/current/maps/shangrao_20260725_06/20260725_06_combined_overview_6x6_grid.png",
+                  "full_bytes": 1980181
+                },
+                {
+                  "id": "shangrao_national",
+                  "lead": 1,
+                  "lead_label": "全国",
+                  "file": "./data/tianhe/current/maps/shangrao_20260725_06/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_06_00_combined_overview_6x6_grid.webp",
+                  "bytes": 884608,
+                  "preview_file": "./data/tianhe/current/maps/shangrao_20260725_06/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_06_00_combined_overview_6x6_grid.preview.webp",
+                  "preview_bytes": 211070,
+                  "full_file": "./data/tianhe/current/maps/shangrao_20260725_06/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_06_00_combined_overview_6x6_grid.png",
+                  "full_bytes": 1705943
+                }
+              ]
+            }
+          ]
+        },
         {
           "id": "tianhe_shangrao_20260725_00",
           "label": "2026-07-25 08:00 BJT",
