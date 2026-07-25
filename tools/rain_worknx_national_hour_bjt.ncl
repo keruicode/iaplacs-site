@@ -125,7 +125,7 @@ begin
       res@sfYArray = lat_axis
       ; Keep the full coordinate context while the base-map boundaries remain
       ; off. China itself is drawn exclusively by the provincial SHP below.
-      res@pmTickMarkDisplayMode = "Conditional"
+      res@pmTickMarkDisplayMode = "Always"
       res@gsnMajorLonSpacing = 10.0
       res@gsnMajorLatSpacing = 10.0
       res@tmXMajorGrid = False
@@ -138,11 +138,10 @@ begin
       res@tmXBLabelFontThicknessF = 8
       res@tmYLLabelFont = "Times-Roman"
       res@tmYLLabelFontColor = "black"
-      res@tmYLLabelFontHeightF = 0.034
-      res@tmYLLabelFontThicknessF = 8
-      res@tmYLMode = "Explicit"
-      res@tmYLValues = (/20.0, 30.0, 40.0, 50.0/)
-      res@tmYLLabels = (/"20N", "30N", "40N", "50N"/)
+      ; MapPlot intercepts explicit TickMark resources. Suppress its automatic
+      ; left labels and attach the required 10-degree labels to map coordinates.
+      res@tmYLLabelsOn = False
+      res@tmYLOn = False
       res@tmBorderLineColor = "black"
       res@tmBorderThicknessF = 5
       res@lbLabelFont = "Times-Roman"
@@ -155,6 +154,17 @@ begin
       res@pmLabelBarSide = "Right"
 
       plot = gsn_csm_contour_map(wks, rain_h, res)
+      lat_label_values = (/20.0, 30.0, 40.0, 50.0/)
+      lat_label_strings = (/"20~S~o~N~N", "30~S~o~N~N", "40~S~o~N~N", "50~S~o~N~N"/)
+      lat_text_res = True
+      lat_text_res@txFont = "Times-Roman"
+      lat_text_res@txFontHeightF = 0.028
+      lat_text_res@txFontThicknessF = 1.0
+      lat_text_res@txJust = "CenterRight"
+      lat_text = new(dimsizes(lat_label_values), graphic)
+      do ilat = 0, dimsizes(lat_label_values)-1
+        lat_text(ilat) = gsn_add_text(wks, plot, lat_label_strings(ilat), lon_min, lat_label_values(ilat), lat_text_res)
+      end do
       if (province_shp_file.ne."" .and. fileexists(province_shp_file)) then
         province_shp_res = True
         province_shp_res@gsLineColor = "black"
@@ -163,7 +173,7 @@ begin
       end if
       draw(plot)
       frame(wks)
-      delete([/plot, wks, rain_h/])
+      delete([/lat_text, plot, wks, rain_h/])
     end do
     delete([/f, times, rain_all/])
   end do
