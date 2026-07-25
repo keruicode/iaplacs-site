@@ -113,7 +113,9 @@ begin
       res@cnFillDrawOrder = "PreDraw"
       res@mpProjection = "CylindricalEquidistant"
       res@mpDataBaseVersion = "MediumRes"
-      res@mpOutlineBoundarySets = "AllBoundaries"
+      ; The China provincial shapefile below is the sole boundary source for
+      ; this product. Do not draw surrounding-country borders or a world map.
+      res@mpOutlineBoundarySets = "NoBoundaries"
       res@mpFillOn = False
       res@mpMinLonF = lon_min
       res@mpMaxLonF = lon_max
@@ -121,21 +123,7 @@ begin
       res@mpMaxLatF = lat_max
       res@sfXArray = lon_axis
       res@sfYArray = lat_axis
-      res@pmTickMarkDisplayMode = "Always"
-      res@gsnMajorLonSpacing = 10.0
-      res@gsnMajorLatSpacing = 5.0
-      res@tmXMajorGrid = False
-      res@tmYMajorGrid = False
-      res@tmXMinorGrid = False
-      res@tmYMinorGrid = False
-      res@tmXBLabelFontColor = "black"
-      res@tmXBLabelFontHeightF = 0.030
-      res@tmXBLabelFontThicknessF = 5
-      res@tmYLLabelFontColor = "black"
-      res@tmYLLabelFontHeightF = 0.030
-      res@tmYLLabelFontThicknessF = 5
-      res@tmBorderLineColor = "black"
-      res@tmBorderThicknessF = 4
+      res@pmTickMarkDisplayMode = "Never"
       res@lbLabelFontColor = "black"
       res@lbLabelFontHeightF = 0.030
       res@lbLabelFontThicknessF = 5
