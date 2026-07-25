@@ -1,6 +1,76 @@
 # Codex Resume: iaplacs.xyz Website Planning
 
-Last updated: 2026-07-24 CST
+Last updated: 2026-07-25 CST
+
+## Current Work Session: 2026-07-25 Tianhe WORK_tc Backup Cleanup
+
+### Resume Commands
+
+```bash
+codex resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+```
+
+```bash
+code resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+```
+
+### Current Thread
+
+- Thread ID: `019f9328-ea7c-7b92-a0f3-42cf58743cfc`
+- Session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/24/rollout-2026-07-24T16-06-00-019f9328-ea7c-7b92-a0f3-42cf58743cfc.jsonl`
+- Working directory: `/Users/xiaoxiaotu/_01_IAP/Website`
+- Local branch: `main`; published implementation commit: `d9ce2617 Back up and clear completed WORK_tc runs`.
+- Tianhe checkout: `/fs2/home/junzhang/kerui/iaplacs-site`.
+- Tianhe publisher cron:
+  ```cron
+  7,22,37,52 * * * * GIT_BIN=/fs2/home/junzhang/kerui/bin/git-system /fs2/home/junzhang/kerui/iaplacs-site/tools/tianhe_publish_forecast_to_github.sh >> /fs2/home/junzhang/.iaplacs-tianhe/logs/github-publisher.log 2>&1
+  ```
+
+### Implementation And Verification
+
+- Updated `tools/tianhe_publish_forecast_to_github.sh` and
+  `docs/tianhe-github-relay.md` to make `WORK_tc` a backup-only family.
+  `WORK_tc` is deliberately not rendered or uploaded to the website.
+- A stable numeric `WORK_tc` directory must have a WRF output at least 20
+  minutes old and at least 20GB. The publisher creates an atomic,
+  precipitation-only NetCDF backup (`Times`, `XLAT`, `XLONG`, `RAINC`,
+  `RAINNC`), validates it, then removes that full run. Unlike website families,
+  it does not retain a newest full `WORK_tc` run.
+- `IAPLACS_TIANHE_WORK_TC_ENABLED=0` disables only this cleanup. Existing
+  `IAPLACS_TIANHE_DELETE_COMPLETED_MODEL_RUNS=0` prevents all model-output
+  deletions while still allowing inspection with `--dry-run`.
+- Successful first live run at 2026-07-25 10:53 CST:
+  - removed `/fs2/home/junzhang/zhoubj/WORK_tc/2026072406` (about 168GB);
+  - created and independently validated
+    `/fs2/home/junzhang/kerui/iaplacs-precip-backups/WORK_tc/2026072406_precip.nc`
+    (47MB);
+  - retained `WORK_tc/2026072412` because its WRF output was only seven minutes
+    old. The normal 11:07 CST cron run will handle it once it has been stable
+    for 20 minutes.
+- Local verification passed:
+  ```bash
+  bash -n tools/tianhe_publish_forecast_to_github.sh
+  python3 -m py_compile tools/extract_tianhe_precip_backup.py
+  git diff --check
+  ```
+- Tianhe verification passed:
+  ```bash
+  /fs2/home/junzhang/zhoubj/conda_envs/wrf-scripts/bin/python \
+    /fs2/home/junzhang/kerui/iaplacs-site/tools/extract_tianhe_precip_backup.py \
+    --verify /fs2/home/junzhang/kerui/iaplacs-precip-backups/WORK_tc/2026072406_precip.nc
+  ```
+
+### Known Pitfalls And Next Actions
+
+- Never delete `/fs2/home/junzhang/kerui/iaplacs-site`; it is the active Tianhe
+  Git checkout and cron publisher.
+- Do not reduce the 20-minute stability threshold merely to reclaim space. A
+  run still being written must stay intact.
+- The user-owned local `.gitignore` modification is intentionally unstaged and
+  must not be reverted or committed.
+- On the next follow-up, inspect
+  `~/.iaplacs-tianhe/logs/github-publisher.log`, confirm the `2026072412`
+  backup validates and its full directory is gone, then refresh this handoff.
 
 ## Resume Commands
 
