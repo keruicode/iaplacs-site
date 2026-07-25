@@ -1985,6 +1985,24 @@ Notes for deployment:
 - The warning for missing `tools/SHP/省界_region.shp` remains expected. The available Ningxia city/county and Shangrao city/county overlays are still present. Do not fabricate the missing provincial SHP.
 - The only local uncommitted change remains the user's `.gitignore` entry for `.tmp`; do not stage, commit, or discard it.
 
+## 2026-07-25 Airport Source Lock and Tab Icon Cache Repair
+
+- Current thread ID: `019f9328-ea7c-7b92-a0f3-42cf58743cfc`.
+- Current session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/24/rollout-2026-07-24T16-06-00-019f9328-ea7c-7b92-a0f3-42cf58743cfc.jsonl`.
+- Working directory: `/Users/xiaoxiaotu/_01_IAP/Website`.
+- Resume this exact work with:
+  ```bash
+  codex resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+  ```bash
+  code resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+- User reported that Chrome still showed a black cursor-like tab icon on the Ningxia page and that the airport page intermittently reopened with Huan data.
+- Replaced all four HTML pages' favicon declarations with one new, opaque, RGB IAPLACS PNG: `assets/brand/iaplacs-tab-icon-20260725.png`. The old PNG/ICO pair was removed from HTML so Chrome has no competing `.ico` fallback. The newly named asset avoids the old favicon cache key.
+- `airpots/index.html` now uses `data-default-source="tianhe"` and `data-force-default-source="true"`, matching root and Shangrao behavior. The `app.js` initial-source branch honors that flag before any saved browser preference, so the airport page starts with Tianhe on every page load.
+- Local verification passed: visual inspection of the 32 px tab PNG shows the blue IAPLACS mark; `node --check app.js` and `git diff --check` passed. Pending after this entry: commit, push, and public HTTP verification.
+- Preserve the user-owned unstaged `.gitignore` entry for `.tmp`; do not commit or discard it.
+
 ## 2026-07-25 Province Boundary and Nationwide Layout Repair
 
 - Current thread ID: `019f9328-ea7c-7b92-a0f3-42cf58743cfc`.
