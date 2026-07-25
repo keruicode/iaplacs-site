@@ -2004,6 +2004,25 @@ Notes for deployment:
 - Public verification passed: `https://iaplacs.xyz/ningxia/?v=c6eb210a-r2` declares only `iaplacs-tab-icon-20260725.png` (no `.ico` declaration); `https://iaplacs.xyz/airpots/?v=c6eb210a-r2` contains both Tianhe default and force flags; and the new icon asset returns `HTTP 200`, `Content-Type: image/png`, `Content-Length: 87522`.
 - Preserve the user-owned unstaged `.gitignore` entry for `.tmp`; do not commit or discard it.
 
+## 2026-07-25 Ningxia No-Contour and BJT Audit
+
+- Current thread ID: `019f9328-ea7c-7b92-a0f3-42cf58743cfc`.
+- Current session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/24/rollout-2026-07-24T16-06-00-019f9328-ea7c-7b92-a0f3-42cf58743cfc.jsonl`.
+- Working directory: `/Users/xiaoxiaotu/_01_IAP/Website`.
+- Resume this exact work with:
+  ```bash
+  codex resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+  ```bash
+  code resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
+  ```
+- User reported several Ningxia `NO CONTOUR` panels and requested confirmation that the product uses the 36 hours after the initial 12-hour spin-up in BJT.
+- Tianhe source audit against `WORK_nx/2026072412/gfs/wrf/wrfout_d01_2026-07-24_12:00:00` confirmed the NCL loop is `it=13..48`, exactly 36 panels. T13 uses UTC `2026-07-25 00:00-01:00`, which is BJT `07-25 08:00-09:00`; T48 uses UTC `07-26 11:00-12:00`, which is BJT `07-26 19:00-20:00`. The first 12 hours are not drawn.
+- The data itself is dry in several early hours: T13/T14/T17--T20 have Ningxia-wide maximum `0.0 mm`, and T15/T16 are below `0.01 mm`. The old code converted each `<0.01 mm` cell to missing; NCL can label an all-missing panel `NO CONTOUR`. Current Tianhe and Huan previews were visually inspected and did not contain the label, but the renderer was hardened for all later products.
+- Updated `tools/rain_worknx_ningxia_hour_bjt.ncl` and `tools/rain_worknx_national_hour_bjt.ncl`: trace/zero rain is now rendered as the white `0 mm` class rather than missing, and `cnNoDataLabelOn=False` is explicit alongside the existing constant/info label suppression. This does not alter time selection, thresholds, or BJT labels.
+- Local verification passed: `git diff --check`. Pending after this entry: commit/push, deploy to Tianhe, force-render current Ningxia regional/national mosaics, and visually verify the dry panels.
+- Preserve the user-owned unstaged `.gitignore` entry for `.tmp`; do not commit or discard it.
+
 ## 2026-07-25 Province Boundary and Nationwide Layout Repair
 
 - Current thread ID: `019f9328-ea7c-7b92-a0f3-42cf58743cfc`.

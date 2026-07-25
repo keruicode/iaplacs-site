@@ -84,8 +84,9 @@ begin
       file_start = bjt_label(times(it-1), 1)
       file_end = bjt_label(times(it), 1)
       rain_h = rain_all(it,:,:) - rain_all(it-1,:,:)
-      rain_h@_FillValue = -9999.0
-      rain_h = where(rain_h.lt.0.01, rain_h@_FillValue, rain_h)
+      ; Keep trace/zero rain as the white 0 mm class so an all-dry panel
+      ; remains a clean map instead of receiving NCL's NO CONTOUR label.
+      rain_h = where(rain_h.lt.0.01, 0.0, rain_h)
 
       wks = gsn_open_wks("png", out_dir + "/" + init_bjt + "_national_rain_hour_" + file_start + "-" + file_end + "_BJT")
       cmap = (/(/1.00,1.00,1.00/), (/0.00,0.00,0.00/), (/1.00,1.00,1.00/), \
@@ -102,6 +103,7 @@ begin
       res@cnLinesOn = False
       res@cnLineLabelsOn = False
       res@cnInfoLabelOn = False
+      res@cnNoDataLabelOn = False
       res@cnLevelSelectionMode = "ExplicitLevels"
       res@cnLevels = rain_levs
       res@cnFillColors = (/2,3,4,5,6,7/)
