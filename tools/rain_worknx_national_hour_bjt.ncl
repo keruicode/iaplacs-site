@@ -84,9 +84,9 @@ begin
       file_start = bjt_label(times(it-1), 1)
       file_end = bjt_label(times(it), 1)
       rain_h = rain_all(it,:,:) - rain_all(it-1,:,:)
-      ; Keep trace/zero rain as the white 0 mm class so an all-dry panel
-      ; remains a clean map instead of receiving NCL's NO CONTOUR label.
-      rain_h = where(rain_h.lt.0.01, 0.0, rain_h)
+      ; Put trace/zero rain below the first contour level. That is the white
+      ; below-range class, while an all-missing panel triggers NO CONTOUR.
+      rain_h = where(rain_h.lt.0.01, -1.0, rain_h)
 
       wks = gsn_open_wks("png", out_dir + "/" + init_bjt + "_national_rain_hour_" + file_start + "-" + file_end + "_BJT")
       cmap = (/(/1.00,1.00,1.00/), (/0.00,0.00,0.00/), (/1.00,1.00,1.00/), \
