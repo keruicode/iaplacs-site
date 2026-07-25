@@ -24,7 +24,7 @@ WORK_SHANGRAO_ROOT="${WORK_SHANGRAO_ROOT:-$TIANHE_HOME/zhoubj/WORK}"
 # as a verified precipitation backup, then released to protect the shared quota.
 WORK_TC_ROOT="${WORK_TC_ROOT:-$TIANHE_HOME/zhoubj/WORK_tc}"
 WORK_TC_ENABLED="${IAPLACS_TIANHE_WORK_TC_ENABLED:-1}"
-SITE_REPO="${SITE_REPO:-$TIANHE_HOME/kerui/iaplacs-site}"
+SITE_REPO="${SITE_REPO:-$TIANHE_HOME/kerui/.iaplacs-site}"
 GIT_REMOTE_URL="${GIT_REMOTE_URL:-https://github.com/keruicode/iaplacs-site.git}"
 if [[ -n "${GIT_BIN:-}" ]]; then
   GIT_BIN="$GIT_BIN"

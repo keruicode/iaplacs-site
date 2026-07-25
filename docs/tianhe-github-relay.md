@@ -37,8 +37,9 @@ Intermediate 36-panel PNG files are created only below
 `~/.iaplacs-tianhe/rendered/*/.panels` while composing a mosaic, then removed.
 Use `--force` to regenerate an already rendered run after a plotting change.
 
-After cloning `iaplacs-site` to `/fs2/home/junzhang/kerui/iaplacs-site`,
-verify discovery without changing files:
+The active Tianhe checkout is deliberately hidden at
+`/fs2/home/junzhang/kerui/.iaplacs-site`. After cloning or moving the checkout
+there, verify discovery without changing files:
 
 ```bash
 tools/tianhe_publish_forecast_to_github.sh --dry-run
