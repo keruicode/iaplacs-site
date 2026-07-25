@@ -73,18 +73,21 @@ caption_panel() {
   panel_date="${BASH_REMATCH[2]}-${BASH_REMATCH[3]} ${BASH_REMATCH[4]}:00-${BASH_REMATCH[8]}:00"
   caption_path="$caption_dir/$panel_name"
   convert "$panel_path" \
+    -trim +repage \
     -gravity North \
     -background white \
-    -splice 0x48 \
+    -splice 0x118 \
     -fill black \
-    -font Helvetica-Bold \
-    -pointsize 82 \
-    -annotate +0+1 "$panel_date" \
+    -font "Times New Roman" \
+    -stroke black \
+    -strokewidth 1 \
+    -pointsize 108 \
+    -annotate +0+14 "$panel_date" \
     "$caption_path"
 }
 
 render_source() {
-  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview
+  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview mosaic init_label
   base="$(basename "$source_path")"
   if [[ ! "$base" =~ wrfout_d01_([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2}):[0-9]{2}:[0-9]{2} ]]; then
     echo "ERROR: cannot parse run time from $base" >&2
@@ -98,6 +101,8 @@ render_source() {
   panel_dir="$run_dir/hourly_t13_t48"
   caption_dir="$run_dir/captioned_t13_t48"
   overview="$run_dir/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_${run_date}_${run_hour}_00_combined_overview_6x6_grid.png"
+  mosaic="$run_dir/.combined_overview_6x6_grid.mosaic.png"
+  init_label="起报时间：${run_date} ${run_hour}:00 UTC"
 
   mkdir -p "$panel_dir" "$caption_dir"
   echo "Rendering nationwide T13-T48 panels for $run_prefix from $wrf_dir"
@@ -119,7 +124,19 @@ render_source() {
     captioned_panels+=("$caption_dir/$(basename "$panel")")
   done
 
-  montage "${captioned_panels[@]}" -tile 6x6 -geometry '100%x100%+2+2' -background white "$overview"
+  montage "${captioned_panels[@]}" -tile 6x6 -geometry '100%x100%+2+2' -background white "$mosaic"
+  convert "$mosaic" \
+    -gravity North \
+    -background white \
+    -splice 0x160 \
+    -fill black \
+    -font "Noto Serif CJK SC" \
+    -stroke black \
+    -strokewidth 1 \
+    -pointsize 132 \
+    -annotate +0+24 "$init_label" \
+    "$overview"
+  rm -f "$mosaic"
   touch -r "$source_path" "$overview"
   echo "Rendered $overview"
 }

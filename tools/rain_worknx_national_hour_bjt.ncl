@@ -123,10 +123,29 @@ begin
       res@mpMaxLatF = lat_max
       res@sfXArray = lon_axis
       res@sfYArray = lat_axis
-      res@pmTickMarkDisplayMode = "Never"
+      ; Keep the full coordinate context while the base-map boundaries remain
+      ; off. China itself is drawn exclusively by the provincial SHP below.
+      res@pmTickMarkDisplayMode = "Always"
+      res@gsnMajorLonSpacing = 10.0
+      res@gsnMajorLatSpacing = 5.0
+      res@tmXMajorGrid = False
+      res@tmYMajorGrid = False
+      res@tmXMinorGrid = False
+      res@tmYMinorGrid = False
+      res@tmXBLabelFont = "times-roman"
+      res@tmXBLabelFontColor = "black"
+      res@tmXBLabelFontHeightF = 0.034
+      res@tmXBLabelFontThicknessF = 8
+      res@tmYLLabelFont = "times-roman"
+      res@tmYLLabelFontColor = "black"
+      res@tmYLLabelFontHeightF = 0.034
+      res@tmYLLabelFontThicknessF = 8
+      res@tmBorderLineColor = "black"
+      res@tmBorderThicknessF = 5
+      res@lbLabelFont = "times-roman"
       res@lbLabelFontColor = "black"
-      res@lbLabelFontHeightF = 0.030
-      res@lbLabelFontThicknessF = 5
+      res@lbLabelFontHeightF = 0.034
+      res@lbLabelFontThicknessF = 8
       res@lbLabelBarOn = True
       res@lbOrientation = "Vertical"
       res@pmLabelBarDisplayMode = "Always"
@@ -136,7 +155,7 @@ begin
       if (province_shp_file.ne."" .and. fileexists(province_shp_file)) then
         province_shp_res = True
         province_shp_res@gsLineColor = "black"
-        province_shp_res@gsLineThicknessF = 4.5
+        province_shp_res@gsLineThicknessF = 6.5
         province_shp_line = gsn_add_shapefile_polylines(wks, plot, province_shp_file, province_shp_res)
       end if
       draw(plot)
