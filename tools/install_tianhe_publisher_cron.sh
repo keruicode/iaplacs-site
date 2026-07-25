@@ -7,9 +7,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PUBLISHER="${PUBLISHER:-$SCRIPT_DIR/tianhe_publish_forecast_to_github.sh}"
 STATE_DIR="${IAPLACS_TIANHE_STATE_DIR:-$HOME/.iaplacs-tianhe}"
 LOG_DIR="${IAPLACS_TIANHE_LOG_DIR:-$STATE_DIR/logs}"
+DELETE_COMPLETED_MODEL_RUNS="${IAPLACS_TIANHE_DELETE_COMPLETED_MODEL_RUNS:-0}"
 
 [[ -x "$PUBLISHER" ]] || {
   echo "ERROR: Tianhe publisher is not executable: $PUBLISHER" >&2
+  exit 1
+}
+[[ "$DELETE_COMPLETED_MODEL_RUNS" == "0" || "$DELETE_COMPLETED_MODEL_RUNS" == "1" ]] || {
+  echo "ERROR: IAPLACS_TIANHE_DELETE_COMPLETED_MODEL_RUNS must be 0 or 1" >&2
   exit 1
 }
 
@@ -34,7 +39,7 @@ awk '
 cat >> "$CRON_TMP" <<EOF
 
 # IAPLACS Tianhe GitHub publisher begin
-7,22,37,52 * * * * $PUBLISHER >> $LOG_DIR/github-publisher.log 2>&1
+7,22,37,52 * * * * IAPLACS_TIANHE_DELETE_COMPLETED_MODEL_RUNS=$DELETE_COMPLETED_MODEL_RUNS $PUBLISHER >> $LOG_DIR/github-publisher.log 2>&1
 # IAPLACS Tianhe GitHub publisher end
 EOF
 

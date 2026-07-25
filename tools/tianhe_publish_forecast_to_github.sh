@@ -49,7 +49,9 @@ KEEP_RUNS="${IAPLACS_TIANHE_KEEP_RUNS:-5}"
 PRECIP_BACKUP_ROOT="${IAPLACS_TIANHE_PRECIP_BACKUP_ROOT:-$TIANHE_HOME/kerui/iaplacs-precip-backups}"
 PRECIP_BACKUP_KEEP_RUNS="${IAPLACS_TIANHE_PRECIP_BACKUP_KEEP_RUNS:-10}"
 PRECIP_BACKUP_EXTRACTOR="${IAPLACS_TIANHE_PRECIP_BACKUP_EXTRACTOR:-$SCRIPT_DIR/extract_tianhe_precip_backup.py}"
-DELETE_COMPLETED_MODEL_RUNS="${IAPLACS_TIANHE_DELETE_COMPLETED_MODEL_RUNS:-1}"
+# Keep full WRF output by default. Set this explicitly to 1 only when storage
+# pressure justifies deleting a run after its backup has been verified.
+DELETE_COMPLETED_MODEL_RUNS="${IAPLACS_TIANHE_DELETE_COMPLETED_MODEL_RUNS:-0}"
 MIN_FILE_AGE_SECONDS="${IAPLACS_TIANHE_MIN_FILE_AGE_SECONDS:-1200}"
 MIN_WRFOUT_BYTES="${IAPLACS_TIANHE_MIN_WRFOUT_BYTES:-20000000000}"
 GIT_NETWORK_TIMEOUT="${IAPLACS_TIANHE_GIT_NETWORK_TIMEOUT:-120}"
@@ -64,9 +66,9 @@ Usage: tianhe_publish_forecast_to_github.sh [--dry-run] [--force]
 
 Finds the newest stable Tianhe WORK_nx, WORK_yn, and WORK wrfout files,
 renders the regional precipitation figures, retains five web runs per family, creates
-compact precipitation backups, safely removes superseded completed WRF runs, rebuilds
+compact precipitation backups, can optionally remove completed WRF runs, rebuilds
 data/tianhe/current/forecast-runs.json, then pushes to origin. Completed WORK_tc
-output is not rendered: it is backed up and removed immediately after validation.
+output is not rendered: it is backed up, while full WRF output is retained by default.
 EOF
 }
 

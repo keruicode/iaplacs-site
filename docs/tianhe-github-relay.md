@@ -60,7 +60,7 @@ operation has two attempts by default; adjust
 `IAPLACS_TIANHE_GIT_NETWORK_ATTEMPTS` or
 `IAPLACS_TIANHE_GIT_NETWORK_RETRY_DELAY` only when needed.
 
-## Completed WRF cleanup
+## WRF backups and optional cleanup
 
 The same 15-minute publisher also manages completed WRF output directories.
 It creates an atomic, compressed precipitation-only NetCDF backup containing
@@ -70,20 +70,17 @@ It creates an atomic, compressed precipitation-only NetCDF backup containing
 /fs2/home/junzhang/kerui/iaplacs-precip-backups/<WORK family>/<YYYYMMDDHH>_precip.nc
 ```
 
-Only after the corresponding web products are complete and the backup validates
-does it remove a superseded stable numeric run directory from `WORK_nx`,
-`WORK_yn`, or `WORK`. The newest completed run is never removed, and incomplete
-runs are retained. This leaves one complete full WRF run per family until the
-next completed run has been rendered and backed up.
+The default is to retain all original WRF output directories. The publisher can
+still create and validate precipitation-only backups, but it does not delete
+any `wrfout` directory unless deletion is explicitly enabled.
 
 `WORK_tc` follows a separate backup-only rule because it has no website product:
 once a numeric run's WRF file is stable (at least 20 minutes old and at least
-20GB by default), the publisher creates and verifies its precipitation backup,
-then deletes that full run immediately. Incomplete or still-writing runs are
-never deleted. Set `IAPLACS_TIANHE_WORK_TC_ENABLED=0` to disable only this
-`WORK_tc` cleanup.
+20GB by default), the publisher may create and verify its precipitation backup.
+Its original full run remains on disk by default. Set
+`IAPLACS_TIANHE_WORK_TC_ENABLED=0` to disable only this `WORK_tc` backup pass.
 
-The defaults keep 10 precipitation backups per family and enable model cleanup.
-Set `IAPLACS_TIANHE_DELETE_COMPLETED_MODEL_RUNS=0` to inspect backups without
-deleting any WRF output. The `--dry-run` mode reports planned extraction and
-cleanup without modifying files.
+The defaults keep 10 precipitation backups per family and disable model cleanup.
+Only set `IAPLACS_TIANHE_DELETE_COMPLETED_MODEL_RUNS=1` when storage pressure
+requires removing completed full runs after their backup is validated. The
+`--dry-run` mode reports planned extraction and cleanup without modifying files.
