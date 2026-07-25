@@ -19,11 +19,11 @@ code resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
 - Thread ID: `019f9328-ea7c-7b92-a0f3-42cf58743cfc`
 - Session log: `/Users/xiaoxiaotu/.codex/sessions/2026/07/24/rollout-2026-07-24T16-06-00-019f9328-ea7c-7b92-a0f3-42cf58743cfc.jsonl`
 - Working directory: `/Users/xiaoxiaotu/_01_IAP/Website`
-- Local branch: `main`; published implementation commits: `d9ce2617 Back up and clear completed WORK_tc runs` and `3ab0fabe Hide Tianhe publisher checkout`.
+- Local branch: `main`; latest policy commit: `0b6438cc Retain Tianhe WRF output by default`.
 - Tianhe checkout: `/fs2/home/junzhang/kerui/.iaplacs-site` (deliberately hidden).
 - Tianhe publisher cron:
   ```cron
-  7,22,37,52 * * * * /fs2/home/junzhang/kerui/.iaplacs-site/tools/tianhe_publish_forecast_to_github.sh >> /fs2/home/junzhang/.iaplacs-tianhe/logs/github-publisher.log 2>&1
+  7,22,37,52 * * * * IAPLACS_TIANHE_DELETE_COMPLETED_MODEL_RUNS=0 /fs2/home/junzhang/kerui/.iaplacs-site/tools/tianhe_publish_forecast_to_github.sh >> /fs2/home/junzhang/.iaplacs-tianhe/logs/github-publisher.log 2>&1
   ```
 
 ### Implementation And Verification
@@ -31,14 +31,11 @@ code resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
 - Updated `tools/tianhe_publish_forecast_to_github.sh` and
   `docs/tianhe-github-relay.md` to make `WORK_tc` a backup-only family.
   `WORK_tc` is deliberately not rendered or uploaded to the website.
-- A stable numeric `WORK_tc` directory must have a WRF output at least 20
-  minutes old and at least 20GB. The publisher creates an atomic,
-  precipitation-only NetCDF backup (`Times`, `XLAT`, `XLONG`, `RAINC`,
-  `RAINNC`), validates it, then removes that full run. Unlike website families,
-  it does not retain a newest full `WORK_tc` run.
-- `IAPLACS_TIANHE_WORK_TC_ENABLED=0` disables only this cleanup. Existing
-  `IAPLACS_TIANHE_DELETE_COMPLETED_MODEL_RUNS=0` prevents all model-output
-  deletions while still allowing inspection with `--dry-run`.
+- The current policy retains all full WRF output by default. The publisher may
+  create atomic precipitation-only NetCDF backups (`Times`, `XLAT`, `XLONG`,
+  `RAINC`, `RAINNC`), but never deletes model directories unless
+  `IAPLACS_TIANHE_DELETE_COMPLETED_MODEL_RUNS=1` is explicitly configured.
+  The Tianhe cron now explicitly sets this variable to `0`.
 - Successful first live run at 2026-07-25 10:53 CST:
   - removed `/fs2/home/junzhang/zhoubj/WORK_tc/2026072406` (about 168GB);
   - created and independently validated
@@ -58,6 +55,11 @@ code resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
 - At 11:30:47 CST, `WORK_tc/2026072412` had a WRF file modified at 11:30:18,
   so the 20-minute stability safeguard correctly retained it. Do not manually
   delete it while its timestamp continues to advance.
+- At 16:11 CST the no-deletion policy was deployed to the hidden checkout and
+  cron. `WORK_tc/2026072412` and `WORK_tc/2026072418` had already been removed
+  by the earlier deletion policy; their 43MB and 44MB precipitation backups,
+  respectively, validate successfully. The earlier `2026072406` 47MB backup
+  also validates. These backups cannot reconstruct the deleted full WRF output.
 - Local verification passed:
   ```bash
   bash -n tools/tianhe_publish_forecast_to_github.sh
@@ -75,14 +77,15 @@ code resume 019f9328-ea7c-7b92-a0f3-42cf58743cfc
 
 - Never delete `/fs2/home/junzhang/kerui/.iaplacs-site`; it is the active Tianhe
   Git checkout and cron publisher.
-- Do not reduce the 20-minute stability threshold merely to reclaim space. A
-  run still being written must stay intact.
+- Keep `IAPLACS_TIANHE_DELETE_COMPLETED_MODEL_RUNS=0` in the cron line while
+  the 15TB quota remains available. Do not set it to `1` unless the user
+  explicitly requests deletion again.
 - The user-owned local `.gitignore` modification is intentionally unstaged and
   must not be reverted or committed.
 - On the next follow-up, inspect
-  `~/.iaplacs-tianhe/logs/github-publisher.log`, confirm the `2026072412`
-  file has stopped changing for 20 minutes, then confirm its backup validates
-  and full directory is gone before refreshing this handoff.
+  `~/.iaplacs-tianhe/logs/github-publisher.log` and confirm new WRF runs remain
+  in their source directories after publication. The compact precipitation
+  backups can remain as an additional archive.
 
 ## Resume Commands
 
