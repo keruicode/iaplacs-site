@@ -134,8 +134,9 @@ begin
       res@tmYMinorGrid = False
       res@tmXBLabelFont = "Times-Roman"
       res@tmXBLabelFontColor = "black"
-      res@tmXBLabelFontHeightF = 0.034
-      res@tmXBLabelFontThicknessF = 8
+      res@tmXBLabelFontHeightF = 0.028
+      res@tmXBLabelFontThicknessF = 1.0
+      res@tmXBLabelDeltaF = -0.15
       res@tmYLLabelFont = "Times-Roman"
       res@tmYLLabelFontColor = "black"
       res@tmBorderLineColor = "black"
