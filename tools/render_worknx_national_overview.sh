@@ -78,7 +78,7 @@ caption_panel() {
     -background white \
     -splice 0x92 \
     -fill black \
-    -font "Times New Roman" \
+    -font "Times-Roman" \
     -stroke black \
     -strokewidth 1 \
     -pointsize 88 \
@@ -131,7 +131,7 @@ render_source() {
     -background white \
     -splice 0x160 \
     -fill black \
-    -font "Times New Roman" \
+    -font "Times-Roman" \
     -stroke black \
     -strokewidth 1 \
     -pointsize 132 \

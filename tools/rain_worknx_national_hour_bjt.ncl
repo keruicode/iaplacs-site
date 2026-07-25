@@ -140,9 +140,6 @@ begin
       res@tmYLLabelFontColor = "black"
       res@tmYLLabelFontHeightF = 0.034
       res@tmYLLabelFontThicknessF = 8
-      res@tmYLMode = "Explicit"
-      res@tmYLValues = (/20.0, 30.0, 40.0, 50.0/)
-      res@tmYLLabels = (/"20N", "30N", "40N", "50N"/)
       res@tmBorderLineColor = "black"
       res@tmBorderThicknessF = 5
       res@lbLabelFont = "Times-Roman"
