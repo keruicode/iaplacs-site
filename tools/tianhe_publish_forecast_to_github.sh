@@ -20,6 +20,10 @@ fi
 WORK_NX_ROOT="${WORK_NX_ROOT:-$TIANHE_HOME/zhoubj/WORK_nx}"
 WORK_YN_ROOT="${WORK_YN_ROOT:-$TIANHE_HOME/zhoubj/WORK_yn}"
 WORK_SHANGRAO_ROOT="${WORK_SHANGRAO_ROOT:-$TIANHE_HOME/zhoubj/WORK}"
+# WORK_tc is not rendered for the website. Its completed output is retained only
+# as a verified precipitation backup, then released to protect the shared quota.
+WORK_TC_ROOT="${WORK_TC_ROOT:-$TIANHE_HOME/zhoubj/WORK_tc}"
+WORK_TC_ENABLED="${IAPLACS_TIANHE_WORK_TC_ENABLED:-1}"
 SITE_REPO="${SITE_REPO:-$TIANHE_HOME/kerui/iaplacs-site}"
 GIT_REMOTE_URL="${GIT_REMOTE_URL:-https://github.com/keruicode/iaplacs-site.git}"
 if [[ -n "${GIT_BIN:-}" ]]; then
@@ -61,7 +65,8 @@ Usage: tianhe_publish_forecast_to_github.sh [--dry-run] [--force]
 Finds the newest stable Tianhe WORK_nx, WORK_yn, and WORK wrfout files,
 renders the regional precipitation figures, retains five web runs per family, creates
 compact precipitation backups, safely removes superseded completed WRF runs, rebuilds
-data/tianhe/current/forecast-runs.json, then pushes to origin.
+data/tianhe/current/forecast-runs.json, then pushes to origin. Completed WORK_tc
+output is not rendered: it is backed up and removed immediately after validation.
 EOF
 }
 
@@ -94,6 +99,12 @@ done
 [[ -d "$WORK_NX_ROOT" ]] || fail "WORK_nx directory does not exist: $WORK_NX_ROOT"
 [[ -d "$WORK_YN_ROOT" ]] || fail "WORK_yn directory does not exist: $WORK_YN_ROOT"
 [[ -d "$WORK_SHANGRAO_ROOT" ]] || fail "WORK directory does not exist: $WORK_SHANGRAO_ROOT"
+[[ "$WORK_TC_ENABLED" == "0" || "$WORK_TC_ENABLED" == "1" ]] \
+  || fail "IAPLACS_TIANHE_WORK_TC_ENABLED must be 0 or 1"
+if [[ "$WORK_TC_ENABLED" == "1" && ! -d "$WORK_TC_ROOT" ]]; then
+  echo "WARNING: WORK_tc directory does not exist; skipping WORK_tc backup cleanup: $WORK_TC_ROOT" >&2
+  WORK_TC_ENABLED=0
+fi
 [[ -x "$PYTHON_BIN" ]] || fail "Python environment is not executable: $PYTHON_BIN"
 [[ -x "$NCL_COMMAND_RUNNER" ]] || fail "Tianhe NCL command runner is not executable: $NCL_COMMAND_RUNNER"
 [[ -x "$NINGXIA_NCL_RENDERER" ]] || fail "Ningxia NCL renderer is not executable: $NINGXIA_NCL_RENDERER"
@@ -333,6 +344,41 @@ cleanup_completed_model_runs() {
   )
 }
 
+cleanup_backup_only_model_runs() {
+  local family="$1"
+  local work_root="$2"
+  local run_id run_root wrfout
+
+  # Unlike the website-backed families, WORK_tc has no map publication step and
+  # must not keep a full latest run. Only stable numeric runs with a valid backup
+  # are eligible for deletion.
+  while IFS= read -r run_id; do
+    run_root="$work_root/$run_id"
+    wrfout="$(matching_wrfout "$run_root" || true)"
+    if [[ -z "$wrfout" ]]; then
+      echo "retaining non-stable $family run $run_id"
+      continue
+    fi
+    if ! ensure_precip_backup "$family" "$run_id" "$wrfout"; then
+      continue
+    fi
+    if [[ "$DELETE_COMPLETED_MODEL_RUNS" == "0" ]]; then
+      echo "model cleanup disabled; retaining $family run $run_id"
+    elif [[ "$DRY_RUN" == "1" ]]; then
+      echo "would remove backed-up $family run: $run_root"
+    else
+      [[ "$run_id" =~ ^[0-9]{10}$ && "$run_root" == "$work_root/$run_id" ]] \
+        || fail "unsafe model run cleanup path: $run_root"
+      echo "removing backed-up $family run: $run_root"
+      rm -rf -- "$run_root"
+    fi
+  done < <(
+    find "$work_root" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' \
+      | LC_ALL=C awk '/^[0-9]{10}$/' \
+      | LC_ALL=C sort -r
+  )
+}
+
 prune_precip_backups() {
   local family="$1"
   local backup_dir="$PRECIP_BACKUP_ROOT/$family"
@@ -562,9 +608,15 @@ fi
 cleanup_completed_model_runs "WORK_nx" "$WORK_NX_ROOT"
 cleanup_completed_model_runs "WORK_yn" "$WORK_YN_ROOT"
 cleanup_completed_model_runs "WORK" "$WORK_SHANGRAO_ROOT"
+if [[ "$WORK_TC_ENABLED" == "1" ]]; then
+  cleanup_backup_only_model_runs "WORK_tc" "$WORK_TC_ROOT"
+fi
 prune_precip_backups "WORK_nx"
 prune_precip_backups "WORK_yn"
 prune_precip_backups "WORK"
+if [[ "$WORK_TC_ENABLED" == "1" ]]; then
+  prune_precip_backups "WORK_tc"
+fi
 
 if [[ "$DRY_RUN" == "1" ]]; then
   exit 0

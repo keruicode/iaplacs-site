@@ -11,6 +11,8 @@ The publisher reads these default Tianhe locations:
 ```text
 /fs2/home/junzhang/zhoubj/WORK_nx
 /fs2/home/junzhang/zhoubj/WORK_yn
+/fs2/home/junzhang/zhoubj/WORK
+/fs2/home/junzhang/zhoubj/WORK_tc
 ```
 
 It uses ImageMagick when present; otherwise it uses Pillow from the existing
@@ -27,8 +29,9 @@ existing Tianhe Conda Python reads the completed WRF files directly and creates:
 - `WORK_yn`: a Yunnan airport T13-T48 6x6 precipitation mosaic with the three
   airport-plane markers and `airport_precip_totals.json`. The catalog shows the
   maximum hourly precipitation and time for each airport.
-- `WORK_tc`/Shangrao: the catalog remains ready but intentionally has no run
-  until Tianhe produces a completed Shangrao product.
+- `WORK`: Shangrao regional precipitation mosaics.
+- `WORK_tc`: not rendered or transferred to the website. It is a storage-only
+  source whose completed output is condensed into a precipitation backup.
 
 Intermediate 36-panel PNG files are created only below
 `~/.iaplacs-tianhe/rendered/*/.panels` while composing a mosaic, then removed.
@@ -71,6 +74,13 @@ does it remove a superseded stable numeric run directory from `WORK_nx`,
 `WORK_yn`, or `WORK`. The newest completed run is never removed, and incomplete
 runs are retained. This leaves one complete full WRF run per family until the
 next completed run has been rendered and backed up.
+
+`WORK_tc` follows a separate backup-only rule because it has no website product:
+once a numeric run's WRF file is stable (at least 20 minutes old and at least
+20GB by default), the publisher creates and verifies its precipitation backup,
+then deletes that full run immediately. Incomplete or still-writing runs are
+never deleted. Set `IAPLACS_TIANHE_WORK_TC_ENABLED=0` to disable only this
+`WORK_tc` cleanup.
 
 The defaults keep 10 precipitation backups per family and enable model cleanup.
 Set `IAPLACS_TIANHE_DELETE_COMPLETED_MODEL_RUNS=0` to inspect backups without
