@@ -79,8 +79,7 @@ caption_panel() {
     -splice 0x92 \
     -fill black \
     -font "times.ttf" \
-    -stroke black \
-    -strokewidth 1 \
+    -stroke none \
     -pointsize 88 \
     -annotate +0+14 "$panel_date" \
     "$caption_path"
@@ -132,8 +131,7 @@ render_source() {
     -splice 0x160 \
     -fill black \
     -font "times.ttf" \
-    -stroke black \
-    -strokewidth 1 \
+    -stroke none \
     -pointsize 132 \
     -annotate +0+24 "$init_label" \
     "$overview"
