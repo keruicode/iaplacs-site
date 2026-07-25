@@ -2000,7 +2000,8 @@ Notes for deployment:
 - User reported that Chrome still showed a black cursor-like tab icon on the Ningxia page and that the airport page intermittently reopened with Huan data.
 - Replaced all four HTML pages' favicon declarations with one new, opaque, RGB IAPLACS PNG: `assets/brand/iaplacs-tab-icon-20260725.png`. The old PNG/ICO pair was removed from HTML so Chrome has no competing `.ico` fallback. The newly named asset avoids the old favicon cache key.
 - `airpots/index.html` now uses `data-default-source="tianhe"` and `data-force-default-source="true"`, matching root and Shangrao behavior. The `app.js` initial-source branch honors that flag before any saved browser preference, so the airport page starts with Tianhe on every page load.
-- Local verification passed: visual inspection of the 32 px tab PNG shows the blue IAPLACS mark; `node --check app.js` and `git diff --check` passed. Pending after this entry: commit, push, and public HTTP verification.
+- Local verification passed: visual inspection of the 32 px tab PNG shows the blue IAPLACS mark; `node --check app.js` and `git diff --check` passed. Commit `c6eb210a Force airport Tianhe source and refresh tab icon` was rebased onto Tianhe data commit `1497cc62` and pushed to `origin/main`.
+- Public verification passed: `https://iaplacs.xyz/ningxia/?v=c6eb210a-r2` declares only `iaplacs-tab-icon-20260725.png` (no `.ico` declaration); `https://iaplacs.xyz/airpots/?v=c6eb210a-r2` contains both Tianhe default and force flags; and the new icon asset returns `HTTP 200`, `Content-Type: image/png`, `Content-Length: 87522`.
 - Preserve the user-owned unstaged `.gitignore` entry for `.tmp`; do not commit or discard it.
 
 ## 2026-07-25 Province Boundary and Nationwide Layout Repair
