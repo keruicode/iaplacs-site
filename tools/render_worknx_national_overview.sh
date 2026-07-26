@@ -84,22 +84,6 @@ caption_panel() {
   caption_path="$caption_dir/$panel_name"
   convert "$panel_path" \
     -trim +repage \
-    -background white \
-    -gravity South \
-    -splice 0x56 \
-    +gravity \
-    -fill white \
-    -stroke none \
-    -draw 'rectangle 0,0 141,422' \
-    -draw 'rectangle 142,430 966,497' \
-    -stroke black \
-    -strokewidth 1 \
-    -draw 'line 128,69 142,69 line 128,172 142,172 line 128,275 142,275 line 128,378 142,378' \
-    -fill black \
-    -stroke none \
-    -font "times.ttf" \
-    -pointsize 24 \
-    -draw 'text 94,82 "50°N" text 94,185 "40°N" text 94,288 "30°N" text 94,391 "20°N" text 178,463 "75°E" text 351,463 "90°E" text 517,463 "105°E" text 692,463 "120°E" text 866,463 "135°E"' \
     -gravity North \
     -background white \
     -splice 0x92 \
@@ -112,36 +96,7 @@ caption_panel() {
 }
 
 caption_panel_legacy() {
-  local panel_path="$1" caption_dir="$2" panel_name panel_date caption_path
-  panel_name="$(basename "$panel_path")"
-  if [[ ! "$panel_name" =~ _rain_hour_([0-9]{4})([0-9]{2})([0-9]{2})([0-9]{2})-([0-9]{4})([0-9]{2})([0-9]{2})([0-9]{2})_BJT\.png$ ]]; then
-    echo "ERROR: cannot parse panel date from $panel_name" >&2
-    return 1
-  fi
-  panel_date="${BASH_REMATCH[2]}-${BASH_REMATCH[3]} ${BASH_REMATCH[4]}:00-${BASH_REMATCH[8]}:00"
-  caption_path="$caption_dir/$panel_name"
-  convert "$panel_path" \
-    -trim +repage \
-    -fill white \
-    -stroke none \
-    -draw 'rectangle 0,0 141,422' \
-    -stroke black \
-    -strokewidth 1 \
-    -draw 'line 128,69 142,69 line 128,172 142,172 line 128,275 142,275 line 128,378 142,378' \
-    -fill black \
-    -stroke none \
-    -font "times.ttf" \
-    -pointsize 24 \
-    -draw 'text 94,82 "50°N" text 94,185 "40°N" text 94,288 "30°N" text 94,391 "20°N"' \
-    -gravity North \
-    -background white \
-    -splice 0x92 \
-    -fill black \
-    -font "times.ttf" \
-    -stroke none \
-    -pointsize 88 \
-    -annotate +0+14 "$panel_date" \
-    "$caption_path"
+  caption_panel "$@"
 }
 
 render_source() {

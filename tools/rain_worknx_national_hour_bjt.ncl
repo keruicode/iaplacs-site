@@ -137,11 +137,13 @@ begin
       res@tmXBLabelFontHeightF = 0.028
       res@tmXBLabelFontThicknessF = 1.0
       res@tmXBLabelDeltaF = -0.15
-      ; The montage renderer places both coordinate-label axes explicitly so
-      ; nationwide Ningxia, airport, and Shangrao figures have identical type.
-      res@tmXBLabelsOn = False
+      res@tmXBLabelsOn = True
+      res@tmYLLabelsOn = True
       res@tmYLLabelFont = "Times-Roman"
       res@tmYLLabelFontColor = "black"
+      res@tmYLLabelFontHeightF = 0.028
+      res@tmYLLabelFontThicknessF = 1.0
+      res@tmYLLabelDeltaF = -0.15
       res@tmBorderLineColor = "black"
       res@tmBorderThicknessF = 5
       res@lbLabelFont = "Times-Roman"
