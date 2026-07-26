@@ -77,6 +77,7 @@ caption_panel() {
     -fill white \
     -stroke none \
     -draw 'rectangle 0,0 141,422' \
+    -draw 'rectangle 142,430 966,497' \
     -stroke black \
     -strokewidth 1 \
     -draw 'line 128,69 142,69 line 128,172 142,172 line 128,275 142,275 line 128,378 142,378' \
@@ -84,7 +85,7 @@ caption_panel() {
     -stroke none \
     -font "times.ttf" \
     -pointsize 24 \
-    -draw 'text 88,82 "50°N" text 88,185 "40°N" text 88,288 "30°N" text 88,391 "20°N"' \
+    -draw 'text 94,82 "50°N" text 94,185 "40°N" text 94,288 "30°N" text 94,391 "20°N" text 178,463 "75°E" text 351,463 "90°E" text 517,463 "105°E" text 692,463 "120°E" text 866,463 "135°E"' \
     -gravity North \
     -background white \
     -splice 0x92 \
