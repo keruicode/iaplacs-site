@@ -4,15 +4,86 @@
     "name": "IAP-LACS Forecast",
     "domain": "iaplacs.xyz"
   },
-  "published_at": "2026-07-26T10:19:06+08:00",
+  "published_at": "2026-07-26T11:23:25+08:00",
   "note": "天河模型数据源。宁夏与云南图件由天河 WRF 结果生成并发布到 GitHub Pages。",
   "services": {
     "main": {
       "title": "机场气象服务",
       "subtitle": "Airport weather service",
       "note": "天河 WORK_yn 云南机场降水产品。",
-      "latest_run": "tianhe_airport_yunnan_20260725_06",
+      "latest_run": "tianhe_airport_yunnan_20260725_12",
       "runs": [
+        {
+          "id": "tianhe_airport_yunnan_20260725_12",
+          "label": "2026-07-25 20:00 BJT",
+          "run_time": "2026-07-25T20:00:00+08:00",
+          "published_at": "2026-07-26T11:23:25+08:00",
+          "summary": "天河 WORK_yn 云南降水预报",
+          "products": [
+            {
+              "id": "tianhe_airport_yunnan_precip_series",
+              "title": "云南机场降水预报图集",
+              "category": "天河预报",
+              "unit": "mm",
+              "color": "#0f68c8",
+              "description": "默认显示云南机场区域图，可切换 WORK_yn 全国降水图。区域图标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈机场位置。",
+              "metrics": [
+                {
+                  "label": "起报时次",
+                  "value": "20260725 12 UTC"
+                },
+                {
+                  "label": "数据源",
+                  "value": "天河"
+                },
+                {
+                  "label": "生成时间",
+                  "value": "2026-07-26 11:23 BJT"
+                },
+                {
+                  "label": "图像数量",
+                  "value": "2"
+                },
+                {
+                  "label": "德宏芒市",
+                  "value": "最大小时降水 0.0 mm 07-27 04:00-05:00"
+                },
+                {
+                  "label": "西双版纳嘎洒",
+                  "value": "最大小时降水 2.0 mm 07-27 04:00-05:00"
+                },
+                {
+                  "label": "普洱澜沧景迈",
+                  "value": "最大小时降水 0.2 mm 07-26 19:00-20:00"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "airport_region",
+                  "lead": 0,
+                  "lead_label": "区域",
+                  "file": "./data/tianhe/current/maps/airport_yunnan_20260725_12/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-25_12_00_combined_overview_6x6_grid.webp",
+                  "bytes": 918128,
+                  "preview_file": "./data/tianhe/current/maps/airport_yunnan_20260725_12/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-25_12_00_combined_overview_6x6_grid.preview.webp",
+                  "preview_bytes": 204540,
+                  "full_file": "./data/tianhe/current/maps/airport_yunnan_20260725_12/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-25_12_00_combined_overview_6x6_grid.png",
+                  "full_bytes": 1828324
+                },
+                {
+                  "id": "airport_national",
+                  "lead": 1,
+                  "lead_label": "全国",
+                  "file": "./data/tianhe/current/maps/airport_yunnan_20260725_12/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_12_00_combined_overview_6x6_grid.webp",
+                  "bytes": 848714,
+                  "preview_file": "./data/tianhe/current/maps/airport_yunnan_20260725_12/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_12_00_combined_overview_6x6_grid.preview.webp",
+                  "preview_bytes": 192436,
+                  "full_file": "./data/tianhe/current/maps/airport_yunnan_20260725_12/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_12_00_combined_overview_6x6_grid.png",
+                  "full_bytes": 1541049
+                }
+              ]
+            }
+          ]
+        },
         {
           "id": "tianhe_airport_yunnan_20260725_06",
           "label": "2026-07-25 14:00 BJT",
@@ -262,64 +333,6 @@
                   "bytes": 915678,
                   "preview_file": "./data/tianhe/current/maps/airport_yunnan_20260724_12/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-24_12_00_combined_overview_6x6_grid.preview.webp",
                   "preview_bytes": 204022
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "tianhe_airport_yunnan_20260724_06",
-          "label": "2026-07-24 14:00 BJT",
-          "run_time": "2026-07-24T14:00:00+08:00",
-          "published_at": "2026-07-25T04:34:39+08:00",
-          "summary": "天河 WORK_yn 云南降水预报",
-          "products": [
-            {
-              "id": "tianhe_airport_yunnan_precip_series",
-              "title": "云南机场降水预报图集",
-              "category": "天河预报",
-              "unit": "mm",
-              "color": "#0f68c8",
-              "description": "默认显示云南机场区域图，可切换 WORK_yn 全国降水图。区域图标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈机场位置。",
-              "metrics": [
-                {
-                  "label": "起报时次",
-                  "value": "20260724 06 UTC"
-                },
-                {
-                  "label": "数据源",
-                  "value": "天河"
-                },
-                {
-                  "label": "生成时间",
-                  "value": "2026-07-25 04:34 BJT"
-                },
-                {
-                  "label": "图像数量",
-                  "value": "1"
-                },
-                {
-                  "label": "德宏芒市",
-                  "value": "最大小时降水 0.0 mm 07-25 05:00-06:00"
-                },
-                {
-                  "label": "西双版纳嘎洒",
-                  "value": "最大小时降水 3.3 mm 07-26 05:00-06:00"
-                },
-                {
-                  "label": "普洱澜沧景迈",
-                  "value": "最大小时降水 4.1 mm 07-26 03:00-04:00"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "airport_region",
-                  "lead": 0,
-                  "lead_label": "区域",
-                  "file": "./data/tianhe/current/maps/airport_yunnan_20260724_06/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-24_06_00_combined_overview_6x6_grid.webp",
-                  "bytes": 801376,
-                  "preview_file": "./data/tianhe/current/maps/airport_yunnan_20260724_06/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-24_06_00_combined_overview_6x6_grid.preview.webp",
-                  "preview_bytes": 179598
                 }
               ]
             }
@@ -634,8 +647,79 @@
       "title": "机场气象服务",
       "subtitle": "Airport weather service",
       "note": "默认显示云南机场区域图，可切换同一时次的 WORK_yn 全国降水图。",
-      "latest_run": "tianhe_airport_yunnan_20260725_06",
+      "latest_run": "tianhe_airport_yunnan_20260725_12",
       "runs": [
+        {
+          "id": "tianhe_airport_yunnan_20260725_12",
+          "label": "2026-07-25 20:00 BJT",
+          "run_time": "2026-07-25T20:00:00+08:00",
+          "published_at": "2026-07-26T11:23:25+08:00",
+          "summary": "天河 WORK_yn 云南降水预报",
+          "products": [
+            {
+              "id": "tianhe_airport_yunnan_precip_series",
+              "title": "云南机场降水预报图集",
+              "category": "天河预报",
+              "unit": "mm",
+              "color": "#0f68c8",
+              "description": "默认显示云南机场区域图，可切换 WORK_yn 全国降水图。区域图标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈机场位置。",
+              "metrics": [
+                {
+                  "label": "起报时次",
+                  "value": "20260725 12 UTC"
+                },
+                {
+                  "label": "数据源",
+                  "value": "天河"
+                },
+                {
+                  "label": "生成时间",
+                  "value": "2026-07-26 11:23 BJT"
+                },
+                {
+                  "label": "图像数量",
+                  "value": "2"
+                },
+                {
+                  "label": "德宏芒市",
+                  "value": "最大小时降水 0.0 mm 07-27 04:00-05:00"
+                },
+                {
+                  "label": "西双版纳嘎洒",
+                  "value": "最大小时降水 2.0 mm 07-27 04:00-05:00"
+                },
+                {
+                  "label": "普洱澜沧景迈",
+                  "value": "最大小时降水 0.2 mm 07-26 19:00-20:00"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "airport_region",
+                  "lead": 0,
+                  "lead_label": "区域",
+                  "file": "./data/tianhe/current/maps/airport_yunnan_20260725_12/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-25_12_00_combined_overview_6x6_grid.webp",
+                  "bytes": 918128,
+                  "preview_file": "./data/tianhe/current/maps/airport_yunnan_20260725_12/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-25_12_00_combined_overview_6x6_grid.preview.webp",
+                  "preview_bytes": 204540,
+                  "full_file": "./data/tianhe/current/maps/airport_yunnan_20260725_12/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-25_12_00_combined_overview_6x6_grid.png",
+                  "full_bytes": 1828324
+                },
+                {
+                  "id": "airport_national",
+                  "lead": 1,
+                  "lead_label": "全国",
+                  "file": "./data/tianhe/current/maps/airport_yunnan_20260725_12/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_12_00_combined_overview_6x6_grid.webp",
+                  "bytes": 848714,
+                  "preview_file": "./data/tianhe/current/maps/airport_yunnan_20260725_12/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_12_00_combined_overview_6x6_grid.preview.webp",
+                  "preview_bytes": 192436,
+                  "full_file": "./data/tianhe/current/maps/airport_yunnan_20260725_12/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_12_00_combined_overview_6x6_grid.png",
+                  "full_bytes": 1541049
+                }
+              ]
+            }
+          ]
+        },
         {
           "id": "tianhe_airport_yunnan_20260725_06",
           "label": "2026-07-25 14:00 BJT",
@@ -889,64 +973,6 @@
               ]
             }
           ]
-        },
-        {
-          "id": "tianhe_airport_yunnan_20260724_06",
-          "label": "2026-07-24 14:00 BJT",
-          "run_time": "2026-07-24T14:00:00+08:00",
-          "published_at": "2026-07-25T04:34:39+08:00",
-          "summary": "天河 WORK_yn 云南降水预报",
-          "products": [
-            {
-              "id": "tianhe_airport_yunnan_precip_series",
-              "title": "云南机场降水预报图集",
-              "category": "天河预报",
-              "unit": "mm",
-              "color": "#0f68c8",
-              "description": "默认显示云南机场区域图，可切换 WORK_yn 全国降水图。区域图标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈机场位置。",
-              "metrics": [
-                {
-                  "label": "起报时次",
-                  "value": "20260724 06 UTC"
-                },
-                {
-                  "label": "数据源",
-                  "value": "天河"
-                },
-                {
-                  "label": "生成时间",
-                  "value": "2026-07-25 04:34 BJT"
-                },
-                {
-                  "label": "图像数量",
-                  "value": "1"
-                },
-                {
-                  "label": "德宏芒市",
-                  "value": "最大小时降水 0.0 mm 07-25 05:00-06:00"
-                },
-                {
-                  "label": "西双版纳嘎洒",
-                  "value": "最大小时降水 3.3 mm 07-26 05:00-06:00"
-                },
-                {
-                  "label": "普洱澜沧景迈",
-                  "value": "最大小时降水 4.1 mm 07-26 03:00-04:00"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "airport_region",
-                  "lead": 0,
-                  "lead_label": "区域",
-                  "file": "./data/tianhe/current/maps/airport_yunnan_20260724_06/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-24_06_00_combined_overview_6x6_grid.webp",
-                  "bytes": 801376,
-                  "preview_file": "./data/tianhe/current/maps/airport_yunnan_20260724_06/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_2026-07-24_06_00_combined_overview_6x6_grid.preview.webp",
-                  "preview_bytes": 179598
-                }
-              ]
-            }
-          ]
         }
       ]
     },
@@ -993,8 +1019,10 @@
                   "id": "shangrao_region",
                   "lead": 0,
                   "lead_label": "区域",
-                  "file": "./data/tianhe/current/maps/shangrao_20260725_06/20260725_06_combined_overview_6x6_grid.png",
-                  "bytes": 1980181,
+                  "file": "./data/tianhe/current/maps/shangrao_20260725_06/20260725_06_combined_overview_6x6_grid.webp",
+                  "bytes": 1060522,
+                  "preview_file": "./data/tianhe/current/maps/shangrao_20260725_06/20260725_06_combined_overview_6x6_grid.preview.webp",
+                  "preview_bytes": 274072,
                   "full_file": "./data/tianhe/current/maps/shangrao_20260725_06/20260725_06_combined_overview_6x6_grid.png",
                   "full_bytes": 1980181
                 },
@@ -1002,8 +1030,10 @@
                   "id": "shangrao_national",
                   "lead": 1,
                   "lead_label": "全国",
-                  "file": "./data/tianhe/current/maps/shangrao_20260725_06/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_06_00_combined_overview_6x6_grid.png",
-                  "bytes": 1616339,
+                  "file": "./data/tianhe/current/maps/shangrao_20260725_06/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_06_00_combined_overview_6x6_grid.webp",
+                  "bytes": 824776,
+                  "preview_file": "./data/tianhe/current/maps/shangrao_20260725_06/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_06_00_combined_overview_6x6_grid.preview.webp",
+                  "preview_bytes": 187034,
                   "full_file": "./data/tianhe/current/maps/shangrao_20260725_06/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_06_00_combined_overview_6x6_grid.png",
                   "full_bytes": 1616339
                 }
