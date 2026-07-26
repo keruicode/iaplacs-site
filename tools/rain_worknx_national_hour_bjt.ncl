@@ -123,15 +123,34 @@ begin
       res@mpMaxLatF = lat_max
       res@sfXArray = lon_axis
       res@sfYArray = lat_axis
-      ; Keep the full coordinate context while the base-map boundaries remain
-      ; off. China itself is drawn exclusively by the provincial SHP below.
+      ; Use MapPlot's native cylindrical-equidistant tickmarks.  This anchors
+      ; the labels and tick marks to the geographic map transform rather than
+      ; to pixel positions added during montage assembly.
       res@pmTickMarkDisplayMode = "Always"
-      res@gsnMajorLonSpacing = 10.0
+      ; The national frame (72--138E, 16--55N) therefore labels exactly
+      ; 75/90/105/120/135E and 20/30/40/50N.
+      res@gsnMajorLonSpacing = 15.0
       res@gsnMajorLatSpacing = 10.0
+      ; Retain only the labelled major ticks on the bottom and left axes.
+      ; The MapPlot defaults otherwise create unlabeled minor tickmarks.
+      res@tmXTOn = False
+      res@tmYROn = False
+      res@tmXBMinorOn = False
+      res@tmXTMinorOn = False
+      res@tmYLMinorOn = False
+      res@tmYRMinorOn = False
       res@tmXMajorGrid = False
       res@tmYMajorGrid = False
       res@tmXMinorGrid = False
       res@tmYMinorGrid = False
+      ; Explicit outward lengths keep the geographic major ticks visible after
+      ; each panel is trimmed and placed in the 6x6 montage.
+      res@tmXBMajorLengthF = 0.018
+      res@tmXBMajorOutwardLengthF = 0.012
+      res@tmXBMajorThicknessF = 1.5
+      res@tmYLMajorLengthF = 0.018
+      res@tmYLMajorOutwardLengthF = 0.012
+      res@tmYLMajorThicknessF = 1.5
       res@tmXBLabelFont = "Times-Roman"
       res@tmXBLabelFontColor = "black"
       res@tmXBLabelFontHeightF = 0.028
