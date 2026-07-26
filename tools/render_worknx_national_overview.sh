@@ -15,7 +15,7 @@ NATIONAL_PROVINCE_SHP_FILE="${NATIONAL_PROVINCE_SHP_FILE:-$SCRIPT_DIR/SHP/省界
 
 usage() {
   cat <<'EOF'
-Usage: render_worknx_national_overview.sh [--latest | --recent COUNT | --assemble-existing RUN]
+Usage: render_worknx_national_overview.sh [--latest | --recent COUNT | --assemble-existing RUN | --assemble-legacy RUN]
 
 Reads stable WORK_nx wrfout files, renders hourly T13-T48 nationwide panels,
 and writes one *_combined_overview_6x6_grid.png per run.
@@ -24,8 +24,12 @@ EOF
 
 count=1
 existing_run=""
+assemble_legacy="0"
 if [[ "${1:-}" == "--assemble-existing" ]]; then
   existing_run="${2:-}"
+elif [[ "${1:-}" == "--assemble-legacy" ]]; then
+  existing_run="${2:-}"
+  assemble_legacy="1"
 elif [[ "${1:-}" == "--recent" ]]; then
   count="${2:-5}"
 elif [[ -n "${1:-}" && "${1:-}" != "--latest" ]]; then
@@ -107,6 +111,39 @@ caption_panel() {
     "$caption_path"
 }
 
+caption_panel_legacy() {
+  local panel_path="$1" caption_dir="$2" panel_name panel_date caption_path
+  panel_name="$(basename "$panel_path")"
+  if [[ ! "$panel_name" =~ _rain_hour_([0-9]{4})([0-9]{2})([0-9]{2})([0-9]{2})-([0-9]{4})([0-9]{2})([0-9]{2})([0-9]{2})_BJT\.png$ ]]; then
+    echo "ERROR: cannot parse panel date from $panel_name" >&2
+    return 1
+  fi
+  panel_date="${BASH_REMATCH[2]}-${BASH_REMATCH[3]} ${BASH_REMATCH[4]}:00-${BASH_REMATCH[8]}:00"
+  caption_path="$caption_dir/$panel_name"
+  convert "$panel_path" \
+    -trim +repage \
+    -fill white \
+    -stroke none \
+    -draw 'rectangle 0,0 141,422' \
+    -stroke black \
+    -strokewidth 1 \
+    -draw 'line 128,69 142,69 line 128,172 142,172 line 128,275 142,275 line 128,378 142,378' \
+    -fill black \
+    -stroke none \
+    -font "times.ttf" \
+    -pointsize 24 \
+    -draw 'text 94,82 "50°N" text 94,185 "40°N" text 94,288 "30°N" text 94,391 "20°N"' \
+    -gravity North \
+    -background white \
+    -splice 0x92 \
+    -fill black \
+    -font "times.ttf" \
+    -stroke none \
+    -pointsize 88 \
+    -annotate +0+14 "$panel_date" \
+    "$caption_path"
+}
+
 render_source() {
   local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview mosaic init_bjt init_label
   base="$(basename "$source_path")"
@@ -140,9 +177,10 @@ render_source() {
     return 1
   fi
 
-  local captioned_panels=()
+  local captioned_panels=() caption_function="caption_panel"
+  [[ "$assemble_legacy" == "1" ]] && caption_function="caption_panel_legacy"
   for panel in "${panels[@]}"; do
-    caption_panel "$panel" "$caption_dir"
+    "$caption_function" "$panel" "$caption_dir"
     captioned_panels+=("$caption_dir/$(basename "$panel")")
   done
 
