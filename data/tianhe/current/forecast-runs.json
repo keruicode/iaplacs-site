@@ -4,7 +4,7 @@
     "name": "IAP-LACS Forecast",
     "domain": "iaplacs.xyz"
   },
-  "published_at": "2026-07-26T19:14:55+08:00",
+  "published_at": "2026-07-26T23:09:24+08:00",
   "note": "天河模型数据源。宁夏与云南图件由天河 WRF 结果生成并发布到 GitHub Pages。",
   "services": {
     "main": {
@@ -992,8 +992,67 @@
       "title": "上饶专项天气服务",
       "subtitle": "Shangrao service",
       "note": "默认显示上饶区域图，可切换同一时次的 WORK 全国降水图。",
-      "latest_run": "tianhe_shangrao_20260725_12",
+      "latest_run": "tianhe_shangrao_20260725_18",
       "runs": [
+        {
+          "id": "tianhe_shangrao_20260725_18",
+          "label": "2026-07-26 02:00 BJT",
+          "run_time": "2026-07-26T02:00:00+08:00",
+          "published_at": "2026-07-26T23:09:24+08:00",
+          "summary": "天河 WORK 上饶降水预报",
+          "products": [
+            {
+              "id": "tianhe_shangrao_precip_series",
+              "title": "上饶 WRF 逐小时降水拼图",
+              "category": "天河预报",
+              "unit": "mm",
+              "color": "#0f68c8",
+              "description": "默认显示上饶区域逐小时降水图，可切换 WORK 全国降水图。",
+              "metrics": [
+                {
+                  "label": "起报时次",
+                  "value": "20260725 18 UTC"
+                },
+                {
+                  "label": "数据源",
+                  "value": "天河"
+                },
+                {
+                  "label": "生成时间",
+                  "value": "2026-07-26 23:09 BJT"
+                },
+                {
+                  "label": "图像数量",
+                  "value": "2"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "shangrao_region",
+                  "lead": 0,
+                  "lead_label": "区域",
+                  "file": "./data/tianhe/current/maps/shangrao_20260725_18/20260725_18_combined_overview_6x6_grid.webp",
+                  "bytes": 1111132,
+                  "preview_file": "./data/tianhe/current/maps/shangrao_20260725_18/20260725_18_combined_overview_6x6_grid.preview.webp",
+                  "preview_bytes": 284750,
+                  "full_file": "./data/tianhe/current/maps/shangrao_20260725_18/20260725_18_combined_overview_6x6_grid.png",
+                  "full_bytes": 2009093
+                },
+                {
+                  "id": "shangrao_national",
+                  "lead": 1,
+                  "lead_label": "全国",
+                  "file": "./data/tianhe/current/maps/shangrao_20260725_18/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_18_00_combined_overview_6x6_grid.webp",
+                  "bytes": 895144,
+                  "preview_file": "./data/tianhe/current/maps/shangrao_20260725_18/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_18_00_combined_overview_6x6_grid.preview.webp",
+                  "preview_bytes": 204156,
+                  "full_file": "./data/tianhe/current/maps/shangrao_20260725_18/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_18_00_combined_overview_6x6_grid.png",
+                  "full_bytes": 1783779
+                }
+              ]
+            }
+          ]
+        },
         {
           "id": "tianhe_shangrao_20260725_12",
           "label": "2026-07-25 20:00 BJT",
@@ -1212,52 +1271,6 @@
                   "bytes": 988260,
                   "preview_file": "./data/tianhe/current/maps/shangrao_20260724_18/20260724_18_combined_overview_6x6_grid.preview.webp",
                   "preview_bytes": 258528
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "tianhe_shangrao_20260724_12",
-          "label": "2026-07-24 20:00 BJT",
-          "run_time": "2026-07-24T20:00:00+08:00",
-          "published_at": "2026-07-25T06:46:36+08:00",
-          "summary": "天河 WORK 上饶降水预报",
-          "products": [
-            {
-              "id": "tianhe_shangrao_precip_series",
-              "title": "上饶 WRF 逐小时降水拼图",
-              "category": "天河预报",
-              "unit": "mm",
-              "color": "#0f68c8",
-              "description": "默认显示上饶区域逐小时降水图，可切换 WORK 全国降水图。",
-              "metrics": [
-                {
-                  "label": "起报时次",
-                  "value": "20260724 12 UTC"
-                },
-                {
-                  "label": "数据源",
-                  "value": "天河"
-                },
-                {
-                  "label": "生成时间",
-                  "value": "2026-07-25 06:46 BJT"
-                },
-                {
-                  "label": "图像数量",
-                  "value": "1"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "shangrao_region",
-                  "lead": 0,
-                  "lead_label": "区域",
-                  "file": "./data/tianhe/current/maps/shangrao_20260724_12/20260724_12_combined_overview_6x6_grid.webp",
-                  "bytes": 957742,
-                  "preview_file": "./data/tianhe/current/maps/shangrao_20260724_12/20260724_12_combined_overview_6x6_grid.preview.webp",
-                  "preview_bytes": 250672
                 }
               ]
             }
