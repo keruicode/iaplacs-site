@@ -74,6 +74,10 @@ caption_panel() {
   caption_path="$caption_dir/$panel_name"
   convert "$panel_path" \
     -trim +repage \
+    -background white \
+    -gravity South \
+    -splice 0x56 \
+    +gravity \
     -fill white \
     -stroke none \
     -draw 'rectangle 0,0 141,422' \
