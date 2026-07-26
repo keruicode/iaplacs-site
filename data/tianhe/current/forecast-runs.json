@@ -4,7 +4,7 @@
     "name": "IAP-LACS Forecast",
     "domain": "iaplacs.xyz"
   },
-  "published_at": "2026-07-26T11:44:37+08:00",
+  "published_at": "2026-07-26T13:52:46+08:00",
   "note": "天河模型数据源。宁夏与云南图件由天河 WRF 结果生成并发布到 GitHub Pages。",
   "services": {
     "main": {
@@ -346,8 +346,69 @@
       "title": "宁夏预报",
       "subtitle": "Ningxia forecast",
       "note": "默认显示宁夏区域图，可切换同一时次的 WORK_nx 全国模拟图。",
-      "latest_run": "tianhe_worknx_summary_20260725_12",
+      "latest_run": "tianhe_worknx_summary_20260725_18",
       "runs": [
+        {
+          "id": "tianhe_worknx_summary_20260725_18",
+          "label": "2026-07-26 02:00 BJT",
+          "run_time": "2026-07-26T02:00:00+08:00",
+          "published_at": "2026-07-26T13:52:46+08:00",
+          "summary": "天河 WORK_nx 宁夏降水预报",
+          "products": [
+            {
+              "id": "tianhe_ningxia_precip_series",
+              "title": "降水预报图集",
+              "category": "天河预报",
+              "unit": "mm",
+              "color": "#0f68c8",
+              "description": "默认显示宁夏区域图，可切换 WORK_nx 全国降水图。",
+              "metrics": [
+                {
+                  "label": "起报时次",
+                  "value": "20260725 18 UTC"
+                },
+                {
+                  "label": "数据源",
+                  "value": "天河"
+                },
+                {
+                  "label": "生成时间",
+                  "value": "2026-07-26 13:52 BJT"
+                },
+                {
+                  "label": "图像数量",
+                  "value": "2"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "ningxia_region",
+                  "lead": 0,
+                  "lead_label": "区域",
+                  "valid_label": "当前显示：宁夏区域",
+                  "file": "./data/tianhe/current/maps/worknx_summary_20260725_18/Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_2026-07-25_18_00_combined_overview_6x6_grid.webp",
+                  "bytes": 704032,
+                  "preview_file": "./data/tianhe/current/maps/worknx_summary_20260725_18/Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_2026-07-25_18_00_combined_overview_6x6_grid.preview.webp",
+                  "preview_bytes": 175950,
+                  "full_file": "./data/tianhe/current/maps/worknx_summary_20260725_18/Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_2026-07-25_18_00_combined_overview_6x6_grid.png",
+                  "full_bytes": 1417648
+                },
+                {
+                  "id": "worknx_national",
+                  "lead": 1,
+                  "lead_label": "全国",
+                  "valid_label": "当前显示：WORK_nx 全国模拟图",
+                  "file": "./data/tianhe/current/maps/worknx_summary_20260725_18/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_18_00_combined_overview_6x6_grid.webp",
+                  "bytes": 911658,
+                  "preview_file": "./data/tianhe/current/maps/worknx_summary_20260725_18/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_18_00_combined_overview_6x6_grid.preview.webp",
+                  "preview_bytes": 201842,
+                  "full_file": "./data/tianhe/current/maps/worknx_summary_20260725_18/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_18_00_combined_overview_6x6_grid.png",
+                  "full_bytes": 1635336
+                }
+              ]
+            }
+          ]
+        },
         {
           "id": "tianhe_worknx_summary_20260725_12",
           "label": "2026-07-25 20:00 BJT",
@@ -583,65 +644,6 @@
                   "preview_bytes": 157338,
                   "full_file": "./data/tianhe/current/maps/worknx_summary_20260724_12/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-24_12_00_combined_overview_6x6_grid.png",
                   "full_bytes": 1809197
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "tianhe_worknx_summary_20260724_06",
-          "label": "2026-07-24 14:00 BJT",
-          "run_time": "2026-07-24T14:00:00+08:00",
-          "published_at": "2026-07-26T11:44:01+08:00",
-          "summary": "天河 WORK_nx 宁夏降水预报",
-          "products": [
-            {
-              "id": "tianhe_ningxia_precip_series",
-              "title": "降水预报图集",
-              "category": "天河预报",
-              "unit": "mm",
-              "color": "#0f68c8",
-              "description": "默认显示宁夏区域图，可切换 WORK_nx 全国降水图。",
-              "metrics": [
-                {
-                  "label": "起报时次",
-                  "value": "20260724 06 UTC"
-                },
-                {
-                  "label": "数据源",
-                  "value": "天河"
-                },
-                {
-                  "label": "生成时间",
-                  "value": "2026-07-26 11:44 BJT"
-                },
-                {
-                  "label": "图像数量",
-                  "value": "2"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "ningxia_region",
-                  "lead": 0,
-                  "lead_label": "区域",
-                  "valid_label": "当前显示：宁夏区域",
-                  "file": "./data/tianhe/current/maps/worknx_summary_20260724_06/Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_2026-07-24_06_00_combined_overview_6x6_grid.webp",
-                  "bytes": 540186,
-                  "preview_file": "./data/tianhe/current/maps/worknx_summary_20260724_06/Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_2026-07-24_06_00_combined_overview_6x6_grid.preview.webp",
-                  "preview_bytes": 123544
-                },
-                {
-                  "id": "worknx_national",
-                  "lead": 1,
-                  "lead_label": "全国",
-                  "valid_label": "当前显示：WORK_nx 全国模拟图",
-                  "file": "./data/tianhe/current/maps/worknx_summary_20260724_06/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-24_06_00_combined_overview_6x6_grid.webp",
-                  "bytes": 837712,
-                  "preview_file": "./data/tianhe/current/maps/worknx_summary_20260724_06/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-24_06_00_combined_overview_6x6_grid.preview.webp",
-                  "preview_bytes": 108666,
-                  "full_file": "./data/tianhe/current/maps/worknx_summary_20260724_06/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-24_06_00_combined_overview_6x6_grid.png",
-                  "full_bytes": 1229088
                 }
               ]
             }
@@ -1098,9 +1100,9 @@
                   "lead": 1,
                   "lead_label": "全国",
                   "file": "./data/tianhe/current/maps/shangrao_20260725_00/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_00_00_combined_overview_6x6_grid.webp",
-                  "bytes": 876920,
+                  "bytes": 791544,
                   "preview_file": "./data/tianhe/current/maps/shangrao_20260725_00/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_00_00_combined_overview_6x6_grid.preview.webp",
-                  "preview_bytes": 211552,
+                  "preview_bytes": 185962,
                   "full_file": "./data/tianhe/current/maps/shangrao_20260725_00/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_00_00_combined_overview_6x6_grid.png",
                   "full_bytes": 1551794
                 }
