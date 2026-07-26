@@ -15,7 +15,7 @@ NATIONAL_PROVINCE_SHP_FILE="${NATIONAL_PROVINCE_SHP_FILE:-$SCRIPT_DIR/SHP/省界
 
 usage() {
   cat <<'EOF'
-Usage: render_worknx_national_overview.sh [--latest | --recent COUNT]
+Usage: render_worknx_national_overview.sh [--latest | --recent COUNT | --assemble-existing RUN]
 
 Reads stable WORK_nx wrfout files, renders hourly T13-T48 nationwide panels,
 and writes one *_combined_overview_6x6_grid.png per run.
@@ -23,7 +23,10 @@ EOF
 }
 
 count=1
-if [[ "${1:-}" == "--recent" ]]; then
+existing_run=""
+if [[ "${1:-}" == "--assemble-existing" ]]; then
+  existing_run="${2:-}"
+elif [[ "${1:-}" == "--recent" ]]; then
   count="${2:-5}"
 elif [[ -n "${1:-}" && "${1:-}" != "--latest" ]]; then
   usage >&2
@@ -31,6 +34,7 @@ elif [[ -n "${1:-}" && "${1:-}" != "--latest" ]]; then
 fi
 
 [[ "$count" =~ ^[1-9][0-9]*$ ]] || { echo "ERROR: recent count must be positive" >&2; exit 64; }
+[[ -z "$existing_run" || "$existing_run" =~ ^[0-9]{8}_[0-9]{2}$ ]] || { echo "ERROR: existing run must be YYYYMMDD_HH" >&2; exit 64; }
 [[ -d "$WORK_NX_ROOT" ]] || { echo "ERROR: WORK_nx not found: $WORK_NX_ROOT" >&2; exit 1; }
 [[ -f "$NCL_SCRIPT" ]] || { echo "ERROR: NCL script not found: $NCL_SCRIPT" >&2; exit 1; }
 [[ -x "$NCL_BIN" ]] || { echo "ERROR: ncl is required: $NCL_BIN" >&2; exit 127; }
@@ -44,24 +48,26 @@ if [[ -n "$NATIONAL_PROVINCE_SHP_FILE" && ! -f "$NATIONAL_PROVINCE_SHP_FILE" ]];
 fi
 
 mkdir -p "$OUTPUT_ROOT"
-now_epoch="$(date +%s)"
 sources=()
-while IFS= read -r line; do
-  source_epoch="${line%% *}"
-  rest="${line#* }"
-  source_size="${rest%% *}"
-  source_path="${rest#* }"
-  source_epoch="${source_epoch%.*}"
-  (( now_epoch - source_epoch >= MIN_FILE_AGE_SECONDS )) || continue
-  (( source_size >= MIN_WRFOUT_BYTES )) || continue
-  sources+=("$source_path")
-  [[ "${#sources[@]}" -ge "$count" ]] && break
-done < <(
-  find "$WORK_NX_ROOT" -maxdepth 4 -type f \
-    -name 'wrfout_d01_*' -printf '%T@ %s %p\n' | sort -nr
-)
+if [[ -z "$existing_run" ]]; then
+  now_epoch="$(date +%s)"
+  while IFS= read -r line; do
+    source_epoch="${line%% *}"
+    rest="${line#* }"
+    source_size="${rest%% *}"
+    source_path="${rest#* }"
+    source_epoch="${source_epoch%.*}"
+    (( now_epoch - source_epoch >= MIN_FILE_AGE_SECONDS )) || continue
+    (( source_size >= MIN_WRFOUT_BYTES )) || continue
+    sources+=("$source_path")
+    [[ "${#sources[@]}" -ge "$count" ]] && break
+  done < <(
+    find "$WORK_NX_ROOT" -maxdepth 4 -type f \
+      -name 'wrfout_d01_*' -printf '%T@ %s %p\n' | sort -nr
+  )
 
-[[ "${#sources[@]}" -gt 0 ]] || { echo "ERROR: no stable WORK_nx wrfout source found" >&2; exit 1; }
+  [[ "${#sources[@]}" -gt 0 ]] || { echo "ERROR: no stable WORK_nx wrfout source found" >&2; exit 1; }
+fi
 
 caption_panel() {
   local panel_path="$1" caption_dir="$2" panel_name panel_date caption_path
@@ -156,6 +162,47 @@ render_source() {
   echo "Rendered $overview"
 }
 
-for source_path in "${sources[@]}"; do
-  render_source "$source_path"
-done
+assemble_existing() {
+  local run_prefix="$1" run_date run_hour run_dir panel_dir caption_dir overview mosaic init_bjt init_label
+  run_date="${run_prefix:0:4}-${run_prefix:4:2}-${run_prefix:6:2}"
+  run_hour="${run_prefix:9:2}"
+  run_dir="$OUTPUT_ROOT/$run_prefix"
+  panel_dir="$run_dir/hourly_t13_t48"
+  caption_dir="$run_dir/captioned_t13_t48"
+  overview="$run_dir/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_${run_date}_${run_hour}_00_combined_overview_6x6_grid.png"
+  mosaic="$run_dir/.combined_overview_6x6_grid.mosaic.png"
+  init_bjt="$(TZ=Asia/Shanghai date -d "${run_date} ${run_hour}:00 UTC" '+%Y-%m-%d %H:%M BJT')"
+  init_label="Forecast Initialization: $init_bjt"
+
+  mapfile -t panels < <(find "$panel_dir" -maxdepth 1 -type f -name '*_national_rain_hour_*_BJT.png' -print | sort)
+  [[ "${#panels[@]}" -eq 36 ]] || { echo "ERROR: expected 36 archived panels, found ${#panels[@]} for $run_prefix" >&2; return 1; }
+
+  mkdir -p "$caption_dir"
+  local captioned_panels=()
+  for panel in "${panels[@]}"; do
+    caption_panel "$panel" "$caption_dir"
+    captioned_panels+=("$caption_dir/$(basename "$panel")")
+  done
+
+  montage "${captioned_panels[@]}" -tile 6x6 -geometry '100%x100%+2+2' -background white "$mosaic"
+  convert "$mosaic" \
+    -gravity North \
+    -background white \
+    -splice 0x160 \
+    -fill black \
+    -font "times.ttf" \
+    -stroke none \
+    -pointsize 132 \
+    -annotate +0+24 "$init_label" \
+    "$overview"
+  rm -f "$mosaic"
+  echo "Reassembled archived nationwide overview $overview"
+}
+
+if [[ -n "$existing_run" ]]; then
+  assemble_existing "$existing_run"
+else
+  for source_path in "${sources[@]}"; do
+    render_source "$source_path"
+  done
+fi
