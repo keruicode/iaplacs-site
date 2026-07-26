@@ -83,8 +83,8 @@ caption_panel() {
     -fill black \
     -stroke none \
     -font "times.ttf" \
-    -pointsize 32 \
-    -draw 'text 76,82 "50°N" text 76,185 "40°N" text 76,288 "30°N" text 76,391 "20°N"' \
+    -pointsize 24 \
+    -draw 'text 88,82 "50°N" text 88,185 "40°N" text 88,288 "30°N" text 88,391 "20°N"' \
     -gravity North \
     -background white \
     -splice 0x92 \
