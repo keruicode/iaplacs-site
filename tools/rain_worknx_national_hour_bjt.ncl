@@ -55,6 +55,14 @@ begin
   lon_max = 138.0
   lat_min = 16.0
   lat_max = 55.0
+  ; These are geographic coordinates, not montage pixel positions.  The
+  ; CylindricalEquidistant MapPlot maps them directly to its bottom/left axes.
+  national_lon_ticks = (/75.0, 90.0, 105.0, 120.0, 135.0/)
+  national_lon_labels = (/"75~S~o~N~E", "90~S~o~N~E", "105~S~o~N~E", \
+                          "120~S~o~N~E", "135~S~o~N~E"/)
+  national_lat_ticks = (/20.0, 30.0, 40.0, 50.0/)
+  national_lat_labels = (/"20~S~o~N~N", "30~S~o~N~N", \
+                          "40~S~o~N~N", "50~S~o~N~N"/)
   ; Use the same thresholds as the Ningxia regional product so switching
   ; between the two views does not change the precipitation interpretation.
   rain_levs = (/0.0, 1.5, 7.0, 15.0, 40.0, 50.0/)
@@ -123,16 +131,17 @@ begin
       res@mpMaxLatF = lat_max
       res@sfXArray = lon_axis
       res@sfYArray = lat_axis
-      ; Use MapPlot's native cylindrical-equidistant tickmarks.  This anchors
-      ; the labels and tick marks to the geographic map transform rather than
-      ; to pixel positions added during montage assembly.
-      res@pmTickMarkDisplayMode = "Always"
-      ; The national frame (72--138E, 16--55N) therefore labels exactly
-      ; 75/90/105/120/135E and 20/30/40/50N.
-      res@gsnMajorLonSpacing = 15.0
-      res@gsnMajorLatSpacing = 10.0
-      ; Retain only the labelled major ticks on the bottom and left axes.
-      ; The MapPlot defaults otherwise create unlabeled minor tickmarks.
+      ; Native NCL tickmarks for a cylindrical-equidistant map.  Explicit
+      ; geographic values prevent MapPlot's built-in automatic 5-degree ticks
+      ; from replacing the intended labelled intervals after montage trimming.
+      ; This remains map-coordinate rendering, not manual image annotation.
+      res@tmXBMode = "Explicit"
+      res@tmXBValues = national_lon_ticks
+      res@tmXBLabels = national_lon_labels
+      res@tmYLMode = "Explicit"
+      res@tmYLValues = national_lat_ticks
+      res@tmYLLabels = national_lat_labels
+      ; Retain only labelled major ticks on the bottom and left axes.
       res@tmXTOn = False
       res@tmYROn = False
       res@tmXBMinorOn = False
@@ -155,7 +164,10 @@ begin
       res@tmXBLabelFontColor = "black"
       res@tmXBLabelFontHeightF = 0.028
       res@tmXBLabelFontThicknessF = 1.0
-      res@tmXBLabelDeltaF = -0.15
+      ; Match NCL's cylindrical-map tickmark example: degree labels are
+      ; aligned by their baseline and offset from the newly visible ticks.
+      res@tmXBLabelJust = "BottomCenter"
+      res@tmXBLabelDeltaF = 1.0
       res@tmXBLabelsOn = True
       res@tmYLLabelsOn = True
       res@tmYLLabelFont = "Times-Roman"
