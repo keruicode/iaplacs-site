@@ -4,7 +4,7 @@
     "name": "IAP-LACS Forecast",
     "domain": "iaplacs.xyz"
   },
-  "published_at": "2026-07-28T14:53:54+08:00",
+  "published_at": "2026-07-28T16:50:51+08:00",
   "note": "天河模型数据源。宁夏与云南图件由天河 WRF 结果生成并发布到 GitHub Pages。",
   "services": {
     "main": {
@@ -1050,8 +1050,67 @@
       "title": "上饶专项天气服务",
       "subtitle": "Shangrao service",
       "note": "默认显示上饶区域图，可切换同一时次的 WORK 全国降水图。",
-      "latest_run": "tianhe_shangrao_20260726_06",
+      "latest_run": "tianhe_shangrao_20260727_18",
       "runs": [
+        {
+          "id": "tianhe_shangrao_20260727_18",
+          "label": "2026-07-28 02:00 BJT",
+          "run_time": "2026-07-28T02:00:00+08:00",
+          "published_at": "2026-07-28T16:50:51+08:00",
+          "summary": "天河 WORK 上饶降水预报",
+          "products": [
+            {
+              "id": "tianhe_shangrao_precip_series",
+              "title": "上饶 WRF 逐小时降水拼图",
+              "category": "天河预报",
+              "unit": "mm",
+              "color": "#0f68c8",
+              "description": "默认显示上饶区域逐小时降水图，可切换 WORK 全国降水图。",
+              "metrics": [
+                {
+                  "label": "起报时次",
+                  "value": "20260727 18 UTC"
+                },
+                {
+                  "label": "数据源",
+                  "value": "天河"
+                },
+                {
+                  "label": "生成时间",
+                  "value": "2026-07-28 16:50 BJT"
+                },
+                {
+                  "label": "图像数量",
+                  "value": "2"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "shangrao_region",
+                  "lead": 0,
+                  "lead_label": "区域",
+                  "file": "./data/tianhe/current/maps/shangrao_20260727_18/20260727_18_combined_overview_6x6_grid.webp",
+                  "bytes": 1184308,
+                  "preview_file": "./data/tianhe/current/maps/shangrao_20260727_18/20260727_18_combined_overview_6x6_grid.preview.webp",
+                  "preview_bytes": 299450,
+                  "full_file": "./data/tianhe/current/maps/shangrao_20260727_18/20260727_18_combined_overview_6x6_grid.png",
+                  "full_bytes": 1874603
+                },
+                {
+                  "id": "shangrao_national",
+                  "lead": 1,
+                  "lead_label": "全国",
+                  "file": "./data/tianhe/current/maps/shangrao_20260727_18/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-27_18_00_combined_overview_6x6_grid.webp",
+                  "bytes": 912308,
+                  "preview_file": "./data/tianhe/current/maps/shangrao_20260727_18/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-27_18_00_combined_overview_6x6_grid.preview.webp",
+                  "preview_bytes": 205962,
+                  "full_file": "./data/tianhe/current/maps/shangrao_20260727_18/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-27_18_00_combined_overview_6x6_grid.png",
+                  "full_bytes": 1783591
+                }
+              ]
+            }
+          ]
+        },
         {
           "id": "tianhe_shangrao_20260726_06",
           "label": "2026-07-26 14:00 BJT",
@@ -1283,65 +1342,6 @@
                   "preview_bytes": 202422,
                   "full_file": "./data/tianhe/current/maps/shangrao_20260725_06/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_06_00_combined_overview_6x6_grid.png",
                   "full_bytes": 1748355
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "tianhe_shangrao_20260725_00",
-          "label": "2026-07-25 08:00 BJT",
-          "run_time": "2026-07-25T08:00:00+08:00",
-          "published_at": "2026-07-26T11:43:03+08:00",
-          "summary": "天河 WORK 上饶降水预报",
-          "products": [
-            {
-              "id": "tianhe_shangrao_precip_series",
-              "title": "上饶 WRF 逐小时降水拼图",
-              "category": "天河预报",
-              "unit": "mm",
-              "color": "#0f68c8",
-              "description": "默认显示上饶区域逐小时降水图，可切换 WORK 全国降水图。",
-              "metrics": [
-                {
-                  "label": "起报时次",
-                  "value": "20260725 00 UTC"
-                },
-                {
-                  "label": "数据源",
-                  "value": "天河"
-                },
-                {
-                  "label": "生成时间",
-                  "value": "2026-07-26 11:43 BJT"
-                },
-                {
-                  "label": "图像数量",
-                  "value": "2"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "shangrao_region",
-                  "lead": 0,
-                  "lead_label": "区域",
-                  "file": "./data/tianhe/current/maps/shangrao_20260725_00/20260725_00_combined_overview_6x6_grid.webp",
-                  "bytes": 1009744,
-                  "preview_file": "./data/tianhe/current/maps/shangrao_20260725_00/20260725_00_combined_overview_6x6_grid.preview.webp",
-                  "preview_bytes": 261610,
-                  "full_file": "./data/tianhe/current/maps/shangrao_20260725_00/20260725_00_combined_overview_6x6_grid.png",
-                  "full_bytes": 1849238
-                },
-                {
-                  "id": "shangrao_national",
-                  "lead": 1,
-                  "lead_label": "全国",
-                  "file": "./data/tianhe/current/maps/shangrao_20260725_00/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_00_00_combined_overview_6x6_grid.webp",
-                  "bytes": 791544,
-                  "preview_file": "./data/tianhe/current/maps/shangrao_20260725_00/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_00_00_combined_overview_6x6_grid.preview.webp",
-                  "preview_bytes": 185962,
-                  "full_file": "./data/tianhe/current/maps/shangrao_20260725_00/Precip_hourly_WRF_AllRain_T13_T48_InitUTC_2026-07-25_00_00_combined_overview_6x6_grid.png",
-                  "full_bytes": 1551794
                 }
               ]
             }
