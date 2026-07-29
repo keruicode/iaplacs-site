@@ -10,6 +10,11 @@ const ACCESS_TOKEN_VALUE = "iaplacs_access_granted_v1";
 const DATA_SOURCE_TOKEN_KEY = "iaplacs_forecast_source";
 const NINGXIA_PRODUCT_TITLE = "降水预报图集";
 const NINGXIA_PRODUCT_DESCRIPTION = "默认显示宁夏区域图，可切换 WORK_nx 全国模拟图。";
+const NATIONAL_FRAME_LABELS = {
+  worknx_national: "中国中部",
+  shangrao_national: "中国东南部",
+  airport_national: "中国西南部",
+};
 
 const pageConfig = {
   service: document.body.dataset.service || "airport",
@@ -172,6 +177,9 @@ async function loadForecast({ preserveSelection }) {
   try {
     let raw = await fetchForecastData();
     let catalog = normalizeForecastData(raw);
+    if (state.sourceId === "huan") {
+      catalog = await addHuanNationalFallback(catalog);
+    }
     let service = selectService(catalog);
 
     // Shangrao has no Tianhe product yet. Keep the page useful when a browser
@@ -221,6 +229,113 @@ async function loadForecast({ preserveSelection }) {
     state.loading = false;
     setRefreshState(false);
   }
+}
+
+async function addHuanNationalFallback(catalog) {
+  const frameIds = nationalFrameIds();
+  if (!frameIds) return catalog;
+
+  const service = selectService(catalog);
+  const latestRun =
+    service?.runs?.find((run) => run.id === service.latest_run) || service?.runs?.[0];
+  if (!latestRun || findFrame(latestRun, frameIds.national)) return catalog;
+
+  const tianheSource = pageConfig.sources.find((source) => source.id === "tianhe");
+  if (!tianheSource) return catalog;
+
+  try {
+    const tianheCatalog = normalizeForecastData(
+      await fetchForecastDataForSource(tianheSource),
+    );
+    const tianheService = selectService(tianheCatalog);
+    const tianheRun =
+      tianheService?.runs?.find((run) => run.id === tianheService.latest_run) ||
+      tianheService?.runs?.[0];
+    const nationalFrame = findFrame(tianheRun, frameIds.national);
+    if (!nationalFrame) return catalog;
+
+    return limitCatalogRuns(
+      addNationalFallbackToLatestRun(catalog, frameIds, nationalFrame),
+    );
+  } catch (error) {
+    console.warn("Huan national fallback unavailable", error);
+    return catalog;
+  }
+}
+
+function nationalFrameIds() {
+  const ids = {
+    ningxia: { region: "ningxia_region", national: "worknx_national" },
+    airport: { region: "airport_region", national: "airport_national" },
+    shangrao: { region: "shangrao_region", national: "shangrao_national" },
+  };
+  return ids[pageConfig.service] || null;
+}
+
+function findFrame(run, frameId) {
+  return run?.products
+    ?.flatMap((product) => product.frames || [])
+    .find((frame) => frame?.id === frameId);
+}
+
+function addNationalFallbackToLatestRun(catalog, frameIds, nationalFrame) {
+  const serviceKey = catalog.services?.[pageConfig.service]
+    ? pageConfig.service
+    : pageConfig.service === "airport" && catalog.services?.main
+      ? "main"
+      : null;
+  if (!serviceKey) return catalog;
+
+  const service = catalog.services[serviceKey];
+  const runs = (service.runs || []).map((run) => {
+    if (run.id !== service.latest_run) return run;
+    const products = (run.products || []).map((product) => {
+      if (!isPrecipitationProduct(product)) return product;
+      const frames = normalizeFallbackRegionFrame(product.frames || [], frameIds);
+      if (frames.some((frame) => frame.id === frameIds.national)) return product;
+      return {
+        ...product,
+        metrics: updateFrameCountMetric(product.metrics || [], frames.length + 1),
+        frames: [
+          ...frames,
+          {
+            ...nationalFrame,
+            id: frameIds.national,
+            lead: 1,
+            lead_label: NATIONAL_FRAME_LABELS[frameIds.national],
+            fallback_source: "tianhe",
+          },
+        ],
+      };
+    });
+    return { ...run, products };
+  });
+
+  return {
+    ...catalog,
+    services: {
+      ...catalog.services,
+      [serviceKey]: { ...service, runs },
+    },
+  };
+}
+
+function isPrecipitationProduct(product) {
+  const value = `${product?.id || ""} ${product?.title || ""} ${product?.category || ""}`;
+  return /precip|rain|降水/i.test(value);
+}
+
+function normalizeFallbackRegionFrame(frames, frameIds) {
+  if (frames.some((frame) => frame.id === frameIds.region)) return frames;
+  const overview = frames.find((frame) => /overview|总览|yunnanairports/i.test(
+    `${frame?.id || ""} ${frame?.lead_label || ""} ${frame?.file || ""}`,
+  ));
+  if (!overview) return frames;
+  return frames.map((frame) =>
+    frame === overview
+      ? { ...frame, id: frameIds.region, lead: 0, lead_label: "区域" }
+      : frame,
+  );
 }
 
 async function fetchForecastData() {
@@ -794,7 +909,7 @@ function renderProductNote(run, product, frame) {
 }
 
 function displayFrameLabel(frame) {
-  return frame?.lead_label || frame?.valid_label || "--";
+  return NATIONAL_FRAME_LABELS[frame?.id] || frame?.lead_label || frame?.valid_label || "--";
 }
 
 function currentRun() {
