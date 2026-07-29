@@ -44,6 +44,7 @@ const pageConfig = {
   ],
   defaultSource: document.body.dataset.defaultSource || "huan",
   forceDefaultSource: document.body.dataset.forceDefaultSource === "true",
+  autoSelectLatestSource: document.body.dataset.autoSelectLatestSource === "true",
 };
 
 const state = {
@@ -115,6 +116,7 @@ const viewerState = {
 async function init() {
   setupImageViewer();
   setupDataSourceSwitch();
+  await selectLatestSource();
   await loadForecast({ preserveSelection: false });
   if (pageConfig.refreshMs > 0) {
     state.refreshTimer = window.setInterval(
@@ -122,6 +124,42 @@ async function init() {
       pageConfig.refreshMs,
     );
   }
+}
+
+async function selectLatestSource() {
+  if (!pageConfig.autoSelectLatestSource) return;
+
+  const candidates = await Promise.all(
+    pageConfig.sources.map(async (source) => {
+      try {
+        const raw = await fetchForecastDataForSource(source);
+        const catalog = normalizeForecastData(raw);
+        const service = selectService(catalog);
+        const latestRun =
+          service?.runs?.find((run) => run.id === service.latest_run) || service?.runs?.[0];
+        if (!serviceHasRenderableFrames(service) || !latestRun) return null;
+
+        const runTime = Date.parse(latestRun.run_time || "");
+        const publishedTime = Date.parse(catalog.published_at || "");
+        return {
+          id: source.id,
+          time: Number.isFinite(runTime)
+            ? runTime
+            : Number.isFinite(publishedTime)
+              ? publishedTime
+              : 0,
+        };
+      } catch (error) {
+        console.warn(`latest source check failed: ${source.manifestUrl}`, error);
+        return null;
+      }
+    }),
+  );
+
+  const latest = candidates
+    .filter(Boolean)
+    .sort((a, b) => b.time - a.time)[0];
+  if (latest) state.sourceId = latest.id;
 }
 
 async function loadForecast({ preserveSelection }) {
