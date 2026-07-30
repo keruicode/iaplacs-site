@@ -35,6 +35,7 @@ RUN_DIR_RE = re.compile(r"^wrf_montage_(\d{8}_\d{2})$")
 AIRPORT_YUNNAN_DIR_RE = re.compile(r"^airport_yunnan_(\d{8}_\d{2})$")
 DETAIL_RE = re.compile(r"_combined_detail_p(\d{2})_")
 LEAD_RANGE_RE = re.compile(r"T(\d{2})_T(\d{2})", re.IGNORECASE)
+ACCUMULATION_WINDOW_RE = re.compile(r"_(\d{10})-(\d{10})(?:_BJT)?(?:_combined|_grid)")
 YUNNAN_AIRPORTS = [
     {"id": "dehong_mangshi", "label": "德宏芒市机场"},
     {"id": "xishuangbanna_gasa", "label": "西双版纳嘎洒机场"},
@@ -177,6 +178,14 @@ def build_yunnan_airport_frames(
         groups.setdefault(stem, []).append(path)
 
     frames = []
+    if accumulation_hours == 12 and any(
+        ACCUMULATION_WINDOW_RE.search(key) for key in groups
+    ):
+        groups = {
+            key: candidates
+            for key, candidates in groups.items()
+            if ACCUMULATION_WINDOW_RE.search(key)
+        }
     for _, candidates in sorted(groups.items()):
         existing = [path for path in candidates if path.exists()]
         if not existing:
@@ -188,7 +197,7 @@ def build_yunnan_airport_frames(
         if accumulation_hours is None and "T13_T48" in path.name:
             lead_label = "36小时拼图"
         elif accumulation_hours is not None:
-            lead_label = f"T13起 {accumulation_hours}小时累计"
+            lead_label = accumulation_window_label(path.name, accumulation_hours)
         frame = {
             "id": "overview",
             "lead": lead_value_from_label(lead_label),
@@ -541,6 +550,14 @@ def build_ningxia_frames(
         for key, candidates in groups.items()
         if accumulation_hours is None and "_WRF_AllRain_" in key
     }
+    if accumulation_hours == 12 and any(
+        ACCUMULATION_WINDOW_RE.search(key) for key in regional_groups
+    ):
+        regional_groups = {
+            key: candidates
+            for key, candidates in regional_groups.items()
+            if ACCUMULATION_WINDOW_RE.search(key)
+        }
     primary_groups = {**regional_groups, **national_groups}
     if primary_groups:
         groups = primary_groups
@@ -595,7 +612,7 @@ def ningxia_frame_meta(
         return (
             f"ningxia_accum_{accumulation_hours}h",
             0,
-            f"T13起 {accumulation_hours}小时累计",
+            accumulation_window_label(path.name, accumulation_hours),
             "",
         )
     if "_combined_overview_" in key and "_6x6_" in key:
@@ -703,6 +720,14 @@ def build_frames(
         groups.setdefault(key, []).append(path)
 
     frames = []
+    if accumulation_hours == 12 and any(
+        ACCUMULATION_WINDOW_RE.search(key) for key in groups
+    ):
+        groups = {
+            key: candidates
+            for key, candidates in groups.items()
+            if ACCUMULATION_WINDOW_RE.search(key)
+        }
     for key, candidates in sorted(groups.items(), key=frame_sort_key):
         chosen = choose_frame_candidate(key, candidates)
         full = choose_full_candidate(key, candidates)
@@ -803,7 +828,7 @@ def frame_meta(run_id: str, key: str) -> dict:
         return {
             "id": f"shangrao_accum_{hours}h",
             "lead": 0,
-            "lead_label": f"T13起 {hours}小时累计",
+            "lead_label": accumulation_window_label(key, hours),
             "valid_label": "",
         }
     if "_combined_overview" in key:
@@ -850,6 +875,15 @@ def lead_label_from_name(file_name: str) -> str:
 def lead_value_from_label(label: str) -> int:
     match = re.search(r"(\d+)(?!.*\d)", label)
     return int(match.group(1)) if match else 0
+
+
+def accumulation_window_label(file_name: str, hours: int) -> str:
+    match = ACCUMULATION_WINDOW_RE.search(file_name)
+    if not match:
+        return f"T13起 {hours}小时累计"
+    start = datetime.strptime(match.group(1), "%Y%m%d%H")
+    end = datetime.strptime(match.group(2), "%Y%m%d%H")
+    return f"{start:%m-%d %H}-{end:%H}"
 
 
 def parse_run_time(run_id: str) -> datetime:
