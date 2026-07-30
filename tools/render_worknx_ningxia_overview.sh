@@ -9,6 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORK_NX_ROOT="${WORK_NX_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK_nx}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-$SCRIPT_DIR/worknx_ningxia_overview}"
 NCL_SCRIPT="${NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_ningxia_hour_bjt.ncl}"
+NATIONAL_NCL_SCRIPT="${NATIONAL_NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_national_hour_bjt.ncl}"
 NCL_BIN="${NCL_BIN:-/public/software/apps/ncl_ncarg/ncl630/bin/ncl}"
 NCL_ROOT="${NCL_ROOT:-/public/software/apps/ncl_ncarg/ncl630}"
 MIN_FILE_AGE_SECONDS="${MIN_FILE_AGE_SECONDS:-1200}"
@@ -46,6 +47,10 @@ if [[ ! -d "$WORK_NX_ROOT" ]]; then
 fi
 if [[ ! -f "$NCL_SCRIPT" ]]; then
   echo "ERROR: NCL script not found: $NCL_SCRIPT" >&2
+  exit 1
+fi
+if [[ ! -f "$NATIONAL_NCL_SCRIPT" ]]; then
+  echo "ERROR: nationwide NCL script not found: $NATIONAL_NCL_SCRIPT" >&2
   exit 1
 fi
 [[ -x "$NCL_BIN" ]] || { echo "ERROR: ncl is required: $NCL_BIN" >&2; exit 127; }
@@ -157,14 +162,12 @@ render_source() {
   for accum_hours in 12 24; do
     local accum_source accum_overview
     WORK_NX_WRF_DIR="$wrf_dir" \
-      WORK_NX_NINGXIA_PNG_DIR="$panel_dir" \
-      NINGXIA_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
-      NINGXIA_PROVINCE_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
-      NINGXIA_COUNTY_SHP_FILE="$NINGXIA_COUNTY_SHP_FILE" \
+      WORK_NX_NATIONAL_PNG_DIR="$panel_dir" \
+      WORK_NX_NATIONAL_PROVINCE_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
       RAIN_ACCUM_HOURS="$accum_hours" \
-      "$NCL_BIN" "$NCL_SCRIPT"
-    accum_source="$(find "$panel_dir" -maxdepth 1 -type f -name "*_combined_accum_$(printf '%02d' "$accum_hours")h_*_BJT_grid.png" | sort | tail -n 1)"
-    [[ -n "$accum_source" ]] || { echo "ERROR: missing ${accum_hours}h Ningxia accumulation for $run_prefix" >&2; return 1; }
+      "$NCL_BIN" "$NATIONAL_NCL_SCRIPT"
+    accum_source="$(find "$panel_dir" -maxdepth 1 -type f -name "*_national_accum_$(printf '%02d' "$accum_hours")h_*_BJT.png" | sort | tail -n 1)"
+    [[ -n "$accum_source" ]] || { echo "ERROR: missing ${accum_hours}h nationwide Ningxia accumulation for $run_prefix" >&2; return 1; }
     accum_overview="$run_dir/Precip_accum_${accum_hours}h_WRF_Ningxia_T13_T48_InitUTC_${run_date}_${run_hour}_00_combined_overview_1x1_grid.png"
     cp -p "$accum_source" "$accum_overview"
     touch -r "$source_path" "$accum_overview"
