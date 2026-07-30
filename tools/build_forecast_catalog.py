@@ -713,10 +713,6 @@ def build_frames(
         add_preview_asset(frame, chosen, preview)
         add_full_asset(frame, chosen, full)
         frames.append(frame)
-    if accumulation_hours is not None:
-        # Each product represents the first post-spinup accumulation window.
-        # Ignore stale secondary windows left by an interrupted prior render.
-        frames = frames[:1]
     return frames
 
 

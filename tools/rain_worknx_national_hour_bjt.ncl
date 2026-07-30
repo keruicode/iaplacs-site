@@ -84,7 +84,6 @@ begin
     end_idx = min((/48, ntimes - 1/))
     if (accum_hours.gt.1) then
       start_idx = start_idx + accum_hours - 1
-      end_idx = start_idx
     end if
     if (end_idx.lt.start_idx) then
       print("WARNING: insufficient fields for requested precipitation product in " + files(ifile))

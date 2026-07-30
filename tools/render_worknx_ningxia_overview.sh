@@ -160,17 +160,21 @@ render_source() {
   touch -r "$source_path" "$overview"
 
   for accum_hours in 12 24; do
-    local accum_source accum_overview
+    local accum_source accum_overview accum_name
     WORK_NX_WRF_DIR="$wrf_dir" \
       WORK_NX_NATIONAL_PNG_DIR="$panel_dir" \
       WORK_NX_NATIONAL_PROVINCE_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
       RAIN_ACCUM_HOURS="$accum_hours" \
       "$NCL_BIN" "$NATIONAL_NCL_SCRIPT"
-    accum_source="$(find "$panel_dir" -maxdepth 1 -type f -name "*_national_accum_$(printf '%02d' "$accum_hours")h_*_BJT.png" | sort | tail -n 1)"
-    [[ -n "$accum_source" ]] || { echo "ERROR: missing ${accum_hours}h nationwide Ningxia accumulation for $run_prefix" >&2; return 1; }
-    accum_overview="$run_dir/Precip_accum_${accum_hours}h_WRF_Ningxia_T13_T48_InitUTC_${run_date}_${run_hour}_00_combined_overview_1x1_grid.png"
-    cp -p "$accum_source" "$accum_overview"
-    touch -r "$source_path" "$accum_overview"
+    while IFS= read -r accum_source; do
+      [[ -n "$accum_source" ]] || continue
+      accum_name="$(basename "$accum_source")"
+      accum_name="${accum_name#*_national_accum_${accum_hours}h_}"
+      accum_name="${accum_name%_BJT.png}"
+      accum_overview="$run_dir/Precip_accum_${accum_hours}h_WRF_Ningxia_T13_T48_InitUTC_${run_date}_${run_hour}_00_${accum_name}_combined_overview_1x1_grid.png"
+      cp -p "$accum_source" "$accum_overview"
+      touch -r "$source_path" "$accum_overview"
+    done < <(find "$panel_dir" -maxdepth 1 -type f -name "*_national_accum_$(printf '%02d' "$accum_hours")h_*_BJT.png" | sort)
   done
   echo "Rendered $overview"
 }
