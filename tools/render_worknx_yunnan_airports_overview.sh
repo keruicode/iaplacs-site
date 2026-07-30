@@ -222,6 +222,20 @@ render_source() {
 
   montage "${captioned_panels[@]}" -tile 6x6 -geometry '100%x100%+2+2' -background white "$overview"
   touch -r "$source_path" "$overview"
+  for accum_hours in 12 24; do
+    local accum_source accum_overview
+    WORK_YN_WRF_DIR="$wrf_dir" \
+      WORK_YN_YUNNAN_AIRPORT_PNG_DIR="$panel_dir" \
+      YUNNAN_PROVINCE_SHP_FILE="$YUNNAN_PROVINCE_SHP_FILE" \
+      YUNNAN_CITY_SHP_FILE="$YUNNAN_CITY_SHP_FILE" \
+      RAIN_ACCUM_HOURS="$accum_hours" \
+      "$NCL_BIN" "$NCL_SCRIPT"
+    accum_source="$(find "$panel_dir" -maxdepth 1 -type f -name "*_combined_accum_$(printf '%02d' "$accum_hours")h_*_BJT_grid.png" | sort | tail -n 1)"
+    [[ -n "$accum_source" ]] || { echo "ERROR: missing ${accum_hours}h Yunnan accumulation for $run_prefix" >&2; return 1; }
+    accum_overview="$run_dir/Precip_accum_${accum_hours}h_WRF_YunnanAirports_T13_T48_InitUTC_${run_date}_${run_hour}_00_combined_overview_1x1_grid.png"
+    cp -p "$accum_source" "$accum_overview"
+    touch -r "$source_path" "$accum_overview"
+  done
   "$PYTHON_BIN" "$POINT_SCRIPT" --wrf-dir "$wrf_dir" --output "$totals_json" --start 13 --end 48
   write_manifest "$manifest_json" "$run_prefix" "$source_path" "$overview" "$totals_json"
   echo "Rendered $overview"

@@ -124,6 +124,11 @@ for source in "${sources[@]}"; do
   webp_base="${base%.png}.webp"
   preview_base="${base%.png}.preview.webp"
   run_dir="$(dirname "$source")"
+  asset_files=(
+    "$source"
+    "$run_dir/$webp_base"
+    "$run_dir/$preview_base"
+  )
 
   for required in "$run_dir/$webp_base" "$run_dir/$preview_base" "$run_dir/manifest_fragment.json" "$run_dir/airport_precip_totals.json"; do
     if [[ ! -f "$required" ]]; then
@@ -132,12 +137,25 @@ for source in "${sources[@]}"; do
     fi
   done
 
+  while IFS= read -r accum_source; do
+    [[ -n "$accum_source" ]] || continue
+    make_webp "$accum_source"
+    make_preview_webp "$accum_source"
+    asset_files+=(
+      "$accum_source"
+      "${accum_source%.png}.webp"
+      "${accum_source%.png}.preview.webp"
+    )
+  done < <(
+    find "$run_dir" -maxdepth 1 -type f \
+      -name 'Precip_accum_*h_WRF_YunnanAirports_T13_T48_InitUTC_*_combined_overview_1x1_grid.png' \
+      | sort
+  )
+
   echo "Publishing Yunnan airport regional overview: $source"
   ssh "$GITHUB_HOST" "mkdir -p ~/incoming/airport_yunnan_${run_prefix}"
   rsync -av \
-    "$source" \
-    "$run_dir/$webp_base" \
-    "$run_dir/$preview_base" \
+    "${asset_files[@]}" \
     "$run_dir/manifest_fragment.json" \
     "$run_dir/airport_precip_totals.json" \
     "$GITHUB_HOST:~/incoming/airport_yunnan_${run_prefix}/"

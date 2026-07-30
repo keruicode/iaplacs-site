@@ -41,6 +41,7 @@ begin
   out_dir = getenv("WORK_NX_NINGXIA_PNG_DIR")
   province_shp_file = getenv("NINGXIA_PROVINCE_SHP_FILE")
   county_shp_file = getenv("NINGXIA_COUNTY_SHP_FILE")
+  accum_hours_text = getenv("RAIN_ACCUM_HOURS")
   legacy_shp_file = getenv("NINGXIA_SHP_FILE")
 
   if (wrf_dir.eq."") then
@@ -54,6 +55,14 @@ begin
   end if
   if (ismissing(county_shp_file)) then
     county_shp_file = ""
+  end if
+  if (ismissing(accum_hours_text) .or. accum_hours_text.eq."") then
+    accum_hours = 1
+  else
+    accum_hours = toint(accum_hours_text)
+  end if
+  if (accum_hours.lt.1) then
+    accum_hours = 1
   end if
   if (ismissing(legacy_shp_file)) then
     legacy_shp_file = ""
@@ -110,16 +119,30 @@ begin
     rain_all = f->RAINNC + f->RAINC
     init_bjt = bjt_label(f@START_DATE, 3)
 
-    do it = start_idx, end_idx
-      file_start = bjt_label(times(it-1), 1)
+    if (accum_hours.eq.1) then
+      first_end_idx = start_idx
+    else
+      first_end_idx = start_idx + accum_hours - 1
+    end if
+    do it = first_end_idx, end_idx, accum_hours
+      accum_start_idx = it - accum_hours
+      if (accum_hours.eq.1) then
+        accum_start_idx = it - 1
+      end if
+      file_start = bjt_label(times(accum_start_idx), 1)
       file_end = bjt_label(times(it), 1)
-      rain_h = rain_all(it,:,:) - rain_all(it-1,:,:)
+      rain_h = rain_all(it,:,:) - rain_all(accum_start_idx,:,:)
       rain_region = rain_h(row_start:row_end,col_start:col_end)
       ; Put trace/zero rain below the first contour level. That is the white
       ; below-range class, while an all-missing panel triggers NO CONTOUR.
       rain_region = where(rain_region.lt.0.01, -1.0, rain_region)
 
-      wks = gsn_open_wks("png", out_dir + "/" + init_bjt + "_rain_hour_" + file_start + "-" + file_end + "_BJT")
+      if (accum_hours.eq.1) then
+        out_name = init_bjt + "_rain_hour_" + file_start + "-" + file_end + "_BJT"
+      else
+        out_name = init_bjt + "_combined_accum_" + sprinti("%0.2i",accum_hours) + "h_" + file_start + "-" + file_end + "_BJT_grid"
+      end if
+      wks = gsn_open_wks("png", out_dir + "/" + out_name)
       cmap = (/(/1.00,1.00,1.00/), (/0.00,0.00,0.00/), (/1.00,1.00,1.00/), \
                (/0.42,0.86,0.40/), (/0.25,0.72,0.25/), (/0.42,0.68,0.90/), \
                (/0.10,0.05,1.00/), (/0.92,0.00,0.92/), (/116.0/255,30.0/255,7.0/255/)/)
@@ -170,6 +193,12 @@ begin
       res@tmYLLabelFontThicknessF = 4
       res@tmBorderLineColor = "black"
       res@tmBorderThicknessF = 3
+      if (accum_hours.gt.1) then
+        res@tiMainString = sprinti("%0.2i",accum_hours) + " h accumulation " + bjt_label(times(accum_start_idx),2) + "-" + bjt_label(times(it),4)
+        res@tiMainFont = 22
+        res@tiMainFontHeightF = 0.04
+        res@tiMainFontColor = "black"
+      end if
       res@lbLabelFontColor = "black"
       res@lbLabelBarOn = True
       res@lbOrientation = "Vertical"

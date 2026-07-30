@@ -89,4 +89,20 @@ for source in "${sources[@]}"; do
     SOURCE_IMAGE_GLOB="$(basename "$source")" \
     MIN_FILE_AGE_SECONDS=0 \
     "$PUBLISHER"
+
+  while IFS= read -r accum_source; do
+    [[ -n "$accum_source" ]] || continue
+    echo "Publishing Ningxia accumulation: $accum_source"
+    IAPLACS_WEBP_FORCE=1 \
+      IAPLACS_PREVIEW_FORCE=1 \
+      IAPLACS_ASSET_FORCE_UPLOAD=1 \
+      WORK_NX_ROOT="$source_dir" \
+      SOURCE_IMAGE_GLOB="$(basename "$accum_source")" \
+      MIN_FILE_AGE_SECONDS=0 \
+      "$PUBLISHER"
+  done < <(
+    find "$source_dir" -maxdepth 1 -type f \
+      -name 'Precip_accum_*h_WRF_Ningxia_T13_T48_InitUTC_*_combined_overview_1x1_grid.png' \
+      | sort
+  )
 done

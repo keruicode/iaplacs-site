@@ -45,6 +45,7 @@ begin
   province_shp_file = getenv("SHANGRAO_PROVINCE_SHP_FILE")
   county_shp_file = getenv("SHANGRAO_COUNTY_SHP_FILE")
   legacy_shp_file = getenv("SHANGRAO_SHP_FILE")
+  accum_hours_text = getenv("RAIN_ACCUM_HOURS")
 
   if (ismissing(wrf_dir)) then
     wrf_dir = ""
@@ -60,6 +61,14 @@ begin
   end if
   if (ismissing(legacy_shp_file)) then
     legacy_shp_file = ""
+  end if
+  if (ismissing(accum_hours_text) .or. accum_hours_text.eq."") then
+    accum_hours = 1
+  else
+    accum_hours = toint(accum_hours_text)
+  end if
+  if (accum_hours.lt.1) then
+    accum_hours = 1
   end if
 
   if (wrf_dir.eq."") then
@@ -112,21 +121,39 @@ begin
       continue
     end if
 
-    do it = start_idx, ntimes-1
-      bjt_start_title = get_bjt_info(times(it-1), 2)
+    end_idx = min((/48, ntimes-1/))
+    if (accum_hours.eq.1) then
+      first_end_idx = start_idx
+    else
+      first_end_idx = start_idx + accum_hours - 1
+    end if
+    do it = first_end_idx, end_idx, accum_hours
+      accum_start_idx = it - accum_hours
+      if (accum_hours.eq.1) then
+        accum_start_idx = it - 1
+      end if
+      bjt_start_title = get_bjt_info(times(accum_start_idx), 2)
       bjt_end_title   = get_bjt_info(times(it), 4)
-      label           = bjt_start_title + "-" + bjt_end_title
+      if (accum_hours.eq.1) then
+        label = bjt_start_title + "-" + bjt_end_title
+      else
+        label = sprinti("%0.2i",accum_hours) + " h accumulation " + bjt_start_title + "-" + bjt_end_title
+      end if
 
-      bjt_start_file  = get_bjt_info(times(it-1), 1)
+      bjt_start_file  = get_bjt_info(times(accum_start_idx), 1)
       bjt_end_file    = get_bjt_info(times(it), 1)
 
-      rain_h = rain_all(it,:,:) - rain_all(it-1,:,:)
+      rain_h = rain_all(it,:,:) - rain_all(accum_start_idx,:,:)
       rain_h@_FillValue = -9999.0
       rain_h = where(rain_h.lt.0.01, rain_h@_FillValue, rain_h)
       rain_h@lat2d = lat2d
       rain_h@lon2d = lon2d
 
-      out_name = init_bjt_str + "_rain_hour_" + bjt_start_file + "-" + bjt_end_file + "_BJT"
+      if (accum_hours.eq.1) then
+        out_name = init_bjt_str + "_rain_hour_" + bjt_start_file + "-" + bjt_end_file + "_BJT"
+      else
+        out_name = init_bjt_str + "_combined_accum_" + sprinti("%0.2i",accum_hours) + "h_" + bjt_start_file + "-" + bjt_end_file + "_BJT_grid"
+      end if
       print("drawing: " + label)
       print("output: " + out_name + ".png")
 

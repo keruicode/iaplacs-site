@@ -125,8 +125,8 @@ def build_yunnan_airport_runs() -> list[dict]:
         if fragment_path.exists():
             fragment = json.loads(fragment_path.read_text(encoding="utf-8"))
 
-        frames = build_yunnan_airport_frames(run_dir, fragment)
-        if not frames:
+        hourly_frames = build_yunnan_airport_frames(run_dir, fragment, accumulation_hours=None)
+        if not hourly_frames:
             continue
 
         run_id = fragment.get("run_prefix") or match.group(1)
@@ -140,7 +140,17 @@ def build_yunnan_airport_runs() -> list[dict]:
                 "published_at": generated_at,
                 "summary": "云南机场降水预报图集，覆盖德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点。",
                 "products": [
-                    build_yunnan_airport_product(run_id, frames, generated_at, fragment),
+                    build_yunnan_airport_product(run_id, hourly_frames, generated_at, fragment),
+                    *[
+                        build_yunnan_airport_accumulation_product(
+                            run_id,
+                            frames,
+                            generated_at,
+                            hours,
+                        )
+                        for hours in (12, 24)
+                        if (frames := build_yunnan_airport_frames(run_dir, fragment, accumulation_hours=hours))
+                    ],
                     *build_airport_sample_products(include_precip=False),
                 ],
             }
@@ -150,13 +160,19 @@ def build_yunnan_airport_runs() -> list[dict]:
     return runs[:MAX_RUNS]
 
 
-def build_yunnan_airport_frames(run_dir: Path, fragment: dict) -> list[dict]:
+def build_yunnan_airport_frames(
+    run_dir: Path, fragment: dict, accumulation_hours: int | None
+) -> list[dict]:
     groups: dict[str, list[Path]] = {}
     for path in run_dir.iterdir():
         if path.suffix.lower() not in {".png", ".webp", ".jpg", ".jpeg"}:
             continue
         stem = frame_asset_stem(path)
         if "_combined_overview_" not in stem:
+            continue
+        if accumulation_hours is None and "_accum_" in stem:
+            continue
+        if accumulation_hours is not None and f"_accum_{accumulation_hours}h_" not in stem:
             continue
         groups.setdefault(stem, []).append(path)
 
@@ -169,8 +185,10 @@ def build_yunnan_airport_frames(run_dir: Path, fragment: dict) -> list[dict]:
         preview_path = choose_preview_candidate(existing)
         full_path = choose_full_candidate("_combined_overview", existing)
         lead_label = lead_label_from_name(path.name)
-        if "T13_T48" in path.name:
+        if accumulation_hours is None and "T13_T48" in path.name:
             lead_label = "36小时拼图"
+        elif accumulation_hours is not None:
+            lead_label = f"T13起 {accumulation_hours}小时累计"
         frame = {
             "id": "overview",
             "lead": lead_value_from_label(lead_label),
@@ -206,6 +224,25 @@ def build_yunnan_airport_product(
         "color": "#0f68c8",
         "description": "WORK_yn 云南区域逐小时降水 6x6 拼图，标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场位置。",
         "metrics": metrics,
+        "frames": frames,
+    }
+
+
+def build_yunnan_airport_accumulation_product(
+    run_id: str, frames: list[dict], generated_at: str, hours: int
+) -> dict:
+    return {
+        "id": f"airport_yunnan_accum_{hours}h",
+        "title": f"{hours}小时累计降水",
+        "category": "机场服务",
+        "unit": "mm",
+        "color": "#0f68c8",
+        "description": f"从 T13 开始累计至 T{12 + hours}，标注三个机场位置。",
+        "metrics": [
+            {"label": "起报时次", "value": run_id.replace("_", " ") + " UTC"},
+            {"label": "累计时段", "value": f"T13-T{12 + hours}"},
+            {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},
+        ],
         "frames": frames,
     }
 
@@ -409,8 +446,8 @@ def build_wrf_runs() -> list[dict]:
         if not match:
             continue
         run_id = match.group(1)
-        frames = build_frames(run_id, run_dir)
-        if not frames:
+        hourly_frames = build_frames(run_id, run_dir, accumulation_hours=None)
+        if not hourly_frames:
             continue
         run_time = parse_run_time(run_id)
         runs.append(
@@ -419,8 +456,15 @@ def build_wrf_runs() -> list[dict]:
                 "label": f"{run_time:%Y-%m-%d %H:%M} BJT",
                 "run_time": run_time.isoformat(),
                 "published_at": latest_mtime(run_dir).isoformat(),
-                "summary": f"WRF 逐小时降水拼图，共 {len(frames)} 张图",
-                "products": [build_wrf_product(run_id, frames)],
+                "summary": f"WRF 逐小时降水拼图，共 {len(hourly_frames)} 张图",
+                "products": [
+                    build_wrf_product(run_id, hourly_frames),
+                    *[
+                        build_wrf_accumulation_product(run_id, frames, hours)
+                        for hours in (12, 24)
+                        if (frames := build_frames(run_id, run_dir, accumulation_hours=hours))
+                    ],
+                ],
             }
         )
 
@@ -440,8 +484,8 @@ def build_ningxia_runs() -> list[dict]:
         if not fragment_path.exists():
             continue
         fragment = json.loads(fragment_path.read_text(encoding="utf-8"))
-        frames = build_ningxia_frames(run_dir, fragment)
-        if not frames:
+        hourly_frames = build_ningxia_frames(run_dir, fragment, accumulation_hours=None)
+        if not hourly_frames:
             continue
 
         run_id = fragment.get("run_prefix") or run_dir.name.replace("worknx_summary_", "")
@@ -454,8 +498,15 @@ def build_ningxia_runs() -> list[dict]:
                 "label": f"{format_run_label(run_time)} BJT",
                 "run_time": run_time,
                 "published_at": generated_at,
-                "summary": f"宁夏区域与全国预报图集，共 {len(frames)} 张图",
-                "products": [build_ningxia_product(run_id, frames, generated_at)],
+                "summary": f"宁夏区域与全国预报图集，共 {len(hourly_frames)} 张图",
+                "products": [
+                    build_ningxia_product(run_id, hourly_frames, generated_at),
+                    *[
+                        build_ningxia_accumulation_product(run_id, frames, generated_at, hours)
+                        for hours in (12, 24)
+                        if (frames := build_ningxia_frames(run_dir, fragment, accumulation_hours=hours))
+                    ],
+                ],
             }
         )
 
@@ -463,7 +514,9 @@ def build_ningxia_runs() -> list[dict]:
     return runs[:MAX_RUNS]
 
 
-def build_ningxia_frames(run_dir: Path, fragment: dict) -> list[dict]:
+def build_ningxia_frames(
+    run_dir: Path, fragment: dict, accumulation_hours: int | None
+) -> list[dict]:
     groups: dict[str, list[Path]] = {}
     for path in run_dir.iterdir():
         if path.suffix.lower() not in {".png", ".webp", ".jpg", ".jpeg"}:
@@ -477,10 +530,16 @@ def build_ningxia_frames(run_dir: Path, fragment: dict) -> list[dict]:
     regional_groups = {
         key: candidates
         for key, candidates in groups.items()
-        if "_combined_overview_" in key and "_6x6_" in key
+        if "_combined_overview_" in key
+        and (
+            (accumulation_hours is None and "_accum_" not in key and "_6x6_" in key)
+            or (accumulation_hours is not None and f"_accum_{accumulation_hours}h_" in key)
+        )
     }
     national_groups = {
-        key: candidates for key, candidates in groups.items() if "_WRF_AllRain_" in key
+        key: candidates
+        for key, candidates in groups.items()
+        if accumulation_hours is None and "_WRF_AllRain_" in key
     }
     primary_groups = {**regional_groups, **national_groups}
     if primary_groups:
@@ -498,7 +557,9 @@ def build_ningxia_frames(run_dir: Path, fragment: dict) -> list[dict]:
         full_path = choose_full_candidate("", existing)
         if not path.exists():
             continue
-        frame_id, lead_value, lead_label, valid_label = ningxia_frame_meta(key, path)
+        frame_id, lead_value, lead_label, valid_label = ningxia_frame_meta(
+            key, path, accumulation_hours
+        )
         frame = {
             "id": frame_id,
             "lead": lead_value,
@@ -527,7 +588,16 @@ def ningxia_frame_sort_key(item: tuple[str, list[Path]]) -> tuple[int, str]:
     return (2, key)
 
 
-def ningxia_frame_meta(key: str, path: Path) -> tuple[str, int, str, str]:
+def ningxia_frame_meta(
+    key: str, path: Path, accumulation_hours: int | None
+) -> tuple[str, int, str, str]:
+    if accumulation_hours is not None:
+        return (
+            f"ningxia_accum_{accumulation_hours}h",
+            0,
+            f"T13起 {accumulation_hours}小时累计",
+            "",
+        )
     if "_combined_overview_" in key and "_6x6_" in key:
         return ("ningxia_region", 0, "宁夏区域", "当前显示：宁夏区域")
     if "_WRF_AllRain_" in key:
@@ -558,6 +628,25 @@ def build_ningxia_product(run_id: str, frames: list[dict], generated_at: str) ->
     }
 
 
+def build_ningxia_accumulation_product(
+    run_id: str, frames: list[dict], generated_at: str, hours: int
+) -> dict:
+    return {
+        "id": f"ningxia_accum_{hours}h",
+        "title": f"{hours}小时累计降水",
+        "category": "宁夏预报",
+        "unit": "mm",
+        "color": "#0f68c8",
+        "description": f"宁夏区域从 T13 开始累计至 T{12 + hours}。",
+        "metrics": [
+            {"label": "起报时次", "value": run_id.replace("_", " ") + " UTC"},
+            {"label": "累计时段", "value": f"T13-T{12 + hours}"},
+            {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},
+        ],
+        "frames": frames,
+    }
+
+
 def build_wrf_product(run_id: str, frames: list[dict]) -> dict:
     return {
         "id": "wrf_rain_montage",
@@ -575,13 +664,36 @@ def build_wrf_product(run_id: str, frames: list[dict]) -> dict:
     }
 
 
-def build_frames(run_id: str, run_dir: Path) -> list[dict]:
+def build_wrf_accumulation_product(run_id: str, frames: list[dict], hours: int) -> dict:
+    return {
+        "id": f"shangrao_accum_{hours}h",
+        "title": f"{hours}小时累计降水",
+        "category": "上饶预报",
+        "unit": "mm",
+        "color": "#0f68c8",
+        "description": f"上饶区域从 T13 开始累计至 T{12 + hours}。",
+        "metrics": [
+            {"label": "起报时次", "value": run_id.replace("_", " ") + " BJT"},
+            {"label": "累计时段", "value": f"T13-T{12 + hours}"},
+            {"label": "产品状态", "value": "服务器发布"},
+        ],
+        "frames": frames,
+    }
+
+
+def build_frames(
+    run_id: str, run_dir: Path, accumulation_hours: int | None
+) -> list[dict]:
     groups: dict[str, list[Path]] = {}
     for path in run_dir.iterdir():
         if path.suffix.lower() not in {".png", ".webp", ".jpg", ".jpeg"}:
             continue
         stem = frame_asset_stem(path)
         if not stem.startswith(run_id + "_combined_"):
+            continue
+        if accumulation_hours is None and "_combined_accum_" in stem:
+            continue
+        if accumulation_hours is not None and f"_combined_accum_{accumulation_hours}h_" not in stem:
             continue
         key = stem
         if key.endswith("_grid"):
@@ -685,6 +797,15 @@ def frame_sort_key(item: tuple[str, list[Path]]) -> tuple[int, int, str]:
 
 
 def frame_meta(run_id: str, key: str) -> dict:
+    accumulation = re.search(r"_combined_accum_(12|24)h_", key)
+    if accumulation:
+        hours = int(accumulation.group(1))
+        return {
+            "id": f"shangrao_accum_{hours}h",
+            "lead": 0,
+            "lead_label": f"T13起 {hours}小时累计",
+            "valid_label": "",
+        }
     if "_combined_overview" in key:
         return {
             "id": "overview",

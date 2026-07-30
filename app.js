@@ -290,7 +290,7 @@ function addNationalFallbackToLatestRun(catalog, frameIds, nationalFrame) {
   const runs = (service.runs || []).map((run) => {
     if (run.id !== service.latest_run) return run;
     const products = (run.products || []).map((product) => {
-      if (!isPrecipitationProduct(product)) return product;
+      if (!isHourlyPrecipitationProduct(product)) return product;
       const frames = normalizeFallbackRegionFrame(product.frames || [], frameIds);
       if (frames.some((frame) => frame.id === frameIds.national)) return product;
       return {
@@ -320,9 +320,9 @@ function addNationalFallbackToLatestRun(catalog, frameIds, nationalFrame) {
   };
 }
 
-function isPrecipitationProduct(product) {
+function isHourlyPrecipitationProduct(product) {
   const value = `${product?.id || ""} ${product?.title || ""} ${product?.category || ""}`;
-  return /precip|rain|降水/i.test(value);
+  return /precip|rain|降水/i.test(value) && !/accum|累计/i.test(value);
 }
 
 function normalizeFallbackRegionFrame(frames, frameIds) {
@@ -500,11 +500,15 @@ function limitCatalogRuns(catalog) {
 function normalizeNingxiaRun(run) {
   return {
     ...run,
-    products: (run.products || []).map((product) => ({
-      ...product,
-      title: NINGXIA_PRODUCT_TITLE,
-      description: NINGXIA_PRODUCT_DESCRIPTION,
-    })),
+    products: (run.products || []).map((product) =>
+      product.id === "ningxia_precip_series"
+        ? {
+            ...product,
+            title: NINGXIA_PRODUCT_TITLE,
+            description: NINGXIA_PRODUCT_DESCRIPTION,
+          }
+        : product,
+    ),
   };
 }
 

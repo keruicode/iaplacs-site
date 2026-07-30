@@ -97,4 +97,19 @@ for page in 1 2 3; do
   touch -r "$source_path" "$detail"
 done
 touch -r "$source_path" "$overview"
+for accum_hours in 12 24; do
+  accum_source=""
+  accum_target="$run_dir/${run_prefix}_combined_accum_${accum_hours}h_grid.png"
+  RAIN_ACCUM_HOURS="$accum_hours" \
+    SHANGRAO_WRF_DIR="$wrf_dir" \
+    SHANGRAO_PNG_DIR="$run_dir" \
+    SHANGRAO_PROVINCE_SHP_FILE="$SHANGRAO_PROVINCE_SHP_FILE" \
+    SHANGRAO_COUNTY_SHP_FILE="$SHANGRAO_COUNTY_SHP_FILE" \
+    "$NCL_BIN" "$NCL_SCRIPT"
+  accum_source="$(find "$run_dir" -maxdepth 1 -type f -name "*_combined_accum_$(printf '%02d' "$accum_hours")h_*_BJT_grid.png" | sort | tail -n 1)"
+  accum_count="$(test -n "$accum_source" && echo 1 || echo 0)"
+  [[ "$accum_count" == "1" ]] || { echo "ERROR: expected one ${accum_hours}h accumulation, found $accum_count" >&2; exit 1; }
+  cp -p "$accum_source" "$accum_target"
+  touch -r "$source_path" "$accum_target"
+done
 echo "Rendered $overview"
