@@ -642,6 +642,70 @@ button {
   color: var(--muted);
 }
 
+.airport-hour-timeline {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+
+.airport-hour-timeline::before,
+.airport-hour-timeline::after {
+  flex: 0 0 max(24px, calc(50% - 68px));
+  content: "";
+}
+
+.airport-hour-button {
+  display: grid;
+  flex: 0 0 110px;
+  min-height: 48px;
+  align-content: center;
+  gap: 2px;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: #fbfcfd;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.15;
+  scroll-snap-align: center;
+}
+
+.airport-hour-button strong {
+  color: var(--ink);
+  font-family: "Times New Roman", "Songti SC", serif;
+  font-size: 15px;
+}
+
+.airport-hour-button:hover {
+  border-color: #8cb9ee;
+  background: var(--blue-soft);
+}
+
+.airport-hour-button.is-active {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #dcecff;
+}
+
+.airport-hour-button.is-active strong {
+  color: #fff;
+}
+
+.airport-hour-live {
+  color: #fff;
+  font-weight: 800;
+}
+
+.airport-hour-timeline.is-at-start::before {
+  flex-basis: 0;
+}
+
 .icon-button {
   width: 38px;
   font-size: 24px;
@@ -824,6 +888,110 @@ button {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.55;
+}
+
+.feedback-toggle,
+.feedback-archive-button,
+.airport-rating-button {
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: #fbfcfd;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.feedback-toggle {
+  min-height: 28px;
+  padding: 0 9px;
+  font-size: 12px;
+}
+
+.feedback-toggle:hover,
+.feedback-archive-button:hover:not(:disabled),
+.airport-rating-button:hover {
+  border-color: #8cb9ee;
+  background: var(--blue-soft);
+}
+
+.airport-feedback {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.airport-rating-list {
+  display: grid;
+  gap: 10px;
+}
+
+.airport-rating-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.airport-rating-airport {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.airport-rating-plane {
+  color: var(--blue);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.airport-rating-choices {
+  display: inline-flex;
+}
+
+.airport-rating-button {
+  min-width: 38px;
+  min-height: 30px;
+  border-left: 0;
+  font-size: 12px;
+}
+
+.airport-rating-button:first-child {
+  border-left: 1px solid var(--line);
+}
+
+.airport-rating-button.is-active {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #fff;
+}
+
+.airport-feedback-footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.feedback-archive-button {
+  min-height: 34px;
+  padding: 0 11px;
+}
+
+.feedback-archive-button:disabled {
+  cursor: not-allowed;
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+.airport-rating-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .service-focus-block {
@@ -1231,6 +1399,15 @@ button {
   .toolbar-actions {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .airport-hour-button {
+    flex-basis: 56px;
+    font-size: 10px;
+  }
+
+  .airport-hour-button strong {
+    font-size: 13px;
   }
 
   .topbar-actions {

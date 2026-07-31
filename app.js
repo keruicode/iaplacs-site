@@ -8,6 +8,8 @@ const ACCESS_PASSWORD = "123";
 const ACCESS_TOKEN_KEY = "iaplacs_access_token";
 const ACCESS_TOKEN_VALUE = "iaplacs_access_granted_v1";
 const DATA_SOURCE_TOKEN_KEY = "iaplacs_forecast_source";
+const AIRPORT_RATINGS_STORAGE_KEY = "iaplacs_airport_ratings_v1";
+const AIRPORT_RATING_ISSUE_URL = "https://github.com/keruicode/iaplacs-site/issues/new";
 const NINGXIA_PRODUCT_TITLE = "降水预报图集";
 const NINGXIA_PRODUCT_DESCRIPTION = "默认显示宁夏区域图，可切换 WORK_nx 全国模拟图。";
 const NATIONAL_FRAME_LABELS = {
@@ -15,6 +17,16 @@ const NATIONAL_FRAME_LABELS = {
   shangrao_national: "中国东南部",
   airport_national: "中国西南部",
 };
+const AIRPORT_RATING_TARGETS = [
+  { id: "dehong_mangshi", label: "德宏芒市机场" },
+  { id: "xishuangbanna_gasa", label: "西双版纳嘎洒机场" },
+  { id: "puer_lancang_jingmai", label: "普洱澜沧景迈机场" },
+];
+const AIRPORT_RATING_OPTIONS = [
+  { id: "accurate", label: "准" },
+  { id: "inaccurate", label: "不准" },
+  { id: "fair", label: "一般" },
+];
 
 const pageConfig = {
   service: document.body.dataset.service || "airport",
@@ -94,8 +106,14 @@ const els = {
   imageLink: document.querySelector("#imageLink"),
   imageDownload: document.querySelector("#imageDownload"),
   airportViewMode: document.querySelector("#airportViewMode"),
+  airportHourTimeline: document.querySelector("#airportHourTimeline"),
   metricGrid: document.querySelector("#metricGrid"),
   productNote: document.querySelector("#productNote"),
+  airportFeedbackToggle: document.querySelector("#airportFeedbackToggle"),
+  airportFeedback: document.querySelector("#airportFeedback"),
+  airportRatingList: document.querySelector("#airportRatingList"),
+  archiveAirportRatings: document.querySelector("#archiveAirportRatings"),
+  airportRatingStatus: document.querySelector("#airportRatingStatus"),
 };
 
 const viewerState = {
@@ -125,6 +143,7 @@ async function init() {
   setupImageViewer();
   setupDataSourceSwitch();
   setupAirportViewMode();
+  setupAirportFeedback();
   await selectLatestSource();
   await loadForecast({ preserveSelection: false });
   if (pageConfig.refreshMs > 0) {
@@ -690,6 +709,7 @@ function addHours(date, hours) {
 function bjtParts(date) {
   const bjtDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
   return {
+    year: bjtDate.getUTCFullYear(),
     month: bjtDate.getUTCMonth() + 1,
     day: bjtDate.getUTCDate(),
     hour: bjtDate.getUTCHours(),
@@ -784,8 +804,10 @@ function render() {
   renderProducts();
   renderLeads();
   renderAirportViewMode(product, selectedFrame);
+  renderAirportHourTimeline(product, selectedFrame);
   renderMetrics(product);
   renderProductNote(run, product, frame);
+  renderAirportFeedback();
   updateControls(product);
 
   const imageSrc = forecastFrameSource(run, frame);
@@ -841,6 +863,11 @@ function renderEmpty() {
   if (els.imageLink) els.imageLink.href = "#";
   if (els.imageDownload) els.imageDownload.href = "#";
   if (els.airportViewMode) els.airportViewMode.hidden = true;
+  if (els.airportHourTimeline) {
+    els.airportHourTimeline.hidden = true;
+    els.airportHourTimeline.innerHTML = "";
+  }
+  renderAirportFeedback();
   setText(els.runSummary, "暂无起报时次");
 }
 
@@ -1052,6 +1079,207 @@ function renderAirportViewMode(product, frame) {
     button.setAttribute("aria-pressed", String(active));
     button.disabled = mode === "hourly" && !hasPanels;
   });
+}
+
+function renderAirportHourTimeline(product, frame) {
+  const root = els.airportHourTimeline;
+  if (!root) return;
+
+  const showTimeline = isAirportHourlyView(product, frame);
+  root.hidden = !showTimeline;
+  root.innerHTML = "";
+  if (!showTimeline) return;
+
+  const panels = airportHourlyFrames(frame);
+  root.classList.toggle("is-at-start", state.airportPanelIndex === 0);
+  let activeButton = null;
+  panels.forEach((panel, index) => {
+    const button = document.createElement("button");
+    const isActive = index === state.airportPanelIndex;
+    const isRealtime = index === 0 && isAirportRealtimePanel(panel);
+    const label = airportHourLabel(panel, isRealtime);
+    button.type = "button";
+    button.className = `airport-hour-button${isActive ? " is-active" : ""}`;
+    button.setAttribute("aria-pressed", String(isActive));
+    button.setAttribute("aria-label", isRealtime ? `实时 ${airportHourRange(panel)}` : airportHourRange(panel));
+    button.innerHTML = isRealtime
+      ? '<span class="airport-hour-live">实时</span>'
+      : `<span>${label.date}</span><strong>${label.hour}</strong>`;
+    button.addEventListener("click", () => {
+      if (index === state.airportPanelIndex) return;
+      state.airportPanelIndex = index;
+      render();
+    });
+    root.appendChild(button);
+    if (isActive) activeButton = button;
+  });
+
+  window.requestAnimationFrame(() => {
+    if (state.airportPanelIndex === 0) {
+      root.scrollTo({ left: 0, behavior: "auto" });
+      return;
+    }
+    activeButton?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  });
+}
+
+function airportHourLabel(frame, isRealtime) {
+  if (isRealtime) return { date: "", hour: "实时" };
+  const end = Date.parse(frame?.valid_time || "");
+  if (Number.isNaN(end)) return { date: frame?.lead_label || "--", hour: "" };
+  const startParts = bjtParts(new Date(end - 60 * 60 * 1000));
+  return {
+    date: `${twoDigits(startParts.month)}-${twoDigits(startParts.day)}`,
+    hour: `${twoDigits(startParts.hour)}时`,
+  };
+}
+
+function airportHourRange(frame) {
+  const end = Date.parse(frame?.valid_time || "");
+  if (Number.isNaN(end)) return frame?.valid_label || frame?.lead_label || "--";
+  const startParts = bjtParts(new Date(end - 60 * 60 * 1000));
+  const endParts = bjtParts(new Date(end));
+  return `${startParts.year}-${twoDigits(startParts.month)}-${twoDigits(startParts.day)} ${twoDigits(startParts.hour)}:00-${twoDigits(endParts.hour)}:00 BJT`;
+}
+
+function isAirportRealtimePanel(frame) {
+  const end = Date.parse(frame?.valid_time || "");
+  if (Number.isNaN(end)) return false;
+  const now = Date.now();
+  return now >= end - 60 * 60 * 1000 && now < end;
+}
+
+function renderAirportFeedback() {
+  const root = els.airportFeedback;
+  const list = els.airportRatingList;
+  const run = currentRun();
+  if (!root || !list) return;
+
+  const available = pageConfig.service === "airport" && Boolean(run?.id);
+  root.hidden = !available || root.hidden;
+  if (!available) {
+    list.innerHTML = "";
+    return;
+  }
+
+  list.innerHTML = "";
+  const ratings = airportRatingsForRun(run.id);
+  AIRPORT_RATING_TARGETS.forEach((airport) => {
+    const row = document.createElement("div");
+    row.className = "airport-rating-row";
+
+    const label = document.createElement("div");
+    label.className = "airport-rating-airport";
+    label.innerHTML = `<span class="airport-rating-plane" aria-hidden="true">&#9992;</span><span>${airport.label}</span>`;
+
+    const choices = document.createElement("div");
+    choices.className = "airport-rating-choices";
+    choices.setAttribute("role", "group");
+    choices.setAttribute("aria-label", `${airport.label}预报评分`);
+    AIRPORT_RATING_OPTIONS.forEach((option) => {
+      const button = document.createElement("button");
+      const isSelected = ratings[airport.id]?.rating === option.id;
+      button.type = "button";
+      button.className = `airport-rating-button${isSelected ? " is-active" : ""}`;
+      button.textContent = option.label;
+      button.setAttribute("aria-pressed", String(isSelected));
+      button.addEventListener("click", () => {
+        toggleAirportRating(run.id, airport.id, option.id);
+        renderAirportFeedback();
+      });
+      choices.appendChild(button);
+    });
+
+    row.append(label, choices);
+    list.appendChild(row);
+  });
+
+  const selectedCount = Object.keys(ratings).length;
+  if (els.archiveAirportRatings) els.archiveAirportRatings.disabled = selectedCount === 0;
+}
+
+function setupAirportFeedback() {
+  els.airportFeedbackToggle?.addEventListener("click", () => {
+    if (!els.airportFeedback) return;
+    const willOpen = els.airportFeedback.hidden;
+    els.airportFeedback.hidden = !willOpen;
+    els.airportFeedbackToggle.setAttribute("aria-expanded", String(willOpen));
+    if (willOpen) renderAirportFeedback();
+  });
+  els.archiveAirportRatings?.addEventListener("click", openAirportRatingArchive);
+}
+
+function airportRatingsForRun(runId) {
+  const allRatings = readAirportRatings();
+  return allRatings[airportRatingKey(runId)] || {};
+}
+
+function airportRatingKey(runId) {
+  return `${state.sourceId}:${runId}`;
+}
+
+function readAirportRatings() {
+  try {
+    const saved = window.localStorage.getItem(AIRPORT_RATINGS_STORAGE_KEY);
+    const parsed = saved ? JSON.parse(saved) : {};
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (error) {
+    console.warn("airport rating storage unavailable", error);
+    return {};
+  }
+}
+
+function toggleAirportRating(runId, airportId, rating) {
+  const allRatings = readAirportRatings();
+  const key = airportRatingKey(runId);
+  const ratings = allRatings[key] || {};
+  if (ratings[airportId]?.rating === rating) {
+    delete ratings[airportId];
+  } else {
+    ratings[airportId] = { rating, updated_at: new Date().toISOString() };
+  }
+  if (Object.keys(ratings).length) allRatings[key] = ratings;
+  else delete allRatings[key];
+
+  try {
+    window.localStorage.setItem(AIRPORT_RATINGS_STORAGE_KEY, JSON.stringify(allRatings));
+  } catch (error) {
+    console.warn("airport rating could not be saved", error);
+  }
+}
+
+function openAirportRatingArchive() {
+  const run = currentRun();
+  if (!run?.id) return;
+  const ratings = airportRatingsForRun(run.id);
+  const entries = AIRPORT_RATING_TARGETS
+    .map((airport) => {
+      const value = ratings[airport.id];
+      if (!value) return null;
+      const label = AIRPORT_RATING_OPTIONS.find((option) => option.id === value.rating)?.label;
+      return `| ${airport.label} | ${label || value.rating} | ${formatTime(value.updated_at)} BJT |`;
+    })
+    .filter(Boolean);
+  if (!entries.length) return;
+
+  const body = [
+    "## 云南机场预报评分",
+    "",
+    `- 起报时次：${run.id.replace("_", " ")} UTC`,
+    `- 数据源：${activeDataSource().label}`,
+    `- 归档时间：${formatTime(new Date().toISOString())} BJT`,
+    "",
+    "| 机场 | 评分 | 评分时间 |",
+    "| --- | --- | --- |",
+    ...entries,
+  ].join("\n");
+  const url = `${AIRPORT_RATING_ISSUE_URL}?title=${encodeURIComponent(`机场预报评分 ${run.id}`)}&body=${encodeURIComponent(body)}`;
+  window.open(url, "_blank", "noopener");
+  setText(els.airportRatingStatus, "GitHub 存档草稿已打开");
 }
 
 function forecastFrameSource(run, frame) {

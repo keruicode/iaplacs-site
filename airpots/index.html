@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com" crossorigin />
     <link rel="icon" type="image/png" sizes="512x512" href="../assets/brand/iaplacs-tab-icon-20260725.png?v=20260725-04" />
     <link rel="apple-touch-icon" href="../assets/brand/iaplacs-tab-icon-20260725.png?v=20260725-04" />
-    <link rel="stylesheet" href="../styles.css?v=20260731-04" />
+    <link rel="stylesheet" href="../styles.css?v=20260731-06" />
   </head>
   <body
     class="auth-lock"
@@ -115,6 +115,7 @@
           </div>
         </div>
 
+        <div id="airportHourTimeline" class="airport-hour-timeline" aria-label="逐时预报时间" hidden></div>
         <div id="leadTabs" class="lead-tabs" aria-label="预报时效"></div>
 
         <div class="map-stage">
@@ -138,7 +139,16 @@
         <div class="product-note-block">
           <div class="note-header">
             <span>服务说明</span>
+            <button id="airportFeedbackToggle" class="feedback-toggle" type="button" aria-expanded="false" aria-controls="airportFeedback">预报评分</button>
           </div>
+          <p id="productNote" class="product-note"></p>
+          <section id="airportFeedback" class="airport-feedback" aria-label="机场预报评分" hidden>
+            <div id="airportRatingList" class="airport-rating-list"></div>
+            <div class="airport-feedback-footer">
+              <button id="archiveAirportRatings" class="feedback-archive-button" type="button" disabled>存档至 GitHub</button>
+              <p id="airportRatingStatus" class="airport-rating-status" aria-live="polite"></p>
+            </div>
+          </section>
         </div>
       </aside>
     </main>
@@ -149,6 +159,6 @@
       <span>iaplacs.xyz</span>
     </footer>
 
-    <script src="../app.js?v=20260731-04"></script>
+    <script src="../app.js?v=20260731-06"></script>
   </body>
 </html>
