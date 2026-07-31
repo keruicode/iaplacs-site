@@ -69,24 +69,30 @@ fi
 mkdir -p "$OUTPUT_ROOT"
 now_epoch="$(date +%s)"
 sources=()
+
+wrf_has_t48() {
+  local file="$1" time_count
+  time_count="$(ncdump -h "$file" 2>/dev/null | awk '/Time = UNLIMITED/ { gsub(/[^0-9]/, "", $0); print; exit }')"
+  [[ "$time_count" =~ ^[0-9]+$ ]] && (( time_count >= 49 ))
+}
+
 while IFS= read -r line; do
-  source_epoch="${line%% *}"
-  rest="${line#* }"
-  source_size="${rest%% *}"
-  source_path="${rest#* }"
-  source_epoch="${source_epoch%.*}"
+  source_path="$line"
+  source_epoch="$(stat -c '%Y' "$source_path")"
+  source_size="$(stat -c '%s' "$source_path")"
   if (( now_epoch - source_epoch < MIN_FILE_AGE_SECONDS )); then
     continue
   fi
   if (( source_size < MIN_WRFOUT_BYTES )); then
     continue
   fi
+  wrf_has_t48 "$source_path" || continue
   sources+=("$source_path")
   [[ "${#sources[@]}" -ge "$count" ]] && break
 done < <(
   find "$WORK_NX_ROOT" -maxdepth 4 -type f \
-    -name 'wrfout_d01_*' -printf '%T@ %s %p\n' \
-    | sort -nr
+    -name 'wrfout_d01_*' -printf '%p\n' \
+    | sort -r
 )
 
 if [[ "${#sources[@]}" -eq 0 ]]; then
@@ -159,6 +165,10 @@ render_source() {
   montage "${captioned_panels[@]}" -tile 6x6 -geometry '100%x100%+2+2' -background white "$overview"
   touch -r "$source_path" "$overview"
 
+  # Remove rolling-window output from older renders before copying the current
+  # BJT-aligned accumulation periods.
+  rm -f "$run_dir"/Precip_accum_*h_WRF_Ningxia_T13_T48_InitUTC_"${run_date}"_"${run_hour}"_00*combined_overview_1x1_grid.png
+  rm -f "$panel_dir"/*_national_accum_*.png
   for accum_hours in 12 24; do
     local accum_source accum_overview accum_name
     WORK_NX_WRF_DIR="$wrf_dir" \

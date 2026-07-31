@@ -13,6 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MAPS_DIR = ROOT / "data" / "current" / "maps"
+CMA_OBSERVATION_DIR = MAPS_DIR / "cma_24h_observation"
 CATALOG_PATH = ROOT / "data" / "current" / "forecast-runs.json"
 BJT = timezone(timedelta(hours=8))
 DEFAULT_ASSET_BASE_URL = (
@@ -36,6 +37,7 @@ AIRPORT_YUNNAN_DIR_RE = re.compile(r"^airport_yunnan_(\d{8}_\d{2})$")
 DETAIL_RE = re.compile(r"_combined_detail_p(\d{2})_")
 LEAD_RANGE_RE = re.compile(r"T(\d{2})_T(\d{2})", re.IGNORECASE)
 ACCUMULATION_WINDOW_RE = re.compile(r"_(\d{10})-(\d{10})(?:_BJT)?(?:_combined|_grid)")
+CMA_OBSERVATION_RE = re.compile(r"^cma_24h_obs_(\d{10})_BJT$")
 YUNNAN_AIRPORTS = [
     {"id": "dehong_mangshi", "label": "德宏芒市机场"},
     {"id": "xishuangbanna_gasa", "label": "西双版纳嘎洒机场"},
@@ -152,6 +154,7 @@ def build_yunnan_airport_runs() -> list[dict]:
                         for hours in (12, 24)
                         if (frames := build_yunnan_airport_frames(run_dir, fragment, accumulation_hours=hours))
                     ],
+                    *build_cma_24h_observation_product(),
                     *build_airport_sample_products(include_precip=False),
                 ],
             }
@@ -246,14 +249,77 @@ def build_yunnan_airport_accumulation_product(
         "category": "机场服务",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": f"从 T13 开始累计至 T{12 + hours}，标注三个机场位置。",
+        "description": accumulation_description(hours),
         "metrics": [
             {"label": "起报时次", "value": run_id.replace("_", " ") + " UTC"},
-            {"label": "累计时段", "value": f"T13-T{12 + hours}"},
+            {"label": "累计时段", "value": accumulation_schedule_label(hours)},
             {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},
         ],
         "frames": frames,
     }
+
+
+def build_cma_24h_observation_product() -> list[dict]:
+    if not CMA_OBSERVATION_DIR.exists():
+        return []
+
+    groups: dict[str, list[Path]] = {}
+    for path in CMA_OBSERVATION_DIR.iterdir():
+        if path.suffix.lower() not in {".png", ".webp", ".jpg", ".jpeg"}:
+            continue
+        match = CMA_OBSERVATION_RE.match(frame_asset_stem(path))
+        if match:
+            groups.setdefault(match.group(1), []).append(path)
+
+    frames = []
+    for end_stamp, candidates in sorted(groups.items(), reverse=True):
+        main_path = choose_frame_candidate("cma_24h", candidates)
+        full_path = choose_full_candidate("cma_24h", candidates)
+        preview_path = choose_preview_candidate(candidates)
+        end = datetime.strptime(end_stamp, "%Y%m%d%H").replace(tzinfo=BJT)
+        start = end - timedelta(hours=24)
+        frame = {
+            "id": f"cma_24h_{end_stamp}",
+            "lead": int(end_stamp),
+            "lead_label": f"{start:%m-%d %H}-{end:%m-%d %H}",
+            "valid_label": end.strftime("%Y-%m-%d %H:00 BJT"),
+            "file": forecast_asset_url(main_path),
+            "bytes": main_path.stat().st_size,
+        }
+        add_preview_asset(frame, main_path, preview_path)
+        add_full_asset(frame, main_path, full_path)
+        frames.append(frame)
+
+    if not frames:
+        return []
+    return [
+        {
+            "id": "cma_observed_precip_24h",
+            "title": "中央气象台24小时降水实况",
+            "category": "中央气象台实况",
+            "unit": "mm",
+            "color": "#0f68c8",
+            "description": "仅发布中央气象台北京时间08-08和20-20的全国24小时累计降水实况图。",
+            "metrics": [
+                {"label": "数据来源", "value": "中央气象台"},
+                {"label": "图像数量", "value": str(len(frames))},
+            ],
+            "frames": frames,
+        }
+    ]
+
+
+def accumulation_schedule_label(hours: int) -> str:
+    if hours == 12:
+        return "08-20 或 20-08 BJT"
+    return "08-08 或 20-20 BJT"
+
+
+def accumulation_description(hours: int) -> str:
+    return (
+        f"跳过前12小时 spin-up 后的全国{hours}小时累计降水，"
+        f"仅发布北京时间 {accumulation_schedule_label(hours)} 的完整时段。"
+    )
 
 
 def yunnan_airport_precip_metrics(fragment: dict) -> list[dict]:
@@ -473,6 +539,7 @@ def build_wrf_runs() -> list[dict]:
                         for hours in (12, 24)
                         if (frames := build_frames(run_id, run_dir, accumulation_hours=hours))
                     ],
+                    *build_cma_24h_observation_product(),
                 ],
             }
         )
@@ -515,6 +582,7 @@ def build_ningxia_runs() -> list[dict]:
                         for hours in (12, 24)
                         if (frames := build_ningxia_frames(run_dir, fragment, accumulation_hours=hours))
                     ],
+                    *build_cma_24h_observation_product(),
                 ],
             }
         )
@@ -654,10 +722,10 @@ def build_ningxia_accumulation_product(
         "category": "宁夏预报",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": f"宁夏区域从 T13 开始累计至 T{12 + hours}。",
+        "description": accumulation_description(hours),
         "metrics": [
             {"label": "起报时次", "value": run_id.replace("_", " ") + " UTC"},
-            {"label": "累计时段", "value": f"T13-T{12 + hours}"},
+            {"label": "累计时段", "value": accumulation_schedule_label(hours)},
             {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},
         ],
         "frames": frames,
@@ -688,10 +756,10 @@ def build_wrf_accumulation_product(run_id: str, frames: list[dict], hours: int) 
         "category": "上饶预报",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": f"上饶区域从 T13 开始累计至 T{12 + hours}。",
+        "description": accumulation_description(hours),
         "metrics": [
             {"label": "起报时次", "value": run_id.replace("_", " ") + " BJT"},
-            {"label": "累计时段", "value": f"T13-T{12 + hours}"},
+            {"label": "累计时段", "value": accumulation_schedule_label(hours)},
             {"label": "产品状态", "value": "服务器发布"},
         ],
         "frames": frames,

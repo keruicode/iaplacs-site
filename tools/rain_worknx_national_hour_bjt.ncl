@@ -72,9 +72,15 @@ begin
   national_lat_ticks = (/20.0, 30.0, 40.0, 50.0/)
   national_lat_labels = (/"20~S~o~N~N", "30~S~o~N~N", \
                           "40~S~o~N~N", "50~S~o~N~N"/)
-  ; Use the same thresholds as the Ningxia regional product so switching
-  ; between the two views does not change the precipitation interpretation.
-  rain_levs = (/0.0, 1.5, 7.0, 15.0, 40.0, 50.0/)
+  ; Hourly maps retain the service palette.  Accumulations use the CMA-style
+  ; thresholds from 00_TMP/TF: 0, 0.1, 10, 25, 50, 100 and 250 mm.
+  if (accum_hours.eq.1) then
+    rain_levs = (/0.0, 1.5, 7.0, 15.0, 40.0, 50.0/)
+    fill_colors = (/2,3,4,5,6,7/)
+  else
+    rain_levs = (/0.0, 0.1, 10.0, 25.0, 50.0, 100.0, 250.0/)
+    fill_colors = (/2,2,3,4,5,6,7,8/)
+  end if
 
   do ifile = 0, dimsizes(files)-1
     f = addfile(files(ifile), "r")
@@ -83,7 +89,9 @@ begin
     start_idx = 13
     end_idx = min((/48, ntimes - 1/))
     if (accum_hours.gt.1) then
-      start_idx = start_idx + accum_hours - 1
+      ; A cumulative interval must start after the first 12 hours of WRF
+      ; spin-up.  Iterate hourly below, then retain only BJT 08/20 endpoints.
+      start_idx = 12 + accum_hours
     end if
     if (end_idx.lt.start_idx) then
       print("WARNING: insufficient fields for requested precipitation product in " + files(ifile))
@@ -100,13 +108,19 @@ begin
     rain_all = f->RAINNC + f->RAINC
     init_bjt = bjt_label(f@START_DATE, 3)
 
-    do it = start_idx, end_idx, accum_hours
+    do it = start_idx, end_idx
       accum_start_idx = it - accum_hours
       if (accum_hours.eq.1) then
         accum_start_idx = it - 1
       end if
       file_start = bjt_label(times(accum_start_idx), 1)
       file_end = bjt_label(times(it), 1)
+      end_hour = toint(str_get_cols(file_end, 8, 9))
+      ; 12 h: 08-20 or 20-08 BJT. 24 h: 08-08 or 20-20 BJT.  Both
+      ; tests are represented by the corresponding ending hour.
+      if (accum_hours.gt.1 .and. end_hour.ne.8 .and. end_hour.ne.20) then
+        continue
+      end if
       rain_h = rain_all(it,:,:) - rain_all(accum_start_idx,:,:)
       ; Put trace/zero rain below the first contour level. That is the white
       ; below-range class, while an all-missing panel triggers NO CONTOUR.
@@ -118,9 +132,16 @@ begin
         out_name = init_bjt + "_national_accum_" + sprinti("%0.2i",accum_hours) + "h_" + file_start + "-" + file_end + "_BJT"
       end if
       wks = gsn_open_wks("png", out_dir + "/" + out_name)
-      cmap = (/(/1.00,1.00,1.00/), (/0.00,0.00,0.00/), (/1.00,1.00,1.00/), \
-               (/0.42,0.86,0.40/), (/0.25,0.72,0.25/), (/0.42,0.68,0.90/), \
-               (/0.10,0.05,1.00/), (/0.92,0.00,0.92/), (/116.0/255,30.0/255,7.0/255/)/)
+      if (accum_hours.eq.1) then
+        cmap = (/(/1.00,1.00,1.00/), (/0.00,0.00,0.00/), (/1.00,1.00,1.00/), \
+                 (/0.42,0.86,0.40/), (/0.25,0.72,0.25/), (/0.42,0.68,0.90/), \
+                 (/0.10,0.05,1.00/), (/0.92,0.00,0.92/), (/116.0/255,30.0/255,7.0/255/)/)
+      else
+        cmap = (/(/1.00,1.00,1.00/), (/0.00,0.00,0.00/), (/1.00,1.00,1.00/), \
+                 (/186.0/255,244.0/255,168.0/255/), (/84.0/255,199.0/255,104.0/255/), \
+                 (/96.0/255,174.0/255,234.0/255/), (/23.0/255,39.0/255,230.0/255/), \
+                 (/236.0/255,55.0/255,231.0/255/), (/122.0/255,11.0/255,120.0/255/)/)
+      end if
       gsn_define_colormap(wks, cmap)
 
       res = True
@@ -135,7 +156,7 @@ begin
       res@cnNoDataLabelOn = False
       res@cnLevelSelectionMode = "ExplicitLevels"
       res@cnLevels = rain_levs
-      res@cnFillColors = (/2,3,4,5,6,7/)
+      res@cnFillColors = fill_colors
       res@cnConstFEnableFill = True
       res@cnConstFLabelOn = False
       res@cnMissingValFillColor = "white"
