@@ -59,6 +59,9 @@ def main() -> None:
     airport_runs = airport_yunnan_runs or build_airport_sample_runs()
     wrf_runs = merge_existing_runs(build_wrf_runs(), existing_catalog, "shangrao")
     ningxia_runs = merge_existing_runs(build_ningxia_runs(), existing_catalog, "ningxia")
+    for runs in (airport_runs, wrf_runs, ningxia_runs):
+        discard_invalid_accumulation_products(runs)
+        attach_latest_cma_24h_observation(runs)
     shangrao_runs = wrf_runs
     catalog_published_at = latest_published_at(
         airport_runs + ningxia_runs + shangrao_runs
@@ -156,7 +159,6 @@ def build_yunnan_airport_runs() -> list[dict]:
                         for hours in (12, 24)
                         if (frames := build_yunnan_airport_frames(run_dir, fragment, accumulation_hours=hours))
                     ],
-                    *build_cma_24h_observation_product(),
                     *build_airport_sample_products(include_precip=False),
                 ],
             }
@@ -274,7 +276,7 @@ def build_cma_24h_observation_product() -> list[dict]:
             groups.setdefault(match.group(1), []).append(path)
 
     frames = []
-    for end_stamp, candidates in sorted(groups.items(), reverse=True):
+    for end_stamp, candidates in sorted(groups.items()):
         main_path = choose_frame_candidate("cma_24h", candidates)
         full_path = choose_full_candidate("cma_24h", candidates)
         preview_path = choose_preview_candidate(candidates)
@@ -294,6 +296,8 @@ def build_cma_24h_observation_product() -> list[dict]:
 
     if not frames:
         return []
+    # The site intentionally presents the newest valid CMA analysis only.
+    frames = [frames[-1]]
     return [
         {
             "id": "cma_observed_precip_24h",
@@ -301,7 +305,7 @@ def build_cma_24h_observation_product() -> list[dict]:
             "category": "中央气象台实况",
             "unit": "mm",
             "color": "#0f68c8",
-            "description": "仅发布中央气象台北京时间08-08和20-20的全国24小时累计降水实况图。",
+            "description": "中央气象台24小时累计降水实况（08/20 BJT）。",
             "metrics": [
                 {"label": "数据来源", "value": "中央气象台"},
                 {"label": "图像数量", "value": str(len(frames))},
@@ -311,17 +315,48 @@ def build_cma_24h_observation_product() -> list[dict]:
     ]
 
 
+def attach_latest_cma_24h_observation(runs: list[dict]) -> None:
+    """Keep a current observation separate from archived forecast runs."""
+    for run in runs:
+        run["products"] = [
+            product
+            for product in run.get("products", [])
+            if product.get("id") != "cma_observed_precip_24h"
+        ]
+    if runs:
+        runs[0]["products"].extend(build_cma_24h_observation_product())
+
+
+def discard_invalid_accumulation_products(runs: list[dict]) -> None:
+    """Drop legacy products that pointed a cumulative tab at hourly imagery."""
+    for run in runs:
+        valid_products = []
+        for product in run.get("products", []):
+            product_id = str(product.get("id") or "")
+            match = re.search(r"_accum_(12|24)h$", product_id)
+            if not match:
+                valid_products.append(product)
+                continue
+            token = f"_accum_{match.group(1)}h_"
+            frames = [
+                frame
+                for frame in product.get("frames", [])
+                if token in str(frame.get("file") or "")
+            ]
+            if frames:
+                product["frames"] = frames
+                valid_products.append(product)
+        run["products"] = valid_products
+
+
 def accumulation_schedule_label(hours: int) -> str:
     if hours == 12:
-        return "08-20 或 20-08 BJT"
-    return "08-08 或 20-20 BJT"
+        return "08-20 / 20-08 BJT"
+    return "08-08 / 20-20 BJT"
 
 
 def accumulation_description(hours: int) -> str:
-    return (
-        f"跳过前12小时 spin-up 后的全国{hours}小时累计降水，"
-        f"仅发布北京时间 {accumulation_schedule_label(hours)} 的完整时段。"
-    )
+    return f"全国{hours}小时累计降水（{accumulation_schedule_label(hours)}）。"
 
 
 def yunnan_airport_precip_metrics(fragment: dict) -> list[dict]:
@@ -535,13 +570,14 @@ def build_wrf_runs() -> list[dict]:
                 "published_at": latest_mtime(run_dir).isoformat(),
                 "summary": f"WRF 逐小时降水拼图，共 {len(hourly_frames)} 张图",
                 "products": [
-                    build_wrf_product(run_id, hourly_frames),
+                    build_wrf_product(run_id, hourly_frames, latest_mtime(run_dir).isoformat()),
                     *[
-                        build_wrf_accumulation_product(run_id, frames, hours)
+                        build_wrf_accumulation_product(
+                            run_id, frames, hours, latest_mtime(run_dir).isoformat()
+                        )
                         for hours in (12, 24)
                         if (frames := build_frames(run_id, run_dir, accumulation_hours=hours))
                     ],
-                    *build_cma_24h_observation_product(),
                 ],
             }
         )
@@ -584,7 +620,6 @@ def build_ningxia_runs() -> list[dict]:
                         for hours in (12, 24)
                         if (frames := build_ningxia_frames(run_dir, fragment, accumulation_hours=hours))
                     ],
-                    *build_cma_24h_observation_product(),
                 ],
             }
         )
@@ -734,7 +769,8 @@ def build_ningxia_accumulation_product(
     }
 
 
-def build_wrf_product(run_id: str, frames: list[dict]) -> dict:
+def build_wrf_product(run_id: str, frames: list[dict], generated_at: str) -> dict:
+    run_time = parse_run_time(run_id).astimezone(timezone.utc)
     return {
         "id": "wrf_rain_montage",
         "title": "上饶 WRF 逐小时降水拼图",
@@ -743,15 +779,18 @@ def build_wrf_product(run_id: str, frames: list[dict]) -> dict:
         "color": "#0f68c8",
         "description": f"上饶服务起报时次 {run_id}，包含总览图和分段细节图。",
         "metrics": [
-            {"label": "起报时次", "value": run_id.replace("_", " ") + " BJT"},
+            {"label": "起报时次", "value": run_time.strftime("%Y%m%d %H UTC")},
+            {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},
             {"label": "图像数量", "value": str(len(frames))},
-            {"label": "产品状态", "value": "服务器发布"},
         ],
         "frames": frames,
     }
 
 
-def build_wrf_accumulation_product(run_id: str, frames: list[dict], hours: int) -> dict:
+def build_wrf_accumulation_product(
+    run_id: str, frames: list[dict], hours: int, generated_at: str
+) -> dict:
+    run_time = parse_run_time(run_id).astimezone(timezone.utc)
     return {
         "id": f"shangrao_accum_{hours}h",
         "title": f"{hours}小时累计降水",
@@ -760,9 +799,9 @@ def build_wrf_accumulation_product(run_id: str, frames: list[dict], hours: int) 
         "color": "#0f68c8",
         "description": accumulation_description(hours),
         "metrics": [
-            {"label": "起报时次", "value": run_id.replace("_", " ") + " BJT"},
+            {"label": "起报时次", "value": run_time.strftime("%Y%m%d %H UTC")},
             {"label": "累计时段", "value": accumulation_schedule_label(hours)},
-            {"label": "产品状态", "value": "服务器发布"},
+            {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},
         ],
         "frames": frames,
     }
