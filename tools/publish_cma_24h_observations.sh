@@ -6,7 +6,7 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GITHUB_HOST="${GITHUB_HOST:-server02}"
-GITHUB_KEY="${GITHUB_KEY:-/data1/elpt_2022_00083/kerui/.ssh/id_ed25519_iaplacs}"
+GITHUB_KEY="${GITHUB_KEY:-/public/home/elzd_2023_00026/.ssh/id_ed25519_iaplacs_github}"
 GIT_URL="${GIT_URL:-git@github.com:keruicode/iaplacs-site.git}"
 GIT_USER_NAME="${GIT_USER_NAME:-IAP-LACS Publisher}"
 GIT_USER_EMAIL="${GIT_USER_EMAIL:-publisher@iaplacs.xyz}"
