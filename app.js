@@ -1102,9 +1102,7 @@ function renderAirportHourTimeline(product, frame) {
     button.className = `airport-hour-button${isActive ? " is-active" : ""}`;
     button.setAttribute("aria-pressed", String(isActive));
     button.setAttribute("aria-label", isRealtime ? `实时 ${airportHourRange(panel)}` : airportHourRange(panel));
-    button.innerHTML = isRealtime
-      ? '<span class="airport-hour-live">实时</span>'
-      : `<span>${label.date}</span><strong>${label.hour}</strong>`;
+    button.textContent = isRealtime ? "实时" : label;
     button.addEventListener("click", () => {
       if (index === state.airportPanelIndex) return;
       state.airportPanelIndex = index;
@@ -1128,14 +1126,11 @@ function renderAirportHourTimeline(product, frame) {
 }
 
 function airportHourLabel(frame, isRealtime) {
-  if (isRealtime) return { date: "", hour: "实时" };
+  if (isRealtime) return "实时";
   const end = Date.parse(frame?.valid_time || "");
-  if (Number.isNaN(end)) return { date: frame?.lead_label || "--", hour: "" };
+  if (Number.isNaN(end)) return frame?.lead_label || "--";
   const startParts = bjtParts(new Date(end - 60 * 60 * 1000));
-  return {
-    date: `${twoDigits(startParts.month)}-${twoDigits(startParts.day)}`,
-    hour: `${twoDigits(startParts.hour)}时`,
-  };
+  return `${twoDigits(startParts.month)}-${twoDigits(startParts.day)} ${twoDigits(startParts.hour)}时`;
 }
 
 function airportHourRange(frame) {
