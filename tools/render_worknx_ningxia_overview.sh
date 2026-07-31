@@ -167,7 +167,7 @@ render_source() {
 
   # Remove rolling-window output from older renders before copying the current
   # BJT-aligned accumulation periods.
-  rm -f "$run_dir"/Precip_accum_*h_WRF_Ningxia_T13_T48_InitUTC_"${run_date}"_"${run_hour}"_00*combined_overview_1x1_grid.png
+  rm -f "$run_dir"/Precip_accum_*h_WRF_Ningxia_T13_T48_InitUTC_"${run_date}"_"${run_hour}"_00*combined_overview_1x1_grid.*
   rm -f "$panel_dir"/*_national_accum_*.png
   for accum_hours in 12 24; do
     local accum_source accum_overview accum_name
