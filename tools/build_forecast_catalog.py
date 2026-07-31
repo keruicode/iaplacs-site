@@ -36,7 +36,9 @@ RUN_DIR_RE = re.compile(r"^wrf_montage_(\d{8}_\d{2})$")
 AIRPORT_YUNNAN_DIR_RE = re.compile(r"^airport_yunnan_(\d{8}_\d{2})$")
 DETAIL_RE = re.compile(r"_combined_detail_p(\d{2})_")
 LEAD_RANGE_RE = re.compile(r"T(\d{2})_T(\d{2})", re.IGNORECASE)
-ACCUMULATION_WINDOW_RE = re.compile(r"_(\d{10})-(\d{10})(?:_BJT)?(?:_combined|_grid)")
+ACCUMULATION_WINDOW_RE = re.compile(
+    r"_(\d{10})-(\d{10})(?:_BJT)?(?=(?:_combined|_grid|$))"
+)
 CMA_OBSERVATION_RE = re.compile(r"^cma_24h_obs_(\d{10})_BJT$")
 YUNNAN_AIRPORTS = [
     {"id": "dehong_mangshi", "label": "德宏芒市机场"},
@@ -951,7 +953,7 @@ def accumulation_window_label(file_name: str, hours: int) -> str:
         return f"T13起 {hours}小时累计"
     start = datetime.strptime(match.group(1), "%Y%m%d%H")
     end = datetime.strptime(match.group(2), "%Y%m%d%H")
-    return f"{start:%m-%d %H}-{end:%H}"
+    return f"{start:%m-%d %H}-{end:%m-%d %H}"
 
 
 def parse_run_time(run_id: str) -> datetime:
