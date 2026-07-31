@@ -153,6 +153,35 @@ add_overview_header() {
     "$overview_path"
 }
 
+format_bjt_interval() {
+  local start="$1" end="$2"
+  printf '%s-%s-%s %s:00 - %s-%s-%s %s:00 BJT' \
+    "${start:0:4}" "${start:4:2}" "${start:6:2}" "${start:8:2}" \
+    "${end:0:4}" "${end:4:2}" "${end:6:2}" "${end:8:2}"
+}
+
+caption_accumulation() {
+  local source_path="$1" output_path="$2" hours="$3" start="$4" end="$5" interval
+  interval="$(format_bjt_interval "$start" "$end")"
+
+  # NCL uses a square page for the map. Trim its canvas before adding the
+  # interval caption so every national accumulation product stays compact.
+  convert "$source_path" \
+    -trim +repage \
+    -bordercolor white \
+    -border 20 \
+    -gravity North \
+    -background white \
+    -splice 0x112 \
+    -fill black \
+    -font Times-Bold \
+    -stroke black \
+    -strokewidth 1 \
+    -pointsize 34 \
+    -annotate +0+10 "${hours} h Accumulated Precipitation\n${interval}" \
+    "$output_path"
+}
+
 render_source() {
   local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview time_count last_lead panel_count overview_rows overview_grid national_panel_dir national_caption_dir national_overview init_bjt
   base="$(basename "$source_path")"
@@ -231,7 +260,7 @@ render_source() {
   rm -f "$run_dir"/Precip_accum_*h_WRF_Ningxia_T13_T*_InitUTC_"${run_date}"_"${run_hour}"_00*combined_overview_1x1_grid.*
   rm -f "$panel_dir"/*_national_accum_*.png
   for accum_hours in 12 24; do
-    local accum_source accum_overview accum_name
+    local accum_source accum_overview accum_name accum_start accum_end
     WORK_NX_WRF_DIR="$wrf_dir" \
       WORK_NX_NATIONAL_PNG_DIR="$panel_dir" \
       WORK_NX_NATIONAL_PROVINCE_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
@@ -242,8 +271,14 @@ render_source() {
       accum_name="$(basename "$accum_source")"
       accum_name="${accum_name#*_national_accum_${accum_hours}h_}"
       accum_name="${accum_name%_BJT.png}"
+      if [[ ! "$accum_name" =~ ^([0-9]{10})-([0-9]{10})$ ]]; then
+        echo "ERROR: cannot parse BJT accumulation interval from $accum_source" >&2
+        return 1
+      fi
+      accum_start="${BASH_REMATCH[1]}"
+      accum_end="${BASH_REMATCH[2]}"
       accum_overview="$run_dir/Precip_accum_${accum_hours}h_WRF_Ningxia_T13_T${last_lead}_InitUTC_${run_date}_${run_hour}_00_${accum_name}_combined_overview_1x1_grid.png"
-      cp -p "$accum_source" "$accum_overview"
+      caption_accumulation "$accum_source" "$accum_overview" "$accum_hours" "$accum_start" "$accum_end"
       touch -r "$source_path" "$accum_overview"
     done < <(find "$panel_dir" -maxdepth 1 -type f -name "*_national_accum_$(printf '%02d' "$accum_hours")h_*_BJT.png" | sort)
   done
