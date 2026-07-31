@@ -187,23 +187,28 @@ begin
       res@pmTickMarkDisplayMode = "Always"
       res@gsnMajorLonSpacing = 2.0
       res@gsnMajorLatSpacing = 2.0
+      res@tmXBLabelFont = "Times-Bold"
       res@tmXBLabelFontColor = "black"
       res@tmXBLabelFontHeightF = 0.025
-      res@tmXBLabelFontThicknessF = 4
+      res@tmXBLabelFontThicknessF = 6
+      res@tmYLLabelFont = "Times-Bold"
       res@tmYLLabelFontColor = "black"
       res@tmYLLabelFontHeightF = 0.025
-      res@tmYLLabelFontThicknessF = 4
+      res@tmYLLabelFontThicknessF = 6
       res@tmBorderLineColor = "black"
-      res@tmBorderThicknessF = 6
+      res@tmBorderThicknessF = 8
       res@vpXF = 0.16
       res@vpWidthF = 0.62
       res@vpYF = 0.82
       res@vpHeightF = 0.62
       res@tiMainString = label
       res@tiMainFontHeightF = 0.065
-      res@tiMainFont = 22
+      res@tiMainFont = "Times-Bold"
+      res@tiMainFontThicknessF = 3.0
       res@tiMainFontColor = "black"
       res@tiMainOffsetYF = -0.018
+      res@lbLabelFont = "Times-Bold"
+      res@lbLabelFontThicknessF = 5.0
       res@lbLabelFontColor = "black"
       res@lbLabelBarOn = True
       res@lbOrientation = "Vertical"
@@ -215,13 +220,13 @@ begin
       if (county_shp_file.ne."" .and. fileexists(county_shp_file)) then
         county_shp_res = True
         county_shp_res@gsLineColor = "black"
-        county_shp_res@gsLineThicknessF = 3.2
+        county_shp_res@gsLineThicknessF = 4.0
         county_shp_line = gsn_add_shapefile_polylines(wks, plot, county_shp_file, county_shp_res)
       end if
       if (province_shp_file.ne."" .and. fileexists(province_shp_file)) then
         province_shp_res = True
         province_shp_res@gsLineColor = "black"
-        province_shp_res@gsLineThicknessF = 7.0
+        province_shp_res@gsLineThicknessF = 9.0
         province_shp_line = gsn_add_shapefile_polylines(wks, plot, province_shp_file, province_shp_res)
       end if
 

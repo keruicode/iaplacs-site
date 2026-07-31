@@ -12,6 +12,7 @@ NATIONAL_NCL_SCRIPT="${NATIONAL_NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_national_hou
 POINT_SCRIPT="${POINT_SCRIPT:-$SCRIPT_DIR/extract_yunnan_airport_precip.py}"
 NCL_BIN="${NCL_BIN:-/public/software/apps/ncl_ncarg/ncl630/bin/ncl}"
 NCL_ROOT="${NCL_ROOT:-/public/software/apps/ncl_ncarg/ncl630}"
+NCDUMP_BIN="${NCDUMP_BIN:-/public/software/apps/conda/latest/bin/ncdump}"
 PYTHON_BIN="${PYTHON_BIN:-}"
 MIN_FILE_AGE_SECONDS="${MIN_FILE_AGE_SECONDS:-1200}"
 MIN_WRFOUT_BYTES="${MIN_WRFOUT_BYTES:-8000000000}"
@@ -86,7 +87,7 @@ fi
 [[ -d "$NCL_ROOT/lib/ncarg" ]] || { echo "ERROR: NCARG_ROOT is invalid: $NCL_ROOT" >&2; exit 127; }
 command -v montage >/dev/null || { echo "ERROR: ImageMagick montage is required" >&2; exit 127; }
 command -v convert >/dev/null || { echo "ERROR: ImageMagick convert is required" >&2; exit 127; }
-command -v ncdump >/dev/null || { echo "ERROR: ncdump is required" >&2; exit 127; }
+[[ -x "$NCDUMP_BIN" ]] || { echo "ERROR: ncdump is required: $NCDUMP_BIN" >&2; exit 127; }
 export NCARG_ROOT="$NCL_ROOT"
 
 if [[ -n "$YUNNAN_PROVINCE_SHP_FILE" && ! -f "$YUNNAN_PROVINCE_SHP_FILE" ]]; then
@@ -101,7 +102,7 @@ now_epoch="$(date +%s)"
 sources=()
 
 wrf_time_count() {
-  ncdump -h "$1" 2>/dev/null | awk '/Time = UNLIMITED/ { gsub(/[^0-9]/, "", $0); print; exit }'
+  "$NCDUMP_BIN" -h "$1" 2>/dev/null | awk '/Time = UNLIMITED/ && !seen { gsub(/[^0-9]/, "", $0); print; seen=1 }'
 }
 
 wrf_completed_successfully() {
@@ -146,14 +147,32 @@ caption_panel() {
   caption_path="$caption_dir/$panel_name"
 
   convert "$panel_path" \
+    -trim +repage \
     -gravity North \
     -background white \
     -splice 0x92 \
     -fill black \
-    -font Helvetica-Bold \
+    -font Times-Bold \
+    -stroke black \
+    -strokewidth 1 \
     -pointsize 92 \
     -annotate +0+24 "$panel_date" \
     "$caption_path"
+}
+
+add_overview_header() {
+  local overview_path="$1" init_label="$2"
+  convert "$overview_path" \
+    -gravity North \
+    -background white \
+    -splice 0x152 \
+    -fill black \
+    -font Times-Bold \
+    -stroke black \
+    -strokewidth 1 \
+    -pointsize 128 \
+    -annotate +0+20 "Forecast Initialization: $init_label" \
+    "$overview_path"
 }
 
 write_manifest() {
@@ -193,7 +212,7 @@ PY
 }
 
 render_source() {
-  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview totals_json manifest_json time_count last_lead panel_count overview_rows overview_grid national_panel_dir national_caption_dir national_overview
+  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview totals_json manifest_json time_count last_lead panel_count overview_rows overview_grid national_panel_dir national_caption_dir national_overview init_bjt
   base="$(basename "$source_path")"
   if [[ "$base" =~ wrfout_d01_([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2}):[0-9]{2}:[0-9]{2} ]]; then
     run_date="${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]}"
@@ -207,6 +226,7 @@ render_source() {
     echo "ERROR: cannot parse run time from $base" >&2
     return 1
   fi
+  init_bjt="$(TZ=Asia/Shanghai date -d "${run_date} ${run_hour}:00 UTC" '+%Y-%m-%d %H:%M BJT')"
   wrf_dir="$(dirname "$source_path")"
   run_dir="$OUTPUT_ROOT/$run_prefix"
   panel_dir="$run_dir/hourly_t13_t48"
@@ -254,6 +274,7 @@ render_source() {
   done
 
   montage "${captioned_panels[@]}" -tile "$overview_grid" -geometry '100%x100%+2+2' -background white "$overview"
+  add_overview_header "$overview" "$init_bjt"
   touch -r "$source_path" "$overview"
 
   WORK_NX_WRF_DIR="$wrf_dir" \
@@ -271,9 +292,10 @@ render_source() {
     national_captioned_panels+=("$national_caption_dir/$(basename "$panel")")
   done
   montage "${national_captioned_panels[@]}" -tile "$overview_grid" -geometry '100%x100%+2+2' -background white "$national_overview"
+  add_overview_header "$national_overview" "$init_bjt"
   touch -r "$source_path" "$national_overview"
   # Keep only BJT-aligned accumulation windows for this forecast run.
-  rm -f "$run_dir"/Precip_accum_*h_WRF_YunnanAirports_T13_T48_InitUTC_"${run_date}"_"${run_hour}"_00*combined_overview_1x1_grid.*
+  rm -f "$run_dir"/Precip_accum_*h_WRF_YunnanAirports_T13_T*_InitUTC_"${run_date}"_"${run_hour}"_00*combined_overview_1x1_grid.*
   rm -f "$panel_dir"/*_national_accum_*.png
   for accum_hours in 12 24; do
     local accum_source accum_overview accum_name

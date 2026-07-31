@@ -198,28 +198,28 @@ begin
       ; each panel is trimmed and placed in the 6x6 montage.
       res@tmXBMajorLengthF = 0.018
       res@tmXBMajorOutwardLengthF = 0.012
-      res@tmXBMajorThicknessF = 1.5
+      res@tmXBMajorThicknessF = 2.2
       res@tmYLMajorLengthF = 0.018
       res@tmYLMajorOutwardLengthF = 0.012
-      res@tmYLMajorThicknessF = 1.5
-      res@tmXBLabelFont = "Times-Roman"
+      res@tmYLMajorThicknessF = 2.2
+      res@tmXBLabelFont = "Times-Bold"
       res@tmXBLabelFontColor = "black"
       res@tmXBLabelFontHeightF = 0.028
-      res@tmXBLabelFontThicknessF = 1.0
+      res@tmXBLabelFontThicknessF = 2.2
       ; Match NCL's cylindrical-map tickmark example: degree labels are
       ; aligned by their baseline and offset from the newly visible ticks.
       res@tmXBLabelJust = "BottomCenter"
       res@tmXBLabelDeltaF = 1.0
       res@tmXBLabelsOn = True
       res@tmYLLabelsOn = True
-      res@tmYLLabelFont = "Times-Roman"
+      res@tmYLLabelFont = "Times-Bold"
       res@tmYLLabelFontColor = "black"
       res@tmYLLabelFontHeightF = 0.028
-      res@tmYLLabelFontThicknessF = 1.0
+      res@tmYLLabelFontThicknessF = 2.2
       res@tmYLLabelDeltaF = -0.15
       res@tmBorderLineColor = "black"
-      res@tmBorderThicknessF = 5
-      res@lbLabelFont = "Times-Roman"
+      res@tmBorderThicknessF = 6
+      res@lbLabelFont = "Times-Bold"
       res@lbLabelFontColor = "black"
       res@lbLabelFontHeightF = 0.034
       res@lbLabelFontThicknessF = 8
@@ -232,7 +232,7 @@ begin
       if (province_shp_file.ne."" .and. fileexists(province_shp_file)) then
         province_shp_res = True
         province_shp_res@gsLineColor = "black"
-        province_shp_res@gsLineThicknessF = 6.5
+        province_shp_res@gsLineThicknessF = 8.0
         province_shp_line = gsn_add_shapefile_polylines(wks, plot, province_shp_file, province_shp_res)
       end if
       draw(plot)

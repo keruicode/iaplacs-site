@@ -9,6 +9,7 @@ OUTPUT_ROOT="${OUTPUT_ROOT:-$SCRIPT_DIR/worknx_national_overview}"
 NCL_SCRIPT="${NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_national_hour_bjt.ncl}"
 NCL_BIN="${NCL_BIN:-/public/software/apps/ncl_ncarg/ncl630/bin/ncl}"
 NCL_ROOT="${NCL_ROOT:-/public/software/apps/ncl_ncarg/ncl630}"
+NCDUMP_BIN="${NCDUMP_BIN:-/public/software/apps/conda/latest/bin/ncdump}"
 MIN_FILE_AGE_SECONDS="${MIN_FILE_AGE_SECONDS:-1200}"
 MIN_WRFOUT_BYTES="${MIN_WRFOUT_BYTES:-8000000000}"
 MIN_TIME_COUNT="${MIN_TIME_COUNT:-14}"
@@ -48,7 +49,7 @@ fi
 [[ -d "$NCL_ROOT/lib/ncarg" ]] || { echo "ERROR: NCARG_ROOT is invalid: $NCL_ROOT" >&2; exit 127; }
 command -v montage >/dev/null || { echo "ERROR: ImageMagick montage is required" >&2; exit 127; }
 command -v convert >/dev/null || { echo "ERROR: ImageMagick convert is required" >&2; exit 127; }
-command -v ncdump >/dev/null || { echo "ERROR: ncdump is required" >&2; exit 127; }
+[[ -x "$NCDUMP_BIN" ]] || { echo "ERROR: ncdump is required: $NCDUMP_BIN" >&2; exit 127; }
 export NCARG_ROOT="$NCL_ROOT"
 
 if [[ -n "$NATIONAL_PROVINCE_SHP_FILE" && ! -f "$NATIONAL_PROVINCE_SHP_FILE" ]]; then
@@ -57,7 +58,7 @@ fi
 
 mkdir -p "$OUTPUT_ROOT"
 wrf_time_count() {
-  ncdump -h "$1" 2>/dev/null | awk '/Time = UNLIMITED/ { gsub(/[^0-9]/, "", $0); print; exit }'
+  "$NCDUMP_BIN" -h "$1" 2>/dev/null | awk '/Time = UNLIMITED/ && !seen { gsub(/[^0-9]/, "", $0); print; seen=1 }'
 }
 
 wrf_completed_successfully() {
@@ -106,8 +107,9 @@ caption_panel() {
     -background white \
     -splice 0x92 \
     -fill black \
-    -font "times.ttf" \
-    -stroke none \
+    -font Times-Bold \
+    -stroke black \
+    -strokewidth 1 \
     -pointsize 88 \
     -annotate +0+14 "$panel_date" \
     "$caption_path"
@@ -172,8 +174,9 @@ render_source() {
     -background white \
     -splice 0x160 \
     -fill black \
-    -font "times.ttf" \
-    -stroke none \
+    -font Times-Bold \
+    -stroke black \
+    -strokewidth 1 \
     -pointsize 132 \
     -annotate +0+24 "$init_label" \
     "$overview"
