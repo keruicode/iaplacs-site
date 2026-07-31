@@ -321,8 +321,11 @@ function addNationalFallbackToLatestRun(catalog, frameIds, nationalFrame) {
 }
 
 function isHourlyPrecipitationProduct(product) {
-  const value = `${product?.id || ""} ${product?.title || ""} ${product?.category || ""}`;
-  return /precip|rain|降水/i.test(value) && !/accum|累计/i.test(value);
+  return new Set([
+    "airport_yunnan_precip_series",
+    "ningxia_precip_series",
+    "wrf_rain_montage",
+  ]).has(product?.id);
 }
 
 function normalizeFallbackRegionFrame(frames, frameIds) {
@@ -681,8 +684,18 @@ function chooseProductIndex(run, previousProductId) {
 function chooseLeadIndex(product, previousFrameId) {
   const frames = product?.frames || [];
   if (!frames.length) return 0;
+  if (product?.id === "cma_observed_precip_24h") {
+    return defaultLeadIndex(product);
+  }
   const found = frames.findIndex((frame) => frameId(frame) === previousFrameId);
-  return found >= 0 ? found : 0;
+  return found >= 0 ? found : defaultLeadIndex(product);
+}
+
+function defaultLeadIndex(product) {
+  const frames = product?.frames || [];
+  return product?.id === "cma_observed_precip_24h"
+    ? Math.max(0, frames.length - 1)
+    : 0;
 }
 
 function currentSelection() {
@@ -854,7 +867,7 @@ function renderProducts() {
     `;
     button.addEventListener("click", () => {
       state.productIndex = index;
-      state.leadIndex = 0;
+      state.leadIndex = defaultLeadIndex(product);
       render();
     });
     els.productList.appendChild(button);

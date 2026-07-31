@@ -296,8 +296,9 @@ def build_cma_24h_observation_product() -> list[dict]:
 
     if not frames:
         return []
-    # The site intentionally presents the newest valid CMA analysis only.
-    frames = [frames[-1]]
+    # Keep the last three analyses in chronological order; the UI opens on
+    # the newest frame while still allowing recent observations to be reviewed.
+    frames = frames[-3:]
     return [
         {
             "id": "cma_observed_precip_24h",
@@ -323,8 +324,20 @@ def attach_latest_cma_24h_observation(runs: list[dict]) -> None:
             for product in run.get("products", [])
             if product.get("id") != "cma_observed_precip_24h"
         ]
-    if runs:
-        runs[0]["products"].extend(build_cma_24h_observation_product())
+    if not runs:
+        return
+
+    products = runs[0]["products"]
+    observations = build_cma_24h_observation_product()
+    insertion_index = next(
+        (
+            index
+            for index, product in enumerate(products)
+            if product.get("id") in {"airport_temperature", "airport_wind"}
+        ),
+        len(products),
+    )
+    products[insertion_index:insertion_index] = observations
 
 
 def discard_invalid_accumulation_products(runs: list[dict]) -> None:

@@ -48,12 +48,9 @@ if [[ ! -x "$RENDERER" ]]; then
   exit 1
 fi
 
-if command -v magick >/dev/null 2>&1; then
-  IMAGE_TOOL=(magick)
-elif command -v convert >/dev/null 2>&1; then
-  IMAGE_TOOL=(convert)
-else
-  echo "ERROR: ImageMagick magick or convert is required" >&2
+PYTHON_BIN="$(command -v python3 || command -v python || true)"
+if [[ -z "$PYTHON_BIN" ]]; then
+  echo "ERROR: Python is required for WebP conversion" >&2
   exit 127
 fi
 
@@ -62,13 +59,16 @@ make_webp() {
   if [[ "${IAPLACS_WEBP_FORCE:-0}" != "1" && -f "$output" && ! "$source" -nt "$output" ]]; then
     return
   fi
-  "${IMAGE_TOOL[@]}" "$source" \
-    -resize "3200x3200>" \
-    -strip \
-    -quality 92 \
-    -define webp:method=6 \
-    -define webp:use-sharp-yuv=true \
-    "$output"
+  "$PYTHON_BIN" - "$source" "$output" 3200 92 <<'PY'
+import sys
+from PIL import Image
+
+source, output, limit, quality = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])
+with Image.open(source) as image:
+    image = image.convert("RGB")
+    image.thumbnail((limit, limit), Image.Resampling.LANCZOS)
+    image.save(output, "WEBP", quality=quality, method=6)
+PY
   touch -r "$source" "$output"
 }
 
@@ -77,13 +77,16 @@ make_preview_webp() {
   if [[ "${IAPLACS_PREVIEW_FORCE:-0}" != "1" && -f "$output" && ! "$source" -nt "$output" ]]; then
     return
   fi
-  "${IMAGE_TOOL[@]}" "$source" \
-    -resize "1100x1100>" \
-    -strip \
-    -quality 70 \
-    -define webp:method=6 \
-    -define webp:use-sharp-yuv=true \
-    "$output"
+  "$PYTHON_BIN" - "$source" "$output" 1100 70 <<'PY'
+import sys
+from PIL import Image
+
+source, output, limit, quality = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])
+with Image.open(source) as image:
+    image = image.convert("RGB")
+    image.thumbnail((limit, limit), Image.Resampling.LANCZOS)
+    image.save(output, "WEBP", quality=quality, method=6)
+PY
   if [[ "${IAPLACS_PREVIEW_FORCE:-0}" == "1" ]]; then
     touch "$output"
   else
