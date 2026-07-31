@@ -646,7 +646,7 @@ button {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding: 12px 18px;
+  padding: 14px 18px 18px;
   border-bottom: 1px solid var(--line);
   background: #fff;
   scroll-snap-type: x mandatory;
@@ -662,24 +662,24 @@ button {
 .airport-hour-button {
   display: grid;
   flex: 0 0 110px;
-  min-height: 48px;
+  min-height: 38px;
   align-content: center;
-  gap: 2px;
+  gap: 0;
   border: 1px solid var(--line);
   border-radius: 0;
   background: #fbfcfd;
   color: var(--muted);
   cursor: pointer;
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.15;
   scroll-snap-align: center;
 }
 
 .airport-hour-button strong {
   color: var(--ink);
-  font-family: "Times New Roman", "Songti SC", serif;
-  font-size: 15px;
+  font: inherit;
+  font-weight: 700;
 }
 
 .airport-hour-button:hover {
@@ -825,18 +825,6 @@ button {
   padding: 14px 18px 18px;
   border-bottom: 1px solid var(--line);
   background: #fff;
-}
-
-.lead-tabs.is-airport-map-selector {
-  display: flex;
-  justify-content: flex-start;
-  padding: 12px 18px;
-}
-
-.lead-tabs.is-airport-map-selector .lead-tab {
-  flex: 0 0 auto;
-  min-width: 112px;
-  padding: 0 14px;
 }
 
 .lead-tab {
@@ -1411,15 +1399,6 @@ button {
   .toolbar-actions {
     width: 100%;
     justify-content: flex-start;
-  }
-
-  .airport-hour-button {
-    flex-basis: 56px;
-    font-size: 10px;
-  }
-
-  .airport-hour-button strong {
-    font-size: 13px;
   }
 
   .topbar-actions {
