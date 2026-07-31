@@ -960,6 +960,10 @@ function renderLeads() {
   if (!els.leadTabs) return;
   const product = currentProduct();
   els.leadTabs.innerHTML = "";
+  els.leadTabs.classList.toggle(
+    "is-airport-map-selector",
+    isYunnanAirportPrecipProduct(product),
+  );
   const frames = product.frames || [];
   const hideSingleNingxiaFrame = pageConfig.service === "ningxia" && frames.length <= 1;
   els.leadTabs.hidden = hideSingleNingxiaFrame;
