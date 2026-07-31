@@ -605,6 +605,43 @@ button {
   cursor: pointer;
 }
 
+.view-mode-switch {
+  display: inline-flex;
+  height: 38px;
+  border: 1px solid var(--line);
+  background: #f8fafb;
+}
+
+.view-mode-button {
+  min-width: 52px;
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.view-mode-button:first-child {
+  border-left: 0;
+}
+
+.view-mode-button:hover:not(:disabled) {
+  background: var(--blue-soft);
+}
+
+.view-mode-button.is-active {
+  background: var(--blue);
+  color: #fff;
+}
+
+.view-mode-button:disabled {
+  cursor: not-allowed;
+  color: var(--muted);
+}
+
 .icon-button {
   width: 38px;
   font-size: 24px;

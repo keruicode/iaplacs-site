@@ -58,6 +58,8 @@ const state = {
   runIndex: 0,
   productIndex: 0,
   leadIndex: 0,
+  airportPanelIndex: 0,
+  airportViewMode: "hourly",
   refreshTimer: null,
   loading: false,
   hasNewLatestRun: false,
@@ -91,6 +93,7 @@ const els = {
   nextLead: document.querySelector("#nextLead"),
   imageLink: document.querySelector("#imageLink"),
   imageDownload: document.querySelector("#imageDownload"),
+  airportViewMode: document.querySelector("#airportViewMode"),
   metricGrid: document.querySelector("#metricGrid"),
   productNote: document.querySelector("#productNote"),
 };
@@ -121,6 +124,7 @@ const viewerState = {
 async function init() {
   setupImageViewer();
   setupDataSourceSwitch();
+  setupAirportViewMode();
   await selectLatestSource();
   await loadForecast({ preserveSelection: false });
   if (pageConfig.refreshMs > 0) {
@@ -750,9 +754,12 @@ function currentSelection() {
 function render() {
   const run = currentRun();
   const product = currentProduct();
-  const frame = currentFrame();
+  const selectedFrame = currentFrame();
 
-  if (!state.catalog || !state.service || !run || !product || !frame) {
+  reconcileAirportViewMode(product, selectedFrame);
+  const frame = currentDisplayFrame();
+
+  if (!state.catalog || !state.service || !run || !product || !selectedFrame || !frame) {
     renderEmpty();
     return;
   }
@@ -776,6 +783,7 @@ function render() {
   renderRuns();
   renderProducts();
   renderLeads();
+  renderAirportViewMode(product, selectedFrame);
   renderMetrics(product);
   renderProductNote(run, product, frame);
   updateControls(product);
@@ -810,7 +818,10 @@ function render() {
 }
 
 function updateControls(product) {
-  const hasMultipleFrames = (product.frames || []).length > 1;
+  const frames = isAirportHourlyView(product, currentFrame())
+    ? airportHourlyFrames(currentFrame())
+    : product.frames || [];
+  const hasMultipleFrames = frames.length > 1;
   if (els.prevLead) els.prevLead.disabled = !hasMultipleFrames;
   if (els.nextLead) els.nextLead.disabled = !hasMultipleFrames;
 }
@@ -829,6 +840,7 @@ function renderEmpty() {
   if (els.forecastImage) els.forecastImage.removeAttribute("src");
   if (els.imageLink) els.imageLink.href = "#";
   if (els.imageDownload) els.imageDownload.href = "#";
+  if (els.airportViewMode) els.airportViewMode.hidden = true;
   setText(els.runSummary, "暂无起报时次");
 }
 
@@ -878,6 +890,7 @@ function renderRuns() {
       state.runIndex = index;
       state.productIndex = 0;
       state.leadIndex = 0;
+      state.airportPanelIndex = 0;
       state.hasNewLatestRun = false;
       render();
     });
@@ -909,6 +922,7 @@ function renderProducts() {
     button.addEventListener("click", () => {
       state.productIndex = index;
       state.leadIndex = defaultLeadIndex(product);
+      state.airportPanelIndex = 0;
       render();
     });
     els.productList.appendChild(button);
@@ -930,6 +944,7 @@ function renderLeads() {
     button.textContent = displayFrameLabel(frame);
     button.addEventListener("click", () => {
       state.leadIndex = index;
+      state.airportPanelIndex = 0;
       render();
     });
     els.leadTabs.appendChild(button);
@@ -982,6 +997,63 @@ function currentFrame() {
   return currentProduct()?.frames?.[state.leadIndex];
 }
 
+function isYunnanAirportPrecipProduct(product = currentProduct()) {
+  return (
+    pageConfig.service === "airport" &&
+    product?.id === "airport_yunnan_precip_series"
+  );
+}
+
+function airportHourlyFrames(frame = currentFrame()) {
+  return Array.isArray(frame?.individual_frames)
+    ? frame.individual_frames.filter((item) => item?.file)
+    : [];
+}
+
+function isAirportHourlyView(product = currentProduct(), frame = currentFrame()) {
+  return (
+    state.airportViewMode === "hourly" &&
+    isYunnanAirportPrecipProduct(product) &&
+    airportHourlyFrames(frame).length > 0
+  );
+}
+
+function reconcileAirportViewMode(product, frame) {
+  const panels = airportHourlyFrames(frame);
+  if (!isYunnanAirportPrecipProduct(product)) return;
+  if (panels.length === 0) {
+    state.airportViewMode = "montage";
+    state.airportPanelIndex = 0;
+    return;
+  }
+  state.airportPanelIndex = Math.min(
+    Math.max(0, state.airportPanelIndex),
+    panels.length - 1,
+  );
+}
+
+function currentDisplayFrame() {
+  const frame = currentFrame();
+  if (!isAirportHourlyView(currentProduct(), frame)) return frame;
+  return airportHourlyFrames(frame)[state.airportPanelIndex] || frame;
+}
+
+function renderAirportViewMode(product, frame) {
+  if (!els.airportViewMode) return;
+  const isAirportProduct = isYunnanAirportPrecipProduct(product);
+  const hasPanels = airportHourlyFrames(frame).length > 0;
+  els.airportViewMode.hidden = !isAirportProduct;
+  if (!isAirportProduct) return;
+
+  els.airportViewMode.querySelectorAll("[data-airport-view-mode]").forEach((button) => {
+    const mode = button.dataset.airportViewMode;
+    const active = mode === state.airportViewMode;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+    button.disabled = mode === "hourly" && !hasPanels;
+  });
+}
+
 function forecastFrameSource(run, frame) {
   return frameAssetSource(run, frame, frame?.preview_file || frame?.file);
 }
@@ -1025,7 +1097,7 @@ function collectServicePreloadSources(service) {
   };
 
   const activeRun = currentRun();
-  const activeFrame = currentFrame();
+  const activeFrame = currentDisplayFrame();
   if (activeRun && activeFrame) appendFrameSources(activeRun, activeFrame);
 
   for (const run of service?.runs || []) {
@@ -1094,6 +1166,14 @@ function preloadImageSource(source) {
 }
 
 function stepLead(delta) {
+  if (isAirportHourlyView()) {
+    const frames = airportHourlyFrames();
+    if (frames.length <= 1) return;
+    state.airportPanelIndex =
+      (state.airportPanelIndex + delta + frames.length) % frames.length;
+    render();
+    return;
+  }
   const frames = currentProduct()?.frames || [];
   if (!frames.length) return;
   state.leadIndex = (state.leadIndex + delta + frames.length) % frames.length;
@@ -1316,7 +1396,34 @@ function setupImageViewer() {
   viewerState.downloadLink?.addEventListener("click", handleDownloadClick);
 }
 
+function setupAirportViewMode() {
+  els.airportViewMode?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-airport-view-mode]");
+    const mode = button?.dataset.airportViewMode;
+    if (!mode || button.disabled || mode === state.airportViewMode) return;
+    state.airportViewMode = mode;
+    state.airportPanelIndex = 0;
+    render();
+  });
+}
+
 function viewerEntries() {
+  if (isAirportHourlyView()) {
+    const run = currentRun();
+    const product = currentProduct();
+    const leadIndex = state.leadIndex;
+    return airportHourlyFrames().map((frame, airportPanelIndex) => ({
+      runIndex: state.runIndex,
+      productIndex: state.productIndex,
+      leadIndex,
+      airportPanelIndex,
+      run,
+      product,
+      frame,
+      source: viewerFrameSource(run, frame),
+    }));
+  }
+
   const entries = [];
   const runs = state.service?.runs || [];
   for (let runIndex = runs.length - 1; runIndex >= 0; runIndex -= 1) {
@@ -1345,7 +1452,8 @@ function currentViewerEntryIndex(entries) {
     (entry) =>
       entry.runIndex === state.runIndex &&
       entry.productIndex === state.productIndex &&
-      entry.leadIndex === state.leadIndex,
+      entry.leadIndex === state.leadIndex &&
+      (entry.airportPanelIndex === undefined || entry.airportPanelIndex === state.airportPanelIndex),
   );
   return index >= 0 ? index : 0;
 }
@@ -1371,6 +1479,7 @@ function stepViewerFrame(delta) {
   state.runIndex = next.runIndex;
   state.productIndex = next.productIndex;
   state.leadIndex = next.leadIndex;
+  state.airportPanelIndex = next.airportPanelIndex || 0;
   state.hasNewLatestRun = false;
   render();
 }
@@ -1380,7 +1489,7 @@ function syncViewerFrame(source, alt, { reset = false } = {}) {
 
   const run = currentRun();
   const product = currentProduct();
-  const frame = currentFrame();
+  const frame = currentDisplayFrame();
   // Use the medium WebP in the viewer. It stays sharp without decoding the
   // original 7000px PNG, and direct <img> requests do not require OSS CORS.
   const viewerSource = viewerFrameSource(run, frame) || source;
@@ -1437,7 +1546,7 @@ function loadViewerImage({ source, requestId }) {
 }
 
 function openImageViewer(opener) {
-  const frame = currentFrame();
+  const frame = currentDisplayFrame();
   const product = currentProduct();
   const run = currentRun();
   if (!viewerState.root || !frame || !product) return;

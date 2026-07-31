@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com" crossorigin />
     <link rel="icon" type="image/png" sizes="512x512" href="../assets/brand/iaplacs-tab-icon-20260725.png?v=20260725-04" />
     <link rel="apple-touch-icon" href="../assets/brand/iaplacs-tab-icon-20260725.png?v=20260725-04" />
-    <link rel="stylesheet" href="../styles.css?v=20260725-01" />
+    <link rel="stylesheet" href="../styles.css?v=20260731-04" />
   </head>
   <body
     class="auth-lock"
@@ -101,6 +101,10 @@
           </div>
           <div class="toolbar-actions">
             <a id="imageLink" class="text-button link-button" href="#" target="_blank" rel="noreferrer">放大查看</a>
+            <div id="airportViewMode" class="view-mode-switch" role="group" aria-label="图件显示方式" hidden>
+              <button class="view-mode-button" type="button" data-airport-view-mode="hourly" aria-pressed="true">逐时</button>
+              <button class="view-mode-button" type="button" data-airport-view-mode="montage" aria-pressed="false">拼图</button>
+            </div>
             <a id="imageDownload" class="text-button link-button" href="#" download>下载原图</a>
             <button id="prevLead" class="icon-button" type="button" title="上一时效" aria-label="上一时效">
               &#8249;
@@ -145,6 +149,6 @@
       <span>iaplacs.xyz</span>
     </footer>
 
-    <script src="../app.js?v=20260731-03"></script>
+    <script src="../app.js?v=20260731-04"></script>
   </body>
 </html>

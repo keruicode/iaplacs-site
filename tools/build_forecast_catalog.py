@@ -40,6 +40,11 @@ ACCUMULATION_WINDOW_RE = re.compile(
     r"_(\d{10})-(\d{10})(?:_BJT)?(?=(?:_combined|_grid|$))"
 )
 CMA_OBSERVATION_RE = re.compile(r"^cma_24h_obs_(\d{10})_BJT$")
+YUNNAN_HOURLY_PANEL_RE = re.compile(
+    r"_(?P<area>yunnan_airport|national)_rain_hour_"
+    r"(?P<start>\d{10})-(?P<end>\d{10})_BJT$",
+    re.IGNORECASE,
+)
 YUNNAN_AIRPORTS = [
     {"id": "dehong_mangshi", "label": "德宏芒市机场"},
     {"id": "xishuangbanna_gasa", "label": "西双版纳嘎洒机场"},
@@ -171,6 +176,11 @@ def build_yunnan_airport_runs() -> list[dict]:
 def build_yunnan_airport_frames(
     run_dir: Path, fragment: dict, accumulation_hours: int | None
 ) -> list[dict]:
+    hourly_frames = (
+        build_yunnan_airport_hourly_frames(run_dir)
+        if accumulation_hours is None
+        else {}
+    )
     groups: dict[str, list[Path]] = {}
     for path in run_dir.iterdir():
         if path.suffix.lower() not in {".png", ".webp", ".jpg", ".jpeg"}:
@@ -220,12 +230,51 @@ def build_yunnan_airport_frames(
         valid_time = fragment.get("valid_time")
         if valid_time:
             frame["valid_time"] = valid_time
+        if accumulation_hours is None:
+            frame["individual_frames"] = hourly_frames.get(frame_id, [])
         add_preview_asset(frame, path, preview_path)
         add_full_asset(frame, path, full_path)
         frames.append(frame)
 
     frames.sort(key=lambda item: (item.get("lead", 0), item["file"]))
     return frames
+
+
+def build_yunnan_airport_hourly_frames(run_dir: Path) -> dict[str, list[dict]]:
+    frames_by_area: dict[str, list[tuple[datetime, dict]]] = {
+        "airport_region": [],
+        "airport_national": [],
+    }
+    for path in sorted(run_dir.glob("*_rain_hour_*_BJT.webp")):
+        if is_preview_asset(path):
+            continue
+        match = YUNNAN_HOURLY_PANEL_RE.search(frame_asset_stem(path))
+        if not match:
+            continue
+        start = datetime.strptime(match.group("start"), "%Y%m%d%H").replace(tzinfo=BJT)
+        end = datetime.strptime(match.group("end"), "%Y%m%d%H").replace(tzinfo=BJT)
+        frame_id = (
+            "airport_region"
+            if match.group("area").lower() == "yunnan_airport"
+            else "airport_national"
+        )
+        frame = {
+            "id": f"{frame_id}_hour_{start:%Y%m%d%H}",
+            "lead_label": f"{start:%m-%d %H:00}-{end:%H:00}",
+            "valid_label": f"{start:%Y-%m-%d %H:00}-{end:%H:00} BJT",
+            "valid_time": end.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "file": forecast_asset_url(path),
+            "bytes": path.stat().st_size,
+        }
+        frames_by_area[frame_id].append((start, frame))
+
+    normalized: dict[str, list[dict]] = {}
+    for frame_id, candidates in frames_by_area.items():
+        ordered = [frame for _, frame in sorted(candidates, key=lambda item: item[0])]
+        for lead, frame in enumerate(ordered, start=1):
+            frame["lead"] = lead
+        normalized[frame_id] = ordered
+    return normalized
 
 
 def build_yunnan_airport_product(

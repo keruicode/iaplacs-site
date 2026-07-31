@@ -150,6 +150,20 @@ for source in "${sources[@]}"; do
     asset_files+=("$national_source" "${national_source%.png}.webp" "${national_source%.png}.preview.webp")
   done
 
+  for panel_dir in "$run_dir/captioned_t13_t48" "$run_dir/national_captioned_t13_t48"; do
+    mapfile -t hourly_panel_sources < <(
+      find "$panel_dir" -maxdepth 1 -type f -name '*_rain_hour_*_BJT.png' | sort
+    )
+    if [[ "${#hourly_panel_sources[@]}" -eq 0 ]]; then
+      echo "ERROR: missing Yunnan hourly panels under $panel_dir" >&2
+      exit 1
+    fi
+    for hourly_panel_source in "${hourly_panel_sources[@]}"; do
+      make_webp "$hourly_panel_source"
+      asset_files+=("${hourly_panel_source%.png}.webp")
+    done
+  done
+
   for required in "$run_dir/$webp_base" "$run_dir/$preview_base" "$run_dir/manifest_fragment.json" "$run_dir/airport_precip_totals.json"; do
     if [[ ! -f "$required" ]]; then
       echo "ERROR: missing required publish file: $required" >&2
