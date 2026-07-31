@@ -4,7 +4,7 @@
     "name": "IAP-LACS Forecast",
     "domain": "iaplacs.xyz"
   },
-  "published_at": "2026-08-01T03:53:48+08:00",
+  "published_at": "2026-08-01T04:22:27+08:00",
   "services": {
     "airport": {
       "title": "机场气象服务",
@@ -4812,8 +4812,98 @@
       "title": "宁夏预报",
       "subtitle": "Ningxia forecast",
       "note": "宁夏页面集中展示 WORK_nx 发布的宁夏区域预报图，并可切换同一时次的全国模拟图。新起报时次推送到仓库后，会自动出现在顶部起报时间选择区。",
-      "latest_run": "20260731_06",
+      "latest_run": "20260731_12",
       "runs": [
+        {
+          "id": "20260731_12",
+          "label": "2026-07-31 20:00 BJT",
+          "run_time": "2026-07-31T20:00:00+08:00",
+          "published_at": "2026-08-01T04:22:27+08:00",
+          "summary": "宁夏区域与全国预报图集，共 1 张图",
+          "products": [
+            {
+              "id": "ningxia_precip_series",
+              "title": "降水预报图集",
+              "category": "宁夏预报",
+              "unit": "mm",
+              "color": "#0f68c8",
+              "description": "默认显示宁夏区域图，可切换 WORK_nx 全国模拟图。",
+              "metrics": [
+                {
+                  "label": "起报时次",
+                  "value": "20260731 12 UTC"
+                },
+                {
+                  "label": "生成时间",
+                  "value": "2026-08-01 04:22 BJT"
+                },
+                {
+                  "label": "图像数量",
+                  "value": "1"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "worknx_national",
+                  "lead": 1,
+                  "lead_label": "中国中部",
+                  "valid_label": "当前显示：中国中部",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260731_12/Precip_hourly_WRF_AllRain_T13_T36_InitUTC_2026-07-31_12_00_combined_overview_6x4_grid.webp",
+                  "bytes": 1738154,
+                  "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260731_12/Precip_hourly_WRF_AllRain_T13_T36_InitUTC_2026-07-31_12_00_combined_overview_6x4_grid.preview.webp",
+                  "preview_bytes": 355166,
+                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260731_12/Precip_hourly_WRF_AllRain_T13_T36_InitUTC_2026-07-31_12_00_combined_overview_6x4_grid.png",
+                  "full_bytes": 2064659,
+                  "valid_time": "2026-08-02T20:00:00+08:00"
+                }
+              ]
+            },
+            {
+              "id": "cma_observed_precip_24h",
+              "title": "中央气象台24小时降水实况",
+              "category": "中央气象台实况",
+              "unit": "mm",
+              "color": "#0f68c8",
+              "description": "中央气象台24小时累计降水实况（08/20 BJT）。",
+              "metrics": [
+                {
+                  "label": "数据来源",
+                  "value": "中央气象台"
+                },
+                {
+                  "label": "图像数量",
+                  "value": "3"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "cma_24h_2026073020",
+                  "lead": 2026073020,
+                  "lead_label": "07-29 20-07-30 20",
+                  "valid_label": "2026-07-30 20:00 BJT",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/cma_24h_observation/cma_24h_obs_2026073020_BJT.jpg",
+                  "bytes": 146415
+                },
+                {
+                  "id": "cma_24h_2026073108",
+                  "lead": 2026073108,
+                  "lead_label": "07-30 08-07-31 08",
+                  "valid_label": "2026-07-31 08:00 BJT",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/cma_24h_observation/cma_24h_obs_2026073108_BJT.jpg",
+                  "bytes": 147326
+                },
+                {
+                  "id": "cma_24h_2026073120",
+                  "lead": 2026073120,
+                  "lead_label": "07-30 20-07-31 20",
+                  "valid_label": "2026-07-31 20:00 BJT",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/cma_24h_observation/cma_24h_obs_2026073120_BJT.jpg",
+                  "bytes": 146500
+                }
+              ]
+            }
+          ]
+        },
         {
           "id": "20260731_06",
           "label": "2026-07-31 14:00 BJT",
@@ -4903,50 +4993,6 @@
                   "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260731_06/Precip_accum_12h_WRF_Ningxia_T13_T36_InitUTC_2026-07-31_06_00_2026080108-2026080120_combined_overview_1x1_grid.png",
                   "full_bytes": 259353,
                   "valid_time": "2026-08-02T14:00:00+08:00"
-                }
-              ]
-            },
-            {
-              "id": "cma_observed_precip_24h",
-              "title": "中央气象台24小时降水实况",
-              "category": "中央气象台实况",
-              "unit": "mm",
-              "color": "#0f68c8",
-              "description": "中央气象台24小时累计降水实况（08/20 BJT）。",
-              "metrics": [
-                {
-                  "label": "数据来源",
-                  "value": "中央气象台"
-                },
-                {
-                  "label": "图像数量",
-                  "value": "3"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "cma_24h_2026073020",
-                  "lead": 2026073020,
-                  "lead_label": "07-29 20-07-30 20",
-                  "valid_label": "2026-07-30 20:00 BJT",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/cma_24h_observation/cma_24h_obs_2026073020_BJT.jpg",
-                  "bytes": 146415
-                },
-                {
-                  "id": "cma_24h_2026073108",
-                  "lead": 2026073108,
-                  "lead_label": "07-30 08-07-31 08",
-                  "valid_label": "2026-07-31 08:00 BJT",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/cma_24h_observation/cma_24h_obs_2026073108_BJT.jpg",
-                  "bytes": 147326
-                },
-                {
-                  "id": "cma_24h_2026073120",
-                  "lead": 2026073120,
-                  "lead_label": "07-30 20-07-31 20",
-                  "valid_label": "2026-07-31 20:00 BJT",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/cma_24h_observation/cma_24h_obs_2026073120_BJT.jpg",
-                  "bytes": 146500
                 }
               ]
             }
@@ -5325,172 +5371,6 @@
                   "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_06/Precip_accum_24h_WRF_Ningxia_T13_T48_InitUTC_2026-07-29_06_00_2026073008-2026073108_combined_overview_1x1_grid.png",
                   "full_bytes": 141685,
                   "valid_time": "2026-07-31T14:00:00+08:00"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "20260729_00",
-          "label": "2026-07-29 08:00 BJT",
-          "run_time": "2026-07-29T08:00:00+08:00",
-          "published_at": "2026-07-31T09:56:02+08:00",
-          "summary": "宁夏区域与全国预报图集，共 2 张图",
-          "products": [
-            {
-              "id": "ningxia_precip_series",
-              "title": "降水预报图集",
-              "category": "宁夏预报",
-              "unit": "mm",
-              "color": "#0f68c8",
-              "description": "默认显示宁夏区域图，可切换 WORK_nx 全国模拟图。",
-              "metrics": [
-                {
-                  "label": "起报时次",
-                  "value": "20260729 00 UTC"
-                },
-                {
-                  "label": "生成时间",
-                  "value": "2026-07-31 09:56 BJT"
-                },
-                {
-                  "label": "图像数量",
-                  "value": "2"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "ningxia_region",
-                  "lead": 0,
-                  "lead_label": "宁夏区域",
-                  "valid_label": "当前显示：宁夏区域",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_00/Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_2026-07-29_00_00_combined_overview_6x6_grid.webp",
-                  "bytes": 934926,
-                  "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_00/Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_2026-07-29_00_00_combined_overview_6x6_grid.preview.webp",
-                  "preview_bytes": 140050,
-                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_00/Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_2026-07-29_00_00_combined_overview_6x6_grid.png",
-                  "full_bytes": 1397395
-                },
-                {
-                  "id": "worknx_national",
-                  "lead": 1,
-                  "lead_label": "中国中部",
-                  "valid_label": "当前显示：中国中部",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_00/Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-29_00_00.webp",
-                  "bytes": 3498494,
-                  "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_00/Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-29_00_00.preview.webp",
-                  "preview_bytes": 500710,
-                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_00/Precip_hourly_WRF_AllRain_T01_T48_InitUTC_2026-07-29_00_00.png",
-                  "full_bytes": 5773254
-                }
-              ]
-            },
-            {
-              "id": "ningxia_accum_12h",
-              "title": "12小时累计降水",
-              "category": "宁夏预报",
-              "unit": "mm",
-              "color": "#0f68c8",
-              "description": "全国12小时累计降水（08-20 / 20-08 BJT）。",
-              "metrics": [
-                {
-                  "label": "起报时次",
-                  "value": "20260729 00 UTC"
-                },
-                {
-                  "label": "累计时段",
-                  "value": "08-20 / 20-08 BJT"
-                },
-                {
-                  "label": "生成时间",
-                  "value": "2026-07-31 09:56 BJT"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "ningxia_accum_12h",
-                  "lead": 0,
-                  "lead_label": "07-29 20-07-30 08",
-                  "valid_label": "",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_00/Precip_accum_12h_WRF_Ningxia_T13_T48_InitUTC_2026-07-29_00_00_2026072920-2026073008_combined_overview_1x1_grid.webp",
-                  "bytes": 80750,
-                  "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_00/Precip_accum_12h_WRF_Ningxia_T13_T48_InitUTC_2026-07-29_00_00_2026072920-2026073008_combined_overview_1x1_grid.preview.webp",
-                  "preview_bytes": 48344,
-                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_00/Precip_accum_12h_WRF_Ningxia_T13_T48_InitUTC_2026-07-29_00_00_2026072920-2026073008_combined_overview_1x1_grid.png",
-                  "full_bytes": 139764
-                },
-                {
-                  "id": "ningxia_accum_12h",
-                  "lead": 0,
-                  "lead_label": "07-30 08-07-30 20",
-                  "valid_label": "",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_00/Precip_accum_12h_WRF_Ningxia_T13_T48_InitUTC_2026-07-29_00_00_2026073008-2026073020_combined_overview_1x1_grid.webp",
-                  "bytes": 80162,
-                  "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_00/Precip_accum_12h_WRF_Ningxia_T13_T48_InitUTC_2026-07-29_00_00_2026073008-2026073020_combined_overview_1x1_grid.preview.webp",
-                  "preview_bytes": 48246,
-                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_00/Precip_accum_12h_WRF_Ningxia_T13_T48_InitUTC_2026-07-29_00_00_2026073008-2026073020_combined_overview_1x1_grid.png",
-                  "full_bytes": 139219
-                },
-                {
-                  "id": "ningxia_accum_12h",
-                  "lead": 0,
-                  "lead_label": "07-30 20-07-31 08",
-                  "valid_label": "",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_00/Precip_accum_12h_WRF_Ningxia_T13_T48_InitUTC_2026-07-29_00_00_2026073020-2026073108_combined_overview_1x1_grid.webp",
-                  "bytes": 80140,
-                  "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_00/Precip_accum_12h_WRF_Ningxia_T13_T48_InitUTC_2026-07-29_00_00_2026073020-2026073108_combined_overview_1x1_grid.preview.webp",
-                  "preview_bytes": 47998,
-                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_00/Precip_accum_12h_WRF_Ningxia_T13_T48_InitUTC_2026-07-29_00_00_2026073020-2026073108_combined_overview_1x1_grid.png",
-                  "full_bytes": 138422
-                }
-              ]
-            },
-            {
-              "id": "ningxia_accum_24h",
-              "title": "24小时累计降水",
-              "category": "宁夏预报",
-              "unit": "mm",
-              "color": "#0f68c8",
-              "description": "全国24小时累计降水（08-08 / 20-20 BJT）。",
-              "metrics": [
-                {
-                  "label": "起报时次",
-                  "value": "20260729 00 UTC"
-                },
-                {
-                  "label": "累计时段",
-                  "value": "08-08 / 20-20 BJT"
-                },
-                {
-                  "label": "生成时间",
-                  "value": "2026-07-31 09:56 BJT"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "ningxia_accum_24h",
-                  "lead": 0,
-                  "lead_label": "07-29 20-07-30 20",
-                  "valid_label": "",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_00/Precip_accum_24h_WRF_Ningxia_T13_T48_InitUTC_2026-07-29_00_00_2026072920-2026073020_combined_overview_1x1_grid.webp",
-                  "bytes": 84394,
-                  "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_00/Precip_accum_24h_WRF_Ningxia_T13_T48_InitUTC_2026-07-29_00_00_2026072920-2026073020_combined_overview_1x1_grid.preview.webp",
-                  "preview_bytes": 50646,
-                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_00/Precip_accum_24h_WRF_Ningxia_T13_T48_InitUTC_2026-07-29_00_00_2026072920-2026073020_combined_overview_1x1_grid.png",
-                  "full_bytes": 142588
-                },
-                {
-                  "id": "ningxia_accum_24h",
-                  "lead": 0,
-                  "lead_label": "07-30 08-07-31 08",
-                  "valid_label": "",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_00/Precip_accum_24h_WRF_Ningxia_T13_T48_InitUTC_2026-07-29_00_00_2026073008-2026073108_combined_overview_1x1_grid.webp",
-                  "bytes": 82784,
-                  "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_00/Precip_accum_24h_WRF_Ningxia_T13_T48_InitUTC_2026-07-29_00_00_2026073008-2026073108_combined_overview_1x1_grid.preview.webp",
-                  "preview_bytes": 49646,
-                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260729_00/Precip_accum_24h_WRF_Ningxia_T13_T48_InitUTC_2026-07-29_00_00_2026073008-2026073108_combined_overview_1x1_grid.png",
-                  "full_bytes": 141813,
-                  "valid_time": "2026-07-31T08:00:00+08:00"
                 }
               ]
             }
