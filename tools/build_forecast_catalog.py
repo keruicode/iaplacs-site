@@ -721,9 +721,9 @@ def build_ningxia_frames(
 
 def ningxia_frame_sort_key(item: tuple[str, list[Path]]) -> tuple[int, str]:
     key = item[0]
-    if "_combined_overview_" in key:
-        return (0, key)
     if "_WRF_AllRain_" in key:
+        return (0, key)
+    if "_combined_overview_" in key:
         return (1, key)
     return (2, key)
 
@@ -738,10 +738,10 @@ def ningxia_frame_meta(
             accumulation_window_label(path.name, accumulation_hours),
             "",
         )
+    if "_WRF_AllRain_" in key:
+        return ("worknx_national", 1, "中国中部", "当前显示：中国中部")
     if "_combined_overview_" in key:
         return ("ningxia_region", 0, "宁夏区域", "当前显示：宁夏区域")
-    if "_WRF_AllRain_" in key:
-        return ("worknx_national", 1, "全国", "当前显示：WORK_nx 全国模拟图")
 
     lead_label = (
         "T13-T48"

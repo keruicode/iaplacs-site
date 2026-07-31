@@ -512,16 +512,48 @@ function limitCatalogRuns(catalog) {
 function normalizeNingxiaRun(run) {
   return {
     ...run,
-    products: (run.products || []).map((product) =>
-      product.id === "ningxia_precip_series"
-        ? {
-            ...product,
-            title: NINGXIA_PRODUCT_TITLE,
-            description: NINGXIA_PRODUCT_DESCRIPTION,
-          }
-        : product,
-    ),
+    products: (run.products || []).map((product) => {
+      if (product.id !== "ningxia_precip_series") return product;
+      const frames = normalizeNingxiaFrames(product.frames || []);
+      return {
+        ...product,
+        title: NINGXIA_PRODUCT_TITLE,
+        description: NINGXIA_PRODUCT_DESCRIPTION,
+        metrics: updateFrameCountMetric(product.metrics || [], frames.length),
+        frames,
+      };
+    }),
   };
+}
+
+function normalizeNingxiaFrames(frames) {
+  return frames
+    .map((frame) => {
+      const source = [frame.file, frame.preview_file, frame.full_file]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      if (source.includes("_wrf_allrain_")) {
+        return {
+          ...frame,
+          id: "worknx_national",
+          lead: 1,
+          lead_label: "中国中部",
+          valid_label: "当前显示：中国中部",
+        };
+      }
+      if (source.includes("_wrf_ningxia_")) {
+        return {
+          ...frame,
+          id: "ningxia_region",
+          lead: 0,
+          lead_label: "宁夏区域",
+          valid_label: "当前显示：宁夏区域",
+        };
+      }
+      return frame;
+    })
+    .sort((a, b) => Number(a.lead || 0) - Number(b.lead || 0));
 }
 
 function normalizeShangraoRuns(sourceRuns) {
