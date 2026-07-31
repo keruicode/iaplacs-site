@@ -251,6 +251,15 @@ async function addHuanNationalFallback(catalog) {
     const tianheRun =
       tianheService?.runs?.find((run) => run.id === tianheService.latest_run) ||
       tianheService?.runs?.[0];
+    const currentRunTime = Date.parse(latestRun.run_time || "");
+    const fallbackRunTime = Date.parse(tianheRun?.run_time || "");
+    if (
+      !tianheRun ||
+      (Number.isFinite(currentRunTime) &&
+        (!Number.isFinite(fallbackRunTime) || fallbackRunTime < currentRunTime))
+    ) {
+      return catalog;
+    }
     const nationalFrame = findFrame(tianheRun, frameIds.national);
     if (!nationalFrame) return catalog;
 
