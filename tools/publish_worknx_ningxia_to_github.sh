@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Render WORK_nx to a Ningxia-only T13-T48 6x6 product, then pass each
+# Render WORK_nx to a Ningxia product through the latest available lead, then pass each
 # generated overview to the existing OSS/GitHub publisher.
 set -Eeuo pipefail
 
@@ -13,8 +13,8 @@ usage() {
   cat <<'EOF'
 Usage: publish_worknx_ningxia_to_github.sh [--latest | --recent COUNT]
 
-Renders Ningxia T13-T48 regional 6x6 products, then publishes each matching
-overview through the existing WORK_nx OSS/GitHub publisher.
+Renders Ningxia regional and nationwide products through the latest available
+lead, then publishes each matching overview through the existing publisher.
 EOF
 }
 
@@ -49,7 +49,7 @@ fi
 
 mapfile -t sources < <(
   find "$OUTPUT_ROOT" -mindepth 2 -maxdepth 2 -type f \
-    -name 'Precip_hourly_WRF_Ningxia_T13_T48_InitUTC_*_combined_overview_6x6_grid.png' \
+    -name 'Precip_hourly_WRF_Ningxia_T13_T*_InitUTC_*_combined_overview_*_grid.png' \
     -printf '%T@ %p\n' \
     | sort -nr \
     | head -n "$count" \
@@ -65,7 +65,7 @@ for source in "${sources[@]}"; do
   source_dir="$(dirname "$source")"
   mapfile -t national_sources < <(
     find "$source_dir" -maxdepth 1 -type f \
-      -name 'Precip_hourly_WRF_AllRain_T01_T48_InitUTC_*.png' \
+      -name 'Precip_hourly_WRF_AllRain_T13_T*_InitUTC_*_combined_overview_*_grid.png' \
       | sort
   )
   if [[ "${#national_sources[@]}" -gt 0 ]]; then
@@ -93,16 +93,6 @@ for source in "${sources[@]}"; do
   while IFS= read -r accum_source; do
     [[ -n "$accum_source" ]] || continue
     echo "Publishing Ningxia accumulation: $accum_source"
-    IAPLACS_WEBP_FORCE=1 \
-      IAPLACS_PREVIEW_FORCE=1 \
-    IAPLACS_ASSET_FORCE_UPLOAD=1 \
-    WORK_NX_ROOT="$source_dir" \
-    SOURCE_IMAGE_GLOB="$(basename "$accum_source")" \
-    MIN_FILE_AGE_SECONDS=0 \
-    "$PUBLISHER" </dev/null
-  done < <(
-    find "$source_dir" -maxdepth 1 -type f \
-      -name 'Precip_accum_*h_WRF_Ningxia_T13_T48_InitUTC_*_combined_overview_1x1_grid.png' \
-      | sort
-  )
+    IAPLACS_WEBP_FORCE=1 IAPLACS_PREVIEW_FORCE=1 IAPLACS_ASSET_FORCE_UPLOAD=1 WORK_NX_ROOT="$source_dir" SOURCE_IMAGE_GLOB="$(basename "$accum_source")" MIN_FILE_AGE_SECONDS=0 "$PUBLISHER" </dev/null
+  done < <(find "$source_dir" -maxdepth 1 -type f -name 'Precip_accum_*h_WRF_Ningxia_T13_T*_InitUTC_*_combined_overview_1x1_grid.png' | sort)
 done

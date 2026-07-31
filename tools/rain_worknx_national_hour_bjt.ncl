@@ -72,15 +72,19 @@ begin
   national_lat_ticks = (/20.0, 30.0, 40.0, 50.0/)
   national_lat_labels = (/"20~S~o~N~N", "30~S~o~N~N", \
                           "40~S~o~N~N", "50~S~o~N~N"/)
-  ; Hourly maps retain the service palette.  Accumulations use the CMA-style
-  ; thresholds from 00_TMP/TF: 0, 0.1, 10, 25, 50, 100 and 250 mm.
+  ; CMA hourly precipitation classes: no rain, 0-2.5, 2.5-5, 5-10,
+  ; 10-25, 25-50, 50-100 and above 100 mm. Accumulations retain their
+  ; existing operational palette.
   if (accum_hours.eq.1) then
-    rain_levs = (/0.0, 1.5, 7.0, 15.0, 40.0, 50.0/)
-    fill_colors = (/2,3,4,5,6,7/)
+    rain_levs = (/0.0, 2.5, 5.0, 10.0, 25.0, 50.0, 100.0/)
+    fill_colors = (/2,3,4,5,6,7,8,9/)
   else
     rain_levs = (/0.0, 0.1, 10.0, 25.0, 50.0, 100.0, 250.0/)
     fill_colors = (/2,2,3,4,5,6,7,8/)
   end if
+  wks_type = "png"
+  wks_type@wkWidth = 1800
+  wks_type@wkHeight = 1800
 
   do ifile = 0, dimsizes(files)-1
     f = addfile(files(ifile), "r")
@@ -131,11 +135,12 @@ begin
       else
         out_name = init_bjt + "_national_accum_" + sprinti("%0.2i",accum_hours) + "h_" + file_start + "-" + file_end + "_BJT"
       end if
-      wks = gsn_open_wks("png", out_dir + "/" + out_name)
+      wks = gsn_open_wks(wks_type, out_dir + "/" + out_name)
       if (accum_hours.eq.1) then
         cmap = (/(/1.00,1.00,1.00/), (/0.00,0.00,0.00/), (/1.00,1.00,1.00/), \
-                 (/0.42,0.86,0.40/), (/0.25,0.72,0.25/), (/0.42,0.68,0.90/), \
-                 (/0.10,0.05,1.00/), (/0.92,0.00,0.92/), (/116.0/255,30.0/255,7.0/255/)/)
+                 (/0.86,0.97,0.82/), (/0.60,0.91,0.52/), (/0.31,0.76,0.29/), \
+                 (/0.12,0.62,0.18/), (/0.33,0.65,0.87/), (/0.00,0.00,0.86/), \
+                 (/0.86,0.00,0.78/)/)
       else
         cmap = (/(/1.00,1.00,1.00/), (/0.00,0.00,0.00/), (/1.00,1.00,1.00/), \
                  (/186.0/255,244.0/255,168.0/255/), (/84.0/255,199.0/255,104.0/255/), \

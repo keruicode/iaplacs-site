@@ -83,8 +83,18 @@ begin
   lon_max = 107.8
   lat_min = 35.0
   lat_max = 39.7
-  ; Keep the exact hourly colorbar used by the Huan regional product.
-  rain_levs = (/0.0, 1.5, 7.0, 15.0, 40.0, 50.0/)
+  ; CMA hourly precipitation classes: no rain, 0-2.5, 2.5-5, 5-10,
+  ; 10-25, 25-50, 50-100 and above 100 mm.
+  if (accum_hours.eq.1) then
+    rain_levs = (/0.0, 2.5, 5.0, 10.0, 25.0, 50.0, 100.0/)
+    fill_colors = (/2,3,4,5,6,7,8,9/)
+  else
+    rain_levs = (/0.0, 1.5, 7.0, 15.0, 40.0, 50.0/)
+    fill_colors = (/2,3,4,5,6,7/)
+  end if
+  wks_type = "png"
+  wks_type@wkWidth = 1800
+  wks_type@wkHeight = 1800
 
   do ifile = 0, dimsizes(files)-1
     f = addfile(files(ifile), "r")
@@ -142,10 +152,17 @@ begin
       else
         out_name = init_bjt + "_combined_accum_" + sprinti("%0.2i",accum_hours) + "h_" + file_start + "-" + file_end + "_BJT_grid"
       end if
-      wks = gsn_open_wks("png", out_dir + "/" + out_name)
-      cmap = (/(/1.00,1.00,1.00/), (/0.00,0.00,0.00/), (/1.00,1.00,1.00/), \
-               (/0.42,0.86,0.40/), (/0.25,0.72,0.25/), (/0.42,0.68,0.90/), \
-               (/0.10,0.05,1.00/), (/0.92,0.00,0.92/), (/116.0/255,30.0/255,7.0/255/)/)
+      wks = gsn_open_wks(wks_type, out_dir + "/" + out_name)
+      if (accum_hours.eq.1) then
+        cmap = (/(/1.00,1.00,1.00/), (/0.00,0.00,0.00/), (/1.00,1.00,1.00/), \
+                 (/0.86,0.97,0.82/), (/0.60,0.91,0.52/), (/0.31,0.76,0.29/), \
+                 (/0.12,0.62,0.18/), (/0.33,0.65,0.87/), (/0.00,0.00,0.86/), \
+                 (/0.86,0.00,0.78/)/)
+      else
+        cmap = (/(/1.00,1.00,1.00/), (/0.00,0.00,0.00/), (/1.00,1.00,1.00/), \
+                 (/0.42,0.86,0.40/), (/0.25,0.72,0.25/), (/0.42,0.68,0.90/), \
+                 (/0.10,0.05,1.00/), (/0.92,0.00,0.92/), (/116.0/255,30.0/255,7.0/255/)/)
+      end if
       gsn_define_colormap(wks, cmap)
 
       res = True
@@ -160,7 +177,7 @@ begin
       res@cnNoDataLabelOn = False
       res@cnLevelSelectionMode = "ExplicitLevels"
       res@cnLevels = rain_levs
-      res@cnFillColors = (/2,3,4,5,6,7/)
+      res@cnFillColors = fill_colors
       res@cnConstFEnableFill = True
       res@cnConstFLabelOn = False
       res@cnMissingValFillColor = "white"

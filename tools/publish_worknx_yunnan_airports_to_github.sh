@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Render WORK_yn to a Yunnan airport 36-hour 6x6 product, upload images to OSS,
+# Render WORK_yn to a Yunnan airport product through the latest available lead, upload images to OSS,
 # then publish only the JSON catalog to GitHub Pages.
 set -Eeuo pipefail
 
@@ -24,8 +24,9 @@ usage() {
   cat <<'EOF'
 Usage: publish_worknx_yunnan_airports_to_github.sh [--latest | --recent COUNT]
 
-Renders Yunnan airport 36-hour regional 6x6 products, uploads PNG/WebP/preview
-assets to OSS, and commits only data/current/forecast-runs.json to GitHub.
+Renders Yunnan airport regional and nationwide products through the latest
+available lead, uploads PNG/WebP/preview assets to OSS, and commits only the
+forecast catalog to GitHub.
 EOF
 }
 
@@ -48,18 +49,22 @@ if [[ ! -x "$RENDERER" ]]; then
   exit 1
 fi
 
-PYTHON_BIN="$(command -v python3 || command -v python || true)"
+PYTHON_BIN="${PYTHON_BIN:-/public/software/apps/conda/latest/bin/python3}"
+if [[ ! -x "$PYTHON_BIN" ]]; then
+  PYTHON_BIN="$(command -v python3 || command -v python || true)"
+fi
 if [[ -z "$PYTHON_BIN" ]]; then
   echo "ERROR: Python is required for WebP conversion" >&2
   exit 127
 fi
 
 make_webp() {
-  local source="$1" output="${source%.png}.webp"
+  local source="$1"
+  local output="${source%.png}.webp"
   if [[ "${IAPLACS_WEBP_FORCE:-0}" != "1" && -f "$output" && ! "$source" -nt "$output" ]]; then
     return
   fi
-  "$PYTHON_BIN" - "$source" "$output" 3200 92 <<'PY'
+  "$PYTHON_BIN" - "$source" "$output" 6000 95 <<'PY'
 import sys
 from PIL import Image
 
@@ -73,11 +78,12 @@ PY
 }
 
 make_preview_webp() {
-  local source="$1" output="${source%.png}.preview.webp"
+  local source="$1"
+  local output="${source%.png}.preview.webp"
   if [[ "${IAPLACS_PREVIEW_FORCE:-0}" != "1" && -f "$output" && ! "$source" -nt "$output" ]]; then
     return
   fi
-  "$PYTHON_BIN" - "$source" "$output" 1100 70 <<'PY'
+  "$PYTHON_BIN" - "$source" "$output" 2400 85 <<'PY'
 import sys
 from PIL import Image
 
@@ -102,7 +108,7 @@ fi
 
 mapfile -t sources < <(
   find "$OUTPUT_ROOT" -mindepth 2 -maxdepth 2 -type f \
-    -name 'Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_*_combined_overview_6x6_grid.png' \
+    -name 'Precip_hourly_WRF_YunnanAirports_T13_T*_InitUTC_*_combined_overview_*_grid.png' \
     -printf '%T@ %p\n' \
     | sort -nr \
     | head -n "$count" \
@@ -127,11 +133,22 @@ for source in "${sources[@]}"; do
   webp_base="${base%.png}.webp"
   preview_base="${base%.png}.preview.webp"
   run_dir="$(dirname "$source")"
-  asset_files=(
-    "$source"
-    "$run_dir/$webp_base"
-    "$run_dir/$preview_base"
+  asset_files=("$source" "$run_dir/$webp_base" "$run_dir/$preview_base")
+
+  mapfile -t national_sources < <(
+    find "$run_dir" -maxdepth 1 -type f \
+      -name 'Precip_hourly_WRF_AllRain_T13_T*_InitUTC_*_combined_overview_*_grid.png' \
+      | sort
   )
+  if [[ "${#national_sources[@]}" -eq 0 ]]; then
+    echo "ERROR: missing Yunnan nationwide overview beside $source" >&2
+    exit 1
+  fi
+  for national_source in "${national_sources[@]}"; do
+    make_webp "$national_source"
+    make_preview_webp "$national_source"
+    asset_files+=("$national_source" "${national_source%.png}.webp" "${national_source%.png}.preview.webp")
+  done
 
   for required in "$run_dir/$webp_base" "$run_dir/$preview_base" "$run_dir/manifest_fragment.json" "$run_dir/airport_precip_totals.json"; do
     if [[ ! -f "$required" ]]; then
@@ -144,16 +161,8 @@ for source in "${sources[@]}"; do
     [[ -n "$accum_source" ]] || continue
     make_webp "$accum_source"
     make_preview_webp "$accum_source"
-    asset_files+=(
-      "$accum_source"
-      "${accum_source%.png}.webp"
-      "${accum_source%.png}.preview.webp"
-    )
-  done < <(
-    find "$run_dir" -maxdepth 1 -type f \
-      -name 'Precip_accum_*h_WRF_YunnanAirports_T13_T48_InitUTC_*_combined_overview_1x1_grid.png' \
-      | sort
-  )
+    asset_files+=("$accum_source" "${accum_source%.png}.webp" "${accum_source%.png}.preview.webp")
+  done < <(find "$run_dir" -maxdepth 1 -type f -name 'Precip_accum_*h_WRF_YunnanAirports_T13_T*_InitUTC_*_combined_overview_1x1_grid.png' | sort)
 
   echo "Publishing Yunnan airport regional overview: $source"
   ssh "$GITHUB_HOST" "mkdir -p ~/incoming/airport_yunnan_${run_prefix}"
@@ -298,7 +307,7 @@ if [ ! -d "$SITE_REPO/.git" ]; then
 fi
 
 cd "$SITE_REPO"
-git pull --ff-only
+git pull --rebase
 
 mkdir -p "$DEST"
 rsync -av --delete "$INCOMING/" "$DEST/"
