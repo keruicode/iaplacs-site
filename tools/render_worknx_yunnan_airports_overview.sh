@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
 # Render a Yunnan airport hourly precipitation overview from WORK_yn.
-# Thirty-six hourly panels remain after the first 12 spin-up hours, so the
-# product is intentionally one 6x6 image with airport markers.
+# Panels start at T13 after the first 12 spin-up hours and grow as WRF writes.
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,7 +14,8 @@ NCL_BIN="${NCL_BIN:-/public/software/apps/ncl_ncarg/ncl630/bin/ncl}"
 NCL_ROOT="${NCL_ROOT:-/public/software/apps/ncl_ncarg/ncl630}"
 PYTHON_BIN="${PYTHON_BIN:-}"
 MIN_FILE_AGE_SECONDS="${MIN_FILE_AGE_SECONDS:-1200}"
-MIN_WRFOUT_BYTES="${MIN_WRFOUT_BYTES:-20000000000}"
+MIN_WRFOUT_BYTES="${MIN_WRFOUT_BYTES:-8000000000}"
+MIN_TIME_COUNT="${MIN_TIME_COUNT:-14}"
 YUNNAN_PROVINCE_SHP_FILE="${YUNNAN_PROVINCE_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
 YUNNAN_CITY_SHP_FILE="${YUNNAN_CITY_SHP_FILE:-${YUNNAN_COUNTY_SHP_FILE:-$SCRIPT_DIR/SHP/yunnan_city.shp}}"
 
@@ -23,9 +23,8 @@ usage() {
   cat <<'EOF'
 Usage: render_worknx_yunnan_airports_overview.sh [--latest | --recent COUNT]
 
-Reads stable WORK_yn wrfout files, renders the 36-hour Yunnan panels with
-airport markers, and writes one *_combined_overview_6x6_grid.png per run plus
-airport point-precipitation totals.
+Renders Yunnan panels from T13 through the latest available lead with airport
+markers, plus a nationwide counterpart and airport point-precipitation totals.
 EOF
 }
 
@@ -63,6 +62,10 @@ if ! [[ "$count" =~ ^[1-9][0-9]*$ ]]; then
   echo "ERROR: recent count must be a positive integer" >&2
   exit 64
 fi
+if ! [[ "$MIN_TIME_COUNT" =~ ^[1-9][0-9]*$ ]]; then
+  echo "ERROR: MIN_TIME_COUNT must be a positive integer" >&2
+  exit 64
+fi
 if [[ ! -d "$WORK_YN_ROOT" ]]; then
   echo "ERROR: WORK_YN_ROOT not found: $WORK_YN_ROOT" >&2
   exit 1
@@ -83,6 +86,7 @@ fi
 [[ -d "$NCL_ROOT/lib/ncarg" ]] || { echo "ERROR: NCARG_ROOT is invalid: $NCL_ROOT" >&2; exit 127; }
 command -v montage >/dev/null || { echo "ERROR: ImageMagick montage is required" >&2; exit 127; }
 command -v convert >/dev/null || { echo "ERROR: ImageMagick convert is required" >&2; exit 127; }
+command -v ncdump >/dev/null || { echo "ERROR: ncdump is required" >&2; exit 127; }
 export NCARG_ROOT="$NCL_ROOT"
 
 if [[ -n "$YUNNAN_PROVINCE_SHP_FILE" && ! -f "$YUNNAN_PROVINCE_SHP_FILE" ]]; then
@@ -96,23 +100,28 @@ mkdir -p "$OUTPUT_ROOT"
 now_epoch="$(date +%s)"
 sources=()
 
-wrf_has_t48() {
-  local file="$1" time_count
-  time_count="$(ncdump -h "$file" 2>/dev/null | awk '/Time = UNLIMITED/ { gsub(/[^0-9]/, "", $0); print; exit }')"
-  [[ "$time_count" =~ ^[0-9]+$ ]] && (( time_count >= 49 ))
+wrf_time_count() {
+  ncdump -h "$1" 2>/dev/null | awk '/Time = UNLIMITED/ { gsub(/[^0-9]/, "", $0); print; exit }'
+}
+
+wrf_completed_successfully() {
+  local rsl_file
+  rsl_file="$(dirname "$1")/rsl.error.0000"
+  [[ -f "$rsl_file" ]] && tail -n 200 "$rsl_file" | grep -q 'SUCCESS COMPLETE WRF'
 }
 
 while IFS= read -r line; do
   source_path="$line"
   source_epoch="$(stat -c '%Y' "$source_path")"
   source_size="$(stat -c '%s' "$source_path")"
-  if (( now_epoch - source_epoch < MIN_FILE_AGE_SECONDS )); then
-    continue
-  fi
   if (( source_size < MIN_WRFOUT_BYTES )); then
     continue
   fi
-  wrf_has_t48 "$source_path" || continue
+  time_count="$(wrf_time_count "$source_path")"
+  [[ "$time_count" =~ ^[0-9]+$ ]] && (( time_count >= MIN_TIME_COUNT )) || continue
+  if ! wrf_completed_successfully "$source_path"; then
+    (( now_epoch - source_epoch >= MIN_FILE_AGE_SECONDS )) || continue
+  fi
   sources+=("$source_path")
   [[ "${#sources[@]}" -ge "$count" ]] && break
 done < <(
@@ -148,8 +157,8 @@ caption_panel() {
 }
 
 write_manifest() {
-  local manifest_path="$1" run_prefix="$2" source_path="$3" overview="$4" totals_json="$5"
-  "$PYTHON_BIN" - "$manifest_path" "$run_prefix" "$source_path" "$overview" "$totals_json" <<'PY'
+  local manifest_path="$1" run_prefix="$2" source_path="$3" overview="$4" totals_json="$5" last_lead="$6"
+  "$PYTHON_BIN" - "$manifest_path" "$run_prefix" "$source_path" "$overview" "$totals_json" "$last_lead" <<'PY'
 import json
 import sys
 from datetime import datetime, timedelta, timezone
@@ -160,10 +169,11 @@ run_prefix = sys.argv[2]
 source_path = Path(sys.argv[3])
 overview = Path(sys.argv[4])
 totals_path = Path(sys.argv[5])
+last_lead = int(sys.argv[6])
 bjt = timezone(timedelta(hours=8))
 run_dt_utc = datetime.strptime(run_prefix, "%Y%m%d_%H").replace(tzinfo=timezone.utc)
 run_dt_bjt = run_dt_utc.astimezone(bjt)
-valid_dt_bjt = (run_dt_utc + timedelta(hours=48)).astimezone(bjt)
+valid_dt_bjt = (run_dt_utc + timedelta(hours=last_lead)).astimezone(bjt)
 generated_at = datetime.fromtimestamp(source_path.stat().st_mtime, tz=bjt)
 with totals_path.open(encoding="utf-8") as handle:
     totals = json.load(handle)
@@ -183,7 +193,7 @@ PY
 }
 
 render_source() {
-  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview totals_json manifest_json
+  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview totals_json manifest_json time_count last_lead panel_count overview_rows overview_grid national_panel_dir national_caption_dir national_overview
   base="$(basename "$source_path")"
   if [[ "$base" =~ wrfout_d01_([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2}):[0-9]{2}:[0-9]{2} ]]; then
     run_date="${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]}"
@@ -201,7 +211,8 @@ render_source() {
   run_dir="$OUTPUT_ROOT/$run_prefix"
   panel_dir="$run_dir/hourly_t13_t48"
   caption_dir="$run_dir/captioned_t13_t48"
-  overview="$run_dir/Precip_hourly_WRF_YunnanAirports_T13_T48_InitUTC_${run_date}_${run_hour}_00_combined_overview_6x6_grid.png"
+  national_panel_dir="$run_dir/national_hourly_t13_t48"
+  national_caption_dir="$run_dir/national_captioned_t13_t48"
   totals_json="$run_dir/airport_precip_totals.json"
   manifest_json="$run_dir/manifest_fragment.json"
 
@@ -209,9 +220,15 @@ render_source() {
     echo "ERROR: wrfout_d01 files are unavailable beside $source_path" >&2
     return 1
   fi
+  time_count="$(wrf_time_count "$source_path")"
+  [[ "$time_count" =~ ^[0-9]+$ ]] && (( time_count >= MIN_TIME_COUNT )) || {
+    echo "ERROR: T13 is not available in $source_path" >&2
+    return 1
+  }
+  last_lead=$((time_count - 1))
 
-  mkdir -p "$panel_dir" "$caption_dir"
-  echo "Rendering Yunnan airport 36-hour panels for $run_prefix from $wrf_dir"
+  mkdir -p "$panel_dir" "$caption_dir" "$national_panel_dir" "$national_caption_dir"
+  echo "Rendering Yunnan airport T13-T${last_lead} panels for $run_prefix from $wrf_dir"
   WORK_YN_WRF_DIR="$wrf_dir" \
     WORK_YN_YUNNAN_AIRPORT_PNG_DIR="$panel_dir" \
     YUNNAN_PROVINCE_SHP_FILE="$YUNNAN_PROVINCE_SHP_FILE" \
@@ -220,10 +237,15 @@ render_source() {
 
   local panels=()
   mapfile -t panels < <(find "$panel_dir" -maxdepth 1 -type f -name '*_rain_hour_*_BJT.png' -print | sort)
-  if [[ "${#panels[@]}" -ne 36 ]]; then
-    echo "ERROR: expected 36 panels, found ${#panels[@]} for $run_prefix" >&2
+  panel_count="${#panels[@]}"
+  if (( panel_count != last_lead - 12 )); then
+    echo "ERROR: expected $((last_lead - 12)) panels, found ${panel_count} for $run_prefix" >&2
     return 1
   fi
+  overview_rows=$(((panel_count + 5) / 6))
+  overview_grid="6x${overview_rows}"
+  overview="$run_dir/Precip_hourly_WRF_YunnanAirports_T13_T${last_lead}_InitUTC_${run_date}_${run_hour}_00_combined_overview_${overview_grid}_grid.png"
+  national_overview="$run_dir/Precip_hourly_WRF_AllRain_T13_T${last_lead}_InitUTC_${run_date}_${run_hour}_00_combined_overview_${overview_grid}_grid.png"
 
   local captioned_panels=()
   for panel in "${panels[@]}"; do
@@ -231,8 +253,25 @@ render_source() {
     captioned_panels+=("$caption_dir/$(basename "$panel")")
   done
 
-  montage "${captioned_panels[@]}" -tile 6x6 -geometry '100%x100%+2+2' -background white "$overview"
+  montage "${captioned_panels[@]}" -tile "$overview_grid" -geometry '100%x100%+2+2' -background white "$overview"
   touch -r "$source_path" "$overview"
+
+  WORK_NX_WRF_DIR="$wrf_dir" \
+    WORK_NX_NATIONAL_PNG_DIR="$national_panel_dir" \
+    WORK_NX_NATIONAL_PROVINCE_SHP_FILE="$YUNNAN_PROVINCE_SHP_FILE" \
+    "$NCL_BIN" "$NATIONAL_NCL_SCRIPT"
+  local national_panels=() national_captioned_panels=()
+  mapfile -t national_panels < <(find "$national_panel_dir" -maxdepth 1 -type f -name '*_national_rain_hour_*_BJT.png' -print | sort)
+  if (( ${#national_panels[@]} != panel_count )); then
+    echo "ERROR: expected ${panel_count} nationwide panels, found ${#national_panels[@]} for $run_prefix" >&2
+    return 1
+  fi
+  for panel in "${national_panels[@]}"; do
+    caption_panel "$panel" "$national_caption_dir"
+    national_captioned_panels+=("$national_caption_dir/$(basename "$panel")")
+  done
+  montage "${national_captioned_panels[@]}" -tile "$overview_grid" -geometry '100%x100%+2+2' -background white "$national_overview"
+  touch -r "$source_path" "$national_overview"
   # Keep only BJT-aligned accumulation windows for this forecast run.
   rm -f "$run_dir"/Precip_accum_*h_WRF_YunnanAirports_T13_T48_InitUTC_"${run_date}"_"${run_hour}"_00*combined_overview_1x1_grid.*
   rm -f "$panel_dir"/*_national_accum_*.png
@@ -248,13 +287,13 @@ render_source() {
       accum_name="$(basename "$accum_source")"
       accum_name="${accum_name#*_national_accum_${accum_hours}h_}"
       accum_name="${accum_name%_BJT.png}"
-      accum_overview="$run_dir/Precip_accum_${accum_hours}h_WRF_YunnanAirports_T13_T48_InitUTC_${run_date}_${run_hour}_00_${accum_name}_combined_overview_1x1_grid.png"
+    accum_overview="$run_dir/Precip_accum_${accum_hours}h_WRF_YunnanAirports_T13_T${last_lead}_InitUTC_${run_date}_${run_hour}_00_${accum_name}_combined_overview_1x1_grid.png"
       cp -p "$accum_source" "$accum_overview"
       touch -r "$source_path" "$accum_overview"
     done < <(find "$panel_dir" -maxdepth 1 -type f -name "*_national_accum_$(printf '%02d' "$accum_hours")h_*_BJT.png" | sort)
   done
-  "$PYTHON_BIN" "$POINT_SCRIPT" --wrf-dir "$wrf_dir" --output "$totals_json" --start 13 --end 48
-  write_manifest "$manifest_json" "$run_prefix" "$source_path" "$overview" "$totals_json"
+  "$PYTHON_BIN" "$POINT_SCRIPT" --wrf-dir "$wrf_dir" --output "$totals_json" --start 13 --end "$last_lead"
+  write_manifest "$manifest_json" "$run_prefix" "$source_path" "$overview" "$totals_json" "$last_lead"
   echo "Rendered $overview"
 }
 

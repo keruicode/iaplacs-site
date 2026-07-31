@@ -200,14 +200,19 @@ def build_yunnan_airport_frames(
         path = choose_frame_candidate("_combined_overview", existing)
         preview_path = choose_preview_candidate(existing)
         full_path = choose_full_candidate("_combined_overview", existing)
+        is_national = accumulation_hours is None and "_WRF_AllRain_" in path.name
         lead_label = lead_label_from_name(path.name)
-        if accumulation_hours is None and "T13_T48" in path.name:
-            lead_label = "36小时拼图"
-        elif accumulation_hours is not None:
+        if is_national:
+            frame_id, lead, lead_label = "airport_national", 1, "中国西南部"
+        elif accumulation_hours is None:
+            frame_id, lead, lead_label = "airport_region", 0, "云南区域"
+        else:
+            frame_id = "overview"
+            lead = lead_value_from_label(lead_label)
             lead_label = accumulation_window_label(path.name, accumulation_hours)
         frame = {
-            "id": "overview",
-            "lead": lead_value_from_label(lead_label),
+            "id": frame_id,
+            "lead": lead,
             "lead_label": lead_label,
             "file": forecast_asset_url(path),
             "bytes": path.stat().st_size,
@@ -238,7 +243,7 @@ def build_yunnan_airport_product(
         "category": "机场服务",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": "WORK_yn 云南区域逐小时降水 6x6 拼图，标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场位置。",
+        "description": "WORK_yn 云南区域逐小时降水拼图，标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场位置。",
         "metrics": metrics,
         "frames": frames,
     }
@@ -659,7 +664,7 @@ def build_ningxia_frames(
         for key, candidates in groups.items()
         if "_combined_overview_" in key
         and (
-            (accumulation_hours is None and "_accum_" not in key and "_6x6_" in key)
+            (accumulation_hours is None and "_accum_" not in key)
             or (accumulation_hours is not None and f"_accum_{accumulation_hours}h_" in key)
         )
     }
@@ -716,7 +721,7 @@ def build_ningxia_frames(
 
 def ningxia_frame_sort_key(item: tuple[str, list[Path]]) -> tuple[int, str]:
     key = item[0]
-    if "_combined_overview_" in key and "_6x6_" in key:
+    if "_combined_overview_" in key:
         return (0, key)
     if "_WRF_AllRain_" in key:
         return (1, key)
@@ -733,7 +738,7 @@ def ningxia_frame_meta(
             accumulation_window_label(path.name, accumulation_hours),
             "",
         )
-    if "_combined_overview_" in key and "_6x6_" in key:
+    if "_combined_overview_" in key:
         return ("ningxia_region", 0, "宁夏区域", "当前显示：宁夏区域")
     if "_WRF_AllRain_" in key:
         return ("worknx_national", 1, "全国", "当前显示：WORK_nx 全国模拟图")
@@ -842,6 +847,9 @@ def build_frames(
         groups.setdefault(key, []).append(path)
 
     frames = []
+    has_national = accumulation_hours is None and any(
+        "_combined_national_" in key for key in groups
+    )
     if accumulation_hours == 12 and any(
         ACCUMULATION_WINDOW_RE.search(key) for key in groups
     ):
@@ -854,6 +862,15 @@ def build_frames(
         chosen = choose_frame_candidate(key, candidates)
         full = choose_full_candidate(key, candidates)
         frame = frame_meta(run_id, key)
+        if has_national and frame["id"] == "overview":
+            frame.update(
+                {
+                    "id": "shangrao_region",
+                    "lead": 0,
+                    "lead_label": "上饶区域",
+                    "valid_label": "当前显示：上饶区域",
+                }
+            )
         frame["file"] = forecast_asset_url(chosen)
         frame["bytes"] = chosen.stat().st_size
         preview = choose_preview_candidate(candidates)
@@ -935,6 +952,8 @@ def forecast_asset_url(path: Path) -> str:
 
 def frame_sort_key(item: tuple[str, list[Path]]) -> tuple[int, int, str]:
     key = item[0]
+    if "_combined_national_" in key:
+        return (0, 1, key)
     if "_combined_overview" in key:
         return (0, 0, key)
     detail = DETAIL_RE.search(key)
@@ -952,6 +971,13 @@ def frame_meta(run_id: str, key: str) -> dict:
             "lead": 0,
             "lead_label": accumulation_window_label(key, hours),
             "valid_label": "",
+        }
+    if "_combined_national_" in key:
+        return {
+            "id": "shangrao_national",
+            "lead": 1,
+            "lead_label": "中国东南部",
+            "valid_label": "当前显示：中国东南部",
         }
     if "_combined_overview" in key:
         return {
