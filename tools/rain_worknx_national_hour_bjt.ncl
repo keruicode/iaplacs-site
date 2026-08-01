@@ -240,10 +240,25 @@ begin
       res@tiMainFontThicknessF = 3.0
       res@tiMainFontColor = "black"
       res@tiMainOffsetYF = -0.012
+      ; NCL 6.3 may automatically stride a vertical label bar and hide every
+      ; other cumulative threshold.  Keep every operational boundary visible.
+      if (accum_hours.gt.1) then
+        res@cnExplicitLabelBarLabelsOn = True
+        res@lbLabelStrings = (/"0", "0.1", "10", "25", "50", "100", "250"/)
+        res@lbLabelAlignment = "InteriorEdges"
+        res@lbAutoManage = False
+        res@lbLabelAutoStride = False
+        res@lbLabelStride = 1
+      end if
       res@lbLabelFont = "Times-Bold"
       res@lbLabelFontColor = "black"
-      res@lbLabelFontHeightF = 0.034
-      res@lbLabelFontThicknessF = 8
+      if (accum_hours.gt.1) then
+        res@lbLabelFontHeightF = 0.025
+        res@lbLabelFontThicknessF = 5.0
+      else
+        res@lbLabelFontHeightF = 0.034
+        res@lbLabelFontThicknessF = 8
+      end if
       res@lbLabelBarOn = True
       res@lbOrientation = "Vertical"
       res@pmLabelBarDisplayMode = "Always"
