@@ -119,6 +119,10 @@ begin
       end if
       file_start = bjt_label(times(accum_start_idx), 1)
       file_end = bjt_label(times(it), 1)
+      panel_title = str_get_cols(file_start, 4, 5) + "-" + \
+                    str_get_cols(file_start, 6, 7) + " " + \
+                    str_get_cols(file_start, 8, 9) + ":00-" + \
+                    str_get_cols(file_end, 8, 9) + ":00"
       end_hour = toint(str_get_cols(file_end, 8, 9))
       ; 12 h: 08-20 or 20-08 BJT. 24 h: 08-08 or 20-20 BJT.  Both
       ; tests are represented by the corresponding ending hour.
@@ -224,6 +228,18 @@ begin
       res@tmYLLabelDeltaF = -0.15
       res@tmBorderLineColor = "black"
       res@tmBorderThicknessF = 6
+      ; Align the wide China map at the top of the canvas and use the
+      ; previously unused upper space for the BJT valid-time title.
+      res@vpXF = 0.13
+      res@vpYF = 0.82
+      res@vpWidthF = 0.70
+      res@vpHeightF = 0.60
+      res@tiMainString = panel_title
+      res@tiMainFont = "Times-Bold"
+      res@tiMainFontHeightF = 0.035
+      res@tiMainFontThicknessF = 3.0
+      res@tiMainFontColor = "black"
+      res@tiMainOffsetYF = -0.012
       res@lbLabelFont = "Times-Bold"
       res@lbLabelFontColor = "black"
       res@lbLabelFontHeightF = 0.034

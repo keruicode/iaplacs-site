@@ -58,7 +58,7 @@ stage_dir="$(mktemp -d "${TMPDIR:-/tmp}/iaplacs-hourly-panels.XXXXXX")"
 trap 'rm -rf -- "$stage_dir"' EXIT
 
 convert_panels() {
-  local source_dir="$1" frame_id="$2" count=0 source name start end output
+  local source_dir="$1" frame_id="$2" trim_whitespace="$3" count=0 source name start end output
   while IFS= read -r -d '' source; do
     name="$(basename "$source")"
     if [[ ! "$name" =~ _rain_hour_([0-9]{10})-([0-9]{10})_BJT\.png$ ]]; then
@@ -67,13 +67,18 @@ convert_panels() {
     start="${BASH_REMATCH[1]}"
     end="${BASH_REMATCH[2]}"
     output="$stage_dir/${run_prefix}_${frame_id}_rain_hour_${start}-${end}_BJT.webp"
-    "$PYTHON_BIN" - "$source" "$output" <<'PY'
+    "$PYTHON_BIN" - "$source" "$output" "$trim_whitespace" <<'PY'
 import sys
-from PIL import Image
+from PIL import Image, ImageChops
 
-source, output = sys.argv[1:3]
+source, output, trim_whitespace = sys.argv[1:4]
 with Image.open(source) as image:
     image = image.convert("RGB")
+    if trim_whitespace == "1":
+        background = Image.new("RGB", image.size, "white")
+        bounds = ImageChops.difference(image, background).getbbox()
+        if bounds:
+            image = image.crop(bounds)
     image.save(output, "WEBP", quality=92, method=6)
 PY
     touch -r "$source" "$output"
@@ -83,8 +88,11 @@ PY
   echo "Prepared $count panel(s) for $frame_id"
 }
 
-convert_panels "$regional_dir" "$regional_id"
-convert_panels "$national_dir" "$national_id"
+convert_panels "$regional_dir" "$regional_id" 0
+# China-wide panels are naturally wide but their NCL source canvas is square.
+# Trim only external white margins for the individual web view; montage PNGs
+# retain the original geometry used by the existing overview builder.
+convert_panels "$national_dir" "$national_id" 1
 
 incoming="hourly_panels_${family}_${run_prefix}"
 ssh "$GITHUB_HOST" "rm -rf ~/incoming/$incoming && mkdir -p ~/incoming/$incoming"
