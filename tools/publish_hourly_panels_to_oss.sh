@@ -153,7 +153,8 @@ export GIT_SSH="$GIT_SSH_WRAPPER"
 if [[ ! -d "$SITE_REPO/.git" ]]; then
   git clone "$GIT_URL" "$SITE_REPO"
 fi
-git -C "$SITE_REPO" pull --rebase
+cd "$SITE_REPO"
+git pull --rebase
 mkdir -p "$DEST"
 rsync -av "$INCOMING/" "$DEST/"
 
@@ -173,14 +174,14 @@ PYTHON_BIN="$(command -v python3 || command -v python)"
   --family "$FAMILY" \
   --run-prefix "$RUN_PREFIX"
 
-git -C "$SITE_REPO" add data/current/forecast-runs.json
-if git -C "$SITE_REPO" diff --cached --quiet; then
+git add data/current/forecast-runs.json
+if git diff --cached --quiet; then
   echo "No hourly catalog changes for $FAMILY $RUN_PREFIX"
   exit 0
 fi
-git -C "$SITE_REPO" -c user.name="$GIT_USER_NAME" -c user.email="$GIT_USER_EMAIL" \
+git -c user.name="$GIT_USER_NAME" -c user.email="$GIT_USER_EMAIL" \
   commit -m "Add hourly panels for ${FAMILY} ${RUN_PREFIX}"
-git -C "$SITE_REPO" push origin HEAD:main
+git push origin HEAD:main
 REMOTE
 
 echo "Published hourly panels for $family $run_prefix"
