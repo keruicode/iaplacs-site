@@ -20,6 +20,12 @@ Current service routes:
 For the repository layout and what should or should not be pushed from a local
 checkout, see [docs/repository-structure.md](docs/repository-structure.md).
 
+Airport forecast ratings use Alibaba Cloud Function Compute plus OSS so that
+anonymous visitors can submit shared results without any GitHub login or token
+in the browser. The full Chinese deployment, validation, security, and
+maintenance manual is in
+[cloud/airport-ratings-fc/README.md](cloud/airport-ratings-fc/README.md).
+
 ## Local Preview
 
 Run from this directory:
