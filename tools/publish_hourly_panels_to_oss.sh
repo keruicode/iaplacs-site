@@ -41,10 +41,12 @@ case "$family" in
   worknx_summary)
     regional_id="ningxia_region"
     national_id="worknx_national"
+    panel_glob='*_rain_hour_*_BJT.png'
     ;;
   wrf_montage)
     regional_id="shangrao_region"
     national_id="shangrao_national"
+    panel_glob="${run_prefix}*_rain_hour_*_BJT.png"
     ;;
   *) usage >&2; echo "ERROR: unsupported family: $family" >&2; exit 64 ;;
 esac
@@ -76,7 +78,7 @@ with Image.open(source) as image:
 PY
     touch -r "$source" "$output"
     count=$((count + 1))
-  done < <(find "$source_dir" -maxdepth 1 -type f -name '*_rain_hour_*_BJT.png' -print0 | sort -z)
+  done < <(find "$source_dir" -maxdepth 1 -type f -name "$panel_glob" -print0 | sort -z)
   (( count > 0 )) || { echo "ERROR: no hourly panels found in $source_dir" >&2; exit 1; }
   echo "Prepared $count panel(s) for $frame_id"
 }
