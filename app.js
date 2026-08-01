@@ -16,6 +16,20 @@ const NATIONAL_FRAME_LABELS = {
   shangrao_national: "中国东南部",
   airport_national: "中国西南部",
 };
+const HOURLY_PRECIP_PRODUCT_IDS = {
+  airport: new Set([
+    "airport_yunnan_precip_series",
+    "tianhe_airport_yunnan_precip_series",
+  ]),
+  ningxia: new Set([
+    "ningxia_precip_series",
+    "tianhe_ningxia_precip_series",
+  ]),
+  shangrao: new Set([
+    "wrf_rain_montage",
+    "tianhe_shangrao_precip_series",
+  ]),
+};
 const AIRPORT_RATING_TARGETS = [
   { id: "dehong_mangshi", label: "德宏芒市机场" },
   { id: "xishuangbanna_gasa", label: "西双版纳嘎洒机场" },
@@ -70,8 +84,8 @@ const state = {
   runIndex: 0,
   productIndex: 0,
   leadIndex: 0,
-  airportPanelIndex: 0,
-  airportViewMode: "hourly",
+  hourlyPanelIndex: 0,
+  forecastViewMode: pageConfig.service === "airport" ? "hourly" : "montage",
   refreshTimer: null,
   loading: false,
   hasNewLatestRun: false,
@@ -113,8 +127,8 @@ const els = {
   nextLead: document.querySelector("#nextLead"),
   imageLink: document.querySelector("#imageLink"),
   imageDownload: document.querySelector("#imageDownload"),
-  airportViewMode: document.querySelector("#airportViewMode"),
-  airportHourTimeline: document.querySelector("#airportHourTimeline"),
+  forecastViewMode: document.querySelector("#forecastViewMode"),
+  forecastHourTimeline: document.querySelector("#forecastHourTimeline"),
   metricGrid: document.querySelector("#metricGrid"),
   productNote: document.querySelector("#productNote"),
   airportFeedbackToggle: document.querySelector("#airportFeedbackToggle"),
@@ -149,7 +163,7 @@ const viewerState = {
 async function init() {
   setupImageViewer();
   setupDataSourceSwitch();
-  setupAirportViewMode();
+  setupForecastViewMode();
   setupAirportFeedback();
   await selectLatestSource();
   await loadForecast({ preserveSelection: false });
@@ -783,7 +797,7 @@ function render() {
   const product = currentProduct();
   const selectedFrame = currentFrame();
 
-  reconcileAirportViewMode(product, selectedFrame);
+  reconcileForecastViewMode(product, selectedFrame);
   const frame = currentDisplayFrame();
 
   if (!state.catalog || !state.service || !run || !product || !selectedFrame || !frame) {
@@ -810,8 +824,8 @@ function render() {
   renderRuns();
   renderProducts();
   renderLeads();
-  renderAirportViewMode(product, selectedFrame);
-  renderAirportHourTimeline(product, selectedFrame);
+  renderForecastViewMode(product, selectedFrame);
+  renderForecastHourTimeline(product, selectedFrame);
   renderMetrics(product);
   renderProductNote(run, product, frame);
   renderAirportFeedback();
@@ -847,8 +861,8 @@ function render() {
 }
 
 function updateControls(product) {
-  const frames = isAirportHourlyView(product, currentFrame())
-    ? airportHourlyFrames(currentFrame())
+  const frames = isHourlyView(product, currentFrame())
+    ? hourlyFrames(currentFrame())
     : product.frames || [];
   const hasMultipleFrames = frames.length > 1;
   if (els.prevLead) els.prevLead.disabled = !hasMultipleFrames;
@@ -869,10 +883,10 @@ function renderEmpty() {
   if (els.forecastImage) els.forecastImage.removeAttribute("src");
   if (els.imageLink) els.imageLink.href = "#";
   if (els.imageDownload) els.imageDownload.href = "#";
-  if (els.airportViewMode) els.airportViewMode.hidden = true;
-  if (els.airportHourTimeline) {
-    els.airportHourTimeline.hidden = true;
-    els.airportHourTimeline.innerHTML = "";
+  if (els.forecastViewMode) els.forecastViewMode.hidden = true;
+  if (els.forecastHourTimeline) {
+    els.forecastHourTimeline.hidden = true;
+    els.forecastHourTimeline.innerHTML = "";
   }
   renderAirportFeedback();
   setText(els.runSummary, "暂无起报时次");
@@ -924,7 +938,8 @@ function renderRuns() {
       state.runIndex = index;
       state.productIndex = 0;
       state.leadIndex = 0;
-      state.airportPanelIndex = 0;
+      state.hourlyPanelIndex = 0;
+      state.forecastViewMode = pageConfig.service === "airport" ? "hourly" : "montage";
       state.hasNewLatestRun = false;
       render();
     });
@@ -956,7 +971,8 @@ function renderProducts() {
     button.addEventListener("click", () => {
       state.productIndex = index;
       state.leadIndex = defaultLeadIndex(product);
-      state.airportPanelIndex = 0;
+      state.hourlyPanelIndex = 0;
+      state.forecastViewMode = pageConfig.service === "airport" ? "hourly" : "montage";
       render();
     });
     els.productList.appendChild(button);
@@ -978,7 +994,7 @@ function renderLeads() {
     button.textContent = displayFrameLabel(frame);
     button.addEventListener("click", () => {
       state.leadIndex = index;
-      state.airportPanelIndex = 0;
+      state.hourlyPanelIndex = 0;
       render();
     });
     els.leadTabs.appendChild(button);
@@ -1031,88 +1047,85 @@ function currentFrame() {
   return currentProduct()?.frames?.[state.leadIndex];
 }
 
-function isYunnanAirportPrecipProduct(product = currentProduct()) {
-  return (
-    pageConfig.service === "airport" &&
-    product?.id === "airport_yunnan_precip_series"
-  );
+function supportsHourlyView(product = currentProduct()) {
+  return HOURLY_PRECIP_PRODUCT_IDS[pageConfig.service]?.has(product?.id) || false;
 }
 
-function airportHourlyFrames(frame = currentFrame()) {
+function hourlyFrames(frame = currentFrame()) {
   return Array.isArray(frame?.individual_frames)
     ? frame.individual_frames.filter((item) => item?.file)
     : [];
 }
 
-function isAirportHourlyView(product = currentProduct(), frame = currentFrame()) {
+function isHourlyView(product = currentProduct(), frame = currentFrame()) {
   return (
-    state.airportViewMode === "hourly" &&
-    isYunnanAirportPrecipProduct(product) &&
-    airportHourlyFrames(frame).length > 0
+    state.forecastViewMode === "hourly" &&
+    supportsHourlyView(product) &&
+    hourlyFrames(frame).length > 0
   );
 }
 
-function reconcileAirportViewMode(product, frame) {
-  const panels = airportHourlyFrames(frame);
-  if (!isYunnanAirportPrecipProduct(product)) return;
+function reconcileForecastViewMode(product, frame) {
+  const panels = hourlyFrames(frame);
+  if (!supportsHourlyView(product)) return;
   if (panels.length === 0) {
-    state.airportViewMode = "montage";
-    state.airportPanelIndex = 0;
+    state.forecastViewMode = "montage";
+    state.hourlyPanelIndex = 0;
     return;
   }
-  state.airportPanelIndex = Math.min(
-    Math.max(0, state.airportPanelIndex),
+  state.hourlyPanelIndex = Math.min(
+    Math.max(0, state.hourlyPanelIndex),
     panels.length - 1,
   );
 }
 
 function currentDisplayFrame() {
   const frame = currentFrame();
-  if (!isAirportHourlyView(currentProduct(), frame)) return frame;
-  return airportHourlyFrames(frame)[state.airportPanelIndex] || frame;
+  if (!isHourlyView(currentProduct(), frame)) return frame;
+  return hourlyFrames(frame)[state.hourlyPanelIndex] || frame;
 }
 
-function renderAirportViewMode(product, frame) {
-  if (!els.airportViewMode) return;
-  const isAirportProduct = isYunnanAirportPrecipProduct(product);
-  const hasPanels = airportHourlyFrames(frame).length > 0;
-  els.airportViewMode.hidden = !isAirportProduct;
-  if (!isAirportProduct) return;
+function renderForecastViewMode(product, frame) {
+  if (!els.forecastViewMode) return;
+  const supportsViewMode = supportsHourlyView(product);
+  const hasPanels = hourlyFrames(frame).length > 0;
+  els.forecastViewMode.hidden = !supportsViewMode;
+  if (!supportsViewMode) return;
 
-  els.airportViewMode.querySelectorAll("[data-airport-view-mode]").forEach((button) => {
-    const mode = button.dataset.airportViewMode;
-    const active = mode === state.airportViewMode;
+  els.forecastViewMode.querySelectorAll("[data-forecast-view-mode]").forEach((button) => {
+    const mode = button.dataset.forecastViewMode;
+    const active = mode === state.forecastViewMode;
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", String(active));
     button.disabled = mode === "hourly" && !hasPanels;
   });
 }
 
-function renderAirportHourTimeline(product, frame) {
-  const root = els.airportHourTimeline;
+function renderForecastHourTimeline(product, frame) {
+  const root = els.forecastHourTimeline;
   if (!root) return;
 
-  const showTimeline = isAirportHourlyView(product, frame);
+  const showTimeline = isHourlyView(product, frame);
   root.hidden = !showTimeline;
   root.innerHTML = "";
   if (!showTimeline) return;
 
-  const panels = airportHourlyFrames(frame);
-  root.classList.toggle("is-at-start", state.airportPanelIndex === 0);
+  const panels = hourlyFrames(frame);
+  root.classList.toggle("is-at-start", state.hourlyPanelIndex === 0);
   let activeButton = null;
   panels.forEach((panel, index) => {
     const button = document.createElement("button");
-    const isActive = index === state.airportPanelIndex;
-    const isRealtime = index === 0 && isAirportRealtimePanel(panel);
-    const label = airportHourLabel(panel, isRealtime);
+    const isActive = index === state.hourlyPanelIndex;
+    const isRealtime = index === 0 && isRealtimePanel(panel);
+    const label = hourLabel(panel, isRealtime);
     button.type = "button";
-    button.className = `airport-hour-button${isActive ? " is-active" : ""}`;
+    button.className = `forecast-hour-button${isActive ? " is-active" : ""}`;
     button.setAttribute("aria-pressed", String(isActive));
-    button.setAttribute("aria-label", isRealtime ? `实时 ${airportHourRange(panel)}` : airportHourRange(panel));
+    button.setAttribute("aria-label", isRealtime ? `实时 ${hourRange(panel)}` : hourRange(panel));
     button.textContent = isRealtime ? "实时" : label;
     button.addEventListener("click", () => {
-      if (index === state.airportPanelIndex) return;
-      state.airportPanelIndex = index;
+      if (index === state.hourlyPanelIndex) return;
+      state.hourlyPanelIndex = index;
       render();
     });
     root.appendChild(button);
@@ -1120,7 +1133,7 @@ function renderAirportHourTimeline(product, frame) {
   });
 
   window.requestAnimationFrame(() => {
-    if (state.airportPanelIndex === 0) {
+    if (state.hourlyPanelIndex === 0) {
       root.scrollTo({ left: 0, behavior: "auto" });
       return;
     }
@@ -1132,7 +1145,7 @@ function renderAirportHourTimeline(product, frame) {
   });
 }
 
-function airportHourLabel(frame, isRealtime) {
+function hourLabel(frame, isRealtime) {
   if (isRealtime) return "实时";
   const end = Date.parse(frame?.valid_time || "");
   if (Number.isNaN(end)) return frame?.lead_label || "--";
@@ -1140,7 +1153,7 @@ function airportHourLabel(frame, isRealtime) {
   return `${twoDigits(startParts.month)}-${twoDigits(startParts.day)} ${twoDigits(startParts.hour)}时`;
 }
 
-function airportHourRange(frame) {
+function hourRange(frame) {
   const end = Date.parse(frame?.valid_time || "");
   if (Number.isNaN(end)) return frame?.valid_label || frame?.lead_label || "--";
   const startParts = bjtParts(new Date(end - 60 * 60 * 1000));
@@ -1148,7 +1161,7 @@ function airportHourRange(frame) {
   return `${startParts.year}-${twoDigits(startParts.month)}-${twoDigits(startParts.day)} ${twoDigits(startParts.hour)}:00-${twoDigits(endParts.hour)}:00 BJT`;
 }
 
-function isAirportRealtimePanel(frame) {
+function isRealtimePanel(frame) {
   const end = Date.parse(frame?.valid_time || "");
   if (Number.isNaN(end)) return false;
   const now = Date.now();
@@ -1450,11 +1463,11 @@ function preloadImageSource(source) {
 }
 
 function stepLead(delta) {
-  if (isAirportHourlyView()) {
-    const frames = airportHourlyFrames();
+  if (isHourlyView()) {
+    const frames = hourlyFrames();
     if (frames.length <= 1) return;
-    state.airportPanelIndex =
-      (state.airportPanelIndex + delta + frames.length) % frames.length;
+    state.hourlyPanelIndex =
+      (state.hourlyPanelIndex + delta + frames.length) % frames.length;
     render();
     return;
   }
@@ -1680,27 +1693,27 @@ function setupImageViewer() {
   viewerState.downloadLink?.addEventListener("click", handleDownloadClick);
 }
 
-function setupAirportViewMode() {
-  els.airportViewMode?.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-airport-view-mode]");
-    const mode = button?.dataset.airportViewMode;
-    if (!mode || button.disabled || mode === state.airportViewMode) return;
-    state.airportViewMode = mode;
-    state.airportPanelIndex = 0;
+function setupForecastViewMode() {
+  els.forecastViewMode?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-forecast-view-mode]");
+    const mode = button?.dataset.forecastViewMode;
+    if (!mode || button.disabled || mode === state.forecastViewMode) return;
+    state.forecastViewMode = mode;
+    state.hourlyPanelIndex = 0;
     render();
   });
 }
 
 function viewerEntries() {
-  if (isAirportHourlyView()) {
+  if (isHourlyView()) {
     const run = currentRun();
     const product = currentProduct();
     const leadIndex = state.leadIndex;
-    return airportHourlyFrames().map((frame, airportPanelIndex) => ({
+    return hourlyFrames().map((frame, hourlyPanelIndex) => ({
       runIndex: state.runIndex,
       productIndex: state.productIndex,
       leadIndex,
-      airportPanelIndex,
+      hourlyPanelIndex,
       run,
       product,
       frame,
@@ -1737,7 +1750,7 @@ function currentViewerEntryIndex(entries) {
       entry.runIndex === state.runIndex &&
       entry.productIndex === state.productIndex &&
       entry.leadIndex === state.leadIndex &&
-      (entry.airportPanelIndex === undefined || entry.airportPanelIndex === state.airportPanelIndex),
+      (entry.hourlyPanelIndex === undefined || entry.hourlyPanelIndex === state.hourlyPanelIndex),
   );
   return index >= 0 ? index : 0;
 }
@@ -1763,7 +1776,7 @@ function stepViewerFrame(delta) {
   state.runIndex = next.runIndex;
   state.productIndex = next.productIndex;
   state.leadIndex = next.leadIndex;
-  state.airportPanelIndex = next.airportPanelIndex || 0;
+  state.hourlyPanelIndex = next.hourlyPanelIndex || 0;
   state.hasNewLatestRun = false;
   render();
 }

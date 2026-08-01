@@ -45,6 +45,12 @@ YUNNAN_HOURLY_PANEL_RE = re.compile(
     r"(?P<start>\d{10})-(?P<end>\d{10})_BJT$",
     re.IGNORECASE,
 )
+SERVICE_HOURLY_PANEL_RE = re.compile(
+    r"^(?P<run>\d{8}_\d{2})_"
+    r"(?P<area>ningxia_region|worknx_national|shangrao_region|shangrao_national)_"
+    r"rain_hour_(?P<start>\d{10})-(?P<end>\d{10})_BJT$",
+    re.IGNORECASE,
+)
 YUNNAN_AIRPORTS = [
     {"id": "dehong_mangshi", "label": "德宏芒市机场"},
     {"id": "xishuangbanna_gasa", "label": "西双版纳嘎洒机场"},
@@ -698,6 +704,14 @@ def build_ningxia_runs() -> list[dict]:
 def build_ningxia_frames(
     run_dir: Path, fragment: dict, accumulation_hours: int | None
 ) -> list[dict]:
+    individual_frames = (
+        build_service_hourly_frames(
+            run_dir,
+            {"ningxia_region", "worknx_national"},
+        )
+        if accumulation_hours is None
+        else {}
+    )
     groups: dict[str, list[Path]] = {}
     for path in run_dir.iterdir():
         if path.suffix.lower() not in {".png", ".webp", ".jpg", ".jpeg"}:
@@ -757,6 +771,8 @@ def build_ningxia_frames(
             "file": forecast_asset_url(path),
             "bytes": path.stat().st_size,
         }
+        if accumulation_hours is None:
+            frame["individual_frames"] = individual_frames.get(frame_id, [])
         add_preview_asset(frame, path, preview_path)
         add_full_asset(frame, path, full_path)
         if fragment_stem and path.stem == fragment_stem:
@@ -877,6 +893,14 @@ def build_wrf_accumulation_product(
 def build_frames(
     run_id: str, run_dir: Path, accumulation_hours: int | None
 ) -> list[dict]:
+    individual_frames = (
+        build_service_hourly_frames(
+            run_dir,
+            {"shangrao_region", "shangrao_national"},
+        )
+        if accumulation_hours is None
+        else {}
+    )
     groups: dict[str, list[Path]] = {}
     for path in run_dir.iterdir():
         if path.suffix.lower() not in {".png", ".webp", ".jpg", ".jpeg"}:
@@ -920,6 +944,8 @@ def build_frames(
                     "valid_label": "当前显示：上饶区域",
                 }
             )
+        if accumulation_hours is None:
+            frame["individual_frames"] = individual_frames.get(frame["id"], [])
         frame["file"] = forecast_asset_url(chosen)
         frame["bytes"] = chosen.stat().st_size
         preview = choose_preview_candidate(candidates)
@@ -927,6 +953,42 @@ def build_frames(
         add_full_asset(frame, chosen, full)
         frames.append(frame)
     return frames
+
+
+def build_service_hourly_frames(
+    run_dir: Path, allowed_frame_ids: set[str]
+) -> dict[str, list[dict]]:
+    frames_by_area: dict[str, list[tuple[datetime, dict]]] = {
+        frame_id: [] for frame_id in allowed_frame_ids
+    }
+    for path in sorted(run_dir.glob("*_rain_hour_*_BJT.webp")):
+        if is_preview_asset(path):
+            continue
+        match = SERVICE_HOURLY_PANEL_RE.match(frame_asset_stem(path))
+        if not match:
+            continue
+        frame_id = match.group("area").lower()
+        if frame_id not in allowed_frame_ids:
+            continue
+        start = datetime.strptime(match.group("start"), "%Y%m%d%H").replace(tzinfo=BJT)
+        end = datetime.strptime(match.group("end"), "%Y%m%d%H").replace(tzinfo=BJT)
+        frame = {
+            "id": f"{frame_id}_hour_{start:%Y%m%d%H}",
+            "lead_label": f"{start:%m-%d %H:00}-{end:%H:00}",
+            "valid_label": f"{start:%Y-%m-%d %H:00}-{end:%H:00} BJT",
+            "valid_time": end.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "file": forecast_asset_url(path),
+            "bytes": path.stat().st_size,
+        }
+        frames_by_area[frame_id].append((start, frame))
+
+    normalized: dict[str, list[dict]] = {}
+    for frame_id, candidates in frames_by_area.items():
+        ordered = [frame for _, frame in sorted(candidates, key=lambda item: item[0])]
+        for lead, frame in enumerate(ordered, start=1):
+            frame["lead"] = lead
+        normalized[frame_id] = ordered
+    return normalized
 
 
 def choose_frame_candidate(key: str, candidates: list[Path]) -> Path:

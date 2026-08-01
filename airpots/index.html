@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com" crossorigin />
     <link rel="icon" type="image/png" sizes="512x512" href="../assets/brand/iaplacs-tab-icon-20260725.png?v=20260725-04" />
     <link rel="apple-touch-icon" href="../assets/brand/iaplacs-tab-icon-20260725.png?v=20260725-04" />
-    <link rel="stylesheet" href="../styles.css?v=20260801-01" />
+    <link rel="stylesheet" href="../styles.css?v=20260802-01" />
   </head>
   <body
     class="auth-lock"
@@ -102,9 +102,9 @@
           </div>
           <div class="toolbar-actions">
             <a id="imageLink" class="text-button link-button" href="#" target="_blank" rel="noreferrer">放大查看</a>
-            <div id="airportViewMode" class="view-mode-switch" role="group" aria-label="图件显示方式" hidden>
-              <button class="view-mode-button" type="button" data-airport-view-mode="hourly" aria-pressed="true">逐时</button>
-              <button class="view-mode-button" type="button" data-airport-view-mode="montage" aria-pressed="false">拼图</button>
+            <div id="forecastViewMode" class="view-mode-switch" role="group" aria-label="图件显示方式" hidden>
+              <button class="view-mode-button is-active" type="button" data-forecast-view-mode="hourly" aria-pressed="true">逐时</button>
+              <button class="view-mode-button" type="button" data-forecast-view-mode="montage" aria-pressed="false">拼图</button>
             </div>
             <a id="imageDownload" class="text-button link-button" href="#" download>下载原图</a>
             <button id="prevLead" class="icon-button" type="button" title="上一时效" aria-label="上一时效">
@@ -117,7 +117,7 @@
         </div>
 
         <div id="leadTabs" class="lead-tabs" aria-label="预报时效"></div>
-        <div id="airportHourTimeline" class="airport-hour-timeline" aria-label="逐时预报时间" hidden></div>
+        <div id="forecastHourTimeline" class="forecast-hour-timeline" aria-label="逐时预报时间" hidden></div>
 
         <div class="map-stage">
           <img id="forecastImage" alt="机场预报产品图" role="button" tabindex="0" draggable="false" decoding="async" fetchpriority="high" aria-label="放大查看当前预报图" />
@@ -158,6 +158,6 @@
       <span>iaplacs.xyz</span>
     </footer>
 
-    <script src="../app.js?v=20260801-01"></script>
+    <script src="../app.js?v=20260802-01"></script>
   </body>
 </html>

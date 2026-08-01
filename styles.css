@@ -642,7 +642,7 @@ button {
   color: var(--muted);
 }
 
-.airport-hour-timeline {
+.forecast-hour-timeline {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -654,13 +654,13 @@ button {
   scrollbar-width: thin;
 }
 
-.airport-hour-timeline::before,
-.airport-hour-timeline::after {
+.forecast-hour-timeline::before,
+.forecast-hour-timeline::after {
   flex: 0 0 max(24px, calc(50% - 68px));
   content: "";
 }
 
-.airport-hour-button {
+.forecast-hour-button {
   display: grid;
   flex: 0 0 110px;
   align-self: center;
@@ -681,18 +681,18 @@ button {
   scroll-snap-align: center;
 }
 
-.airport-hour-button:hover {
+.forecast-hour-button:hover {
   border-color: #8cb9ee;
   background: var(--blue-soft);
 }
 
-.airport-hour-button.is-active {
+.forecast-hour-button.is-active {
   border-color: var(--blue);
   background: var(--blue);
   color: #dcecff;
 }
 
-.airport-hour-timeline.is-at-start::before {
+.forecast-hour-timeline.is-at-start::before {
   flex-basis: 0;
 }
 

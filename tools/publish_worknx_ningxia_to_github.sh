@@ -7,6 +7,7 @@ set -Eeuo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RENDERER="${RENDERER:-$SCRIPT_DIR/render_worknx_ningxia_overview.sh}"
 PUBLISHER="${PUBLISHER:-$SCRIPT_DIR/publish_worknx_summary_to_github.sh}"
+HOURLY_PUBLISHER="${HOURLY_PUBLISHER:-$SCRIPT_DIR/publish_hourly_panels_to_oss.sh}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-$SCRIPT_DIR/worknx_ningxia_overview}"
 
 usage() {
@@ -40,6 +41,10 @@ if [[ ! -x "$PUBLISHER" ]]; then
   echo "ERROR: publisher is not executable: $PUBLISHER" >&2
   exit 1
 fi
+if [[ ! -x "$HOURLY_PUBLISHER" ]]; then
+  echo "ERROR: hourly publisher is not executable: $HOURLY_PUBLISHER" >&2
+  exit 1
+fi
 
 if [[ "$mode" == "--recent" ]]; then
   "$RENDERER" --recent "$count"
@@ -63,6 +68,7 @@ fi
 
 for source in "${sources[@]}"; do
   source_dir="$(dirname "$source")"
+  run_prefix="$(basename "$source_dir")"
   mapfile -t national_sources < <(
     find "$source_dir" -maxdepth 1 -type f \
       -name 'Precip_hourly_WRF_AllRain_T13_T*_InitUTC_*_combined_overview_*_grid.png' \
@@ -95,4 +101,10 @@ for source in "${sources[@]}"; do
     echo "Publishing Ningxia accumulation: $accum_source"
     IAPLACS_WEBP_FORCE=1 IAPLACS_PREVIEW_FORCE=1 IAPLACS_ASSET_FORCE_UPLOAD=1 WORK_NX_ROOT="$source_dir" SOURCE_IMAGE_GLOB="$(basename "$accum_source")" MIN_FILE_AGE_SECONDS=0 "$PUBLISHER" </dev/null
   done < <(find "$source_dir" -maxdepth 1 -type f -name 'Precip_accum_*h_WRF_Ningxia_T13_T*_InitUTC_*_combined_overview_1x1_grid.png' | sort)
+
+  "$HOURLY_PUBLISHER" \
+    --family worknx_summary \
+    --run-prefix "$run_prefix" \
+    --regional-dir "$source_dir/captioned_t13_t48" \
+    --national-dir "$source_dir/national_captioned_t13_t48"
 done
