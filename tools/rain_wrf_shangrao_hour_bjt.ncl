@@ -220,7 +220,8 @@ begin
       res@vpYF = 0.82
       res@vpHeightF = 0.62
       res@tiMainString = label
-      res@tiMainFontHeightF = 0.065
+      ; Keep the hourly interval legible without overwhelming the map panel.
+      res@tiMainFontHeightF = 0.04
       res@tiMainFont = "Times-Bold"
       res@tiMainFontThicknessF = 3.0
       res@tiMainFontColor = "black"
