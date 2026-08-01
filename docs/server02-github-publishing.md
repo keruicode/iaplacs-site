@@ -2,6 +2,9 @@
 
 `server02` publishes IAP-LACS catalog updates to `keruicode/iaplacs-site`.
 
+> 本文只记录 `server02` 的 Git/Deploy Key 环境。整站数据流、OSS、计算服务器、
+> cron 与恢复操作见 [网站运行与运维总手册](网站运行与运维总手册.md)。
+
 ## Deploy Key
 
 - Private key: `~/.ssh/id_ed25519_iaplacs_github`

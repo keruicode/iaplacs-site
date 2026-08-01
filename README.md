@@ -17,8 +17,9 @@ Current service routes:
 - `/ningxia/` shows WORK_nx/NX Ningxia forecast products;
 - `/shangrao/` shows Shangrao forecast products.
 
-For the repository layout and what should or should not be pushed from a local
-checkout, see [docs/repository-structure.md](docs/repository-structure.md).
+For the full end-to-end operating procedure, server paths and environments,
+WRF rendering/publishing flow, scheduled tasks, backup and recovery, see the
+Chinese [website operations manual](docs/网站运行与运维总手册.md).
 
 Airport forecast ratings use Alibaba Cloud Function Compute plus OSS so that
 anonymous visitors can submit shared results without any GitHub login or token
