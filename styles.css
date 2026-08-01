@@ -881,7 +881,6 @@ button {
 }
 
 .feedback-toggle,
-.feedback-archive-button,
 .airport-rating-button {
   border: 1px solid var(--line);
   border-radius: 0;
@@ -899,8 +898,7 @@ button {
 }
 
 .feedback-toggle:hover,
-.feedback-archive-button:hover:not(:disabled),
-.airport-rating-button:hover {
+.airport-rating-button:hover:not(:disabled) {
   border-color: #8cb9ee;
   background: var(--blue-soft);
 }
@@ -959,23 +957,25 @@ button {
   color: #fff;
 }
 
+.airport-rating-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.airport-rating-summary {
+  grid-column: 1 / -1;
+  margin: -4px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .airport-feedback-footer {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 14px;
-}
-
-.feedback-archive-button {
-  min-height: 34px;
-  padding: 0 11px;
-}
-
-.feedback-archive-button:disabled {
-  cursor: not-allowed;
-  color: var(--muted);
-  opacity: 0.6;
 }
 
 .airport-rating-status {

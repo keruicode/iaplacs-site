@@ -8,8 +8,7 @@ const ACCESS_PASSWORD = "123";
 const ACCESS_TOKEN_KEY = "iaplacs_access_token";
 const ACCESS_TOKEN_VALUE = "iaplacs_access_granted_v1";
 const DATA_SOURCE_TOKEN_KEY = "iaplacs_forecast_source";
-const AIRPORT_RATINGS_STORAGE_KEY = "iaplacs_airport_ratings_v1";
-const AIRPORT_RATING_ISSUE_URL = "https://github.com/keruicode/iaplacs-site/issues/new";
+const AIRPORT_RATING_CLIENT_ID_KEY = "iaplacs_airport_rating_client_v1";
 const NINGXIA_PRODUCT_TITLE = "降水预报图集";
 const NINGXIA_PRODUCT_DESCRIPTION = "默认显示宁夏区域图，可切换 WORK_nx 全国模拟图。";
 const NATIONAL_FRAME_LABELS = {
@@ -62,6 +61,7 @@ const pageConfig = {
   defaultSource: document.body.dataset.defaultSource || "huan",
   forceDefaultSource: document.body.dataset.forceDefaultSource === "true",
   autoSelectLatestSource: document.body.dataset.autoSelectLatestSource === "true",
+  airportRatingsApiUrl: document.body.dataset.airportRatingsApiUrl || "",
 };
 
 const state = {
@@ -78,6 +78,14 @@ const state = {
   imageRequestId: 0,
   imageSource: null,
   imageStatus: "idle",
+  airportRatings: {
+    key: "",
+    data: null,
+    loading: false,
+    saving: false,
+    error: "",
+    requestId: 0,
+  },
   prefetchSignature: "",
   prefetchTimer: null,
   prefetchIdleId: null,
@@ -112,7 +120,6 @@ const els = {
   airportFeedbackToggle: document.querySelector("#airportFeedbackToggle"),
   airportFeedback: document.querySelector("#airportFeedback"),
   airportRatingList: document.querySelector("#airportRatingList"),
-  archiveAirportRatings: document.querySelector("#archiveAirportRatings"),
   airportRatingStatus: document.querySelector("#airportRatingStatus"),
 };
 
@@ -1161,8 +1168,13 @@ function renderAirportFeedback() {
     return;
   }
 
+  const context = airportRatingContext(run);
+  ensureAirportRatings(context);
   list.innerHTML = "";
-  const ratings = airportRatingsForRun(run.id);
+  const snapshot = airportRatingsForContext(context);
+  const viewerRatings = snapshot?.viewer_ratings || {};
+  const aggregateRatings = snapshot?.ratings || {};
+  const controlsDisabled = !pageConfig.airportRatingsApiUrl || state.airportRatings.loading || state.airportRatings.saving;
   AIRPORT_RATING_TARGETS.forEach((airport) => {
     const row = document.createElement("div");
     row.className = "airport-rating-row";
@@ -1177,24 +1189,28 @@ function renderAirportFeedback() {
     choices.setAttribute("aria-label", `${airport.label}预报评分`);
     AIRPORT_RATING_OPTIONS.forEach((option) => {
       const button = document.createElement("button");
-      const isSelected = ratings[airport.id]?.rating === option.id;
+      const isSelected = viewerRatings[airport.id]?.rating === option.id;
       button.type = "button";
       button.className = `airport-rating-button${isSelected ? " is-active" : ""}`;
       button.textContent = option.label;
       button.setAttribute("aria-pressed", String(isSelected));
-      button.addEventListener("click", () => {
-        toggleAirportRating(run.id, airport.id, option.id);
-        renderAirportFeedback();
-      });
+      button.disabled = controlsDisabled;
+      button.addEventListener("click", () => toggleAirportRating(context, airport.id, option.id));
       choices.appendChild(button);
     });
 
-    row.append(label, choices);
+    const summary = document.createElement("p");
+    summary.className = "airport-rating-summary";
+    const counts = aggregateRatings[airport.id] || {};
+    summary.textContent = AIRPORT_RATING_OPTIONS
+      .map((option) => `${option.label} ${Number(counts[option.id] || 0)}`)
+      .join(" · ");
+
+    row.append(label, choices, summary);
     list.appendChild(row);
   });
 
-  const selectedCount = Object.keys(ratings).length;
-  if (els.archiveAirportRatings) els.archiveAirportRatings.disabled = selectedCount === 0;
+  setText(els.airportRatingStatus, airportRatingStatusText());
 }
 
 function setupAirportFeedback() {
@@ -1205,76 +1221,121 @@ function setupAirportFeedback() {
     els.airportFeedbackToggle.setAttribute("aria-expanded", String(willOpen));
     if (willOpen) renderAirportFeedback();
   });
-  els.archiveAirportRatings?.addEventListener("click", openAirportRatingArchive);
 }
 
-function airportRatingsForRun(runId) {
-  const allRatings = readAirportRatings();
-  return allRatings[airportRatingKey(runId)] || {};
+function airportRatingContext(run = currentRun()) {
+  const runId = run?.id || "";
+  const sourceId = state.sourceId || "";
+  return {
+    sourceId,
+    runId,
+    key: airportRatingKey(sourceId, runId),
+  };
 }
 
-function airportRatingKey(runId) {
-  return `${state.sourceId}:${runId}`;
+function airportRatingKey(sourceId, runId) {
+  return `${sourceId}:${runId}`;
 }
 
-function readAirportRatings() {
+function airportRatingsForContext(context) {
+  return state.airportRatings.key === context.key ? state.airportRatings.data : null;
+}
+
+function airportRatingsApiUrl(context) {
+  if (!pageConfig.airportRatingsApiUrl || !context?.runId || !context?.sourceId) return "";
+  const url = new URL(pageConfig.airportRatingsApiUrl);
+  url.searchParams.set("source_id", context.sourceId);
+  url.searchParams.set("run_id", context.runId);
+  url.searchParams.set("client_id", airportRatingClientId());
+  return url.toString();
+}
+
+function airportRatingClientId() {
   try {
-    const saved = window.localStorage.getItem(AIRPORT_RATINGS_STORAGE_KEY);
-    const parsed = saved ? JSON.parse(saved) : {};
-    return parsed && typeof parsed === "object" ? parsed : {};
+    const saved = window.localStorage.getItem(AIRPORT_RATING_CLIENT_ID_KEY);
+    if (saved && /^[A-Za-z0-9_-]{6,128}$/.test(saved)) return saved;
+    const generated = window.crypto?.randomUUID?.() || `browser_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    window.localStorage.setItem(AIRPORT_RATING_CLIENT_ID_KEY, generated);
+    return generated;
   } catch (error) {
-    console.warn("airport rating storage unavailable", error);
-    return {};
+    console.warn("airport rating identifier storage unavailable", error);
+    return `browser_${Date.now()}_${Math.random().toString(36).slice(2)}`;
   }
 }
 
-function toggleAirportRating(runId, airportId, rating) {
-  const allRatings = readAirportRatings();
-  const key = airportRatingKey(runId);
-  const ratings = allRatings[key] || {};
-  if (ratings[airportId]?.rating === rating) {
-    delete ratings[airportId];
-  } else {
-    ratings[airportId] = { rating, updated_at: new Date().toISOString() };
-  }
-  if (Object.keys(ratings).length) allRatings[key] = ratings;
-  else delete allRatings[key];
+function ensureAirportRatings(context) {
+  const url = airportRatingsApiUrl(context);
+  if (!url || state.airportRatings.key === context.key) return;
 
+  const requestId = state.airportRatings.requestId + 1;
+  state.airportRatings = {
+    key: context.key,
+    data: null,
+    loading: true,
+    saving: false,
+    error: "",
+    requestId,
+  };
+  void fetchAirportRatings(url, context, requestId);
+}
+
+async function fetchAirportRatings(url, context, requestId) {
   try {
-    window.localStorage.setItem(AIRPORT_RATINGS_STORAGE_KEY, JSON.stringify(allRatings));
+    const response = await fetch(url, { cache: "no-store", credentials: "omit" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    if (state.airportRatings.key !== context.key || state.airportRatings.requestId !== requestId) return;
+    state.airportRatings.data = data;
+    state.airportRatings.loading = false;
+  } catch (error) {
+    console.warn("airport ratings could not be loaded", error);
+    if (state.airportRatings.key !== context.key || state.airportRatings.requestId !== requestId) return;
+    state.airportRatings.loading = false;
+    state.airportRatings.error = "评分暂时无法同步";
+  }
+  renderAirportFeedback();
+}
+
+async function toggleAirportRating(context, airportId, rating) {
+  const url = airportRatingsApiUrl(context);
+  if (!url || state.airportRatings.saving || state.airportRatings.loading) return;
+
+  const previous = airportRatingsForContext(context)?.viewer_ratings?.[airportId]?.rating;
+  state.airportRatings.saving = true;
+  state.airportRatings.error = "";
+  renderAirportFeedback();
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      cache: "no-store",
+      credentials: "omit",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        source_id: context.sourceId,
+        run_id: context.runId,
+        airport_id: airportId,
+        rating: previous === rating ? null : rating,
+        client_id: airportRatingClientId(),
+      }),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    if (state.airportRatings.key === context.key) state.airportRatings.data = data;
   } catch (error) {
     console.warn("airport rating could not be saved", error);
+    if (state.airportRatings.key === context.key) state.airportRatings.error = "评分暂时无法同步，请重试";
+  } finally {
+    if (state.airportRatings.key === context.key) state.airportRatings.saving = false;
+    renderAirportFeedback();
   }
 }
 
-function openAirportRatingArchive() {
-  const run = currentRun();
-  if (!run?.id) return;
-  const ratings = airportRatingsForRun(run.id);
-  const entries = AIRPORT_RATING_TARGETS
-    .map((airport) => {
-      const value = ratings[airport.id];
-      if (!value) return null;
-      const label = AIRPORT_RATING_OPTIONS.find((option) => option.id === value.rating)?.label;
-      return `| ${airport.label} | ${label || value.rating} | ${formatTime(value.updated_at)} BJT |`;
-    })
-    .filter(Boolean);
-  if (!entries.length) return;
-
-  const body = [
-    "## 云南机场预报评分",
-    "",
-    `- 起报时次：${run.id.replace("_", " ")} UTC`,
-    `- 数据源：${activeDataSource().label}`,
-    `- 归档时间：${formatTime(new Date().toISOString())} BJT`,
-    "",
-    "| 机场 | 评分 | 评分时间 |",
-    "| --- | --- | --- |",
-    ...entries,
-  ].join("\n");
-  const url = `${AIRPORT_RATING_ISSUE_URL}?title=${encodeURIComponent(`机场预报评分 ${run.id}`)}&body=${encodeURIComponent(body)}`;
-  window.open(url, "_blank", "noopener");
-  setText(els.airportRatingStatus, "GitHub 存档草稿已打开");
+function airportRatingStatusText() {
+  if (!pageConfig.airportRatingsApiUrl) return "评分服务尚未配置";
+  if (state.airportRatings.loading) return "正在同步评分…";
+  if (state.airportRatings.saving) return "正在自动存档…";
+  if (state.airportRatings.error) return state.airportRatings.error;
+  return "评分自动存档";
 }
 
 function forecastFrameSource(run, frame) {
