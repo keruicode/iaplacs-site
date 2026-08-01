@@ -1272,11 +1272,36 @@ def merge_existing_runs(
     for run in local_runs:
         run_id = str(run.get("id", ""))
         if run_id:
+            if run_id in merged:
+                preserve_individual_frames(run, merged[run_id])
             merged[run_id] = run
 
     runs = list(merged.values())
     runs.sort(key=lambda item: item.get("run_time", ""), reverse=True)
     return runs[:MAX_RUNS]
+
+
+def preserve_individual_frames(current_run: dict, existing_run: dict) -> None:
+    existing_products = {
+        str(product.get("id", "")): product
+        for product in existing_run.get("products", [])
+        if product.get("id")
+    }
+    for product in current_run.get("products", []):
+        existing_product = existing_products.get(str(product.get("id", "")))
+        if not existing_product:
+            continue
+        existing_frames = {
+            str(frame.get("id", "")): frame
+            for frame in existing_product.get("frames", [])
+            if frame.get("id")
+        }
+        for frame in product.get("frames", []):
+            if frame.get("individual_frames"):
+                continue
+            existing_frame = existing_frames.get(str(frame.get("id", "")))
+            if existing_frame and existing_frame.get("individual_frames"):
+                frame["individual_frames"] = existing_frame["individual_frames"]
 
 
 def latest_published_at(runs: list[dict]) -> str:
