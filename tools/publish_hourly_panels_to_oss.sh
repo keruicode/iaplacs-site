@@ -94,6 +94,7 @@ source, output = sys.argv[1:3]
 with Image.open(source) as image:
     image.convert("RGB").save(output, "WEBP", quality=92, method=6)
 PY
+      rm -f "$caption_png"
     else
       "$PYTHON_BIN" - "$source" "$output" "$trim_whitespace" <<'PY'
 import sys
