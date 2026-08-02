@@ -228,18 +228,21 @@ begin
       res@tmYLLabelDeltaF = -0.15
       res@tmBorderLineColor = "black"
       res@tmBorderThicknessF = 6
-      ; Align the wide China map at the top of the canvas and use the
-      ; previously unused upper space for the BJT valid-time title.
+      ; Align the wide China map at the top of the canvas.  Hourly panels
+      ; carry their own valid-time title; accumulated products receive one
+      ; complete interval title from the publishing wrapper instead.
       res@vpXF = 0.13
       res@vpYF = 0.82
       res@vpWidthF = 0.70
       res@vpHeightF = 0.60
-      res@tiMainString = panel_title
-      res@tiMainFont = "Times-Bold"
-      res@tiMainFontHeightF = 0.035
-      res@tiMainFontThicknessF = 3.0
-      res@tiMainFontColor = "black"
-      res@tiMainOffsetYF = -0.012
+      if (accum_hours.eq.1) then
+        res@tiMainString = panel_title
+        res@tiMainFont = "Times-Bold"
+        res@tiMainFontHeightF = 0.035
+        res@tiMainFontThicknessF = 3.0
+        res@tiMainFontColor = "black"
+        res@tiMainOffsetYF = -0.012
+      end if
       ; NCL 6.3 may automatically stride a vertical label bar and hide every
       ; other cumulative threshold.  Keep every operational boundary visible.
       if (accum_hours.gt.1) then
