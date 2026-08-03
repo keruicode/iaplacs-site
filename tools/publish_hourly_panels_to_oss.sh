@@ -42,13 +42,11 @@ case "$family" in
     regional_id="ningxia_region"
     national_id="worknx_national"
     panel_glob='*_rain_hour_*_BJT.png'
-    national_time_caption=0
     ;;
   wrf_montage)
     regional_id="shangrao_region"
     national_id="shangrao_national"
     panel_glob="${run_prefix}*_rain_hour_*_BJT.png"
-    national_time_caption=1
     ;;
   *) usage >&2; echo "ERROR: unsupported family: $family" >&2; exit 64 ;;
 esac
@@ -60,7 +58,7 @@ stage_dir="$(mktemp -d "${TMPDIR:-/tmp}/iaplacs-hourly-panels.XXXXXX")"
 trap 'rm -rf -- "$stage_dir"' EXIT
 
 convert_panels() {
-  local source_dir="$1" frame_id="$2" trim_whitespace="$3" add_time_caption="$4" count=0 source name start end output caption_png panel_date
+  local source_dir="$1" frame_id="$2" trim_whitespace="$3" count=0 source name start end output
   while IFS= read -r -d '' source; do
     name="$(basename "$source")"
     if [[ ! "$name" =~ _rain_hour_([0-9]{10})-([0-9]{10})_BJT\.png$ ]]; then
@@ -69,34 +67,7 @@ convert_panels() {
     start="${BASH_REMATCH[1]}"
     end="${BASH_REMATCH[2]}"
     output="$stage_dir/${run_prefix}_${frame_id}_rain_hour_${start}-${end}_BJT.webp"
-    if [[ "$add_time_caption" == "1" ]]; then
-      panel_date="${start:4:2}-${start:6:2} ${start:8:2}:00-${end:8:2}:00"
-      caption_png="$stage_dir/.${run_prefix}_${frame_id}_rain_hour_${start}-${end}_BJT.caption.png"
-      # Work from the original PNG because the server ImageMagick build can
-      # write WebP through Pillow but cannot decode a WebP intermediate file.
-      convert "$source" \
-        -trim +repage \
-        -gravity North \
-        -background white \
-        -splice 0x52 \
-        -fill black \
-        -font Times-Bold \
-        -stroke black \
-        -strokewidth 1 \
-        -pointsize 52 \
-        -annotate +0+5 "$panel_date" \
-        "$caption_png"
-      "$PYTHON_BIN" - "$caption_png" "$output" <<'PY'
-import sys
-from PIL import Image
-
-source, output = sys.argv[1:3]
-with Image.open(source) as image:
-    image.convert("RGB").save(output, "WEBP", quality=92, method=6)
-PY
-      rm -f "$caption_png"
-    else
-      "$PYTHON_BIN" - "$source" "$output" "$trim_whitespace" <<'PY'
+    "$PYTHON_BIN" - "$source" "$output" "$trim_whitespace" <<'PY'
 import sys
 from PIL import Image, ImageChops
 
@@ -110,7 +81,6 @@ with Image.open(source) as image:
             image = image.crop(bounds)
     image.save(output, "WEBP", quality=92, method=6)
 PY
-    fi
     touch -r "$source" "$output"
     count=$((count + 1))
   done < <(find "$source_dir" -maxdepth 1 -type f -name "$panel_glob" -print0 | sort -z)
@@ -118,11 +88,11 @@ PY
   echo "Prepared $count panel(s) for $frame_id"
 }
 
-convert_panels "$regional_dir" "$regional_id" 0 0
+convert_panels "$regional_dir" "$regional_id" 0
 # China-wide panels are naturally wide but their NCL source canvas is square.
 # Trim only external white margins for the individual web view; montage PNGs
 # retain the original geometry used by the existing overview builder.
-convert_panels "$national_dir" "$national_id" 1 "$national_time_caption"
+convert_panels "$national_dir" "$national_id" 1
 
 incoming="hourly_panels_${family}_${run_prefix}"
 ssh "$GITHUB_HOST" "rm -rf ~/incoming/$incoming && mkdir -p ~/incoming/$incoming"

@@ -137,14 +137,22 @@ if [[ "${#sources[@]}" -eq 0 ]]; then
 fi
 
 caption_panel() {
-  local panel_path="$1" caption_dir="$2" panel_name panel_date caption_path
+  local panel_path="$1" caption_dir="$2" add_time_caption="${3:-1}" panel_name panel_date caption_path
   panel_name="$(basename "$panel_path")"
+  caption_path="$caption_dir/$panel_name"
+
+  # Nationwide hourly panels already include their BJT interval in NCL.
+  # Keep that single title and only add an external caption to regional panels.
+  if [[ "$add_time_caption" != "1" ]]; then
+    convert "$panel_path" -trim +repage "$caption_path"
+    return
+  fi
+
   if [[ ! "$panel_name" =~ _rain_hour_([0-9]{4})([0-9]{2})([0-9]{2})([0-9]{2})-([0-9]{4})([0-9]{2})([0-9]{2})([0-9]{2})_BJT\.png$ ]]; then
     echo "ERROR: cannot parse panel date from $panel_name" >&2
     return 1
   fi
   panel_date="${BASH_REMATCH[2]}-${BASH_REMATCH[3]} ${BASH_REMATCH[4]}:00-${BASH_REMATCH[8]}:00"
-  caption_path="$caption_dir/$panel_name"
 
   convert "$panel_path" \
     -trim +repage \
@@ -316,7 +324,7 @@ render_source() {
     return 1
   fi
   for panel in "${national_panels[@]}"; do
-    caption_panel "$panel" "$national_caption_dir"
+    caption_panel "$panel" "$national_caption_dir" 0
     national_captioned_panels+=("$national_caption_dir/$(basename "$panel")")
   done
   montage "${national_captioned_panels[@]}" -tile "$overview_grid" -geometry '100%x100%+2+2' -background white "$national_overview"
