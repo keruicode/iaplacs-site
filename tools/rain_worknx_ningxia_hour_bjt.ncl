@@ -44,6 +44,7 @@ begin
   accum_hours_text = getenv("RAIN_ACCUM_HOURS")
   legacy_shp_file = getenv("NINGXIA_SHP_FILE")
   region_mode = getenv("WORK_NX_REGION_MODE")
+  component_mode = getenv("RAIN_COMPONENT_MODE")
 
   if (wrf_dir.eq."") then
     wrf_dir = "."
@@ -73,6 +74,9 @@ begin
   end if
   if (ismissing(region_mode)) then
     region_mode = "ningxia"
+  end if
+  if (ismissing(component_mode) .or. component_mode.eq."") then
+    component_mode = "total"
   end if
 
   system("mkdir -p " + out_dir)
@@ -138,16 +142,32 @@ begin
     col_end = toint(min((/ncols-1, max(col_ind)+2/)))
     lat_axis = lat2d(row_start:row_end,mid_col)
     lon_axis = lon2d(mid_row,col_start:col_end)
-    ; Preserve the operational rain baseline and add frozen precipitation
-    ; accumulators when this WRF output provides them. The additions follow
-    ; the IAP TF graupel and hail precipitation components; older files
-    ; without either variable retain the original calculation.
-    rain_all = f->RAINNC + f->RAINC
-    if (isfilevar(f, "GRAUPELNC")) then
-      rain_all = rain_all + f->GRAUPELNC
-    end if
-    if (isfilevar(f, "HAILNC")) then
-      rain_all = rain_all + f->HAILNC
+    if (component_mode.eq."frozen") then
+      ; The hail-warning layer is the accumulated frozen precipitation only.
+      ; Keep it separate from RAINNC/RAINC so the page does not present liquid
+      ; precipitation as a hail signal.
+      if (isfilevar(f, "GRAUPELNC") .and. isfilevar(f, "HAILNC")) then
+        rain_all = f->GRAUPELNC + f->HAILNC
+      else if (isfilevar(f, "GRAUPELNC")) then
+        rain_all = f->GRAUPELNC
+      else if (isfilevar(f, "HAILNC")) then
+        rain_all = f->HAILNC
+      else
+        print("ERROR: frozen mode requires GRAUPELNC or HAILNC in " + files(ifile))
+        delete(f)
+        exit
+      end if
+      end if
+      end if
+    else
+      ; Preserve the operational total-precipitation product.
+      rain_all = f->RAINNC + f->RAINC
+      if (isfilevar(f, "GRAUPELNC")) then
+        rain_all = rain_all + f->GRAUPELNC
+      end if
+      if (isfilevar(f, "HAILNC")) then
+        rain_all = rain_all + f->HAILNC
+      end if
     end if
     init_bjt = bjt_label(f@START_DATE, 3)
 

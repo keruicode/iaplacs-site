@@ -47,7 +47,7 @@ YUNNAN_HOURLY_PANEL_RE = re.compile(
 )
 SERVICE_HOURLY_PANEL_RE = re.compile(
     r"^(?P<run>\d{8}_\d{2})_"
-    r"(?P<area>ningxia_region|worknx_national|shangrao_region|shangrao_national|xinjiang_region|workxj_national)_"
+    r"(?P<area>ningxia_region|worknx_national|ningxia_hail_warning|shangrao_region|shangrao_national|xinjiang_region|workxj_national)_"
     r"rain_hour_(?P<start>\d{10})-(?P<end>\d{10})_BJT$",
     re.IGNORECASE,
 )
@@ -798,10 +798,13 @@ def build_regional_frames(
     national_label: str,
     accumulation_prefix: str,
 ) -> list[dict]:
+    hourly_frame_ids = {region_id, national_id}
+    if accumulation_prefix == "ningxia":
+        hourly_frame_ids.add("ningxia_hail_warning")
     individual_frames = (
         build_service_hourly_frames(
             run_dir,
-            {region_id, national_id},
+            hourly_frame_ids,
         )
         if accumulation_hours is None
         else {}
@@ -912,6 +915,13 @@ def regional_frame_meta(
             accumulation_window_label(path.name, accumulation_hours),
             "",
         )
+    if accumulation_prefix == "ningxia" and "_WRF_NingxiaFrozen_" in key:
+        return (
+            "ningxia_hail_warning",
+            2,
+            "冰雹预警",
+            "当前显示：冰雹预警",
+        )
     if "_WRF_AllRain_" in key:
         return (national_id, 1, national_label, f"当前显示：{national_label}")
     if "_combined_overview_" in key:
@@ -932,7 +942,7 @@ def build_ningxia_product(run_id: str, frames: list[dict], generated_at: str) ->
         "category": "宁夏预报",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": "默认显示宁夏区域图，可切换 WORK_nx 全国模拟图。",
+        "description": "默认显示宁夏区域图，可切换中国中部和冰雹预警图。",
         "metrics": [
             {"label": "起报时次", "value": run_id.replace("_", " ") + " UTC"},
             {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},

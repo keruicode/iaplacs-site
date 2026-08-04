@@ -194,7 +194,7 @@ caption_accumulation() {
 }
 
 render_source() {
-  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview time_count last_lead panel_count overview_rows overview_grid national_panel_dir national_caption_dir national_overview init_bjt
+  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview time_count last_lead panel_count overview_rows overview_grid national_panel_dir national_caption_dir national_overview init_bjt frozen_panel_dir frozen_caption_dir frozen_overview
   base="$(basename "$source_path")"
   if [[ ! "$base" =~ wrfout_d01_([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2}):[0-9]{2}:[0-9]{2} ]]; then
     echo "ERROR: cannot parse run time from $base" >&2
@@ -210,6 +210,8 @@ render_source() {
   caption_dir="$run_dir/captioned_t13_t48"
   national_panel_dir="$run_dir/national_hourly_t13_t48"
   national_caption_dir="$run_dir/national_captioned_t13_t48"
+  frozen_panel_dir="$run_dir/frozen_hourly_t13_t48"
+  frozen_caption_dir="$run_dir/frozen_captioned_t13_t48"
   time_count="$(wrf_time_count "$source_path")"
   [[ "$time_count" =~ ^[0-9]+$ ]] && (( time_count >= MIN_TIME_COUNT )) || {
     echo "ERROR: T13 is not available in $source_path" >&2
@@ -247,6 +249,35 @@ render_source() {
   montage "${captioned_panels[@]}" -tile "$overview_grid" -geometry '100%x100%+2+2' -background white "$overview"
   add_overview_header "$overview" "$init_bjt"
   touch -r "$source_path" "$overview"
+
+  if [[ "$REGION_MODE" == "ningxia" ]]; then
+    mkdir -p "$frozen_panel_dir" "$frozen_caption_dir"
+    rm -f "$frozen_panel_dir"/*.png "$frozen_caption_dir"/*.png
+    echo "Rendering Ningxia hail-warning T13-T${last_lead} panels for $run_prefix"
+    WORK_NX_WRF_DIR="$wrf_dir" \
+      WORK_NX_NINGXIA_PNG_DIR="$frozen_panel_dir" \
+      NINGXIA_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
+      NINGXIA_PROVINCE_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
+      NINGXIA_COUNTY_SHP_FILE="$NINGXIA_COUNTY_SHP_FILE" \
+      WORK_NX_REGION_MODE="$REGION_MODE" \
+      RAIN_COMPONENT_MODE=frozen \
+      "$NCL_BIN" "$NCL_SCRIPT"
+
+    local frozen_panels=() frozen_captioned_panels=()
+    mapfile -t frozen_panels < <(find "$frozen_panel_dir" -maxdepth 1 -type f -name '*_rain_hour_*_BJT.png' -print | sort)
+    if (( ${#frozen_panels[@]} != panel_count )); then
+      echo "ERROR: expected ${panel_count} hail-warning panels, found ${#frozen_panels[@]} for $run_prefix" >&2
+      return 1
+    fi
+    frozen_overview="$run_dir/Precip_hourly_WRF_NingxiaFrozen_T13_T${last_lead}_InitUTC_${run_date}_${run_hour}_00_combined_overview_${overview_grid}_grid.png"
+    for panel in "${frozen_panels[@]}"; do
+      caption_panel "$panel" "$frozen_caption_dir"
+      frozen_captioned_panels+=("$frozen_caption_dir/$(basename "$panel")")
+    done
+    montage "${frozen_captioned_panels[@]}" -tile "$overview_grid" -geometry '100%x100%+2+2' -background white "$frozen_overview"
+    add_overview_header "$frozen_overview" "$init_bjt"
+    touch -r "$source_path" "$frozen_overview"
+  fi
 
   WORK_NX_WRF_DIR="$wrf_dir" \
     WORK_NX_NATIONAL_PNG_DIR="$national_panel_dir" \

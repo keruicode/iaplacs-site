@@ -188,23 +188,34 @@ local_sequences_are_valid() {
 
 audit_ningxia_output() {
   local run="$1" output="$SCRIPT_DIR/worknx_ningxia_overview/$run"
-  local region national public_region public_national region_count national_count
+  local region national frozen public_region public_national public_frozen region_count national_count frozen_count
   region="$(panel_windows "$output/captioned_t13_t48" '')"
   national="$(panel_windows "$output/national_captioned_t13_t48" '')"
+  frozen="$(panel_windows "$output/frozen_captioned_t13_t48" '')"
   region_count="$(window_count "$region")"
   national_count="$(window_count "$national")"
+  frozen_count="$(window_count "$frozen")"
   if ! local_sequences_are_valid utc "$run" "$region" "$national"; then
     log "NINGXIA $run local sequence invalid: region=$region_count national=$national_count; rerender latest run"
     run_action "$SCRIPT_DIR/publish_worknx_ningxia_to_github.sh" --latest
     return
   fi
-  public_region="$(public_windows ningxia "$run" ningxia_region 2>/dev/null || true)"
-  public_national="$(public_windows ningxia "$run" worknx_national 2>/dev/null || true)"
-  if [[ "$public_region" == "$region" && "$public_national" == "$national" ]]; then
-    log "NINGXIA $run verified: region=$region_count national=$national_count first=${region%%,*}"
+  if [[ -n "$frozen" ]] && ! local_sequences_are_valid utc "$run" "$region" "$frozen"; then
+    log "NINGXIA $run hail-warning sequence invalid: region=$region_count frozen=$frozen_count; rerender latest run"
+    run_action "$SCRIPT_DIR/publish_worknx_ningxia_to_github.sh" --latest
     return
   fi
-  log "NINGXIA $run public sequence mismatch; republish region=$region_count national=$national_count first=${region%%,*}"
+  public_region="$(public_windows ningxia "$run" ningxia_region 2>/dev/null || true)"
+  public_national="$(public_windows ningxia "$run" worknx_national 2>/dev/null || true)"
+  public_frozen=""
+  if [[ -n "$frozen" ]]; then
+    public_frozen="$(public_windows ningxia "$run" ningxia_hail_warning 2>/dev/null || true)"
+  fi
+  if [[ "$public_region" == "$region" && "$public_national" == "$national" && "$public_frozen" == "$frozen" ]]; then
+    log "NINGXIA $run verified: region=$region_count national=$national_count hail=$frozen_count first=${region%%,*}"
+    return
+  fi
+  log "NINGXIA $run public sequence mismatch; republish region=$region_count national=$national_count hail=$frozen_count first=${region%%,*}"
   run_action "$SCRIPT_DIR/publish_worknx_ningxia_to_github.sh" --output-run "$run"
 }
 

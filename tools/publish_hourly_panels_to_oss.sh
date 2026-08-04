@@ -19,7 +19,8 @@ usage() {
 Usage: publish_hourly_panels_to_oss.sh \
   --family worknx_summary|workxj_summary|wrf_montage \
   --run-prefix YYYYMMDD_HH \
-  --regional-dir DIR --national-dir DIR
+  --regional-dir DIR --national-dir DIR \
+  [--extra-id ningxia_hail_warning --extra-dir DIR]
 EOF
 }
 
@@ -27,12 +28,16 @@ family=""
 run_prefix=""
 regional_dir=""
 national_dir=""
+extra_id=""
+extra_dir=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --family) family="${2:-}"; shift 2 ;;
     --run-prefix) run_prefix="${2:-}"; shift 2 ;;
     --regional-dir) regional_dir="${2:-}"; shift 2 ;;
     --national-dir) national_dir="${2:-}"; shift 2 ;;
+    --extra-id) extra_id="${2:-}"; shift 2 ;;
+    --extra-dir) extra_dir="${2:-}"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) usage >&2; echo "ERROR: unknown argument: $1" >&2; exit 64 ;;
   esac
@@ -59,6 +64,13 @@ esac
 [[ "$run_prefix" =~ ^[0-9]{8}_[0-9]{2}$ ]] || { echo "ERROR: invalid run prefix" >&2; exit 64; }
 [[ -d "$regional_dir" ]] || { echo "ERROR: regional panel directory not found: $regional_dir" >&2; exit 1; }
 [[ -d "$national_dir" ]] || { echo "ERROR: national panel directory not found: $national_dir" >&2; exit 1; }
+if [[ -n "$extra_id" || -n "$extra_dir" ]]; then
+  [[ "$family" == "worknx_summary" && "$extra_id" == "ningxia_hail_warning" ]] || {
+    echo "ERROR: the optional frame must be ningxia_hail_warning for worknx_summary" >&2
+    exit 64
+  }
+  [[ -d "$extra_dir" ]] || { echo "ERROR: extra panel directory not found: $extra_dir" >&2; exit 1; }
+fi
 [[ -f "$SEQUENCE_VALIDATOR" ]] || { echo "ERROR: hourly sequence validator not found: $SEQUENCE_VALIDATOR" >&2; exit 1; }
 
 if [[ "$family" == "worknx_summary" || "$family" == "workxj_summary" ]]; then
@@ -68,6 +80,13 @@ if [[ "$family" == "worknx_summary" || "$family" == "workxj_summary" ]]; then
     --run-time-basis "$run_time_basis" \
     --regional-dir "$regional_dir" \
     --national-dir "$national_dir"
+  if [[ -n "$extra_dir" ]]; then
+    "$PYTHON_BIN" "$SEQUENCE_VALIDATOR" \
+      --run-prefix "$run_prefix" \
+      --run-time-basis "$run_time_basis" \
+      --regional-dir "$regional_dir" \
+      --national-dir "$extra_dir"
+  fi
 else
   run_time_basis="bjt"
   "$PYTHON_BIN" "$SEQUENCE_VALIDATOR" \
@@ -117,6 +136,9 @@ convert_panels "$regional_dir" "$regional_id" 0
 # Trim only external white margins for the individual web view; montage PNGs
 # retain the original geometry used by the existing overview builder.
 convert_panels "$national_dir" "$national_id" 1
+if [[ -n "$extra_dir" ]]; then
+  convert_panels "$extra_dir" "$extra_id" 0
+fi
 
 incoming="hourly_panels_${family}_${run_prefix}"
 ssh "$GITHUB_HOST" "rm -rf ~/incoming/$incoming && mkdir -p ~/incoming/$incoming"

@@ -17,7 +17,7 @@ DEFAULT_ASSET_BASE_URL = (
 )
 PANEL_RE = re.compile(
     r"^(?P<run>\d{8}_\d{2})_"
-    r"(?P<area>ningxia_region|worknx_national|shangrao_region|shangrao_national|xinjiang_region|workxj_national)_"
+    r"(?P<area>ningxia_region|worknx_national|ningxia_hail_warning|shangrao_region|shangrao_national|xinjiang_region|workxj_national)_"
     r"rain_hour_(?P<start>\d{10})-(?P<end>\d{10})_BJT\.webp$",
     re.IGNORECASE,
 )
@@ -26,6 +26,7 @@ FAMILY_CONFIG = {
         "service": "ningxia",
         "products": {"ningxia_precip_series"},
         "frames": {"ningxia_region", "worknx_national"},
+        "optional_frames": {"ningxia_hail_warning"},
     },
     "wrf_montage": {
         "service": "shangrao",
@@ -56,11 +57,13 @@ def main() -> None:
         parser.error(f"asset directory does not exist: {args.asset_dir}")
 
     config = FAMILY_CONFIG[args.family]
-    panels = scan_panels(args.asset_dir, args.run_prefix, config["frames"])
+    configured_frames = config["frames"] | config.get("optional_frames", set())
+    panels = scan_panels(args.asset_dir, args.run_prefix, configured_frames)
     missing = sorted(frame_id for frame_id in config["frames"] if not panels[frame_id])
     if missing:
         parser.error(f"missing hourly panels for: {', '.join(missing)}")
-    validate_panel_sequences(args.family, args.run_prefix, panels)
+    available_panels = {frame_id: frames for frame_id, frames in panels.items() if frames}
+    validate_panel_sequences(args.family, args.run_prefix, available_panels)
 
     catalog = json.loads(args.catalog.read_text(encoding="utf-8"))
     service = catalog.get("services", {}).get(config["service"], {})
@@ -78,11 +81,12 @@ def main() -> None:
     updated = set()
     for frame in product.get("frames", []):
         frame_id = frame.get("id")
-        if frame_id in panels:
-            frame["individual_frames"] = panels[frame_id]
+        if frame_id in available_panels:
+            frame["individual_frames"] = available_panels[frame_id]
             updated.add(frame_id)
-    if updated != config["frames"]:
-        parser.error(f"catalog frames missing: {', '.join(sorted(config['frames'] - updated))}")
+    expected_frames = set(available_panels)
+    if updated != expected_frames:
+        parser.error(f"catalog frames missing: {', '.join(sorted(expected_frames - updated))}")
 
     args.catalog.write_text(
         json.dumps(catalog, ensure_ascii=False, indent=2) + "\n",
