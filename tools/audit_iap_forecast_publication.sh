@@ -11,6 +11,7 @@ GITHUB_HOST="${GITHUB_HOST:-server02}"
 PUBLIC_CATALOG_URL="${PUBLIC_CATALOG_URL:-https://iaplacs.xyz/data/current/forecast-runs.json}"
 OUTPUT_AUDIT_RUNS="${OUTPUT_AUDIT_RUNS:-5}"
 PYTHON_BIN="${PYTHON_BIN:-/public/software/apps/conda/latest/bin/python3}"
+NCDUMP_BIN="${NCDUMP_BIN:-/public/software/apps/conda/latest/bin/ncdump}"
 DRY_RUN=0
 
 usage() {
@@ -38,6 +39,11 @@ fi
 
 mkdir -p "$LOG_DIR"
 [[ -x "$PYTHON_BIN" ]] || PYTHON_BIN="$(command -v python3 || command -v python)"
+[[ -x "$NCDUMP_BIN" ]] || NCDUMP_BIN="$(command -v ncdump || true)"
+if [[ -z "$NCDUMP_BIN" || ! -x "$NCDUMP_BIN" ]]; then
+  echo "ERROR: ncdump is required for completed-run Time checks" >&2
+  exit 127
+fi
 exec 9>"$LOG_DIR/publication-audit.lock"
 if ! flock -n 9; then
   echo "$(date '+%F %T') publication audit already running; skip"
@@ -84,6 +90,19 @@ window_count() {
   local windows="$1"
   [[ -n "$windows" ]] || { printf '0\n'; return; }
   awk -F, '{ print NF }' <<<"$windows"
+}
+
+wrf_time_count() {
+  "$NCDUMP_BIN" -h "$1" 2>/dev/null | awk '/Time = UNLIMITED/ && !seen { gsub(/[^0-9]/, "", $0); print; seen=1 }'
+}
+
+expected_hourly_count() {
+  local time_count="$1" expected
+  [[ "$time_count" =~ ^[0-9]+$ ]] || { printf '0\n'; return; }
+  expected=$((time_count - 13))
+  (( expected < 0 )) && expected=0
+  (( expected > 36 )) && expected=36
+  printf '%s\n' "$expected"
 }
 
 expected_first_start() {
@@ -351,23 +370,38 @@ PY
 }
 
 submit_missing_render() {
-  local family="$1" model_root="$2" output_root="$3" renderer="$4" prefix source expected
+  local family="$1" model_root="$2" output_root="$3" renderer="$4"
+  local prefix source expected time_count expected_count rendered_windows rendered_count
   source="$(latest_completed_wrf "$model_root" || true)"
   [[ -n "$source" ]] || return
   prefix="$(utc_wrf_prefix "$source")"
   [[ -n "$prefix" ]] || return
+  time_count="$(wrf_time_count "$source")"
+  expected_count="$(expected_hourly_count "$time_count")"
+  if (( expected_count < 1 )); then
+    log "${family^^} completed model output $prefix has unusable Time count: ${time_count:-unknown}"
+    return
+  fi
   expected="$prefix"
   if [[ "$family" == "shangrao" ]]; then
     expected="$(bjt_wrf_prefix "$prefix")"
-    if [[ -s "$SCRIPT_DIR/latest_wrf_prefixes.txt" ]] && grep -qx "$expected" "$SCRIPT_DIR/latest_wrf_prefixes.txt"; then
+    rendered_windows="$(panel_windows "$SCRIPT_DIR/wrf_hourly_png" "${expected}_")"
+    rendered_count="$(window_count "$rendered_windows")"
+    if [[ -s "$SCRIPT_DIR/latest_wrf_prefixes.txt" ]] \
+      && grep -qx "$expected" "$SCRIPT_DIR/latest_wrf_prefixes.txt" \
+      && (( rendered_count == expected_count )); then
       return
     fi
-  elif [[ -d "$output_root/$expected" ]]; then
-    return
+  else
+    rendered_windows="$(panel_windows "$output_root/$expected/captioned_t13_t48" '')"
+    rendered_count="$(window_count "$rendered_windows")"
+    if (( rendered_count == expected_count )); then
+      return
+    fi
   fi
-  log "${family^^} completed model output $prefix has no rendered product $expected"
+  log "${family^^} completed model output $prefix needs full render: Time=$time_count expected=$expected_count rendered=${rendered_count:-0}"
   if [[ "$family" == "shangrao" ]]; then
-    run_action "$SCRIPT_DIR/submit_wrf_pipeline.sh"
+    run_action env IAPLACS_FORCE_RENDER=1 "$SCRIPT_DIR/submit_wrf_pipeline.sh"
   else
     run_action "$renderer" --latest
   fi

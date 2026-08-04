@@ -22,6 +22,15 @@ PREFIX_FILE="${PREFIX_FILE:-$SCRIPT_DIR/latest_wrf_prefixes.txt}"
   exit 1
 }
 
+PUBLISH_LOCK_FILE="${PUBLISH_LOCK_FILE:-$SCRIPT_DIR/logs/shangrao-publish.lock}"
+PUBLISH_LOCK_WAIT_SECONDS="${PUBLISH_LOCK_WAIT_SECONDS:-14400}"
+mkdir -p "$(dirname "$PUBLISH_LOCK_FILE")"
+exec 7>"$PUBLISH_LOCK_FILE"
+if ! flock -w "$PUBLISH_LOCK_WAIT_SECONDS" 7; then
+  echo "ERROR: timed out waiting for Shangrao publication lock: $PUBLISH_LOCK_FILE" >&2
+  exit 75
+fi
+
 "$MONTAGE_PUBLISHER" --all-current
 
 mapfile -t prefixes < <(sed '/^[[:space:]]*$/d' "$PREFIX_FILE" | sort -u)

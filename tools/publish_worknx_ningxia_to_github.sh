@@ -64,6 +64,18 @@ if [[ ! -x "$HOURLY_PUBLISHER" ]]; then
   exit 1
 fi
 
+# Rendering removes stale panels for the selected run before redrawing. Keep
+# cron, the hourly auditor, and the BJT 06 early snapshot from cleaning the
+# same service output at the same time.
+mkdir -p "$OUTPUT_ROOT"
+PUBLISH_LOCK_FILE="${PUBLISH_LOCK_FILE:-$OUTPUT_ROOT/.publish.lock}"
+PUBLISH_LOCK_WAIT_SECONDS="${PUBLISH_LOCK_WAIT_SECONDS:-14400}"
+exec 7>"$PUBLISH_LOCK_FILE"
+if ! flock -w "$PUBLISH_LOCK_WAIT_SECONDS" 7; then
+  echo "ERROR: timed out waiting for $SERVICE_LABEL publication lock: $PUBLISH_LOCK_FILE" >&2
+  exit 75
+fi
+
 if [[ "$mode" == "--recent" ]]; then
   "$RENDERER" --recent "$count"
 elif [[ "$mode" == "--latest" ]]; then

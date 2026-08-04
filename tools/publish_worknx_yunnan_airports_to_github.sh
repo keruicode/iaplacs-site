@@ -59,6 +59,18 @@ if [[ ! -x "$RENDERER" ]]; then
   exit 1
 fi
 
+# A rerender first removes stale panels from the run directory. Serialize all
+# Yunnan render/publish entry points so a partial and a completed run cannot
+# erase each other's files.
+mkdir -p "$OUTPUT_ROOT"
+PUBLISH_LOCK_FILE="${PUBLISH_LOCK_FILE:-$OUTPUT_ROOT/.publish.lock}"
+PUBLISH_LOCK_WAIT_SECONDS="${PUBLISH_LOCK_WAIT_SECONDS:-14400}"
+exec 7>"$PUBLISH_LOCK_FILE"
+if ! flock -w "$PUBLISH_LOCK_WAIT_SECONDS" 7; then
+  echo "ERROR: timed out waiting for Yunnan publication lock: $PUBLISH_LOCK_FILE" >&2
+  exit 75
+fi
+
 PYTHON_BIN="${PYTHON_BIN:-/public/software/apps/conda/latest/bin/python3}"
 if [[ ! -x "$PYTHON_BIN" ]]; then
   PYTHON_BIN="$(command -v python3 || command -v python || true)"

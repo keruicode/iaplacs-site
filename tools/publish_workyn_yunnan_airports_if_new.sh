@@ -12,6 +12,8 @@ STATE_DIR="${STATE_DIR:-$SCRIPT_DIR/state}"
 LAST_PREFIX_FILE="${LAST_PREFIX_FILE:-$STATE_DIR/yunnan_airport_last_published.txt}"
 MIN_FILE_AGE_SECONDS="${MIN_FILE_AGE_SECONDS:-1200}"
 MIN_WRFOUT_BYTES="${MIN_WRFOUT_BYTES:-20000000000}"
+MIN_TIME_COUNT="${MIN_TIME_COUNT:-14}"
+NCDUMP_BIN="${NCDUMP_BIN:-/public/software/apps/conda/latest/bin/ncdump}"
 
 dry_run=0
 force=0
@@ -34,34 +36,65 @@ if [[ ! -x "$PUBLISHER" ]]; then
   echo "ERROR: publisher is not executable: $PUBLISHER" >&2
   exit 1
 fi
+if [[ ! -x "$NCDUMP_BIN" ]]; then
+  NCDUMP_BIN="$(command -v ncdump || true)"
+fi
+if [[ -z "$NCDUMP_BIN" || ! -x "$NCDUMP_BIN" ]]; then
+  echo "ERROR: ncdump is required to inspect WORK_yn Time count" >&2
+  exit 127
+fi
+if [[ ! "$MIN_TIME_COUNT" =~ ^[1-9][0-9]*$ ]]; then
+  echo "ERROR: MIN_TIME_COUNT must be a positive integer" >&2
+  exit 64
+fi
 
 mkdir -p "$STATE_DIR"
 now_epoch="$(date +%s)"
 latest_source=""
 latest_prefix=""
+latest_size=""
+latest_epoch=""
+latest_time_count=""
+latest_complete=0
 
-while IFS= read -r line; do
-  source_epoch="${line%% *}"
-  rest="${line#* }"
-  source_size="${rest%% *}"
-  source_path="${rest#* }"
-  source_epoch="${source_epoch%.*}"
-  if (( now_epoch - source_epoch < MIN_FILE_AGE_SECONDS )); then
+wrf_time_count() {
+  "$NCDUMP_BIN" -h "$1" 2>/dev/null | awk '/Time = UNLIMITED/ && !seen { gsub(/[^0-9]/, "", $0); print; seen=1 }'
+}
+
+wrf_completed_successfully() {
+  local rsl_file
+  rsl_file="$(dirname "$1")/rsl.error.0000"
+  [[ -f "$rsl_file" ]] && tail -n 200 "$rsl_file" | grep -q 'SUCCESS COMPLETE WRF'
+}
+
+while IFS= read -r source_path; do
+  source_epoch="$(stat -c '%Y' "$source_path")"
+  source_size="$(stat -c '%s' "$source_path")"
+  if (( source_size < MIN_WRFOUT_BYTES )); then
     continue
   fi
-  if (( source_size < MIN_WRFOUT_BYTES )); then
+  time_count="$(wrf_time_count "$source_path")"
+  [[ "$time_count" =~ ^[0-9]+$ ]] && (( time_count >= MIN_TIME_COUNT )) || continue
+  complete=0
+  if wrf_completed_successfully "$source_path"; then
+    complete=1
+  elif (( now_epoch - source_epoch < MIN_FILE_AGE_SECONDS )); then
     continue
   fi
   base="$(basename "$source_path")"
   if [[ "$base" =~ wrfout_d01_([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2}):[0-9]{2}:[0-9]{2} ]]; then
     latest_prefix="${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3]}_${BASH_REMATCH[4]}"
     latest_source="$source_path"
+    latest_size="$source_size"
+    latest_epoch="$source_epoch"
+    latest_time_count="$time_count"
+    latest_complete="$complete"
     break
   fi
 done < <(
   find "$WORK_YN_ROOT" -maxdepth 4 -type f \
-    -name 'wrfout_d01_*' -printf '%T@ %s %p\n' \
-    | sort -nr
+    -name 'wrfout_d01_*' -printf '%p\n' \
+    | sort -r
 )
 
 if [[ -z "$latest_prefix" ]]; then
@@ -69,21 +102,22 @@ if [[ -z "$latest_prefix" ]]; then
   exit 0
 fi
 
-last_prefix=""
+latest_signature="${latest_prefix}|${latest_size}|${latest_epoch}|${latest_time_count}|${latest_complete}"
+last_signature=""
 if [[ -f "$LAST_PREFIX_FILE" ]]; then
-  last_prefix="$(tr -d '[:space:]' < "$LAST_PREFIX_FILE")"
+  last_signature="$(tr -d '\r\n' < "$LAST_PREFIX_FILE")"
 fi
 
-if [[ "$force" != "1" && "$latest_prefix" == "$last_prefix" ]]; then
-  echo "Yunnan airport run $latest_prefix already published; source=$latest_source"
+if [[ "$force" != "1" && "$latest_signature" == "$last_signature" ]]; then
+  echo "Yunnan airport source unchanged; run=$latest_prefix Time=$latest_time_count complete=$latest_complete source=$latest_source"
   exit 0
 fi
 
 if [[ "$dry_run" == "1" ]]; then
-  echo "Would publish Yunnan airport run $latest_prefix; source=$latest_source; previous=${last_prefix:-none}"
+  echo "Would publish Yunnan airport run $latest_prefix; Time=$latest_time_count complete=$latest_complete source=$latest_source; previous=${last_signature:-none}"
   exit 0
 fi
 
 "$PUBLISHER" --latest
-printf '%s\n' "$latest_prefix" > "$LAST_PREFIX_FILE"
-echo "Recorded Yunnan airport published run: $latest_prefix"
+printf '%s\n' "$latest_signature" > "$LAST_PREFIX_FILE"
+echo "Recorded Yunnan airport source signature: $latest_signature"
