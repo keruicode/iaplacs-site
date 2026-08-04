@@ -217,8 +217,14 @@ begin
       res@sfYArray = lat_axis
       res@pmTickMarkDisplayMode = "Always"
       if (region_mode.eq."xinjiang") then
-        res@gsnMajorLonSpacing = 5.0
-        res@gsnMajorLatSpacing = 4.0
+        res@tmXBMode = "Explicit"
+        res@tmXBValues = (/75.0, 80.0, 85.0, 90.0, 95.0/)
+        res@tmXBLabels = (/"75~S~o~N~E", "80~S~o~N~E", "85~S~o~N~E", \
+                           "90~S~o~N~E", "95~S~o~N~E"/)
+        res@tmYLMode = "Explicit"
+        res@tmYLValues = (/35.0, 40.0, 45.0, 50.0/)
+        res@tmYLLabels = (/"35~S~o~N~N", "40~S~o~N~N", \
+                           "45~S~o~N~N", "50~S~o~N~N"/)
       else
         res@gsnMajorLonSpacing = 1.0
         res@gsnMajorLatSpacing = 1.0

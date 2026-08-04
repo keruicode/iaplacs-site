@@ -66,14 +66,18 @@ begin
 
   ; These are geographic coordinates, not montage pixel positions.
   if (region_mode.eq."xinjiang") then
-    lon_min = 70.0
-    lon_max = 112.0
-    lat_min = 25.0
+    ; WORK_xj d01 spans roughly 63.7-116.3E and 20.9-54.1N. Use the
+    ; complete model domain so precipitation is not clipped at the edges.
+    lon_min = 64.0
+    lon_max = 117.0
+    lat_min = 20.0
     lat_max = 55.0
-    national_lon_ticks = (/75.0, 85.0, 95.0, 105.0/)
-    national_lon_labels = (/"75~S~o~N~E", "85~S~o~N~E", "95~S~o~N~E", "105~S~o~N~E"/)
-    national_lat_ticks = (/30.0, 40.0, 50.0/)
-    national_lat_labels = (/"30~S~o~N~N", "40~S~o~N~N", "50~S~o~N~N"/)
+    national_lon_ticks = (/65.0, 75.0, 85.0, 95.0, 105.0, 115.0/)
+    national_lon_labels = (/"65~S~o~N~E", "75~S~o~N~E", "85~S~o~N~E", \
+                            "95~S~o~N~E", "105~S~o~N~E", "115~S~o~N~E"/)
+    national_lat_ticks = (/20.0, 30.0, 40.0, 50.0/)
+    national_lat_labels = (/"20~S~o~N~N", "30~S~o~N~N", \
+                            "40~S~o~N~N", "50~S~o~N~N"/)
   else
     lon_min = 72.0
     lon_max = 138.0
