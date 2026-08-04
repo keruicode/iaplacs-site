@@ -149,8 +149,9 @@ begin
       file_start = bjt_label(times(accum_start_idx), 1)
       file_end = bjt_label(times(it), 1)
       rain_h = rain_all(it,:,:) - rain_all(accum_start_idx,:,:)
-      rain_h@_FillValue = -9999.0
-      rain_h = where(rain_h.lt.0.01, rain_h@_FillValue, rain_h)
+      ; Keep dry cells as finite under-range values so sparse precipitation
+      ; cannot be interpolated across the full regional map by NCL.
+      rain_h = where(rain_h.lt.0.01, -1.0, rain_h)
       rain_h@lat2d = lat2d
       rain_h@lon2d = lon2d
 

@@ -165,8 +165,9 @@ begin
       bjt_end_file    = get_bjt_info(times(it), 1)
 
       rain_h = rain_all(it,:,:) - rain_all(accum_start_idx,:,:)
-      rain_h@_FillValue = -9999.0
-      rain_h = where(rain_h.lt.0.01, rain_h@_FillValue, rain_h)
+      ; Keep dry cells as finite under-range values. An almost entirely missing
+      ; field can make NCL spread one small wet cell across the plotted domain.
+      rain_h = where(rain_h.lt.0.01, -1.0, rain_h)
       rain_h@lat2d = lat2d
       rain_h@lon2d = lon2d
 
