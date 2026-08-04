@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/logs}"
 GITHUB_HOST="${GITHUB_HOST:-server02}"
 PUBLIC_CATALOG_URL="${PUBLIC_CATALOG_URL:-https://iaplacs.xyz/data/current/forecast-runs.json}"
-OUTPUT_AUDIT_RUNS="${OUTPUT_AUDIT_RUNS:-1}"
+OUTPUT_AUDIT_RUNS="${OUTPUT_AUDIT_RUNS:-5}"
 PYTHON_BIN="${PYTHON_BIN:-/public/software/apps/conda/latest/bin/python3}"
 DRY_RUN=0
 
@@ -124,11 +124,10 @@ PY
 list_output_runs() {
   local root="$1"
   [[ -d "$root" ]] || return 0
-  find "$root" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %f\n' \
-    | awk '$2 ~ /^[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]_[0-9][0-9]$/ { print }' \
+  find "$root" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' \
+    | awk '/^[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]_[0-9][0-9]$/ { print }' \
     | sort -nr \
-    | head -n "$OUTPUT_AUDIT_RUNS" \
-    | cut -d' ' -f2-
+    | head -n "$OUTPUT_AUDIT_RUNS"
 }
 
 # IAP itself has no public DNS. Fetch the browser-facing catalog once through
@@ -199,11 +198,8 @@ audit_ningxia_output() {
     run_action "$SCRIPT_DIR/publish_worknx_ningxia_to_github.sh" --latest
     return
   fi
-  if ! public_region="$(public_windows ningxia "$run" ningxia_region)" \
-    || ! public_national="$(public_windows ningxia "$run" worknx_national)"; then
-    log "NINGXIA $run public catalog unavailable; leaving existing data untouched"
-    return
-  fi
+  public_region="$(public_windows ningxia "$run" ningxia_region 2>/dev/null || true)"
+  public_national="$(public_windows ningxia "$run" worknx_national 2>/dev/null || true)"
   if [[ "$public_region" == "$region" && "$public_national" == "$national" ]]; then
     log "NINGXIA $run verified: region=$region_count national=$national_count first=${region%%,*}"
     return
@@ -224,11 +220,8 @@ audit_yunnan_output() {
     run_action "$SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh" --latest
     return
   fi
-  if ! public_region="$(public_windows airport "airport_yunnan_$run" airport_region)" \
-    || ! public_national="$(public_windows airport "airport_yunnan_$run" airport_national)"; then
-    log "YUNNAN $run public catalog unavailable; leaving existing data untouched"
-    return
-  fi
+  public_region="$(public_windows airport "airport_yunnan_$run" airport_region 2>/dev/null || true)"
+  public_national="$(public_windows airport "airport_yunnan_$run" airport_national 2>/dev/null || true)"
   if [[ "$public_region" == "$region" && "$public_national" == "$national" ]]; then
     log "YUNNAN $run verified: region=$region_count national=$national_count first=${region%%,*}"
     return
@@ -248,11 +241,8 @@ audit_shangrao_output() {
     run_action env IAPLACS_FORCE_RENDER=1 "$SCRIPT_DIR/submit_wrf_pipeline.sh"
     return
   fi
-  if ! public_region="$(public_windows shangrao "$run" shangrao_region)" \
-    || ! public_national="$(public_windows shangrao "$run" shangrao_national)"; then
-    log "SHANGRAO $run public catalog unavailable; leaving existing data untouched"
-    return
-  fi
+  public_region="$(public_windows shangrao "$run" shangrao_region 2>/dev/null || true)"
+  public_national="$(public_windows shangrao "$run" shangrao_national 2>/dev/null || true)"
   if [[ "$public_region" == "$region" && "$public_national" == "$national" ]]; then
     log "SHANGRAO $run verified: region=$region_count national=$national_count first=${region%%,*}"
     return

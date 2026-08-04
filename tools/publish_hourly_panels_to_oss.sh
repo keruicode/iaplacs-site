@@ -58,17 +58,20 @@ esac
 
 if [[ "$family" == "worknx_summary" ]]; then
   run_time_basis="utc"
-  validator_prefix_args=()
+  "$PYTHON_BIN" "$SEQUENCE_VALIDATOR" \
+    --run-prefix "$run_prefix" \
+    --run-time-basis "$run_time_basis" \
+    --regional-dir "$regional_dir" \
+    --national-dir "$national_dir"
 else
   run_time_basis="bjt"
-  validator_prefix_args=(--filename-prefix "$run_prefix")
+  "$PYTHON_BIN" "$SEQUENCE_VALIDATOR" \
+    --run-prefix "$run_prefix" \
+    --run-time-basis "$run_time_basis" \
+    --regional-dir "$regional_dir" \
+    --national-dir "$national_dir" \
+    --filename-prefix "$run_prefix"
 fi
-"$PYTHON_BIN" "$SEQUENCE_VALIDATOR" \
-  --run-prefix "$run_prefix" \
-  --run-time-basis "$run_time_basis" \
-  --regional-dir "$regional_dir" \
-  --national-dir "$national_dir" \
-  "${validator_prefix_args[@]}"
 
 stage_dir="$(mktemp -d "${TMPDIR:-/tmp}/iaplacs-hourly-panels.XXXXXX")"
 trap 'rm -rf -- "$stage_dir"' EXIT
