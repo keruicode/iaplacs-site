@@ -19,7 +19,7 @@ LAST_SOURCE_STATE_FILE="${LAST_SOURCE_STATE_FILE:-$STATE_DIR/wrf_pipeline_last_r
 MIN_WRFOUT_BYTES="${MIN_WRFOUT_BYTES:-8000000000}"
 MIN_FILE_AGE_SECONDS="${MIN_FILE_AGE_SECONDS:-1200}"
 MIN_TIME_COUNT="${MIN_TIME_COUNT:-14}"
-mkdir -p "$LOG_DIR" "$STATE_DIR" wrf_hourly_png
+mkdir -p "$LOG_DIR" "$STATE_DIR" wrf_hourly_png shangrao_hail_hourly_png
 
 RUN_STAMP="$(date +%Y%m%d_%H%M%S)"
 exec > >(tee -a "$LOG_DIR/pipeline_${RUN_STAMP}.log") 2>&1
@@ -175,12 +175,32 @@ caption_accumulation() {
 
 BJT_PREFIX="$(wrf_to_bjt_prefix "$source_date" "$source_hour")"
 rm -f "$SCRIPT_DIR"/wrf_hourly_png/"${BJT_PREFIX}"_combined_overview_*_grid.png \
-	"$SCRIPT_DIR"/wrf_hourly_png/"${BJT_PREFIX}"_combined_detail_p*_4x3_grid.png \
-	"$SCRIPT_DIR"/wrf_hourly_png/"${BJT_PREFIX}"_national_accum_* \
-	"$SCRIPT_DIR"/wrf_hourly_png/"${BJT_PREFIX}"_combined_accum_* 
+		"$SCRIPT_DIR"/wrf_hourly_png/"${BJT_PREFIX}"_combined_detail_p*_4x3_grid.png \
+		"$SCRIPT_DIR"/wrf_hourly_png/"${BJT_PREFIX}"_combined_hail_warning_*_grid.png \
+		"$SCRIPT_DIR"/wrf_hourly_png/"${BJT_PREFIX}"_national_accum_* \
+		"$SCRIPT_DIR"/wrf_hourly_png/"${BJT_PREFIX}"_combined_accum_*
 
 echo "Running NCL hourly rainfall plotting for $BJT_PREFIX..."
-ncl "$SCRIPT_DIR/rain_wrf_hour_bjt.ncl"
+RAIN_COMPONENT_MODE=total ncl "$SCRIPT_DIR/rain_wrf_hour_bjt.ncl"
+echo "Running NCL Shangrao hail-warning plotting for $BJT_PREFIX..."
+HAIL_PNG_DIR="$SCRIPT_DIR/shangrao_hail_hourly_png"
+rm -f "$HAIL_PNG_DIR/${BJT_PREFIX}_rain_hour_"*_BJT.png \
+	"$HAIL_PNG_DIR/${BJT_PREFIX}_combined_"*_grid.png
+SHANGRAO_WRF_DIR="$SCRIPT_DIR" \
+	SHANGRAO_PNG_DIR="$HAIL_PNG_DIR" \
+	SHANGRAO_PROVINCE_SHP_FILE="$SCRIPT_DIR/SHP/省界_region.shp" \
+	SHANGRAO_COUNTY_SHP_FILE="$SCRIPT_DIR/SHP/shangrao_city_county.shp" \
+	RAIN_COMPONENT_MODE=frozen \
+	ncl "$SCRIPT_DIR/rain_wrf_hour_bjt.ncl"
+bash "$SCRIPT_DIR/make_wrf_montages.sh" "$HAIL_PNG_DIR" "$BJT_PREFIX"
+HAIL_OVERVIEW="$(ls -t "$HAIL_PNG_DIR/${BJT_PREFIX}_combined_overview_"*_grid.png 2>/dev/null | head -n 1 || true)"
+if [ -z "$HAIL_OVERVIEW" ]; then
+	echo "ERROR: Shangrao hail-warning overview was not generated for $BJT_PREFIX" >&2
+	exit 1
+fi
+hail_name="$(basename "$HAIL_OVERVIEW")"
+hail_target="${hail_name/${BJT_PREFIX}_combined_overview_/${BJT_PREFIX}_combined_hail_warning_}"
+cp -f "$HAIL_OVERVIEW" "$SCRIPT_DIR/wrf_hourly_png/$hail_target"
 echo "Running NCL nationwide hourly rainfall plotting for $BJT_PREFIX..."
 NATIONAL_PNG_DIR="$SCRIPT_DIR/national_hourly_png"
 mkdir -p "$NATIONAL_PNG_DIR"

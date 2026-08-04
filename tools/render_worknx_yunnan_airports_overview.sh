@@ -248,7 +248,7 @@ PY
 }
 
 render_source() {
-  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview totals_json manifest_json time_count last_lead panel_count overview_rows overview_grid national_panel_dir national_caption_dir national_overview init_bjt
+  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview totals_json manifest_json time_count last_lead panel_count overview_rows overview_grid national_panel_dir national_caption_dir national_overview frozen_panel_dir frozen_caption_dir frozen_overview init_bjt
   base="$(basename "$source_path")"
   if [[ "$base" =~ wrfout_d01_([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2}):[0-9]{2}:[0-9]{2} ]]; then
     run_date="${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]}"
@@ -269,6 +269,8 @@ render_source() {
   caption_dir="$run_dir/captioned_t13_t48"
   national_panel_dir="$run_dir/national_hourly_t13_t48"
   national_caption_dir="$run_dir/national_captioned_t13_t48"
+  frozen_panel_dir="$run_dir/frozen_hourly_t13_t48"
+  frozen_caption_dir="$run_dir/frozen_captioned_t13_t48"
   totals_json="$run_dir/airport_precip_totals.json"
   manifest_json="$run_dir/manifest_fragment.json"
 
@@ -283,12 +285,21 @@ render_source() {
   }
   last_lead=$((time_count - 1))
 
-  mkdir -p "$panel_dir" "$caption_dir" "$national_panel_dir" "$national_caption_dir"
+  mkdir -p "$panel_dir" "$caption_dir" "$national_panel_dir" "$national_caption_dir" \
+    "$frozen_panel_dir" "$frozen_caption_dir"
+  rm -f "$panel_dir"/*.png "$caption_dir"/*.png \
+    "$national_panel_dir"/*.png "$national_caption_dir"/*.png \
+    "$frozen_panel_dir"/*.png "$frozen_caption_dir"/*.png
+  rm -f "$run_dir"/Precip_hourly_WRF_YunnanAirports_T13_T*_InitUTC_"${run_date}"_"${run_hour}"_00_combined_overview_*_grid.* \
+    "$run_dir"/Precip_hourly_WRF_YunnanAirportsFrozen_T13_T*_InitUTC_"${run_date}"_"${run_hour}"_00_combined_overview_*_grid.* \
+    "$run_dir"/Precip_hourly_WRF_AllRain_T13_T*_InitUTC_"${run_date}"_"${run_hour}"_00_combined_overview_*_grid.*
   echo "Rendering Yunnan airport T13-T${last_lead} panels for $run_prefix from $wrf_dir"
   WORK_YN_WRF_DIR="$wrf_dir" \
     WORK_YN_YUNNAN_AIRPORT_PNG_DIR="$panel_dir" \
     YUNNAN_PROVINCE_SHP_FILE="$YUNNAN_PROVINCE_SHP_FILE" \
     YUNNAN_CITY_SHP_FILE="$YUNNAN_CITY_SHP_FILE" \
+    RAIN_COMPONENT_MODE=total \
+    RAIN_OUTPUT_AREA=yunnan_airport \
     "$NCL_BIN" "$NCL_SCRIPT"
 
   local panels=()
@@ -312,6 +323,29 @@ render_source() {
   montage "${captioned_panels[@]}" -tile "$overview_grid" -geometry '100%x100%+2+2' -background white "$overview"
   add_overview_header "$overview" "$init_bjt"
   touch -r "$source_path" "$overview"
+
+  echo "Rendering Yunnan airport hail-warning T13-T${last_lead} panels for $run_prefix"
+  WORK_YN_WRF_DIR="$wrf_dir" \
+    WORK_YN_YUNNAN_AIRPORT_PNG_DIR="$frozen_panel_dir" \
+    YUNNAN_PROVINCE_SHP_FILE="$YUNNAN_PROVINCE_SHP_FILE" \
+    YUNNAN_CITY_SHP_FILE="$YUNNAN_CITY_SHP_FILE" \
+    RAIN_COMPONENT_MODE=frozen \
+    RAIN_OUTPUT_AREA=yunnan_hail_warning \
+    "$NCL_BIN" "$NCL_SCRIPT"
+  local frozen_panels=() frozen_captioned_panels=()
+  mapfile -t frozen_panels < <(find "$frozen_panel_dir" -maxdepth 1 -type f -name '*_yunnan_hail_warning_rain_hour_*_BJT.png' -print | sort)
+  if (( ${#frozen_panels[@]} != panel_count )); then
+    echo "ERROR: expected ${panel_count} Yunnan hail-warning panels, found ${#frozen_panels[@]} for $run_prefix" >&2
+    return 1
+  fi
+  frozen_overview="$run_dir/Precip_hourly_WRF_YunnanAirportsFrozen_T13_T${last_lead}_InitUTC_${run_date}_${run_hour}_00_combined_overview_${overview_grid}_grid.png"
+  for panel in "${frozen_panels[@]}"; do
+    caption_panel "$panel" "$frozen_caption_dir"
+    frozen_captioned_panels+=("$frozen_caption_dir/$(basename "$panel")")
+  done
+  montage "${frozen_captioned_panels[@]}" -tile "$overview_grid" -geometry '100%x100%+2+2' -background white "$frozen_overview"
+  add_overview_header "$frozen_overview" "$init_bjt"
+  touch -r "$source_path" "$frozen_overview"
 
   WORK_NX_WRF_DIR="$wrf_dir" \
     WORK_NX_NATIONAL_PNG_DIR="$national_panel_dir" \

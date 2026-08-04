@@ -232,6 +232,7 @@ render_source() {
     NINGXIA_PROVINCE_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
     NINGXIA_COUNTY_SHP_FILE="$NINGXIA_COUNTY_SHP_FILE" \
     WORK_NX_REGION_MODE="$REGION_MODE" \
+    RAIN_COMPONENT_MODE=total \
     "$NCL_BIN" "$NCL_SCRIPT"
 
   local panels=()
@@ -255,10 +256,10 @@ render_source() {
   add_overview_header "$overview" "$init_bjt"
   touch -r "$source_path" "$overview"
 
-  if [[ "$REGION_MODE" == "ningxia" ]]; then
+  if [[ "$REGION_MODE" == "ningxia" || "$REGION_MODE" == "xinjiang" ]]; then
     mkdir -p "$frozen_panel_dir" "$frozen_caption_dir"
     rm -f "$frozen_panel_dir"/*.png "$frozen_caption_dir"/*.png
-    echo "Rendering Ningxia hail-warning T13-T${last_lead} panels for $run_prefix"
+    echo "Rendering $SERVICE_LABEL hail-warning T13-T${last_lead} panels for $run_prefix"
     WORK_NX_WRF_DIR="$wrf_dir" \
       WORK_NX_NINGXIA_PNG_DIR="$frozen_panel_dir" \
       NINGXIA_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
@@ -274,7 +275,7 @@ render_source() {
       echo "ERROR: expected ${panel_count} hail-warning panels, found ${#frozen_panels[@]} for $run_prefix" >&2
       return 1
     fi
-    frozen_overview="$run_dir/Precip_hourly_WRF_NingxiaFrozen_T13_T${last_lead}_InitUTC_${run_date}_${run_hour}_00_combined_overview_${overview_grid}_grid.png"
+    frozen_overview="$run_dir/Precip_hourly_WRF_${SERVICE_FILE_TOKEN}Frozen_T13_T${last_lead}_InitUTC_${run_date}_${run_hour}_00_combined_overview_${overview_grid}_grid.png"
     for panel in "${frozen_panels[@]}"; do
       caption_panel "$panel" "$frozen_caption_dir"
       frozen_captioned_panels+=("$frozen_caption_dir/$(basename "$panel")")

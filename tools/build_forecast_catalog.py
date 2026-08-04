@@ -41,13 +41,13 @@ ACCUMULATION_WINDOW_RE = re.compile(
 )
 CMA_OBSERVATION_RE = re.compile(r"^cma_24h_obs_(\d{10})_BJT$")
 YUNNAN_HOURLY_PANEL_RE = re.compile(
-    r"_(?P<area>yunnan_airport|national)_rain_hour_"
+    r"_(?P<area>yunnan_airport|national|yunnan_hail_warning)_rain_hour_"
     r"(?P<start>\d{10})-(?P<end>\d{10})_BJT$",
     re.IGNORECASE,
 )
 SERVICE_HOURLY_PANEL_RE = re.compile(
     r"^(?P<run>\d{8}_\d{2})_"
-    r"(?P<area>ningxia_region|worknx_national|ningxia_hail_warning|shangrao_region|shangrao_national|xinjiang_region|workxj_national)_"
+    r"(?P<area>ningxia_region|worknx_national|ningxia_hail_warning|shangrao_region|shangrao_national|shangrao_hail_warning|xinjiang_region|workxj_national|xinjiang_hail_warning)_"
     r"rain_hour_(?P<start>\d{10})-(?P<end>\d{10})_BJT$",
     re.IGNORECASE,
 )
@@ -225,9 +225,14 @@ def build_yunnan_airport_frames(
         path = choose_frame_candidate("_combined_overview", existing)
         preview_path = choose_preview_candidate(existing)
         full_path = choose_full_candidate("_combined_overview", existing)
+        is_hail_warning = (
+            accumulation_hours is None and "_WRF_YunnanAirportsFrozen_" in path.name
+        )
         is_national = accumulation_hours is None and "_WRF_AllRain_" in path.name
         lead_label = lead_label_from_name(path.name)
-        if is_national:
+        if is_hail_warning:
+            frame_id, lead, lead_label = "airport_hail_warning", 2, "冰雹预警"
+        elif is_national:
             frame_id, lead, lead_label = "airport_national", 1, "中国西南部"
         elif accumulation_hours is None:
             frame_id, lead, lead_label = "airport_region", 0, "云南区域"
@@ -259,6 +264,7 @@ def build_yunnan_airport_hourly_frames(run_dir: Path) -> dict[str, list[dict]]:
     frames_by_area: dict[str, list[tuple[datetime, dict]]] = {
         "airport_region": [],
         "airport_national": [],
+        "airport_hail_warning": [],
     }
     for path in sorted(run_dir.glob("*_rain_hour_*_BJT.webp")):
         if is_preview_asset(path):
@@ -268,11 +274,12 @@ def build_yunnan_airport_hourly_frames(run_dir: Path) -> dict[str, list[dict]]:
             continue
         start = datetime.strptime(match.group("start"), "%Y%m%d%H").replace(tzinfo=BJT)
         end = datetime.strptime(match.group("end"), "%Y%m%d%H").replace(tzinfo=BJT)
-        frame_id = (
-            "airport_region"
-            if match.group("area").lower() == "yunnan_airport"
-            else "airport_national"
-        )
+        area = match.group("area").lower()
+        frame_id = {
+            "yunnan_airport": "airport_region",
+            "national": "airport_national",
+            "yunnan_hail_warning": "airport_hail_warning",
+        }[area]
         frame = {
             "id": f"{frame_id}_hour_{start:%Y%m%d%H}",
             "lead_label": f"{start:%m-%d %H:00}-{end:%H:00}",
@@ -307,7 +314,7 @@ def build_yunnan_airport_product(
         "category": "机场服务",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": "WORK_yn 云南区域逐小时降水拼图，标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场位置。",
+        "description": "WORK_yn 云南逐小时降水与冰雹预警图，标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场位置。",
         "metrics": metrics,
         "frames": frames,
     }
@@ -799,8 +806,7 @@ def build_regional_frames(
     accumulation_prefix: str,
 ) -> list[dict]:
     hourly_frame_ids = {region_id, national_id}
-    if accumulation_prefix == "ningxia":
-        hourly_frame_ids.add("ningxia_hail_warning")
+    hourly_frame_ids.add(f"{accumulation_prefix}_hail_warning")
     individual_frames = (
         build_service_hourly_frames(
             run_dir,
@@ -915,9 +921,9 @@ def regional_frame_meta(
             accumulation_window_label(path.name, accumulation_hours),
             "",
         )
-    if accumulation_prefix == "ningxia" and "_WRF_NingxiaFrozen_" in key:
+    if "Frozen_" in key:
         return (
-            "ningxia_hail_warning",
+            f"{accumulation_prefix}_hail_warning",
             2,
             "冰雹预警",
             "当前显示：冰雹预警",
@@ -978,7 +984,7 @@ def build_xinjiang_product(run_id: str, frames: list[dict], generated_at: str) -
         "category": "新疆预报",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": "默认显示新疆区域图，可切换中国西部图。",
+        "description": "默认显示新疆区域图，可切换中国西部和冰雹预警图。",
         "metrics": [
             {"label": "起报时次", "value": run_id.replace("_", " ") + " UTC"},
             {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},
@@ -1051,7 +1057,7 @@ def build_frames(
     individual_frames = (
         build_service_hourly_frames(
             run_dir,
-            {"shangrao_region", "shangrao_national"},
+            {"shangrao_region", "shangrao_national", "shangrao_hail_warning"},
         )
         if accumulation_hours is None
         else {}
@@ -1220,6 +1226,8 @@ def frame_sort_key(item: tuple[str, list[Path]]) -> tuple[int, int, str]:
     key = item[0]
     if "_combined_national_" in key:
         return (0, 1, key)
+    if "_combined_hail_warning_" in key:
+        return (0, 2, key)
     if "_combined_overview" in key:
         return (0, 0, key)
     detail = DETAIL_RE.search(key)
@@ -1244,6 +1252,13 @@ def frame_meta(run_id: str, key: str) -> dict:
             "lead": 1,
             "lead_label": "中国东南部",
             "valid_label": "当前显示：中国东南部",
+        }
+    if "_combined_hail_warning_" in key:
+        return {
+            "id": "shangrao_hail_warning",
+            "lead": 2,
+            "lead_label": "冰雹预警",
+            "valid_label": "当前显示：冰雹预警",
         }
     if "_combined_overview" in key:
         return {

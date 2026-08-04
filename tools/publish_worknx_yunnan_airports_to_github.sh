@@ -157,6 +157,13 @@ for source in "${sources[@]}"; do
     --run-time-basis utc \
     --regional-dir "$run_dir/captioned_t13_t48" \
     --national-dir "$run_dir/national_captioned_t13_t48"
+  if [[ -d "$run_dir/frozen_captioned_t13_t48" ]] && compgen -G "$run_dir/frozen_captioned_t13_t48/*_rain_hour_*_BJT.png" >/dev/null; then
+    "$PYTHON_BIN" "$SEQUENCE_VALIDATOR" \
+      --run-prefix "$run_prefix" \
+      --run-time-basis utc \
+      --regional-dir "$run_dir/captioned_t13_t48" \
+      --national-dir "$run_dir/frozen_captioned_t13_t48"
+  fi
   asset_files=("$source" "$run_dir/$webp_base" "$run_dir/$preview_base")
 
   mapfile -t national_sources < <(
@@ -174,7 +181,22 @@ for source in "${sources[@]}"; do
     asset_files+=("$national_source" "${national_source%.png}.webp" "${national_source%.png}.preview.webp")
   done
 
-  for panel_dir in "$run_dir/captioned_t13_t48" "$run_dir/national_captioned_t13_t48"; do
+  mapfile -t frozen_sources < <(
+    find "$run_dir" -maxdepth 1 -type f \
+      -name 'Precip_hourly_WRF_YunnanAirportsFrozen_T13_T*_InitUTC_*_combined_overview_*_grid.png' \
+      | sort
+  )
+  for frozen_source in "${frozen_sources[@]}"; do
+    make_webp "$frozen_source"
+    make_preview_webp "$frozen_source"
+    asset_files+=("$frozen_source" "${frozen_source%.png}.webp" "${frozen_source%.png}.preview.webp")
+  done
+
+  panel_dirs=("$run_dir/captioned_t13_t48" "$run_dir/national_captioned_t13_t48")
+  if [[ "${#frozen_sources[@]}" -gt 0 ]]; then
+    panel_dirs+=("$run_dir/frozen_captioned_t13_t48")
+  fi
+  for panel_dir in "${panel_dirs[@]}"; do
     mapfile -t hourly_panel_sources < <(
       find "$panel_dir" -maxdepth 1 -type f -name '*_rain_hour_*_BJT.png' | sort
     )

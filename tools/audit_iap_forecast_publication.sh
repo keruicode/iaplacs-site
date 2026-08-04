@@ -221,66 +221,99 @@ audit_ningxia_output() {
 
 audit_xinjiang_output() {
   local run="$1" output="$SCRIPT_DIR/workxj_xinjiang_overview/$run"
-  local region national public_region public_national region_count national_count
+  local region national frozen public_region public_national public_frozen region_count national_count frozen_count
   region="$(panel_windows "$output/captioned_t13_t48" '')"
   national="$(panel_windows "$output/national_captioned_t13_t48" '')"
+  frozen="$(panel_windows "$output/frozen_captioned_t13_t48" '')"
   region_count="$(window_count "$region")"
   national_count="$(window_count "$national")"
+  frozen_count="$(window_count "$frozen")"
   if ! local_sequences_are_valid utc "$run" "$region" "$national"; then
     log "XINJIANG $run local sequence invalid: region=$region_count national=$national_count; rerender latest run"
     run_action "$SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh" --latest
     return
   fi
-  public_region="$(public_windows xinjiang "$run" xinjiang_region 2>/dev/null || true)"
-  public_national="$(public_windows xinjiang "$run" workxj_national 2>/dev/null || true)"
-  if [[ "$public_region" == "$region" && "$public_national" == "$national" ]]; then
-    log "XINJIANG $run verified: region=$region_count national=$national_count first=${region%%,*}"
+  if [[ -n "$frozen" ]] && ! local_sequences_are_valid utc "$run" "$region" "$frozen"; then
+    log "XINJIANG $run hail-warning sequence invalid: region=$region_count frozen=$frozen_count; rerender latest run"
+    run_action "$SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh" --latest
     return
   fi
-  log "XINJIANG $run public sequence mismatch; republish region=$region_count national=$national_count first=${region%%,*}"
+  public_region="$(public_windows xinjiang "$run" xinjiang_region 2>/dev/null || true)"
+  public_national="$(public_windows xinjiang "$run" workxj_national 2>/dev/null || true)"
+  public_frozen=""
+  if [[ -n "$frozen" ]]; then
+    public_frozen="$(public_windows xinjiang "$run" xinjiang_hail_warning 2>/dev/null || true)"
+  fi
+  if [[ "$public_region" == "$region" && "$public_national" == "$national" && "$public_frozen" == "$frozen" ]]; then
+    log "XINJIANG $run verified: region=$region_count national=$national_count hail=$frozen_count first=${region%%,*}"
+    return
+  fi
+  log "XINJIANG $run public sequence mismatch; republish region=$region_count national=$national_count hail=$frozen_count first=${region%%,*}"
   run_action "$SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh" --output-run "$run"
 }
 
 audit_yunnan_output() {
   local run="$1" output="$SCRIPT_DIR/worknx_yunnan_airports_overview/$run"
-  local region national public_region public_national region_count national_count
+  local region national frozen public_region public_national public_frozen region_count national_count frozen_count
   region="$(panel_windows "$output/captioned_t13_t48" '')"
   national="$(panel_windows "$output/national_captioned_t13_t48" '')"
+  frozen="$(panel_windows "$output/frozen_captioned_t13_t48" '')"
   region_count="$(window_count "$region")"
   national_count="$(window_count "$national")"
+  frozen_count="$(window_count "$frozen")"
   if ! local_sequences_are_valid utc "$run" "$region" "$national"; then
     log "YUNNAN $run local sequence invalid: region=$region_count national=$national_count; rerender latest run"
     run_action "$SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh" --latest
     return
   fi
-  public_region="$(public_windows airport "airport_yunnan_$run" airport_region 2>/dev/null || true)"
-  public_national="$(public_windows airport "airport_yunnan_$run" airport_national 2>/dev/null || true)"
-  if [[ "$public_region" == "$region" && "$public_national" == "$national" ]]; then
-    log "YUNNAN $run verified: region=$region_count national=$national_count first=${region%%,*}"
+  if [[ -n "$frozen" ]] && ! local_sequences_are_valid utc "$run" "$region" "$frozen"; then
+    log "YUNNAN $run hail-warning sequence invalid: region=$region_count frozen=$frozen_count; rerender latest run"
+    run_action "$SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh" --latest
     return
   fi
-  log "YUNNAN $run public sequence mismatch; republish region=$region_count national=$national_count first=${region%%,*}"
+  public_region="$(public_windows airport "airport_yunnan_$run" airport_region 2>/dev/null || true)"
+  public_national="$(public_windows airport "airport_yunnan_$run" airport_national 2>/dev/null || true)"
+  public_frozen=""
+  if [[ -n "$frozen" ]]; then
+    public_frozen="$(public_windows airport "airport_yunnan_$run" airport_hail_warning 2>/dev/null || true)"
+  fi
+  if [[ "$public_region" == "$region" && "$public_national" == "$national" && "$public_frozen" == "$frozen" ]]; then
+    log "YUNNAN $run verified: region=$region_count national=$national_count hail=$frozen_count first=${region%%,*}"
+    return
+  fi
+  log "YUNNAN $run public sequence mismatch; republish region=$region_count national=$national_count hail=$frozen_count first=${region%%,*}"
   run_action "$SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh" --output-run "$run"
 }
 
 audit_shangrao_output() {
-  local run="$1" region national public_region public_national region_count national_count
+  local run="$1" region national frozen public_region public_national public_frozen region_count national_count frozen_count
   region="$(panel_windows "$SCRIPT_DIR/wrf_hourly_png" "${run}_")"
   national="$(panel_windows "$SCRIPT_DIR/national_hourly_png" "${run}_national_")"
+  frozen="$(panel_windows "$SCRIPT_DIR/shangrao_hail_hourly_png" "${run}_")"
   region_count="$(window_count "$region")"
   national_count="$(window_count "$national")"
+  frozen_count="$(window_count "$frozen")"
   if ! local_sequences_are_valid bjt "$run" "$region" "$national"; then
     log "SHANGRAO $run local sequence invalid: region=$region_count national=$national_count; submit forced rerender"
     run_action env IAPLACS_FORCE_RENDER=1 "$SCRIPT_DIR/submit_wrf_pipeline.sh"
     return
   fi
-  public_region="$(public_windows shangrao "$run" shangrao_region 2>/dev/null || true)"
-  public_national="$(public_windows shangrao "$run" shangrao_national 2>/dev/null || true)"
-  if [[ "$public_region" == "$region" && "$public_national" == "$national" ]]; then
-    log "SHANGRAO $run verified: region=$region_count national=$national_count first=${region%%,*}"
+  if [[ -n "$frozen" ]] && ! local_sequences_are_valid bjt "$run" "$region" "$frozen"; then
+    log "SHANGRAO $run hail-warning sequence invalid: region=$region_count frozen=$frozen_count; submit forced rerender"
+    run_action env IAPLACS_FORCE_RENDER=1 "$SCRIPT_DIR/submit_wrf_pipeline.sh"
     return
   fi
-  log "SHANGRAO $run public sequence mismatch; republish region=$region_count national=$national_count first=${region%%,*}"
+  public_region="$(public_windows shangrao "$run" shangrao_region 2>/dev/null || true)"
+  public_national="$(public_windows shangrao "$run" shangrao_national 2>/dev/null || true)"
+  public_frozen=""
+  if [[ -n "$frozen" ]]; then
+    public_frozen="$(public_windows shangrao "$run" shangrao_hail_warning 2>/dev/null || true)"
+  fi
+  if [[ "$public_region" == "$region" && "$public_national" == "$national" && "$public_frozen" == "$frozen" ]]; then
+    log "SHANGRAO $run verified: region=$region_count national=$national_count hail=$frozen_count first=${region%%,*}"
+    return
+  fi
+  log "SHANGRAO $run public sequence mismatch; republish region=$region_count national=$national_count hail=$frozen_count first=${region%%,*}"
   run_action "$SCRIPT_DIR/publish_wrf_montages_with_hourly_to_github.sh"
 }
 

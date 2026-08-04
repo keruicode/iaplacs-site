@@ -43,6 +43,8 @@ begin
   city_shp_file = getenv("YUNNAN_CITY_SHP_FILE")
   accum_hours_text = getenv("RAIN_ACCUM_HOURS")
   legacy_county_shp_file = getenv("YUNNAN_COUNTY_SHP_FILE")
+  component_mode = getenv("RAIN_COMPONENT_MODE")
+  output_area = getenv("RAIN_OUTPUT_AREA")
 
   if (wrf_dir.eq."") then
     wrf_dir = getenv("WORK_NX_WRF_DIR")
@@ -75,6 +77,12 @@ begin
   end if
   if (city_shp_file.eq."" .and. legacy_county_shp_file.ne."") then
     city_shp_file = legacy_county_shp_file
+  end if
+  if (ismissing(component_mode) .or. component_mode.eq."") then
+    component_mode = "total"
+  end if
+  if (ismissing(output_area) .or. output_area.eq."") then
+    output_area = "yunnan_airport"
   end if
 
   system("mkdir -p " + out_dir)
@@ -123,16 +131,29 @@ begin
 
     lat2d = f->XLAT(0,:,:)
     lon2d = f->XLONG(0,:,:)
-    ; Preserve the operational rain baseline and add frozen precipitation
-    ; accumulators when this WRF output provides them. The additions follow
-    ; the IAP TF graupel and hail precipitation components; older files
-    ; without either variable retain the original calculation.
-    rain_all = f->RAINNC + f->RAINC
-    if (isfilevar(f, "GRAUPELNC")) then
-      rain_all = rain_all + f->GRAUPELNC
-    end if
-    if (isfilevar(f, "HAILNC")) then
-      rain_all = rain_all + f->HAILNC
+    if (component_mode.eq."frozen") then
+      if (isfilevar(f, "GRAUPELNC") .and. isfilevar(f, "HAILNC")) then
+        rain_all = f->GRAUPELNC + f->HAILNC
+      else if (isfilevar(f, "GRAUPELNC")) then
+        rain_all = f->GRAUPELNC
+      else if (isfilevar(f, "HAILNC")) then
+        rain_all = f->HAILNC
+      else
+        print("ERROR: frozen mode requires GRAUPELNC or HAILNC in " + files(ifile))
+        delete(f)
+        exit
+      end if
+      end if
+      end if
+    else
+      ; Preserve the operational total-precipitation product.
+      rain_all = f->RAINNC + f->RAINC
+      if (isfilevar(f, "GRAUPELNC")) then
+        rain_all = rain_all + f->GRAUPELNC
+      end if
+      if (isfilevar(f, "HAILNC")) then
+        rain_all = rain_all + f->HAILNC
+      end if
     end if
     init_bjt = bjt_label(f@START_DATE, 3)
 
@@ -156,7 +177,7 @@ begin
       rain_h@lon2d = lon2d
 
       if (accum_hours.eq.1) then
-        out_name = init_bjt + "_yunnan_airport_rain_hour_" + file_start + "-" + file_end + "_BJT"
+        out_name = init_bjt + "_" + output_area + "_rain_hour_" + file_start + "-" + file_end + "_BJT"
       else
         out_name = init_bjt + "_combined_accum_" + sprinti("%0.2i",accum_hours) + "h_" + file_start + "-" + file_end + "_BJT_grid"
       end if

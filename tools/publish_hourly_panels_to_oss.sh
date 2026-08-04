@@ -20,7 +20,7 @@ Usage: publish_hourly_panels_to_oss.sh \
   --family worknx_summary|workxj_summary|wrf_montage \
   --run-prefix YYYYMMDD_HH \
   --regional-dir DIR --national-dir DIR \
-  [--extra-id ningxia_hail_warning --extra-dir DIR]
+  [--extra-id SERVICE_hail_warning --extra-dir DIR]
 EOF
 }
 
@@ -65,10 +65,13 @@ esac
 [[ -d "$regional_dir" ]] || { echo "ERROR: regional panel directory not found: $regional_dir" >&2; exit 1; }
 [[ -d "$national_dir" ]] || { echo "ERROR: national panel directory not found: $national_dir" >&2; exit 1; }
 if [[ -n "$extra_id" || -n "$extra_dir" ]]; then
-  [[ "$family" == "worknx_summary" && "$extra_id" == "ningxia_hail_warning" ]] || {
-    echo "ERROR: the optional frame must be ningxia_hail_warning for worknx_summary" >&2
+  case "$family:$extra_id" in
+    worknx_summary:ningxia_hail_warning|workxj_summary:xinjiang_hail_warning|wrf_montage:shangrao_hail_warning) ;;
+    *)
+    echo "ERROR: unsupported optional frame $extra_id for $family" >&2
     exit 64
-  }
+    ;;
+  esac
   [[ -d "$extra_dir" ]] || { echo "ERROR: extra panel directory not found: $extra_dir" >&2; exit 1; }
 fi
 [[ -f "$SEQUENCE_VALIDATOR" ]] || { echo "ERROR: hourly sequence validator not found: $SEQUENCE_VALIDATOR" >&2; exit 1; }
@@ -95,6 +98,14 @@ else
     --regional-dir "$regional_dir" \
     --national-dir "$national_dir" \
     --filename-prefix "$run_prefix"
+  if [[ -n "$extra_dir" ]]; then
+    "$PYTHON_BIN" "$SEQUENCE_VALIDATOR" \
+      --run-prefix "$run_prefix" \
+      --run-time-basis "$run_time_basis" \
+      --regional-dir "$regional_dir" \
+      --national-dir "$extra_dir" \
+      --filename-prefix "$run_prefix"
+  fi
 fi
 
 stage_dir="$(mktemp -d "${TMPDIR:-/tmp}/iaplacs-hourly-panels.XXXXXX")"

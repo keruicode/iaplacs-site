@@ -13,6 +13,12 @@ SERVICE_LABEL="${SERVICE_LABEL:-Ningxia}"
 SERVICE_FILE_TOKEN="${SERVICE_FILE_TOKEN:-Ningxia}"
 PUBLISH_FAMILY="${PUBLISH_FAMILY:-worknx_summary}"
 
+case "$PUBLISH_FAMILY" in
+  worknx_summary) HAIL_FRAME_ID="ningxia_hail_warning" ;;
+  workxj_summary) HAIL_FRAME_ID="xinjiang_hail_warning" ;;
+  *) HAIL_FRAME_ID="" ;;
+esac
+
 usage() {
   cat <<'EOF'
 Usage: publish_worknx_ningxia_to_github.sh [--latest | --recent COUNT | --output-run YYYYMMDD_HH]
@@ -122,25 +128,25 @@ for source in "${sources[@]}"; do
     echo "WARNING: no $SERVICE_LABEL China-sector overview found beside $source" >&2
   fi
 
-  if [[ "$PUBLISH_FAMILY" == "worknx_summary" ]]; then
+  if [[ -n "$HAIL_FRAME_ID" ]]; then
     mapfile -t frozen_sources < <(
       find "$source_dir" -maxdepth 1 -type f \
-        -name 'Precip_hourly_WRF_NingxiaFrozen_T13_T*_InitUTC_*_combined_overview_*_grid.png' \
+        -name "Precip_hourly_WRF_${SERVICE_FILE_TOKEN}Frozen_T13_T*_InitUTC_*_combined_overview_*_grid.png" \
         | sort
     )
     if [[ "${#frozen_sources[@]}" -gt 0 ]]; then
-      echo "Publishing Ningxia hail-warning overview: ${frozen_sources[0]}"
+      echo "Publishing $SERVICE_LABEL hail-warning overview: ${frozen_sources[0]}"
       IAPLACS_WEBP_FORCE=1 \
         IAPLACS_PREVIEW_FORCE=1 \
         IAPLACS_ASSET_FORCE_UPLOAD=1 \
         WORK_NX_ROOT="$source_dir" \
         PUBLISH_FAMILY="$PUBLISH_FAMILY" \
-        SOURCE_LABEL="Ningxia hail warning" \
+        SOURCE_LABEL="$SERVICE_LABEL hail warning" \
         SOURCE_IMAGE_GLOB="$(basename "${frozen_sources[0]}")" \
         MIN_FILE_AGE_SECONDS=0 \
         "$PUBLISHER"
     else
-      echo "WARNING: no Ningxia hail-warning overview found beside $source" >&2
+      echo "WARNING: no $SERVICE_LABEL hail-warning overview found beside $source" >&2
     fi
   fi
 
@@ -150,13 +156,13 @@ for source in "${sources[@]}"; do
     IAPLACS_WEBP_FORCE=1 IAPLACS_PREVIEW_FORCE=1 IAPLACS_ASSET_FORCE_UPLOAD=1 WORK_NX_ROOT="$source_dir" PUBLISH_FAMILY="$PUBLISH_FAMILY" SOURCE_LABEL="$SERVICE_LABEL" SOURCE_IMAGE_GLOB="$(basename "$accum_source")" MIN_FILE_AGE_SECONDS=0 "$PUBLISHER" </dev/null
   done < <(find "$source_dir" -maxdepth 1 -type f -name "Precip_accum_*h_WRF_${SERVICE_FILE_TOKEN}_T13_T*_InitUTC_*_combined_overview_1x1_grid.png" | sort)
 
-  if [[ "$PUBLISH_FAMILY" == "worknx_summary" && -d "$source_dir/frozen_captioned_t13_t48" ]]; then
+  if [[ -n "$HAIL_FRAME_ID" && -d "$source_dir/frozen_captioned_t13_t48" ]]; then
     "$HOURLY_PUBLISHER" \
       --family "$PUBLISH_FAMILY" \
       --run-prefix "$run_prefix" \
       --regional-dir "$source_dir/captioned_t13_t48" \
       --national-dir "$source_dir/national_captioned_t13_t48" \
-      --extra-id ningxia_hail_warning \
+      --extra-id "$HAIL_FRAME_ID" \
       --extra-dir "$source_dir/frozen_captioned_t13_t48"
   else
     "$HOURLY_PUBLISHER" \

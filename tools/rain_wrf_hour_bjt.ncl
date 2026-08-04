@@ -46,6 +46,7 @@ begin
   county_shp_file = getenv("SHANGRAO_COUNTY_SHP_FILE")
   legacy_shp_file = getenv("SHANGRAO_SHP_FILE")
   accum_hours_text = getenv("RAIN_ACCUM_HOURS")
+  component_mode = getenv("RAIN_COMPONENT_MODE")
 
   if (ismissing(wrf_dir)) then
     wrf_dir = ""
@@ -69,6 +70,9 @@ begin
   end if
   if (accum_hours.lt.1) then
     accum_hours = 1
+  end if
+  if (ismissing(component_mode) .or. component_mode.eq."") then
+    component_mode = "total"
   end if
 
   if (wrf_dir.eq."") then
@@ -120,16 +124,28 @@ begin
 
     lat2d = f->XLAT(0,:,:)
     lon2d = f->XLONG(0,:,:)
-    ; Preserve the operational rain baseline and add frozen precipitation
-    ; accumulators when this WRF output provides them. The additions follow
-    ; the IAP TF graupel and hail precipitation components; older files
-    ; without either variable retain the original calculation.
-    rain_all = f->RAINNC + f->RAINC
-    if (isfilevar(f, "GRAUPELNC")) then
-      rain_all = rain_all + f->GRAUPELNC
-    end if
-    if (isfilevar(f, "HAILNC")) then
-      rain_all = rain_all + f->HAILNC
+    if (component_mode.eq."frozen") then
+      if (isfilevar(f, "GRAUPELNC") .and. isfilevar(f, "HAILNC")) then
+        rain_all = f->GRAUPELNC + f->HAILNC
+      else if (isfilevar(f, "GRAUPELNC")) then
+        rain_all = f->GRAUPELNC
+      else if (isfilevar(f, "HAILNC")) then
+        rain_all = f->HAILNC
+      else
+        print("ERROR: frozen mode requires GRAUPELNC or HAILNC in " + files(ifile))
+        delete(f)
+        exit
+      end if
+      end if
+      end if
+    else
+      rain_all = f->RAINNC + f->RAINC
+      if (isfilevar(f, "GRAUPELNC")) then
+        rain_all = rain_all + f->GRAUPELNC
+      end if
+      if (isfilevar(f, "HAILNC")) then
+        rain_all = rain_all + f->HAILNC
+      end if
     end if
 
     start_date = f@START_DATE

@@ -17,7 +17,7 @@ DEFAULT_ASSET_BASE_URL = (
 )
 PANEL_RE = re.compile(
     r"^(?P<run>\d{8}_\d{2})_"
-    r"(?P<area>ningxia_region|worknx_national|ningxia_hail_warning|shangrao_region|shangrao_national|xinjiang_region|workxj_national)_"
+    r"(?P<area>ningxia_region|worknx_national|ningxia_hail_warning|shangrao_region|shangrao_national|shangrao_hail_warning|xinjiang_region|workxj_national|xinjiang_hail_warning)_"
     r"rain_hour_(?P<start>\d{10})-(?P<end>\d{10})_BJT\.webp$",
     re.IGNORECASE,
 )
@@ -32,11 +32,13 @@ FAMILY_CONFIG = {
         "service": "shangrao",
         "products": {"wrf_rain_montage"},
         "frames": {"shangrao_region", "shangrao_national"},
+        "optional_frames": {"shangrao_hail_warning"},
     },
     "workxj_summary": {
         "service": "xinjiang",
         "products": {"xinjiang_precip_series"},
         "frames": {"xinjiang_region", "workxj_national"},
+        "optional_frames": {"xinjiang_hail_warning"},
     },
 }
 

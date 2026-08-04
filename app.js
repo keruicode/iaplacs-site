@@ -639,7 +639,7 @@ function updateFrameCountMetric(metrics, frameCount) {
 
 function normalizeShangraoFrames(run, frames) {
   const explicitRegionNational = frames.filter((frame) =>
-    ["shangrao_region", "shangrao_national"].includes(frame?.id),
+    ["shangrao_region", "shangrao_national", "shangrao_hail_warning"].includes(frame?.id),
   );
   if (explicitRegionNational.length) {
     return explicitRegionNational
