@@ -215,7 +215,6 @@ begin
       res@mpMaxLatF = lat_max
       res@sfXArray = lon_axis
       res@sfYArray = lat_axis
-      res@pmTickMarkDisplayMode = "Always"
       if (region_mode.eq."xinjiang") then
         res@tmXBMode = "Explicit"
         res@tmXBValues = (/75.0, 80.0, 85.0, 90.0, 95.0/)
@@ -226,6 +225,7 @@ begin
         res@tmYLLabels = (/"35~S~o~N~N", "40~S~o~N~N", \
                            "45~S~o~N~N", "50~S~o~N~N"/)
       else
+        res@pmTickMarkDisplayMode = "Always"
         res@gsnMajorLonSpacing = 1.0
         res@gsnMajorLatSpacing = 1.0
       end if
