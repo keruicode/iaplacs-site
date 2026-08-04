@@ -311,7 +311,8 @@ GIT_SSH_WRAPPER="$(mktemp /tmp/iaplacs_git_ssh.XXXXXX)"
 cat > "$GIT_SSH_WRAPPER" <<EOF
 #!/usr/bin/env bash
 unset LD_LIBRARY_PATH LIBRARY_PATH
-exec ssh -i "$GITHUB_KEY" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no "\$@"
+exec ssh -i "$GITHUB_KEY" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no \
+  -o ConnectTimeout=30 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 "\$@"
 EOF
 chmod 700 "$GIT_SSH_WRAPPER"
 export GIT_SSH="$GIT_SSH_WRAPPER"
