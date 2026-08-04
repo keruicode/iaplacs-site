@@ -22,26 +22,35 @@ mkdir -p "$LOG_DIR"
 
 usage() {
   cat <<'EOF'
-Usage: publish_worknx_yunnan_airports_to_github.sh [--latest | --recent COUNT]
+Usage: publish_worknx_yunnan_airports_to_github.sh [--latest | --recent COUNT | --output-run YYYYMMDD_HH]
 
 Renders Yunnan airport regional and nationwide products through the latest
 available lead, uploads PNG/WebP/preview assets to OSS, and commits only the
 forecast catalog to GitHub.
+--output-run republishes an already rendered run without running NCL again.
 EOF
 }
 
 mode="--latest"
 count=1
+output_run=""
 if [[ "${1:-}" == "--recent" ]]; then
   mode="--recent"
   count="${2:-5}"
+elif [[ "${1:-}" == "--output-run" ]]; then
+  mode="--output-run"
+  output_run="${2:-}"
 elif [[ -n "${1:-}" && "${1:-}" != "--latest" ]]; then
   usage >&2
   exit 64
 fi
 
-if ! [[ "$count" =~ ^[1-9][0-9]*$ ]]; then
+if [[ "$mode" != "--output-run" && ! "$count" =~ ^[1-9][0-9]*$ ]]; then
   echo "ERROR: recent count must be a positive integer" >&2
+  exit 64
+fi
+if [[ "$mode" == "--output-run" && ! "$output_run" =~ ^[0-9]{8}_[0-9]{2}$ ]]; then
+  echo "ERROR: output run must use YYYYMMDD_HH" >&2
   exit 64
 fi
 if [[ ! -x "$RENDERER" ]]; then
@@ -102,18 +111,27 @@ PY
 
 if [[ "$mode" == "--recent" ]]; then
   "$RENDERER" --recent "$count"
-else
+elif [[ "$mode" == "--latest" ]]; then
   "$RENDERER" --latest
 fi
 
-mapfile -t sources < <(
-  find "$OUTPUT_ROOT" -mindepth 2 -maxdepth 2 -type f \
-    -name 'Precip_hourly_WRF_YunnanAirports_T13_T*_InitUTC_*_combined_overview_*_grid.png' \
-    -printf '%T@ %p\n' \
-    | sort -nr \
-    | head -n "$count" \
-    | cut -d' ' -f2-
-)
+if [[ "$mode" == "--output-run" ]]; then
+  mapfile -t sources < <(
+    find "$OUTPUT_ROOT/$output_run" -maxdepth 1 -type f \
+      -name 'Precip_hourly_WRF_YunnanAirports_T13_T*_InitUTC_*_combined_overview_*_grid.png' \
+      | sort
+  )
+  count=1
+else
+  mapfile -t sources < <(
+    find "$OUTPUT_ROOT" -mindepth 2 -maxdepth 2 -type f \
+      -name 'Precip_hourly_WRF_YunnanAirports_T13_T*_InitUTC_*_combined_overview_*_grid.png' \
+      -printf '%T@ %p\n' \
+      | sort -nr \
+      | head -n "$count" \
+      | cut -d' ' -f2-
+  )
+fi
 
 if [[ "${#sources[@]}" -ne "$count" ]]; then
   echo "ERROR: expected $count Yunnan airport overview image(s), found ${#sources[@]}" >&2

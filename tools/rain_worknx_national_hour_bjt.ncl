@@ -253,15 +253,19 @@ begin
         res@tiMainFontColor = "black"
         res@tiMainOffsetYF = -0.012
       end if
-      ; NCL 6.3 may automatically stride a vertical label bar and hide every
-      ; other cumulative threshold.  Keep every operational boundary visible.
-      if (accum_hours.gt.1) then
-        res@cnExplicitLabelBarLabelsOn = True
+      ; NCL 6.3 can automatically stride a vertical label bar and silently
+      ; hide alternate values.  Define every boundary for both the hourly CMA
+      ; palette and the accumulated products so China Central, Southeast, and
+      ; Southwest use the same complete legend.
+      res@cnExplicitLabelBarLabelsOn = True
+      res@lbLabelAlignment = "InteriorEdges"
+      res@lbAutoManage = False
+      res@lbLabelAutoStride = False
+      res@lbLabelStride = 1
+      if (accum_hours.eq.1) then
+        res@lbLabelStrings = (/"0", "2.5", "5", "10", "25", "50", "100"/)
+      else
         res@lbLabelStrings = (/"0", "0.1", "10", "25", "50", "100", "250"/)
-        res@lbLabelAlignment = "InteriorEdges"
-        res@lbAutoManage = False
-        res@lbLabelAutoStride = False
-        res@lbLabelStride = 1
       end if
       res@lbLabelFont = "Times-Bold"
       res@lbLabelFontColor = "black"
@@ -269,8 +273,8 @@ begin
         res@lbLabelFontHeightF = 0.025
         res@lbLabelFontThicknessF = 5.0
       else
-        res@lbLabelFontHeightF = 0.034
-        res@lbLabelFontThicknessF = 8
+        res@lbLabelFontHeightF = 0.024
+        res@lbLabelFontThicknessF = 5.0
       end if
       res@lbLabelBarOn = True
       res@lbOrientation = "Vertical"
