@@ -9,6 +9,9 @@ RENDERER="${RENDERER:-$SCRIPT_DIR/render_worknx_ningxia_overview.sh}"
 PUBLISHER="${PUBLISHER:-$SCRIPT_DIR/publish_worknx_summary_to_github.sh}"
 HOURLY_PUBLISHER="${HOURLY_PUBLISHER:-$SCRIPT_DIR/publish_hourly_panels_to_oss.sh}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-$SCRIPT_DIR/worknx_ningxia_overview}"
+SERVICE_LABEL="${SERVICE_LABEL:-Ningxia}"
+SERVICE_FILE_TOKEN="${SERVICE_FILE_TOKEN:-Ningxia}"
+PUBLISH_FAMILY="${PUBLISH_FAMILY:-worknx_summary}"
 
 usage() {
   cat <<'EOF'
@@ -64,14 +67,14 @@ fi
 if [[ "$mode" == "--output-run" ]]; then
   mapfile -t sources < <(
     find "$OUTPUT_ROOT/$output_run" -maxdepth 1 -type f \
-      -name 'Precip_hourly_WRF_Ningxia_T13_T*_InitUTC_*_combined_overview_*_grid.png' \
+      -name "Precip_hourly_WRF_${SERVICE_FILE_TOKEN}_T13_T*_InitUTC_*_combined_overview_*_grid.png" \
       | sort
   )
   count=1
 else
   mapfile -t sources < <(
     find "$OUTPUT_ROOT" -mindepth 2 -maxdepth 2 -type f \
-      -name 'Precip_hourly_WRF_Ningxia_T13_T*_InitUTC_*_combined_overview_*_grid.png' \
+      -name "Precip_hourly_WRF_${SERVICE_FILE_TOKEN}_T13_T*_InitUTC_*_combined_overview_*_grid.png" \
       -printf '%T@ %p\n' \
       | sort -nr \
       | head -n "$count" \
@@ -80,18 +83,20 @@ else
 fi
 
 if [[ "${#sources[@]}" -ne "$count" ]]; then
-  echo "ERROR: expected $count Ningxia overview image(s), found ${#sources[@]}" >&2
+  echo "ERROR: expected $count $SERVICE_LABEL overview image(s), found ${#sources[@]}" >&2
   exit 1
 fi
 
 for source in "${sources[@]}"; do
   source_dir="$(dirname "$source")"
   run_prefix="$(basename "$source_dir")"
-  echo "Publishing Ningxia regional overview: $source"
+  echo "Publishing $SERVICE_LABEL regional overview: $source"
   IAPLACS_WEBP_FORCE=1 \
     IAPLACS_PREVIEW_FORCE=1 \
     IAPLACS_ASSET_FORCE_UPLOAD=1 \
     WORK_NX_ROOT="$source_dir" \
+    PUBLISH_FAMILY="$PUBLISH_FAMILY" \
+    SOURCE_LABEL="$SERVICE_LABEL" \
     SOURCE_IMAGE_GLOB="$(basename "$source")" \
     MIN_FILE_AGE_SECONDS=0 \
     STABILITY_SLEEP_SECONDS=0 \
@@ -103,26 +108,28 @@ for source in "${sources[@]}"; do
       | sort
   )
   if [[ "${#national_sources[@]}" -gt 0 ]]; then
-    echo "Publishing WORK_nx national overview: ${national_sources[0]}"
+    echo "Publishing $SERVICE_LABEL China-sector overview: ${national_sources[0]}"
     IAPLACS_WEBP_FORCE=1 \
       IAPLACS_PREVIEW_FORCE=1 \
       IAPLACS_ASSET_FORCE_UPLOAD=1 \
       WORK_NX_ROOT="$source_dir" \
+      PUBLISH_FAMILY="$PUBLISH_FAMILY" \
+      SOURCE_LABEL="$SERVICE_LABEL" \
       SOURCE_IMAGE_GLOB="$(basename "${national_sources[0]}")" \
       MIN_FILE_AGE_SECONDS=0 \
       "$PUBLISHER"
   else
-    echo "WARNING: no WORK_nx national overview found beside $source" >&2
+    echo "WARNING: no $SERVICE_LABEL China-sector overview found beside $source" >&2
   fi
 
   while IFS= read -r accum_source; do
     [[ -n "$accum_source" ]] || continue
-    echo "Publishing Ningxia accumulation: $accum_source"
-    IAPLACS_WEBP_FORCE=1 IAPLACS_PREVIEW_FORCE=1 IAPLACS_ASSET_FORCE_UPLOAD=1 WORK_NX_ROOT="$source_dir" SOURCE_IMAGE_GLOB="$(basename "$accum_source")" MIN_FILE_AGE_SECONDS=0 "$PUBLISHER" </dev/null
-  done < <(find "$source_dir" -maxdepth 1 -type f -name 'Precip_accum_*h_WRF_Ningxia_T13_T*_InitUTC_*_combined_overview_1x1_grid.png' | sort)
+    echo "Publishing $SERVICE_LABEL accumulation: $accum_source"
+    IAPLACS_WEBP_FORCE=1 IAPLACS_PREVIEW_FORCE=1 IAPLACS_ASSET_FORCE_UPLOAD=1 WORK_NX_ROOT="$source_dir" PUBLISH_FAMILY="$PUBLISH_FAMILY" SOURCE_LABEL="$SERVICE_LABEL" SOURCE_IMAGE_GLOB="$(basename "$accum_source")" MIN_FILE_AGE_SECONDS=0 "$PUBLISHER" </dev/null
+  done < <(find "$source_dir" -maxdepth 1 -type f -name "Precip_accum_*h_WRF_${SERVICE_FILE_TOKEN}_T13_T*_InitUTC_*_combined_overview_1x1_grid.png" | sort)
 
   "$HOURLY_PUBLISHER" \
-    --family worknx_summary \
+    --family "$PUBLISH_FAMILY" \
     --run-prefix "$run_prefix" \
     --regional-dir "$source_dir/captioned_t13_t48" \
     --national-dir "$source_dir/national_captioned_t13_t48"

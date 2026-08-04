@@ -66,9 +66,10 @@ fi
   echo "iap_home_dir=$IAP_HOME_DIR"
   echo "work_nx_root=/data1/elpt_2022_00083/zhoubj/WORK_nx"
   echo "work_yn_root=/data1/elpt_2022_00083/zhoubj/WORK_yn"
+  echo "work_xj_root=/data1/elpt_2022_00083/zhoubj/WORK_xj"
   echo "required_commands=ncks,ncl,montage,convert,python3,git,sbatch,squeue,rsync"
   echo "credential_files_excluded=~/.ssh,~/.iaplacs-oss.env"
-  echo "large_data_excluded=wrfout_*,wrf_hourly_png,worknx_summary,worknx_ningxia_overview,worknx_yunnan_airports_overview,logs"
+  echo "large_data_excluded=wrfout_*,wrf_hourly_png,worknx_summary,workxj_summary,worknx_ningxia_overview,workxj_xinjiang_overview,worknx_yunnan_airports_overview,logs"
 } > "$STAGE_DIR/runtime-paths.txt"
 
 if git -C "$SCRIPT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then

@@ -17,7 +17,7 @@ DEFAULT_ASSET_BASE_URL = (
 )
 PANEL_RE = re.compile(
     r"^(?P<run>\d{8}_\d{2})_"
-    r"(?P<area>ningxia_region|worknx_national|shangrao_region|shangrao_national)_"
+    r"(?P<area>ningxia_region|worknx_national|shangrao_region|shangrao_national|xinjiang_region|workxj_national)_"
     r"rain_hour_(?P<start>\d{10})-(?P<end>\d{10})_BJT\.webp$",
     re.IGNORECASE,
 )
@@ -31,6 +31,11 @@ FAMILY_CONFIG = {
         "service": "shangrao",
         "products": {"wrf_rain_montage"},
         "frames": {"shangrao_region", "shangrao_national"},
+    },
+    "workxj_summary": {
+        "service": "xinjiang",
+        "products": {"xinjiang_precip_series"},
+        "frames": {"xinjiang_region", "workxj_national"},
     },
 }
 
@@ -137,7 +142,7 @@ def validate_panel_sequences(
     family: str, run_prefix: str, panels: dict[str, list[dict]]
 ) -> None:
     init = datetime.strptime(run_prefix, "%Y%m%d_%H").replace(tzinfo=BJT)
-    if family == "worknx_summary":
+    if family in {"worknx_summary", "workxj_summary"}:
         # WORK_nx run prefixes are UTC; convert to BJT before adding spin-up.
         init += timedelta(hours=8)
     expected_start = init + timedelta(hours=12)

@@ -47,7 +47,7 @@ YUNNAN_HOURLY_PANEL_RE = re.compile(
 )
 SERVICE_HOURLY_PANEL_RE = re.compile(
     r"^(?P<run>\d{8}_\d{2})_"
-    r"(?P<area>ningxia_region|worknx_national|shangrao_region|shangrao_national)_"
+    r"(?P<area>ningxia_region|worknx_national|shangrao_region|shangrao_national|xinjiang_region|workxj_national)_"
     r"rain_hour_(?P<start>\d{10})-(?P<end>\d{10})_BJT$",
     re.IGNORECASE,
 )
@@ -70,12 +70,13 @@ def main() -> None:
     airport_runs = airport_yunnan_runs or build_airport_sample_runs()
     wrf_runs = merge_existing_runs(build_wrf_runs(), existing_catalog, "shangrao")
     ningxia_runs = merge_existing_runs(build_ningxia_runs(), existing_catalog, "ningxia")
-    for runs in (airport_runs, wrf_runs, ningxia_runs):
+    xinjiang_runs = merge_existing_runs(build_xinjiang_runs(), existing_catalog, "xinjiang")
+    for runs in (airport_runs, wrf_runs, ningxia_runs, xinjiang_runs):
         discard_invalid_accumulation_products(runs)
         attach_latest_cma_24h_observation(runs)
     shangrao_runs = wrf_runs
     catalog_published_at = latest_published_at(
-        airport_runs + ningxia_runs + shangrao_runs
+        airport_runs + ningxia_runs + shangrao_runs + xinjiang_runs
     )
     airport_note = (
         "机场服务页展示 WORK_yn 云南区域36小时降水拼图，并单独列出德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点的累计降水；2米气温和10米风场入口继续保留。"
@@ -115,6 +116,13 @@ def main() -> None:
                 "latest_run": shangrao_runs[0]["id"] if shangrao_runs else None,
                 "runs": shangrao_runs,
             },
+            "xinjiang": {
+                "title": "新疆预报",
+                "subtitle": "Xinjiang forecast",
+                "note": "新疆页面展示 WORK_xj 的新疆区域和中国西部降水预报，并提供12小时、24小时累计降水及中央气象台24小时降水实况。",
+                "latest_run": xinjiang_runs[0]["id"] if xinjiang_runs else None,
+                "runs": xinjiang_runs,
+            },
         },
     }
     CATALOG_PATH.write_text(
@@ -123,7 +131,8 @@ def main() -> None:
     print(
         f"wrote {CATALOG_PATH.relative_to(ROOT)} "
         f"with {len(airport_runs)} airport run(s), "
-        f"{len(ningxia_runs)} ningxia run(s), {len(shangrao_runs)} shangrao run(s)"
+        f"{len(ningxia_runs)} ningxia run(s), {len(shangrao_runs)} shangrao run(s), "
+        f"{len(xinjiang_runs)} xinjiang run(s)"
     )
 
 
@@ -701,13 +710,98 @@ def build_ningxia_runs() -> list[dict]:
     return runs[:MAX_RUNS]
 
 
+def build_xinjiang_runs() -> list[dict]:
+    runs = []
+    if not MAPS_DIR.exists():
+        return runs
+
+    for run_dir in sorted(MAPS_DIR.glob("workxj_summary_*")):
+        if not run_dir.is_dir():
+            continue
+        fragment_path = run_dir / "manifest_fragment.json"
+        if not fragment_path.exists():
+            continue
+        fragment = json.loads(fragment_path.read_text(encoding="utf-8"))
+        hourly_frames = build_xinjiang_frames(run_dir, fragment, accumulation_hours=None)
+        if not hourly_frames:
+            continue
+
+        run_id = fragment.get("run_prefix") or run_dir.name.replace("workxj_summary_", "")
+        run_time = fragment.get("run_time") or parse_run_time(run_id).isoformat()
+        generated_at = fragment.get("generated_at") or latest_mtime(run_dir).isoformat()
+        runs.append(
+            {
+                "id": run_id,
+                "label": f"{format_run_label(run_time)} BJT",
+                "run_time": run_time,
+                "published_at": generated_at,
+                "summary": f"新疆区域与中国西部预报图集，共 {len(hourly_frames)} 张图",
+                "products": [
+                    build_xinjiang_product(run_id, hourly_frames, generated_at),
+                    *[
+                        build_xinjiang_accumulation_product(
+                            run_id, frames, generated_at, hours
+                        )
+                        for hours in (12, 24)
+                        if (
+                            frames := build_xinjiang_frames(
+                                run_dir, fragment, accumulation_hours=hours
+                            )
+                        )
+                    ],
+                ],
+            }
+        )
+
+    runs.sort(key=lambda item: item["run_time"], reverse=True)
+    return runs[:MAX_RUNS]
+
+
 def build_ningxia_frames(
     run_dir: Path, fragment: dict, accumulation_hours: int | None
+) -> list[dict]:
+    return build_regional_frames(
+        run_dir,
+        fragment,
+        accumulation_hours,
+        region_id="ningxia_region",
+        national_id="worknx_national",
+        region_label="宁夏区域",
+        national_label="中国中部",
+        accumulation_prefix="ningxia",
+    )
+
+
+def build_xinjiang_frames(
+    run_dir: Path, fragment: dict, accumulation_hours: int | None
+) -> list[dict]:
+    return build_regional_frames(
+        run_dir,
+        fragment,
+        accumulation_hours,
+        region_id="xinjiang_region",
+        national_id="workxj_national",
+        region_label="新疆区域",
+        national_label="中国西部",
+        accumulation_prefix="xinjiang",
+    )
+
+
+def build_regional_frames(
+    run_dir: Path,
+    fragment: dict,
+    accumulation_hours: int | None,
+    *,
+    region_id: str,
+    national_id: str,
+    region_label: str,
+    national_label: str,
+    accumulation_prefix: str,
 ) -> list[dict]:
     individual_frames = (
         build_service_hourly_frames(
             run_dir,
-            {"ningxia_region", "worknx_national"},
+            {region_id, national_id},
         )
         if accumulation_hours is None
         else {}
@@ -760,8 +854,15 @@ def build_ningxia_frames(
         full_path = choose_full_candidate("", existing)
         if not path.exists():
             continue
-        frame_id, lead_value, lead_label, valid_label = ningxia_frame_meta(
-            key, path, accumulation_hours
+        frame_id, lead_value, lead_label, valid_label = regional_frame_meta(
+            key,
+            path,
+            accumulation_hours,
+            region_id=region_id,
+            national_id=national_id,
+            region_label=region_label,
+            national_label=national_label,
+            accumulation_prefix=accumulation_prefix,
         )
         frame = {
             "id": frame_id,
@@ -793,20 +894,28 @@ def ningxia_frame_sort_key(item: tuple[str, list[Path]]) -> tuple[int, str]:
     return (2, key)
 
 
-def ningxia_frame_meta(
-    key: str, path: Path, accumulation_hours: int | None
+def regional_frame_meta(
+    key: str,
+    path: Path,
+    accumulation_hours: int | None,
+    *,
+    region_id: str,
+    national_id: str,
+    region_label: str,
+    national_label: str,
+    accumulation_prefix: str,
 ) -> tuple[str, int, str, str]:
     if accumulation_hours is not None:
         return (
-            f"ningxia_accum_{accumulation_hours}h",
+            f"{accumulation_prefix}_accum_{accumulation_hours}h",
             0,
             accumulation_window_label(path.name, accumulation_hours),
             "",
         )
     if "_WRF_AllRain_" in key:
-        return ("worknx_national", 1, "中国中部", "当前显示：中国中部")
+        return (national_id, 1, national_label, f"当前显示：{national_label}")
     if "_combined_overview_" in key:
-        return ("ningxia_region", 0, "宁夏区域", "当前显示：宁夏区域")
+        return (region_id, 0, region_label, f"当前显示：{region_label}")
 
     lead_label = (
         "T13-T48"
@@ -840,6 +949,42 @@ def build_ningxia_accumulation_product(
         "id": f"ningxia_accum_{hours}h",
         "title": f"{hours}小时累计降水",
         "category": "宁夏预报",
+        "unit": "mm",
+        "color": "#0f68c8",
+        "description": accumulation_description(hours),
+        "metrics": [
+            {"label": "起报时次", "value": run_id.replace("_", " ") + " UTC"},
+            {"label": "累计时段", "value": accumulation_schedule_label(hours)},
+            {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},
+        ],
+        "frames": frames,
+    }
+
+
+def build_xinjiang_product(run_id: str, frames: list[dict], generated_at: str) -> dict:
+    return {
+        "id": "xinjiang_precip_series",
+        "title": "降水预报图集",
+        "category": "新疆预报",
+        "unit": "mm",
+        "color": "#0f68c8",
+        "description": "默认显示新疆区域图，可切换中国西部图。",
+        "metrics": [
+            {"label": "起报时次", "value": run_id.replace("_", " ") + " UTC"},
+            {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},
+            {"label": "图像数量", "value": str(len(frames))},
+        ],
+        "frames": frames,
+    }
+
+
+def build_xinjiang_accumulation_product(
+    run_id: str, frames: list[dict], generated_at: str, hours: int
+) -> dict:
+    return {
+        "id": f"xinjiang_accum_{hours}h",
+        "title": f"{hours}小时累计降水",
+        "category": "新疆预报",
         "unit": "mm",
         "color": "#0f68c8",
         "description": accumulation_description(hours),

@@ -208,6 +208,28 @@ audit_ningxia_output() {
   run_action "$SCRIPT_DIR/publish_worknx_ningxia_to_github.sh" --output-run "$run"
 }
 
+audit_xinjiang_output() {
+  local run="$1" output="$SCRIPT_DIR/workxj_xinjiang_overview/$run"
+  local region national public_region public_national region_count national_count
+  region="$(panel_windows "$output/captioned_t13_t48" '')"
+  national="$(panel_windows "$output/national_captioned_t13_t48" '')"
+  region_count="$(window_count "$region")"
+  national_count="$(window_count "$national")"
+  if ! local_sequences_are_valid utc "$run" "$region" "$national"; then
+    log "XINJIANG $run local sequence invalid: region=$region_count national=$national_count; rerender latest run"
+    run_action "$SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh" --latest
+    return
+  fi
+  public_region="$(public_windows xinjiang "$run" xinjiang_region 2>/dev/null || true)"
+  public_national="$(public_windows xinjiang "$run" workxj_national 2>/dev/null || true)"
+  if [[ "$public_region" == "$region" && "$public_national" == "$national" ]]; then
+    log "XINJIANG $run verified: region=$region_count national=$national_count first=${region%%,*}"
+    return
+  fi
+  log "XINJIANG $run public sequence mismatch; republish region=$region_count national=$national_count first=${region%%,*}"
+  run_action "$SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh" --output-run "$run"
+}
+
 audit_yunnan_output() {
   local run="$1" output="$SCRIPT_DIR/worknx_yunnan_airports_overview/$run"
   local region national public_region public_national region_count national_count
@@ -313,12 +335,16 @@ if ! fetch_public_catalog; then
   exit 75
 fi
 submit_missing_render ningxia /data1/elpt_2022_00083/zhoubj/WORK_nx "$SCRIPT_DIR/worknx_ningxia_overview" "$SCRIPT_DIR/publish_worknx_ningxia_to_github.sh"
+submit_missing_render xinjiang /data1/elpt_2022_00083/zhoubj/WORK_xj "$SCRIPT_DIR/workxj_xinjiang_overview" "$SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh"
 submit_missing_render yunnan /data1/elpt_2022_00083/zhoubj/WORK_yn "$SCRIPT_DIR/worknx_yunnan_airports_overview" "$SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh"
 submit_missing_render shangrao /data1/elpt_2022_00083/zhoubj/WORK '' ''
 
 while IFS= read -r run; do
   [[ -n "$run" ]] && audit_ningxia_output "$run"
 done < <(list_output_runs "$SCRIPT_DIR/worknx_ningxia_overview")
+while IFS= read -r run; do
+  [[ -n "$run" ]] && audit_xinjiang_output "$run"
+done < <(list_output_runs "$SCRIPT_DIR/workxj_xinjiang_overview")
 while IFS= read -r run; do
   [[ -n "$run" ]] && audit_yunnan_output "$run"
 done < <(list_output_runs "$SCRIPT_DIR/worknx_yunnan_airports_overview")

@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 
-# Render a Ningxia hourly precipitation overview from WORK_nx after T12 spin-up.
+# Render a regional hourly precipitation overview after T12 spin-up.
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORK_NX_ROOT="${WORK_NX_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK_nx}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-$SCRIPT_DIR/worknx_ningxia_overview}"
+SERVICE_LABEL="${SERVICE_LABEL:-Ningxia}"
+SERVICE_FILE_TOKEN="${SERVICE_FILE_TOKEN:-Ningxia}"
+REGION_MODE="${REGION_MODE:-ningxia}"
 NCL_SCRIPT="${NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_ningxia_hour_bjt.ncl}"
 NATIONAL_NCL_SCRIPT="${NATIONAL_NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_national_hour_bjt.ncl}"
 NCL_BIN="${NCL_BIN:-/public/software/apps/ncl_ncarg/ncl630/bin/ncl}"
@@ -66,10 +69,10 @@ command -v convert >/dev/null || { echo "ERROR: ImageMagick convert is required"
 export NCARG_ROOT="$NCL_ROOT"
 
 if [[ -n "$NINGXIA_PROVINCE_SHP_FILE" && ! -f "$NINGXIA_PROVINCE_SHP_FILE" ]]; then
-  echo "WARNING: Ningxia province SHP not found, province outline will be skipped: $NINGXIA_PROVINCE_SHP_FILE" >&2
+  echo "WARNING: $SERVICE_LABEL province SHP not found, province outline will be skipped: $NINGXIA_PROVINCE_SHP_FILE" >&2
 fi
 if [[ -n "$NINGXIA_COUNTY_SHP_FILE" && ! -f "$NINGXIA_COUNTY_SHP_FILE" ]]; then
-  echo "WARNING: Ningxia city/county SHP not found, city/county outline will be skipped: $NINGXIA_COUNTY_SHP_FILE" >&2
+  echo "WARNING: $SERVICE_LABEL city/county SHP not found, city/county outline will be skipped: $NINGXIA_COUNTY_SHP_FILE" >&2
 fi
 
 mkdir -p "$OUTPUT_ROOT"
@@ -107,7 +110,7 @@ done < <(
 )
 
 if [[ "${#sources[@]}" -eq 0 ]]; then
-  echo "ERROR: no stable WORK_nx wrfout source found" >&2
+  echo "ERROR: no stable $SERVICE_LABEL wrfout source found" >&2
   exit 1
 fi
 
@@ -215,12 +218,13 @@ render_source() {
   last_lead=$((time_count - 1))
 
   mkdir -p "$panel_dir" "$caption_dir" "$national_panel_dir" "$national_caption_dir"
-  echo "Rendering Ningxia T13-T${last_lead} panels for $run_prefix from $wrf_dir"
+  echo "Rendering $SERVICE_LABEL T13-T${last_lead} panels for $run_prefix from $wrf_dir"
   WORK_NX_WRF_DIR="$wrf_dir" \
     WORK_NX_NINGXIA_PNG_DIR="$panel_dir" \
     NINGXIA_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
     NINGXIA_PROVINCE_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
     NINGXIA_COUNTY_SHP_FILE="$NINGXIA_COUNTY_SHP_FILE" \
+    WORK_NX_REGION_MODE="$REGION_MODE" \
     "$NCL_BIN" "$NCL_SCRIPT"
 
   local panels=()
@@ -232,7 +236,7 @@ render_source() {
   fi
   overview_rows=$(((panel_count + 5) / 6))
   overview_grid="6x${overview_rows}"
-  overview="$run_dir/Precip_hourly_WRF_Ningxia_T13_T${last_lead}_InitUTC_${run_date}_${run_hour}_00_combined_overview_${overview_grid}_grid.png"
+  overview="$run_dir/Precip_hourly_WRF_${SERVICE_FILE_TOKEN}_T13_T${last_lead}_InitUTC_${run_date}_${run_hour}_00_combined_overview_${overview_grid}_grid.png"
 
   local captioned_panels=()
   for panel in "${panels[@]}"; do
@@ -247,6 +251,7 @@ render_source() {
   WORK_NX_WRF_DIR="$wrf_dir" \
     WORK_NX_NATIONAL_PNG_DIR="$national_panel_dir" \
     WORK_NX_NATIONAL_PROVINCE_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
+    WORK_NX_NATIONAL_REGION_MODE="$REGION_MODE" \
     "$NCL_BIN" "$NATIONAL_NCL_SCRIPT"
   local national_panels=() national_captioned_panels=()
   mapfile -t national_panels < <(find "$national_panel_dir" -maxdepth 1 -type f -name '*_national_rain_hour_*_BJT.png' -print | sort)
@@ -265,13 +270,14 @@ render_source() {
 
   # Remove rolling-window output from older renders before copying the current
   # BJT-aligned accumulation periods.
-  rm -f "$run_dir"/Precip_accum_*h_WRF_Ningxia_T13_T*_InitUTC_"${run_date}"_"${run_hour}"_00*combined_overview_1x1_grid.*
+  rm -f "$run_dir"/Precip_accum_*h_WRF_"${SERVICE_FILE_TOKEN}"_T13_T*_InitUTC_"${run_date}"_"${run_hour}"_00*combined_overview_1x1_grid.*
   rm -f "$panel_dir"/*_national_accum_*.png
   for accum_hours in 12 24; do
     local accum_source accum_overview accum_name accum_start accum_end
     WORK_NX_WRF_DIR="$wrf_dir" \
       WORK_NX_NATIONAL_PNG_DIR="$panel_dir" \
       WORK_NX_NATIONAL_PROVINCE_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
+      WORK_NX_NATIONAL_REGION_MODE="$REGION_MODE" \
       RAIN_ACCUM_HOURS="$accum_hours" \
       "$NCL_BIN" "$NATIONAL_NCL_SCRIPT"
     while IFS= read -r accum_source; do
@@ -285,7 +291,7 @@ render_source() {
       fi
       accum_start="${BASH_REMATCH[1]}"
       accum_end="${BASH_REMATCH[2]}"
-      accum_overview="$run_dir/Precip_accum_${accum_hours}h_WRF_Ningxia_T13_T${last_lead}_InitUTC_${run_date}_${run_hour}_00_${accum_name}_combined_overview_1x1_grid.png"
+      accum_overview="$run_dir/Precip_accum_${accum_hours}h_WRF_${SERVICE_FILE_TOKEN}_T13_T${last_lead}_InitUTC_${run_date}_${run_hour}_00_${accum_name}_combined_overview_1x1_grid.png"
       caption_accumulation "$accum_source" "$accum_overview" "$accum_hours" "$accum_start" "$accum_end"
       touch -r "$source_path" "$accum_overview"
     done < <(find "$panel_dir" -maxdepth 1 -type f -name "*_national_accum_$(printf '%02d' "$accum_hours")h_*_BJT.png" | sort)

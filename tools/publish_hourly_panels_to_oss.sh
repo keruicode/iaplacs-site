@@ -17,7 +17,7 @@ SEQUENCE_VALIDATOR="${SEQUENCE_VALIDATOR:-$SCRIPT_DIR/validate_hourly_panel_sequ
 usage() {
   cat <<'EOF'
 Usage: publish_hourly_panels_to_oss.sh \
-  --family worknx_summary|wrf_montage \
+  --family worknx_summary|workxj_summary|wrf_montage \
   --run-prefix YYYYMMDD_HH \
   --regional-dir DIR --national-dir DIR
 EOF
@@ -44,6 +44,11 @@ case "$family" in
     national_id="worknx_national"
     panel_glob='*_rain_hour_*_BJT.png'
     ;;
+  workxj_summary)
+    regional_id="xinjiang_region"
+    national_id="workxj_national"
+    panel_glob='*_rain_hour_*_BJT.png'
+    ;;
   wrf_montage)
     regional_id="shangrao_region"
     national_id="shangrao_national"
@@ -56,7 +61,7 @@ esac
 [[ -d "$national_dir" ]] || { echo "ERROR: national panel directory not found: $national_dir" >&2; exit 1; }
 [[ -f "$SEQUENCE_VALIDATOR" ]] || { echo "ERROR: hourly sequence validator not found: $SEQUENCE_VALIDATOR" >&2; exit 1; }
 
-if [[ "$family" == "worknx_summary" ]]; then
+if [[ "$family" == "worknx_summary" || "$family" == "workxj_summary" ]]; then
   run_time_basis="utc"
   "$PYTHON_BIN" "$SEQUENCE_VALIDATOR" \
     --run-prefix "$run_prefix" \

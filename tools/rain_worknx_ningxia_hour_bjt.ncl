@@ -43,6 +43,7 @@ begin
   county_shp_file = getenv("NINGXIA_COUNTY_SHP_FILE")
   accum_hours_text = getenv("RAIN_ACCUM_HOURS")
   legacy_shp_file = getenv("NINGXIA_SHP_FILE")
+  region_mode = getenv("WORK_NX_REGION_MODE")
 
   if (wrf_dir.eq."") then
     wrf_dir = "."
@@ -70,6 +71,9 @@ begin
   if (province_shp_file.eq."" .and. legacy_shp_file.ne."") then
     province_shp_file = legacy_shp_file
   end if
+  if (ismissing(region_mode)) then
+    region_mode = "ningxia"
+  end if
 
   system("mkdir -p " + out_dir)
   files = systemfunc("ls -1 " + wrf_dir + "/wrfout_d01_*")
@@ -78,11 +82,19 @@ begin
     exit
   end if
 
-  ; Ningxia plus a narrow surrounding margin.
-  lon_min = 104.0
-  lon_max = 107.8
-  lat_min = 35.0
-  lat_max = 39.7
+  if (region_mode.eq."xinjiang") then
+    ; Xinjiang plus a narrow surrounding margin.
+    lon_min = 72.0
+    lon_max = 97.0
+    lat_min = 34.0
+    lat_max = 50.0
+  else
+    ; Ningxia plus a narrow surrounding margin.
+    lon_min = 104.0
+    lon_max = 107.8
+    lat_min = 35.0
+    lat_max = 39.7
+  end if
   ; CMA hourly precipitation classes: no rain, 0-2.5, 2.5-5, 5-10,
   ; 10-25, 25-50, 50-100 and above 100 mm.
   if (accum_hours.eq.1) then
@@ -204,8 +216,13 @@ begin
       res@sfXArray = lon_axis
       res@sfYArray = lat_axis
       res@pmTickMarkDisplayMode = "Always"
-      res@gsnMajorLonSpacing = 1.0
-      res@gsnMajorLatSpacing = 1.0
+      if (region_mode.eq."xinjiang") then
+        res@gsnMajorLonSpacing = 5.0
+        res@gsnMajorLatSpacing = 4.0
+      else
+        res@gsnMajorLonSpacing = 1.0
+        res@gsnMajorLatSpacing = 1.0
+      end if
       res@tmXMajorGrid = False
       res@tmYMajorGrid = False
       res@tmXMinorGrid = False

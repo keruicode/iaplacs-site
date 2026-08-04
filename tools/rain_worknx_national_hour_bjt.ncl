@@ -35,6 +35,7 @@ begin
   out_dir = getenv("WORK_NX_NATIONAL_PNG_DIR")
   province_shp_file = getenv("WORK_NX_NATIONAL_PROVINCE_SHP_FILE")
   accum_hours_text = getenv("RAIN_ACCUM_HOURS")
+  region_mode = getenv("WORK_NX_NATIONAL_REGION_MODE")
   if (wrf_dir.eq."") then
     wrf_dir = "."
   end if
@@ -52,6 +53,9 @@ begin
   if (accum_hours.lt.1) then
     accum_hours = 1
   end if
+  if (ismissing(region_mode)) then
+    region_mode = "china"
+  end if
 
   system("mkdir -p " + out_dir)
   files = systemfunc("ls -1 " + wrf_dir + "/wrfout_d01_*")
@@ -60,18 +64,28 @@ begin
     exit
   end if
 
-  lon_min = 72.0
-  lon_max = 138.0
-  lat_min = 16.0
-  lat_max = 55.0
-  ; These are geographic coordinates, not montage pixel positions.  The
-  ; CylindricalEquidistant MapPlot maps them directly to its bottom/left axes.
-  national_lon_ticks = (/75.0, 90.0, 105.0, 120.0, 135.0/)
-  national_lon_labels = (/"75~S~o~N~E", "90~S~o~N~E", "105~S~o~N~E", \
-                          "120~S~o~N~E", "135~S~o~N~E"/)
-  national_lat_ticks = (/20.0, 30.0, 40.0, 50.0/)
-  national_lat_labels = (/"20~S~o~N~N", "30~S~o~N~N", \
-                          "40~S~o~N~N", "50~S~o~N~N"/)
+  ; These are geographic coordinates, not montage pixel positions.
+  if (region_mode.eq."xinjiang") then
+    lon_min = 70.0
+    lon_max = 112.0
+    lat_min = 25.0
+    lat_max = 55.0
+    national_lon_ticks = (/75.0, 85.0, 95.0, 105.0/)
+    national_lon_labels = (/"75~S~o~N~E", "85~S~o~N~E", "95~S~o~N~E", "105~S~o~N~E"/)
+    national_lat_ticks = (/30.0, 40.0, 50.0/)
+    national_lat_labels = (/"30~S~o~N~N", "40~S~o~N~N", "50~S~o~N~N"/)
+  else
+    lon_min = 72.0
+    lon_max = 138.0
+    lat_min = 16.0
+    lat_max = 55.0
+    national_lon_ticks = (/75.0, 90.0, 105.0, 120.0, 135.0/)
+    national_lon_labels = (/"75~S~o~N~E", "90~S~o~N~E", "105~S~o~N~E", \
+                            "120~S~o~N~E", "135~S~o~N~E"/)
+    national_lat_ticks = (/20.0, 30.0, 40.0, 50.0/)
+    national_lat_labels = (/"20~S~o~N~N", "30~S~o~N~N", \
+                            "40~S~o~N~N", "50~S~o~N~N"/)
+  end if
   ; CMA hourly precipitation classes: no rain, 0-2.5, 2.5-5, 5-10,
   ; 10-25, 25-50, 50-100 and above 100 mm. Accumulations retain their
   ; existing operational palette.

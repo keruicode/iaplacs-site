@@ -5,47 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="IAP-LACS 宁夏预报页面，按起报时次展示 WORK_nx 发布的宁夏区域预报产品。"
+      content="IAP-LACS 新疆预报页面，按起报时次展示 WORK_xj 发布的新疆区域与中国西部预报产品。"
     />
-    <title>宁夏预报 | IAP-LACS Forecast</title>
+    <title>新疆预报 | IAP-LACS Forecast</title>
     <link rel="dns-prefetch" href="//iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com" />
     <link rel="preconnect" href="https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com" crossorigin />
-    <link rel="icon" type="image/png" sizes="512x512" href="./assets/brand/iaplacs-tab-icon-20260725.png?v=20260725-04" />
-    <link rel="apple-touch-icon" href="./assets/brand/iaplacs-tab-icon-20260725.png?v=20260725-04" />
-    <link rel="stylesheet" href="./styles.css?v=20260802-01" />
+    <link rel="icon" type="image/png" sizes="512x512" href="../assets/brand/iaplacs-tab-icon-20260725.png?v=20260725-04" />
+    <link rel="apple-touch-icon" href="../assets/brand/iaplacs-tab-icon-20260725.png?v=20260725-04" />
+    <link rel="stylesheet" href="../styles.css?v=20260802-01" />
   </head>
   <body
     class="auth-lock"
-    data-service="ningxia"
-    data-manifest-url="./data/current/forecast-runs.json"
-    data-fallback-manifest-url="./data/current/manifest.json"
-    data-huan-manifest-url="./data/current/forecast-runs.json"
-    data-huan-fallback-manifest-url="./data/current/manifest.json"
-    data-tianhe-manifest-url="./data/tianhe/current/forecast-runs.json"
-    data-tianhe-fallback-manifest-url="./data/tianhe/current/manifest.json"
-    data-default-source="tianhe"
-    data-auto-select-latest-source="true"
-    data-asset-base="./"
+    data-service="xinjiang"
+    data-manifest-url="../data/current/forecast-runs.json"
+    data-fallback-manifest-url="../data/current/manifest.json"
+    data-huan-manifest-url="../data/current/forecast-runs.json"
+    data-huan-fallback-manifest-url="../data/current/manifest.json"
+    data-tianhe-manifest-url="../data/tianhe/current/forecast-runs.json"
+    data-tianhe-fallback-manifest-url="../data/tianhe/current/manifest.json"
+    data-default-source="huan"
+    data-force-default-source="true"
+    data-asset-base="../"
     data-refresh-ms="120000"
   >
     <header class="topbar">
       <div class="brand">
         <img
           class="brand-icon"
-          src="./assets/brand/logo-lacs-blue-icon.png"
+          src="../assets/brand/logo-lacs-blue-icon.png"
           alt=""
           aria-hidden="true"
         />
         <div class="brand-copy">
           <p class="brand-title">中国科学院大气物理研究所云降水物理与强风暴实验室</p>
           <p class="brand-subtitle">LABORATORY OF CLOUD-PRECIPITATION PHYSICS AND SEVERE STORMS(LACS), IAP, CAS</p>
-          <h1 class="sr-only">宁夏预报</h1>
+          <h1 class="sr-only">新疆预报</h1>
         </div>
       </div>
       <div class="topbar-actions">
         <nav class="home-service-links" aria-label="服务入口">
-          <a class="home-service-link" href="./shangrao/">上饶服务</a>
-          <a class="home-service-link" href="./airpots/">机场服务</a>
+          <a class="home-service-link" href="../shangrao/">上饶服务</a>
+          <a class="home-service-link" href="../airpots/">机场服务</a>
         </nav>
         <div id="dataSourceSwitch" class="data-source-switch" role="group" aria-label="预报数据源">
           <button class="home-service-link data-source-button" type="button" data-source-id="huan" aria-pressed="true">寰</button>
@@ -58,14 +58,7 @@
       </div>
     </header>
 
-    <section class="maintenance-notice" aria-label="运行公告">
-      <p class="maintenance-notice-label">运行公告</p>
-      <p>
-        2026年7月24日（周五）20:00至2026年7月29日（周三）09:00，地球系统数值模拟装置基础设施进行年度检修维护，期间停机并停止所有服务。网站图件目前由天河临时环境生成。
-      </p>
-    </section>
-
-    <section class="run-switchbar" aria-label="宁夏起报时间">
+    <section class="run-switchbar" aria-label="新疆起报时间">
       <div class="run-switch-heading-row">
         <div class="run-switch-heading">
           <p class="eyebrow">Initial Time</p>
@@ -76,15 +69,16 @@
           &#8635;
         </button>
       </div>
-      <div id="runList" class="run-list run-list-horizontal" aria-label="宁夏起报时间"></div>
+      <div id="runList" class="run-list run-list-horizontal" aria-label="新疆起报时间"></div>
     </section>
 
     <main class="workspace service-workspace">
-      <section class="control-panel" aria-label="宁夏预报控制">
+      <section class="control-panel" aria-label="新疆预报控制">
         <div class="panel-heading">
-          <p class="eyebrow">Ningxia Forecast</p>
-          <h2>宁夏产品</h2>
+          <p class="eyebrow">Xinjiang Forecast</p>
+          <h2>新疆产品</h2>
         </div>
+
         <div id="productList" class="product-list"></div>
 
         <div class="meta-block">
@@ -93,7 +87,7 @@
         </div>
       </section>
 
-      <section class="map-panel" aria-label="宁夏预报图">
+      <section class="map-panel" aria-label="新疆预报图">
         <div class="map-toolbar">
           <div>
             <p id="productUnit" class="eyebrow">--</p>
@@ -115,16 +109,16 @@
           </div>
         </div>
 
-        <div id="leadTabs" class="lead-tabs" aria-label="宁夏产品图幅"></div>
+        <div id="leadTabs" class="lead-tabs" aria-label="新疆产品图幅"></div>
         <div id="forecastHourTimeline" class="forecast-hour-timeline" aria-label="逐时预报时间" hidden></div>
 
         <div class="map-stage">
-          <img id="forecastImage" alt="宁夏预报产品图" role="button" tabindex="0" draggable="false" decoding="async" fetchpriority="high" aria-label="放大查看当前预报图" />
+          <img id="forecastImage" alt="新疆预报产品图" role="button" tabindex="0" draggable="false" decoding="async" fetchpriority="high" aria-label="放大查看当前预报图" />
         </div>
 
       </section>
 
-      <aside class="insight-panel" aria-label="宁夏产品摘要">
+      <aside class="insight-panel" aria-label="新疆产品摘要">
         <div class="panel-heading">
           <p class="eyebrow">Operations</p>
           <h2>服务状态</h2>
@@ -142,10 +136,10 @@
 
     <footer class="site-footer">
       <span>IAP-LACS Forecast</span>
-      <span>宁夏预报</span>
-      <span>iaplacs.xyz</span>
+      <span>新疆预报</span>
+      <span>iaplacs.xyz/xinjiang</span>
     </footer>
 
-    <script src="./app.js?v=20260804-03"></script>
+    <script src="../app.js?v=20260804-03"></script>
   </body>
 </html>

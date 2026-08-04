@@ -6,7 +6,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 WORK_NX_ROOT="${WORK_NX_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK_nx}"
-STAGE_DIR="${STAGE_DIR:-$SCRIPT_DIR/worknx_summary}"
+PUBLISH_FAMILY="${PUBLISH_FAMILY:-worknx_summary}"
+SOURCE_LABEL="${SOURCE_LABEL:-WORK_nx}"
+STAGE_DIR="${STAGE_DIR:-$SCRIPT_DIR/$PUBLISH_FAMILY}"
 LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/logs}"
 GITHUB_HOST="${GITHUB_HOST:-server02}"
 GIT_URL="${GIT_URL:-git@github.com:keruicode/iaplacs-site.git}"
@@ -104,7 +106,7 @@ done < <(
 )
 
 if [ -z "$src" ]; then
-	echo "ERROR: no stable WORK_nx image matching $SOURCE_IMAGE_GLOB found under $WORK_NX_ROOT" >&2
+	echo "ERROR: no stable $SOURCE_LABEL image matching $SOURCE_IMAGE_GLOB found under $WORK_NX_ROOT" >&2
 	exit 1
 fi
 
@@ -150,7 +152,7 @@ preview_base="${base%.png}.preview.webp"
 webp_bytes="$(stat -c '%s' "$run_dir/$webp_base")"
 preview_bytes="$(stat -c '%s' "$run_dir/$preview_base")"
 
-repo_rel_dir="data/current/maps/worknx_summary_${run_prefix}"
+repo_rel_dir="data/current/maps/${PUBLISH_FAMILY}_${run_prefix}"
 repo_rel_file="./${repo_rel_dir}/${base}"
 repo_rel_webp_file="./${repo_rel_dir}/${webp_base}"
 
@@ -166,7 +168,7 @@ cat > "$run_dir/manifest_fragment.json" <<EOF
 }
 EOF
 
-echo "Selected WORK_nx summary image:"
+echo "Selected $SOURCE_LABEL summary image:"
 echo "  source=$src"
 echo "  mtime=$generated_at"
 echo "  bytes=$size_after"
@@ -174,12 +176,12 @@ echo "  webp_bytes=$webp_bytes"
 echo "  preview_bytes=$preview_bytes"
 echo "  run_prefix=$run_prefix"
 
-ssh "$GITHUB_HOST" "mkdir -p ~/incoming/worknx_summary_${run_prefix}"
-rsync -av "$run_dir/$base" "$run_dir/$webp_base" "$run_dir/$preview_base" "$run_dir/manifest_fragment.json" "$GITHUB_HOST:~/incoming/worknx_summary_${run_prefix}/"
+ssh "$GITHUB_HOST" "mkdir -p ~/incoming/${PUBLISH_FAMILY}_${run_prefix}"
+rsync -av "$run_dir/$base" "$run_dir/$webp_base" "$run_dir/$preview_base" "$run_dir/manifest_fragment.json" "$GITHUB_HOST:~/incoming/${PUBLISH_FAMILY}_${run_prefix}/"
 
 remote_env_cmd=$(
-	printf 'RUN_PREFIX=%q BASE=%q WEBP_BASE=%q PREVIEW_BASE=%q REPO_REL_DIR=%q REPO_REL_FILE=%q REPO_REL_WEBP_FILE=%q RUN_TIME_BJT=%q VALID_TIME_BJT=%q GENERATED_AT=%q BYTES=%q WEBP_BYTES=%q GIT_URL=%q REMOTE_SITE_REPO=%q GITHUB_KEY=%q GIT_USER_NAME=%q GIT_USER_EMAIL=%q IAPLACS_ASSET_FORCE_UPLOAD=%q bash -s' \
-		"$run_prefix" "$base" "$webp_base" "$preview_base" "$repo_rel_dir" "$repo_rel_file" "$repo_rel_webp_file" "$run_time_bjt" "$valid_time_bjt" "$generated_at" "$size_after" "$webp_bytes" "$GIT_URL" "$REMOTE_SITE_REPO" "$GITHUB_KEY" "$GIT_USER_NAME" "$GIT_USER_EMAIL" "$IAPLACS_ASSET_FORCE_UPLOAD"
+	printf 'RUN_PREFIX=%q BASE=%q WEBP_BASE=%q PREVIEW_BASE=%q REPO_REL_DIR=%q REPO_REL_FILE=%q REPO_REL_WEBP_FILE=%q RUN_TIME_BJT=%q VALID_TIME_BJT=%q GENERATED_AT=%q BYTES=%q WEBP_BYTES=%q GIT_URL=%q REMOTE_SITE_REPO=%q GITHUB_KEY=%q GIT_USER_NAME=%q GIT_USER_EMAIL=%q IAPLACS_ASSET_FORCE_UPLOAD=%q PUBLISH_FAMILY=%q SOURCE_LABEL=%q bash -s' \
+		"$run_prefix" "$base" "$webp_base" "$preview_base" "$repo_rel_dir" "$repo_rel_file" "$repo_rel_webp_file" "$run_time_bjt" "$valid_time_bjt" "$generated_at" "$size_after" "$webp_bytes" "$GIT_URL" "$REMOTE_SITE_REPO" "$GITHUB_KEY" "$GIT_USER_NAME" "$GIT_USER_EMAIL" "$IAPLACS_ASSET_FORCE_UPLOAD" "$PUBLISH_FAMILY" "$SOURCE_LABEL"
 )
 
 ssh "$GITHUB_HOST" "$remote_env_cmd" <<'REMOTE'
@@ -213,7 +215,7 @@ fi
 REMOTE_SITE_REPO="${REMOTE_SITE_REPO:-}"
 
 SITE_REPO="${REMOTE_SITE_REPO:-$HOME/iaplacs-site}"
-INCOMING="$HOME/incoming/worknx_summary_${RUN_PREFIX}"
+INCOMING="$HOME/incoming/${PUBLISH_FAMILY}_${RUN_PREFIX}"
 DEST="$SITE_REPO/${REPO_REL_DIR}"
 
 publish_oss_assets() {
@@ -276,12 +278,12 @@ publish_oss_assets() {
 		fi
 	done < <(
 		if [ "${IAPLACS_ASSET_FORCE_UPLOAD:-0}" = "1" ]; then
-			find "$maps_dir/worknx_summary_${RUN_PREFIX}" -type f \( -name '*.webp' -o -name '*.png' \) -print0
+			find "$maps_dir/${PUBLISH_FAMILY}_${RUN_PREFIX}" -type f \( -name '*.webp' -o -name '*.png' \) -print0
 		else
 			while IFS= read -r run_dir; do
 				find "$maps_dir/$run_dir" -type f \( -name '*.webp' -o -name '*.png' \) -print0
 			done < <(
-				for family in worknx_summary wrf_montage airport_yunnan; do
+				for family in worknx_summary workxj_summary wrf_montage airport_yunnan; do
 					find "$maps_dir" -mindepth 1 -maxdepth 1 -type d -name "${family}_????????_??" -printf '%f\n' \
 						| sed -n -E "/^${family}_[0-9]{8}_[0-9]{2}$/p" \
 						| sort -r | awk -v limit="$retain_runs" 'NR <= limit'
@@ -359,6 +361,7 @@ PYTHON_BIN="$(command -v python3 || command -v python)"
 if [ "${IAPLACS_OSS_ENABLED:-0}" = "1" ]; then
 	export IAPLACS_MAX_RUNS="${IAPLACS_OSS_RETAIN_RUNS:-5}"
 fi
+if [ "$PUBLISH_FAMILY" = "worknx_summary" ]; then
 "$PYTHON_BIN" - "$SITE_REPO/data/current/manifest.json" "$SITE_REPO/data/current/forecast-runs.json" <<'PY'
 from __future__ import print_function
 import json
@@ -518,6 +521,7 @@ main["runs"] = runs[:int(os.environ.get("IAPLACS_MAX_RUNS", "8"))]
 
 atomic_write_json(catalog_path, catalog)
 PY
+fi
 
 CATALOG_BUILDER="$SITE_REPO/tools/build_forecast_catalog.py"
 if [ ! -f "$CATALOG_BUILDER" ]; then
@@ -528,14 +532,14 @@ fi
 
 git add data/current/manifest.json data/current/forecast-runs.json
 if git diff --cached --quiet; then
-	echo "No WORK_nx summary changes to commit for $RUN_PREFIX"
+	echo "No $SOURCE_LABEL summary changes to commit for $RUN_PREFIX"
 	prune_oss_assets
 	exit 0
 fi
 
-git -c user.name="$GIT_USER_NAME" -c user.email="$GIT_USER_EMAIL" commit -m "Update WORK_nx summary ${RUN_PREFIX}"
+git -c user.name="$GIT_USER_NAME" -c user.email="$GIT_USER_EMAIL" commit -m "Update ${SOURCE_LABEL} summary ${RUN_PREFIX}"
 git push origin HEAD:main
 prune_oss_assets
 REMOTE
 
-echo "Published WORK_nx summary prefix: $run_prefix"
+echo "Published $SOURCE_LABEL summary prefix: $run_prefix"

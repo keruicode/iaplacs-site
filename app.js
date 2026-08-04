@@ -15,6 +15,7 @@ const NATIONAL_FRAME_LABELS = {
   worknx_national: "中国中部",
   shangrao_national: "中国东南部",
   airport_national: "中国西南部",
+  workxj_national: "中国西部",
 };
 const HOURLY_PRECIP_PRODUCT_IDS = {
   airport: new Set([
@@ -29,6 +30,7 @@ const HOURLY_PRECIP_PRODUCT_IDS = {
     "wrf_rain_montage",
     "tianhe_shangrao_precip_series",
   ]),
+  xinjiang: new Set(["xinjiang_precip_series"]),
 };
 const AIRPORT_RATING_TARGETS = [
   { id: "dehong_mangshi", label: "德宏芒市机场" },
@@ -321,6 +323,7 @@ function nationalFrameIds() {
     ningxia: { region: "ningxia_region", national: "worknx_national" },
     airport: { region: "airport_region", national: "airport_national" },
     shangrao: { region: "shangrao_region", national: "shangrao_national" },
+    xinjiang: { region: "xinjiang_region", national: "workxj_national" },
   };
   return ids[pageConfig.service] || null;
 }
@@ -378,6 +381,7 @@ function isHourlyPrecipitationProduct(product) {
     "airport_yunnan_precip_series",
     "ningxia_precip_series",
     "wrf_rain_montage",
+    "xinjiang_precip_series",
   ]).has(product?.id);
 }
 
@@ -743,6 +747,7 @@ function twoDigits(value) {
 
 function selectService(catalog) {
   const services = catalog.services || {};
+  if (pageConfig.service === "xinjiang") return services.xinjiang || null;
   return (
     services[pageConfig.service] ||
     services.airport ||
@@ -850,7 +855,7 @@ function render() {
   setText(els.leadLabel, frameLabel);
   setText(
     els.validTime,
-    pageConfig.service === "ningxia" || pageConfig.service === "shangrao"
+    ["ningxia", "shangrao", "xinjiang"].includes(pageConfig.service)
       ? ""
       : frame.valid_label || `有效时间 ${formatTime(frame.valid_time)}`,
   );
