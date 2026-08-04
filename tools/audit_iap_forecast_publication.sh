@@ -13,6 +13,7 @@ OUTPUT_AUDIT_RUNS="${OUTPUT_AUDIT_RUNS:-5}"
 PYTHON_BIN="${PYTHON_BIN:-/public/software/apps/conda/latest/bin/python3}"
 NCDUMP_BIN="${NCDUMP_BIN:-/public/software/apps/conda/latest/bin/ncdump}"
 DRY_RUN=0
+MISSING_RENDER_REPAIRS=0
 
 usage() {
   cat <<'EOF'
@@ -400,6 +401,7 @@ submit_missing_render() {
     fi
   fi
   log "${family^^} completed model output $prefix needs full render: Time=$time_count expected=$expected_count rendered=${rendered_count:-0}"
+  ((MISSING_RENDER_REPAIRS += 1))
   if [[ "$family" == "shangrao" ]]; then
     run_action env IAPLACS_FORCE_RENDER=1 "$SCRIPT_DIR/submit_wrf_pipeline.sh"
   else
@@ -416,6 +418,15 @@ submit_missing_render ningxia /data1/elpt_2022_00083/zhoubj/WORK_nx "$SCRIPT_DIR
 submit_missing_render xinjiang /data1/elpt_2022_00083/zhoubj/WORK_xj "$SCRIPT_DIR/workxj_xinjiang_overview" "$SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh"
 submit_missing_render yunnan /data1/elpt_2022_00083/zhoubj/WORK_yn "$SCRIPT_DIR/worknx_yunnan_airports_overview" "$SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh"
 submit_missing_render shangrao /data1/elpt_2022_00083/zhoubj/WORK '' ''
+
+# The catalog was fetched before any repair above. GitHub Pages may need time
+# to publish the new commit, so comparing repaired runs against that stale
+# snapshot would immediately trigger a redundant republish. The next hourly
+# audit performs the public verification with a fresh catalog.
+if (( ! DRY_RUN && MISSING_RENDER_REPAIRS > 0 )); then
+  log "completed $MISSING_RENDER_REPAIRS missing-render repair(s); defer public comparison to the next audit"
+  exit 0
+fi
 
 while IFS= read -r run; do
   [[ -n "$run" ]] && audit_ningxia_output "$run"
