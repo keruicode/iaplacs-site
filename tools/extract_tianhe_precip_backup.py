@@ -14,6 +14,7 @@ from netCDF4 import Dataset
 
 
 REQUIRED_VARIABLES = ("Times", "XLAT", "XLONG", "RAINC", "RAINNC")
+OPTIONAL_ICE_PHASE_VARIABLES = ("GRAUPELNC", "HAILNC")
 
 
 def parse_args() -> argparse.Namespace:
@@ -97,7 +98,10 @@ def extract_backup(input_path: Path, output_path: Path, family: str, run_id: str
             if missing:
                 raise ValueError(f"WRF source is missing variables: {', '.join(missing)}")
 
-            selected_variables = [source.variables[name] for name in REQUIRED_VARIABLES]
+            selected_names = REQUIRED_VARIABLES + tuple(
+                name for name in OPTIONAL_ICE_PHASE_VARIABLES if name in source.variables
+            )
+            selected_variables = [source.variables[name] for name in selected_names]
             required_dimensions = {
                 dimension
                 for variable in selected_variables
@@ -117,6 +121,10 @@ def extract_backup(input_path: Path, output_path: Path, family: str, run_id: str
                 destination.setncattr(
                     "iaplacs_source_mtime_utc",
                     datetime.fromtimestamp(input_path.stat().st_mtime, timezone.utc).isoformat(),
+                )
+                destination.setncattr(
+                    "iaplacs_precipitation_variables",
+                    ",".join(selected_names),
                 )
                 destination.setncattr("iaplacs_backup_created_utc", datetime.now(timezone.utc).isoformat())
 

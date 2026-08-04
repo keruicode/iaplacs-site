@@ -14,6 +14,8 @@ from netCDF4 import Dataset
 
 
 BJT = timezone(timedelta(hours=8))
+RAIN_BASE_VARIABLES = ("RAINNC", "RAINC")
+ICE_PHASE_VARIABLES = ("GRAUPELNC", "HAILNC")
 
 
 AIRPORTS = [
@@ -89,6 +91,24 @@ def bjt_interval_label(start_value: str, end_value: str) -> str:
     return f"{start_bjt:%m-%d %H}:00-{end_bjt:%H}:00"
 
 
+def precipitation_variables(ds: Dataset) -> tuple[str, ...]:
+    missing = [name for name in RAIN_BASE_VARIABLES if name not in ds.variables]
+    if missing:
+        raise ValueError(f"WRF output is missing rain accumulator(s): {', '.join(missing)}")
+    return RAIN_BASE_VARIABLES + tuple(
+        name for name in ICE_PHASE_VARIABLES if name in ds.variables
+    )
+
+
+def accumulated_precipitation(
+    ds: Dataset, variables: tuple[str, ...], y: int, x: int
+) -> np.ndarray:
+    total = np.zeros(ds.variables[variables[0]].shape[0], dtype="float64")
+    for name in variables:
+        total += ds.variables[name][:, y, x].astype("float64")
+    return total
+
+
 def extract_file(path: Path, start: int, end: int, max_distance_deg: float) -> dict:
     with Dataset(path) as ds:
         time_count = len(ds.dimensions["Time"])
@@ -99,6 +119,7 @@ def extract_file(path: Path, start: int, end: int, max_distance_deg: float) -> d
         lat2d = ds.variables["XLAT"][0, :, :]
         lon2d = ds.variables["XLONG"][0, :, :]
         times = read_times(ds)
+        precip_variables = precipitation_variables(ds)
 
         results = []
         for airport in AIRPORTS:
@@ -113,10 +134,7 @@ def extract_file(path: Path, start: int, end: int, max_distance_deg: float) -> d
                 "grid_y": y,
                 "grid_x": x,
             }
-            accum = (
-                ds.variables["RAINNC"][:, y, x].astype("float64")
-                + ds.variables["RAINC"][:, y, x].astype("float64")
-            )
+            accum = accumulated_precipitation(ds, precip_variables, y, x)
             hourly = accum[start : end_idx + 1] - accum[start - 1 : end_idx]
             hourly = np.maximum(hourly, 0.0)
             total_mm = round(float(np.sum(hourly)), 1)
@@ -159,6 +177,7 @@ def extract_file(path: Path, start: int, end: int, max_distance_deg: float) -> d
             "lead_start": start,
             "lead_end": end_idx,
             "unit": "mm",
+            "precipitation_variables": list(precip_variables),
             "valid_time_start": times[start - 1] if len(times) > start - 1 else "",
             "valid_time_end": times[end_idx] if len(times) > end_idx else "",
             "airports": results,

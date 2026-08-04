@@ -44,6 +44,18 @@ trap 'rm -f "$GIT_SSH_WRAPPER"' EXIT
 export GIT_SSH="$GIT_SSH_WRAPPER"
 
 SITE_REPO="${REMOTE_SITE_REPO:-$HOME/iaplacs-site}"
+# Every publisher shares this lock because they update the same server02 Git
+# checkout and catalog. Without it, a CMA run can leave index.lock while a
+# forecast publisher is preparing its commit.
+if ! command -v flock >/dev/null 2>&1; then
+  echo "ERROR: flock is required to serialize server02 publishing" >&2
+  exit 127
+fi
+exec 8>"$HOME/.iaplacs-github-publish.lock"
+if ! flock -w 600 8; then
+  echo "ERROR: timed out waiting for GitHub publish lock" >&2
+  exit 75
+fi
 if [[ ! -d "$SITE_REPO/.git" ]]; then
   git clone "$GIT_URL" "$SITE_REPO"
 fi

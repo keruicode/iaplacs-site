@@ -123,7 +123,17 @@ begin
 
     lat2d = f->XLAT(0,:,:)
     lon2d = f->XLONG(0,:,:)
+    ; Preserve the operational rain baseline and add frozen precipitation
+    ; accumulators when this WRF output provides them. The additions follow
+    ; the IAP TF graupel and hail precipitation components; older files
+    ; without either variable retain the original calculation.
     rain_all = f->RAINNC + f->RAINC
+    if (isfilevar(f, "GRAUPELNC")) then
+      rain_all = rain_all + f->GRAUPELNC
+    end if
+    if (isfilevar(f, "HAILNC")) then
+      rain_all = rain_all + f->HAILNC
+    end if
     init_bjt = bjt_label(f@START_DATE, 3)
 
     if (accum_hours.eq.1) then
