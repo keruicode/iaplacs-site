@@ -262,14 +262,19 @@ audit_shangrao_output() {
 }
 
 latest_completed_wrf() {
-  local root="$1" candidate rsl
-  while IFS= read -r candidate; do
+  local root="$1" run_dir candidate rsl
+  while IFS= read -r run_dir; do
+    candidate="$(find "$run_dir/gfs/wrf" -maxdepth 1 -type f -name 'wrfout_d01_*' -print 2>/dev/null | sort -r | head -n 1)"
+    [[ -n "$candidate" ]] || continue
     rsl="$(dirname "$candidate")/rsl.error.0000"
     if [[ -f "$rsl" ]] && tail -n 200 "$rsl" | grep -q 'SUCCESS COMPLETE WRF'; then
       printf '%s\n' "$candidate"
       return 0
     fi
-  done < <(find "$root" -mindepth 4 -maxdepth 4 -type f -name 'wrfout_d01_*' -printf '%p\n' | sort -r)
+  done < <(
+    find "$root" -mindepth 1 -maxdepth 1 -type d -name '20????????' -printf '%p\n' \
+      | sort -r
+  )
   return 1
 }
 
