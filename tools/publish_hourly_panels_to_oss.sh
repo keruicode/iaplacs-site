@@ -12,6 +12,7 @@ GITHUB_KEY="${GITHUB_KEY:-/public/home/elzd_2023_00026/.ssh/id_ed25519_iaplacs_g
 GIT_USER_NAME="${GIT_USER_NAME:-IAP-LACS Publisher}"
 GIT_USER_EMAIL="${GIT_USER_EMAIL:-publisher@iaplacs.xyz}"
 PYTHON_BIN="${PYTHON_BIN:-$(command -v python3 || command -v python)}"
+SEQUENCE_VALIDATOR="${SEQUENCE_VALIDATOR:-$SCRIPT_DIR/validate_hourly_panel_sequence.py}"
 
 usage() {
   cat <<'EOF'
@@ -53,6 +54,21 @@ esac
 [[ "$run_prefix" =~ ^[0-9]{8}_[0-9]{2}$ ]] || { echo "ERROR: invalid run prefix" >&2; exit 64; }
 [[ -d "$regional_dir" ]] || { echo "ERROR: regional panel directory not found: $regional_dir" >&2; exit 1; }
 [[ -d "$national_dir" ]] || { echo "ERROR: national panel directory not found: $national_dir" >&2; exit 1; }
+[[ -f "$SEQUENCE_VALIDATOR" ]] || { echo "ERROR: hourly sequence validator not found: $SEQUENCE_VALIDATOR" >&2; exit 1; }
+
+if [[ "$family" == "worknx_summary" ]]; then
+  run_time_basis="utc"
+  validator_prefix_args=()
+else
+  run_time_basis="bjt"
+  validator_prefix_args=(--filename-prefix "$run_prefix")
+fi
+"$PYTHON_BIN" "$SEQUENCE_VALIDATOR" \
+  --run-prefix "$run_prefix" \
+  --run-time-basis "$run_time_basis" \
+  --regional-dir "$regional_dir" \
+  --national-dir "$national_dir" \
+  "${validator_prefix_args[@]}"
 
 stage_dir="$(mktemp -d "${TMPDIR:-/tmp}/iaplacs-hourly-panels.XXXXXX")"
 trap 'rm -rf -- "$stage_dir"' EXIT

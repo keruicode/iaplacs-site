@@ -17,6 +17,7 @@ GIT_USER_EMAIL="${GIT_USER_EMAIL:-publisher@iaplacs.xyz}"
 IAPLACS_ASSET_FORCE_UPLOAD="${IAPLACS_ASSET_FORCE_UPLOAD:-1}"
 IAPLACS_WEBP_FORCE="${IAPLACS_WEBP_FORCE:-1}"
 IAPLACS_PREVIEW_FORCE="${IAPLACS_PREVIEW_FORCE:-1}"
+SEQUENCE_VALIDATOR="${SEQUENCE_VALIDATOR:-$SCRIPT_DIR/validate_hourly_panel_sequence.py}"
 
 mkdir -p "$LOG_DIR"
 
@@ -151,6 +152,11 @@ for source in "${sources[@]}"; do
   webp_base="${base%.png}.webp"
   preview_base="${base%.png}.preview.webp"
   run_dir="$(dirname "$source")"
+  "$PYTHON_BIN" "$SEQUENCE_VALIDATOR" \
+    --run-prefix "$run_prefix" \
+    --run-time-basis utc \
+    --regional-dir "$run_dir/captioned_t13_t48" \
+    --national-dir "$run_dir/national_captioned_t13_t48"
   asset_files=("$source" "$run_dir/$webp_base" "$run_dir/$preview_base")
 
   mapfile -t national_sources < <(

@@ -63,10 +63,62 @@ run_action() {
   "$@"
 }
 
-count_panels() {
+panel_windows() {
   local directory="$1" prefix="$2"
-  [[ -d "$directory" ]] || { printf '0\n'; return; }
-  find "$directory" -maxdepth 1 -type f -name "${prefix}*rain_hour_*_BJT.png" | wc -l | tr -d '[:space:]'
+  [[ -d "$directory" ]] || return 0
+  find "$directory" -maxdepth 1 -type f -name "${prefix}*rain_hour_*_BJT.png" -printf '%f\n' \
+    | "$PYTHON_BIN" -c '
+import re, sys
+pattern = re.compile(r"_rain_hour_(\d{10})-(\d{10})_BJT\.png$")
+windows = set()
+for line in sys.stdin:
+    match = pattern.search(line.strip())
+    if match:
+        windows.add(match.groups())
+windows = sorted(windows)
+print(",".join("%s-%s" % window for window in windows))
+'
+}
+
+window_count() {
+  local windows="$1"
+  [[ -n "$windows" ]] || { printf '0\n'; return; }
+  awk -F, '{ print NF }' <<<"$windows"
+}
+
+expected_first_start() {
+  local run_time_basis="$1" run="$2"
+  "$PYTHON_BIN" - "$run_time_basis" "$run" <<'PY'
+from __future__ import print_function
+import sys
+from datetime import datetime, timedelta
+basis, run = sys.argv[1:]
+initial = datetime.strptime(run, "%Y%m%d_%H")
+if basis == "utc":
+    initial += timedelta(hours=8)
+print((initial + timedelta(hours=12)).strftime("%Y%m%d%H"))
+PY
+}
+
+sequence_is_valid() {
+  local windows="$1" expected_first="$2"
+  "$PYTHON_BIN" - "$windows" "$expected_first" <<'PY'
+from __future__ import print_function
+import sys
+from datetime import datetime, timedelta
+raw, expected = sys.argv[1:]
+items = []
+for value in filter(None, raw.split(",")):
+    start, end = value.split("-")
+    items.append((datetime.strptime(start, "%Y%m%d%H"), datetime.strptime(end, "%Y%m%d%H")))
+if not items or items[0][0] != datetime.strptime(expected, "%Y%m%d%H"):
+    raise SystemExit(1)
+for index, (start, end) in enumerate(items):
+    if end - start != timedelta(hours=1):
+        raise SystemExit(1)
+    if index and start != items[index - 1][1]:
+        raise SystemExit(1)
+PY
 }
 
 list_output_runs() {
@@ -95,99 +147,117 @@ fetch_public_catalog() {
   "$PYTHON_BIN" -m json.tool "$AUDIT_CATALOG" >/dev/null
 }
 
-public_counts() {
-  local service="$1" run_id="$2"
-  shift 2
-  "$PYTHON_BIN" - "$AUDIT_CATALOG" "$service" "$run_id" "$@" <<'PY'
+public_windows() {
+  local service="$1" run_id="$2" frame_id="$3"
+  "$PYTHON_BIN" - "$AUDIT_CATALOG" "$service" "$run_id" "$frame_id" <<'PY'
 from __future__ import print_function
 import json
+import re
 import sys
 
-catalog_path, service, run_id = sys.argv[1:4]
-frame_ids = sys.argv[4:]
+catalog_path, service, run_id, frame_id = sys.argv[1:]
 with open(catalog_path, "r") as handle:
     payload = json.load(handle)
 service_data = payload.get("services", {}).get(service, {})
 run = next((item for item in service_data.get("runs", []) if item.get("id") == run_id), None)
 if run is None:
     raise SystemExit("run-not-found")
-counts = {frame_id: 0 for frame_id in frame_ids}
+target = None
 for product in run.get("products", []):
     for frame in product.get("frames", []):
-        frame_id = frame.get("id")
-        if frame_id in counts:
-            counts[frame_id] = len(frame.get("individual_frames") or [])
-print(" ".join("%s=%s" % (frame_id, counts[frame_id]) for frame_id in frame_ids))
+        if frame.get("id") == frame_id:
+            target = frame
+            break
+if target is None:
+    raise SystemExit("frame-not-found")
+pattern = re.compile(r"_rain_hour_(\d{10})-(\d{10})_BJT\.webp(?:\?|$)")
+windows = []
+for item in target.get("individual_frames") or []:
+    match = pattern.search(item.get("file", ""))
+    if match:
+        windows.append(match.groups())
+print(",".join("%s-%s" % window for window in sorted(set(windows))))
 PY
 }
 
-counts_match() {
-  local actual="$1" expected_region="$2" expected_national="$3" region_id="$4" national_id="$5"
-  local actual_region actual_national
-  actual_region="$(sed -n -E "s/.*${region_id}=([0-9]+).*/\\1/p" <<<"$actual")"
-  actual_national="$(sed -n -E "s/.*${national_id}=([0-9]+).*/\\1/p" <<<"$actual")"
-  [[ "$actual_region" == "$expected_region" && "$actual_national" == "$expected_national" ]]
+local_sequences_are_valid() {
+  local basis="$1" run="$2" region="$3" national="$4" expected
+  expected="$(expected_first_start "$basis" "$run")"
+  [[ -n "$region" && "$region" == "$national" ]] || return 1
+  sequence_is_valid "$region" "$expected"
 }
 
 audit_ningxia_output() {
   local run="$1" output="$SCRIPT_DIR/worknx_ningxia_overview/$run"
-  local region national public
-  region="$(count_panels "$output/captioned_t13_t48" '')"
-  national="$(count_panels "$output/national_captioned_t13_t48" '')"
-  if (( region == 0 || national == 0 )); then
-    log "NINGXIA $run local output incomplete: region=$region national=$national"
+  local region national public_region public_national region_count national_count
+  region="$(panel_windows "$output/captioned_t13_t48" '')"
+  national="$(panel_windows "$output/national_captioned_t13_t48" '')"
+  region_count="$(window_count "$region")"
+  national_count="$(window_count "$national")"
+  if ! local_sequences_are_valid utc "$run" "$region" "$national"; then
+    log "NINGXIA $run local sequence invalid: region=$region_count national=$national_count; rerender latest run"
+    run_action "$SCRIPT_DIR/publish_worknx_ningxia_to_github.sh" --latest
     return
   fi
-  if ! public="$(public_counts ningxia "$run" ningxia_region worknx_national)"; then
+  if ! public_region="$(public_windows ningxia "$run" ningxia_region)" \
+    || ! public_national="$(public_windows ningxia "$run" worknx_national)"; then
     log "NINGXIA $run public catalog unavailable; leaving existing data untouched"
     return
   fi
-  if counts_match "$public" "$region" "$national" ningxia_region worknx_national; then
-    log "NINGXIA $run verified: $public"
+  if [[ "$public_region" == "$region" && "$public_national" == "$national" ]]; then
+    log "NINGXIA $run verified: region=$region_count national=$national_count first=${region%%,*}"
     return
   fi
-  log "NINGXIA $run mismatch local region=$region national=$national public=[$public]"
+  log "NINGXIA $run public sequence mismatch; republish region=$region_count national=$national_count first=${region%%,*}"
   run_action "$SCRIPT_DIR/publish_worknx_ningxia_to_github.sh" --output-run "$run"
 }
 
 audit_yunnan_output() {
   local run="$1" output="$SCRIPT_DIR/worknx_yunnan_airports_overview/$run"
-  local region national public
-  region="$(count_panels "$output/captioned_t13_t48" '')"
-  national="$(count_panels "$output/national_captioned_t13_t48" '')"
-  if (( region == 0 || national == 0 )); then
-    log "YUNNAN $run local output incomplete: region=$region national=$national"
+  local region national public_region public_national region_count national_count
+  region="$(panel_windows "$output/captioned_t13_t48" '')"
+  national="$(panel_windows "$output/national_captioned_t13_t48" '')"
+  region_count="$(window_count "$region")"
+  national_count="$(window_count "$national")"
+  if ! local_sequences_are_valid utc "$run" "$region" "$national"; then
+    log "YUNNAN $run local sequence invalid: region=$region_count national=$national_count; rerender latest run"
+    run_action "$SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh" --latest
     return
   fi
-  if ! public="$(public_counts airport "airport_yunnan_$run" airport_region airport_national)"; then
+  if ! public_region="$(public_windows airport "airport_yunnan_$run" airport_region)" \
+    || ! public_national="$(public_windows airport "airport_yunnan_$run" airport_national)"; then
     log "YUNNAN $run public catalog unavailable; leaving existing data untouched"
     return
   fi
-  if counts_match "$public" "$region" "$national" airport_region airport_national; then
-    log "YUNNAN $run verified: $public"
+  if [[ "$public_region" == "$region" && "$public_national" == "$national" ]]; then
+    log "YUNNAN $run verified: region=$region_count national=$national_count first=${region%%,*}"
     return
   fi
-  log "YUNNAN $run mismatch local region=$region national=$national public=[$public]"
+  log "YUNNAN $run public sequence mismatch; republish region=$region_count national=$national_count first=${region%%,*}"
   run_action "$SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh" --output-run "$run"
 }
 
 audit_shangrao_output() {
-  local run="$1" region national public
-  region="$(count_panels "$SCRIPT_DIR/wrf_hourly_png" "${run}_")"
-  national="$(count_panels "$SCRIPT_DIR/national_hourly_png" "${run}_national_")"
-  if (( region == 0 || national == 0 )); then
-    log "SHANGRAO $run local output incomplete: region=$region national=$national"
+  local run="$1" region national public_region public_national region_count national_count
+  region="$(panel_windows "$SCRIPT_DIR/wrf_hourly_png" "${run}_")"
+  national="$(panel_windows "$SCRIPT_DIR/national_hourly_png" "${run}_national_")"
+  region_count="$(window_count "$region")"
+  national_count="$(window_count "$national")"
+  if ! local_sequences_are_valid bjt "$run" "$region" "$national"; then
+    log "SHANGRAO $run local sequence invalid: region=$region_count national=$national_count; submit forced rerender"
+    run_action env IAPLACS_FORCE_RENDER=1 "$SCRIPT_DIR/submit_wrf_pipeline.sh"
     return
   fi
-  if ! public="$(public_counts shangrao "$run" shangrao_region shangrao_national)"; then
+  if ! public_region="$(public_windows shangrao "$run" shangrao_region)" \
+    || ! public_national="$(public_windows shangrao "$run" shangrao_national)"; then
     log "SHANGRAO $run public catalog unavailable; leaving existing data untouched"
     return
   fi
-  if counts_match "$public" "$region" "$national" shangrao_region shangrao_national; then
-    log "SHANGRAO $run verified: $public"
+  if [[ "$public_region" == "$region" && "$public_national" == "$national" ]]; then
+    log "SHANGRAO $run verified: region=$region_count national=$national_count first=${region%%,*}"
     return
   fi
-  log "SHANGRAO $run mismatch local region=$region national=$national public=[$public]"
+  log "SHANGRAO $run public sequence mismatch; republish region=$region_count national=$national_count first=${region%%,*}"
   run_action "$SCRIPT_DIR/publish_wrf_montages_with_hourly_to_github.sh"
 }
 

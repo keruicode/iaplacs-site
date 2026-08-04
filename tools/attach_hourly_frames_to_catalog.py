@@ -55,6 +55,7 @@ def main() -> None:
     missing = sorted(frame_id for frame_id in config["frames"] if not panels[frame_id])
     if missing:
         parser.error(f"missing hourly panels for: {', '.join(missing)}")
+    validate_panel_sequences(args.family, args.run_prefix, panels)
 
     catalog = json.loads(args.catalog.read_text(encoding="utf-8"))
     service = catalog.get("services", {}).get(config["service"], {})
@@ -130,6 +131,36 @@ def scan_panels(
             frame["lead"] = lead
         normalized[frame_id] = ordered
     return normalized
+
+
+def validate_panel_sequences(
+    family: str, run_prefix: str, panels: dict[str, list[dict]]
+) -> None:
+    init = datetime.strptime(run_prefix, "%Y%m%d_%H").replace(tzinfo=BJT)
+    if family == "worknx_summary":
+        # WORK_nx run prefixes are UTC; convert to BJT before adding spin-up.
+        init += timedelta(hours=8)
+    expected_start = init + timedelta(hours=12)
+
+    starts_by_frame: dict[str, list[datetime]] = {}
+    for frame_id, frames in panels.items():
+        starts = [
+            datetime.strptime(frame["id"].rsplit("_", 1)[-1], "%Y%m%d%H").replace(tzinfo=BJT)
+            for frame in frames
+        ]
+        if starts[0] != expected_start:
+            raise SystemExit(
+                f"ERROR: {frame_id} starts at {starts[0]:%Y-%m-%d %H:%M} BJT; "
+                f"expected {expected_start:%Y-%m-%d %H:%M} BJT"
+            )
+        for previous, current in zip(starts, starts[1:]):
+            if current - previous != timedelta(hours=1):
+                raise SystemExit(f"ERROR: {frame_id} hourly sequence is discontinuous")
+        starts_by_frame[frame_id] = starts
+
+    sequences = list(starts_by_frame.values())
+    if any(sequence != sequences[0] for sequence in sequences[1:]):
+        raise SystemExit("ERROR: regional and national hourly sequences differ")
 
 
 if __name__ == "__main__":
