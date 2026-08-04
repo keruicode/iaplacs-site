@@ -220,6 +220,11 @@ render_source() {
   last_lead=$((time_count - 1))
 
   mkdir -p "$panel_dir" "$caption_dir" "$national_panel_dir" "$national_caption_dir"
+  # A partially rendered run may later finish with a different Time count.
+  # Remove its old hourly panels so stale windows cannot enter the montage or
+  # make the sequence validator reject an otherwise complete rerender.
+  rm -f "$panel_dir"/*.png "$caption_dir"/*.png
+  rm -f "$national_panel_dir"/*.png "$national_caption_dir"/*.png
   echo "Rendering $SERVICE_LABEL T13-T${last_lead} panels for $run_prefix from $wrf_dir"
   WORK_NX_WRF_DIR="$wrf_dir" \
     WORK_NX_NINGXIA_PNG_DIR="$panel_dir" \
