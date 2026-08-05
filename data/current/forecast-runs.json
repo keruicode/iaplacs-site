@@ -4,7 +4,7 @@
     "name": "IAP-LACS Forecast",
     "domain": "iaplacs.xyz"
   },
-  "published_at": "2026-08-05T10:55:20+08:00",
+  "published_at": "2026-08-05T11:34:57+08:00",
   "services": {
     "airport": {
       "title": "机场气象服务",
@@ -15215,8 +15215,99 @@
       "title": "新疆预报",
       "subtitle": "Xinjiang forecast",
       "note": "新疆页面展示 WORK_xj 的新疆区域和中国西部降水预报，并提供12小时、24小时累计降水及中央气象台24小时降水实况。",
-      "latest_run": "20260804_12",
+      "latest_run": "20260804_18",
       "runs": [
+        {
+          "id": "20260804_18",
+          "label": "2026-08-05 02:00 BJT",
+          "run_time": "2026-08-05T02:00:00+08:00",
+          "published_at": "2026-08-05T11:34:57+08:00",
+          "summary": "新疆区域与中国西部预报图集，共 1 张图",
+          "products": [
+            {
+              "id": "xinjiang_precip_series",
+              "title": "降水预报图集",
+              "category": "新疆预报",
+              "unit": "mm",
+              "color": "#0f68c8",
+              "description": "默认显示新疆区域图，可切换中国西部和冰雹预警图。",
+              "metrics": [
+                {
+                  "label": "起报时次",
+                  "value": "20260804 18 UTC"
+                },
+                {
+                  "label": "生成时间",
+                  "value": "2026-08-05 11:34 BJT"
+                },
+                {
+                  "label": "图像数量",
+                  "value": "1"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "xinjiang_region",
+                  "lead": 0,
+                  "lead_label": "新疆区域",
+                  "valid_label": "当前显示：新疆区域",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/workxj_summary_20260804_18/Precip_hourly_WRF_Xinjiang_T13_T36_InitUTC_2026-08-04_18_00_combined_overview_6x4_grid.webp",
+                  "bytes": 1088428,
+                  "individual_frames": [],
+                  "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/workxj_summary_20260804_18/Precip_hourly_WRF_Xinjiang_T13_T36_InitUTC_2026-08-04_18_00_combined_overview_6x4_grid.preview.webp",
+                  "preview_bytes": 250710,
+                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/workxj_summary_20260804_18/Precip_hourly_WRF_Xinjiang_T13_T36_InitUTC_2026-08-04_18_00_combined_overview_6x4_grid.png",
+                  "full_bytes": 1283236,
+                  "valid_time": "2026-08-07T02:00:00+08:00"
+                }
+              ]
+            },
+            {
+              "id": "cma_observed_precip_24h",
+              "title": "中央气象台24小时降水实况",
+              "category": "中央气象台实况",
+              "unit": "mm",
+              "color": "#0f68c8",
+              "description": "中央气象台24小时累计降水实况（08/20 BJT）。",
+              "metrics": [
+                {
+                  "label": "数据来源",
+                  "value": "中央气象台"
+                },
+                {
+                  "label": "图像数量",
+                  "value": "3"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "cma_24h_2026080408",
+                  "lead": 2026080408,
+                  "lead_label": "08-03 08-08-04 08",
+                  "valid_label": "2026-08-04 08:00 BJT",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/cma_24h_observation/cma_24h_obs_2026080408_BJT.jpg",
+                  "bytes": 137116
+                },
+                {
+                  "id": "cma_24h_2026080420",
+                  "lead": 2026080420,
+                  "lead_label": "08-03 20-08-04 20",
+                  "valid_label": "2026-08-04 20:00 BJT",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/cma_24h_observation/cma_24h_obs_2026080420_BJT.jpg",
+                  "bytes": 136514
+                },
+                {
+                  "id": "cma_24h_2026080508",
+                  "lead": 2026080508,
+                  "lead_label": "08-04 08-08-05 08",
+                  "valid_label": "2026-08-05 08:00 BJT",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/cma_24h_observation/cma_24h_obs_2026080508_BJT.jpg",
+                  "bytes": 135532
+                }
+              ]
+            }
+          ]
+        },
         {
           "id": "20260804_12",
           "label": "2026-08-04 20:00 BJT",
@@ -16020,50 +16111,6 @@
                   "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/workxj_summary_20260804_12/Precip_accum_24h_WRF_Xinjiang_T13_T36_InitUTC_2026-08-04_12_00_2026080508-2026080608_combined_overview_1x1_grid.png",
                   "full_bytes": 261341,
                   "valid_time": "2026-08-06T20:00:00+08:00"
-                }
-              ]
-            },
-            {
-              "id": "cma_observed_precip_24h",
-              "title": "中央气象台24小时降水实况",
-              "category": "中央气象台实况",
-              "unit": "mm",
-              "color": "#0f68c8",
-              "description": "中央气象台24小时累计降水实况（08/20 BJT）。",
-              "metrics": [
-                {
-                  "label": "数据来源",
-                  "value": "中央气象台"
-                },
-                {
-                  "label": "图像数量",
-                  "value": "3"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "cma_24h_2026080408",
-                  "lead": 2026080408,
-                  "lead_label": "08-03 08-08-04 08",
-                  "valid_label": "2026-08-04 08:00 BJT",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/cma_24h_observation/cma_24h_obs_2026080408_BJT.jpg",
-                  "bytes": 137116
-                },
-                {
-                  "id": "cma_24h_2026080420",
-                  "lead": 2026080420,
-                  "lead_label": "08-03 20-08-04 20",
-                  "valid_label": "2026-08-04 20:00 BJT",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/cma_24h_observation/cma_24h_obs_2026080420_BJT.jpg",
-                  "bytes": 136514
-                },
-                {
-                  "id": "cma_24h_2026080508",
-                  "lead": 2026080508,
-                  "lead_label": "08-04 08-08-05 08",
-                  "valid_label": "2026-08-05 08:00 BJT",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/cma_24h_observation/cma_24h_obs_2026080508_BJT.jpg",
-                  "bytes": 135532
                 }
               ]
             }
