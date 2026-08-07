@@ -185,21 +185,23 @@ RAIN_COMPONENT_MODE=total ncl "$SCRIPT_DIR/rain_wrf_hour_bjt.ncl"
 echo "Running NCL Shangrao hail-warning plotting for $BJT_PREFIX..."
 HAIL_PNG_DIR="$SCRIPT_DIR/shangrao_hail_hourly_png"
 rm -f "$HAIL_PNG_DIR/${BJT_PREFIX}_rain_hour_"*_BJT.png \
-	"$HAIL_PNG_DIR/${BJT_PREFIX}_combined_"*_grid.png
-SHANGRAO_WRF_DIR="$SCRIPT_DIR" \
-	SHANGRAO_PNG_DIR="$HAIL_PNG_DIR" \
-	SHANGRAO_PROVINCE_SHP_FILE="$SCRIPT_DIR/SHP/省界_region.shp" \
-	SHANGRAO_COUNTY_SHP_FILE="$SCRIPT_DIR/SHP/shangrao_city_county.shp" \
-	RAIN_COMPONENT_MODE=frozen \
-	ncl "$SCRIPT_DIR/rain_wrf_hour_bjt.ncl"
-bash "$SCRIPT_DIR/make_wrf_montages.sh" "$HAIL_PNG_DIR" "$BJT_PREFIX"
-HAIL_OVERVIEW="$(ls -t "$HAIL_PNG_DIR/${BJT_PREFIX}_combined_overview_"*_grid.png 2>/dev/null | head -n 1 || true)"
+  "$HAIL_PNG_DIR/${BJT_PREFIX}_combined_"*_grid.png \
+  "$HAIL_PNG_DIR/${BJT_PREFIX}_shangrao_hail_warning_rain_hour_"*_BJT.png \
+  "$HAIL_PNG_DIR/${BJT_PREFIX}_shangrao_hail_warning_combined_"*_grid.png
+WORK_NX_WRF_DIR="$SCRIPT_DIR" \
+  WORK_NX_NATIONAL_PNG_DIR="$HAIL_PNG_DIR" \
+  WORK_NX_NATIONAL_PROVINCE_SHP_FILE="$SCRIPT_DIR/SHP/省界_region.shp" \
+  RAIN_COMPONENT_MODE=frozen \
+  RAIN_OUTPUT_AREA=shangrao_hail_warning \
+  ncl "$SCRIPT_DIR/rain_worknx_national_hour_bjt.ncl"
+bash "$SCRIPT_DIR/make_wrf_montages.sh" "$HAIL_PNG_DIR" "${BJT_PREFIX}_shangrao_hail_warning"
+HAIL_OVERVIEW="$(ls -t "$HAIL_PNG_DIR/${BJT_PREFIX}_shangrao_hail_warning_combined_overview_"*_grid.png 2>/dev/null | head -n 1 || true)"
 if [ -z "$HAIL_OVERVIEW" ]; then
 	echo "ERROR: Shangrao hail-warning overview was not generated for $BJT_PREFIX" >&2
 	exit 1
 fi
 hail_name="$(basename "$HAIL_OVERVIEW")"
-hail_target="${hail_name/${BJT_PREFIX}_combined_overview_/${BJT_PREFIX}_combined_hail_warning_}"
+hail_target="${hail_name/${BJT_PREFIX}_shangrao_hail_warning_combined_overview_/${BJT_PREFIX}_combined_hail_warning_}"
 cp -f "$HAIL_OVERVIEW" "$SCRIPT_DIR/wrf_hourly_png/$hail_target"
 echo "Running NCL nationwide hourly rainfall plotting for $BJT_PREFIX..."
 NATIONAL_PNG_DIR="$SCRIPT_DIR/national_hourly_png"

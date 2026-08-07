@@ -67,7 +67,7 @@ caption_national_panel() {
 
 add_national_header() {
 	local mosaic_path="$1" overview_path="$2" prefix="$3" init_label
-	if [[ "$prefix" =~ ^([0-9]{4})([0-9]{2})([0-9]{2})_([0-9]{2})_national$ ]]; then
+	if [[ "$prefix" =~ ^([0-9]{4})([0-9]{2})([0-9]{2})_([0-9]{2})(_.+)?$ ]]; then
 		init_label="${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]} ${BASH_REMATCH[4]}:00 BJT"
 	else
 		init_label="BJT"
@@ -108,7 +108,7 @@ while IFS= read -r prefix; do
 	overview_mosaic=".${overview_out}.mosaic.png"
 	montage_images=("${images[@]}")
 	detail_images=("${images[@]}")
-	if [[ "$prefix" == *_national ]]; then
+	if [[ "$prefix" == *_national || "$prefix" == *_hail_warning ]]; then
 		caption_dir=".${prefix}_captioned"
 		mkdir -p "$caption_dir"
 		montage_images=()
@@ -126,7 +126,7 @@ while IFS= read -r prefix; do
 		status=1
 		continue
 	fi
-	if [[ "$prefix" == *_national ]]; then
+	if [[ "$prefix" == *_national || "$prefix" == *_hail_warning ]]; then
 		add_national_header "$overview_mosaic" "$overview_out" "$prefix"
 		rm -f "$overview_mosaic"
 	else
@@ -164,4 +164,3 @@ while IFS= read -r prefix; do
 done <<< "$prefixes"
 
 exit "$status"
-

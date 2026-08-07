@@ -10,7 +10,7 @@ const ACCESS_TOKEN_VALUE = "iaplacs_access_granted_v1";
 const DATA_SOURCE_TOKEN_KEY = "iaplacs_forecast_source";
 const AIRPORT_RATING_CLIENT_ID_KEY = "iaplacs_airport_rating_client_v1";
 const NINGXIA_PRODUCT_TITLE = "降水预报图集";
-const NINGXIA_PRODUCT_DESCRIPTION = "默认显示宁夏区域图，可切换中国中部和冰雹区域图。";
+const NINGXIA_PRODUCT_DESCRIPTION = "默认显示宁夏区域图，可切换中国中部和冰雹预警图。";
 const NATIONAL_FRAME_LABELS = {
   worknx_national: "中国中部",
   shangrao_national: "中国东南部",

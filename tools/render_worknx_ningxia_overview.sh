@@ -9,6 +9,7 @@ OUTPUT_ROOT="${OUTPUT_ROOT:-$SCRIPT_DIR/worknx_ningxia_overview}"
 SERVICE_LABEL="${SERVICE_LABEL:-Ningxia}"
 SERVICE_FILE_TOKEN="${SERVICE_FILE_TOKEN:-Ningxia}"
 REGION_MODE="${REGION_MODE:-ningxia}"
+HAIL_OUTPUT_AREA="${HAIL_OUTPUT_AREA:-${REGION_MODE}_hail_warning}"
 NCL_SCRIPT="${NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_ningxia_hour_bjt.ncl}"
 NATIONAL_NCL_SCRIPT="${NATIONAL_NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_national_hour_bjt.ncl}"
 NCL_BIN="${NCL_BIN:-/public/software/apps/ncl_ncarg/ncl630/bin/ncl}"
@@ -261,23 +262,22 @@ render_source() {
     rm -f "$frozen_panel_dir"/*.png "$frozen_caption_dir"/*.png
     echo "Rendering $SERVICE_LABEL hail-warning T13-T${last_lead} panels for $run_prefix"
     WORK_NX_WRF_DIR="$wrf_dir" \
-      WORK_NX_NINGXIA_PNG_DIR="$frozen_panel_dir" \
-      NINGXIA_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
-      NINGXIA_PROVINCE_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
-      NINGXIA_COUNTY_SHP_FILE="$NINGXIA_COUNTY_SHP_FILE" \
-      WORK_NX_REGION_MODE="$REGION_MODE" \
+      WORK_NX_NATIONAL_PNG_DIR="$frozen_panel_dir" \
+      WORK_NX_NATIONAL_PROVINCE_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
+      WORK_NX_NATIONAL_REGION_MODE="$REGION_MODE" \
       RAIN_COMPONENT_MODE=frozen \
-      "$NCL_BIN" "$NCL_SCRIPT"
+      RAIN_OUTPUT_AREA="$HAIL_OUTPUT_AREA" \
+      "$NCL_BIN" "$NATIONAL_NCL_SCRIPT"
 
     local frozen_panels=() frozen_captioned_panels=()
-    mapfile -t frozen_panels < <(find "$frozen_panel_dir" -maxdepth 1 -type f -name '*_rain_hour_*_BJT.png' -print | sort)
+    mapfile -t frozen_panels < <(find "$frozen_panel_dir" -maxdepth 1 -type f -name "*_${HAIL_OUTPUT_AREA}_rain_hour_*_BJT.png" -print | sort)
     if (( ${#frozen_panels[@]} != panel_count )); then
       echo "ERROR: expected ${panel_count} hail-warning panels, found ${#frozen_panels[@]} for $run_prefix" >&2
       return 1
     fi
     frozen_overview="$run_dir/Precip_hourly_WRF_${SERVICE_FILE_TOKEN}Frozen_T13_T${last_lead}_InitUTC_${run_date}_${run_hour}_00_combined_overview_${overview_grid}_grid.png"
     for panel in "${frozen_panels[@]}"; do
-      caption_panel "$panel" "$frozen_caption_dir"
+      caption_panel "$panel" "$frozen_caption_dir" 0
       frozen_captioned_panels+=("$frozen_caption_dir/$(basename "$panel")")
     done
     montage "${frozen_captioned_panels[@]}" -tile "$overview_grid" -geometry '100%x100%+2+2' -background white "$frozen_overview"

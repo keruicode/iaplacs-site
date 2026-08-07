@@ -325,13 +325,12 @@ render_source() {
   touch -r "$source_path" "$overview"
 
   echo "Rendering Yunnan airport hail-warning T13-T${last_lead} panels for $run_prefix"
-  WORK_YN_WRF_DIR="$wrf_dir" \
-    WORK_YN_YUNNAN_AIRPORT_PNG_DIR="$frozen_panel_dir" \
-    YUNNAN_PROVINCE_SHP_FILE="$YUNNAN_PROVINCE_SHP_FILE" \
-    YUNNAN_CITY_SHP_FILE="$YUNNAN_CITY_SHP_FILE" \
+  WORK_NX_WRF_DIR="$wrf_dir" \
+    WORK_NX_NATIONAL_PNG_DIR="$frozen_panel_dir" \
+    WORK_NX_NATIONAL_PROVINCE_SHP_FILE="$YUNNAN_PROVINCE_SHP_FILE" \
     RAIN_COMPONENT_MODE=frozen \
     RAIN_OUTPUT_AREA=yunnan_hail_warning \
-    "$NCL_BIN" "$NCL_SCRIPT"
+    "$NCL_BIN" "$NATIONAL_NCL_SCRIPT"
   local frozen_panels=() frozen_captioned_panels=()
   mapfile -t frozen_panels < <(find "$frozen_panel_dir" -maxdepth 1 -type f -name '*_yunnan_hail_warning_rain_hour_*_BJT.png' -print | sort)
   if (( ${#frozen_panels[@]} != panel_count )); then
@@ -340,7 +339,7 @@ render_source() {
   fi
   frozen_overview="$run_dir/Precip_hourly_WRF_YunnanAirportsFrozen_T13_T${last_lead}_InitUTC_${run_date}_${run_hour}_00_combined_overview_${overview_grid}_grid.png"
   for panel in "${frozen_panels[@]}"; do
-    caption_panel "$panel" "$frozen_caption_dir"
+    caption_panel "$panel" "$frozen_caption_dir" 0
     frozen_captioned_panels+=("$frozen_caption_dir/$(basename "$panel")")
   done
   montage "${frozen_captioned_panels[@]}" -tile "$overview_grid" -geometry '100%x100%+2+2' -background white "$frozen_overview"

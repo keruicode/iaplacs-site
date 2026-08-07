@@ -36,6 +36,8 @@ begin
   province_shp_file = getenv("WORK_NX_NATIONAL_PROVINCE_SHP_FILE")
   accum_hours_text = getenv("RAIN_ACCUM_HOURS")
   region_mode = getenv("WORK_NX_NATIONAL_REGION_MODE")
+  component_mode = getenv("RAIN_COMPONENT_MODE")
+  output_area = getenv("RAIN_OUTPUT_AREA")
   if (wrf_dir.eq."") then
     wrf_dir = "."
   end if
@@ -55,6 +57,12 @@ begin
   end if
   if (ismissing(region_mode)) then
     region_mode = "china"
+  end if
+  if (ismissing(component_mode) .or. component_mode.eq."") then
+    component_mode = "total"
+  end if
+  if (ismissing(output_area) .or. output_area.eq."") then
+    output_area = "national"
   end if
 
   system("mkdir -p " + out_dir)
@@ -127,16 +135,31 @@ begin
     ncols = dimsizes(lon2d(0,:))
     lat_axis = lat2d(:,toint(ncols/2))
     lon_axis = lon2d(toint(nrows/2),:)
-    ; Preserve the operational rain baseline and add frozen precipitation
-    ; accumulators when this WRF output provides them. The additions follow
-    ; the IAP TF graupel and hail precipitation components; older files
-    ; without either variable retain the original calculation.
-    rain_all = f->RAINNC + f->RAINC
-    if (isfilevar(f, "GRAUPELNC")) then
-      rain_all = rain_all + f->GRAUPELNC
-    end if
-    if (isfilevar(f, "HAILNC")) then
-      rain_all = rain_all + f->HAILNC
+    ; Hail-warning maps reuse this large-domain renderer but contain only
+    ; frozen precipitation. Ordinary hourly/accumulated precipitation keeps
+    ; the operational rain baseline plus available frozen accumulators.
+    if (component_mode.eq."frozen") then
+      if (isfilevar(f, "GRAUPELNC") .and. isfilevar(f, "HAILNC")) then
+        rain_all = f->GRAUPELNC + f->HAILNC
+      else if (isfilevar(f, "GRAUPELNC")) then
+        rain_all = f->GRAUPELNC
+      else if (isfilevar(f, "HAILNC")) then
+        rain_all = f->HAILNC
+      else
+        print("ERROR: frozen mode requires GRAUPELNC or HAILNC in " + files(ifile))
+        delete(f)
+        exit
+      end if
+      end if
+      end if
+    else
+      rain_all = f->RAINNC + f->RAINC
+      if (isfilevar(f, "GRAUPELNC")) then
+        rain_all = rain_all + f->GRAUPELNC
+      end if
+      if (isfilevar(f, "HAILNC")) then
+        rain_all = rain_all + f->HAILNC
+      end if
     end if
     init_bjt = bjt_label(f@START_DATE, 3)
 
@@ -163,7 +186,7 @@ begin
       rain_h = where(rain_h.lt.0.01, -1.0, rain_h)
 
       if (accum_hours.eq.1) then
-        out_name = init_bjt + "_national_rain_hour_" + file_start + "-" + file_end + "_BJT"
+        out_name = init_bjt + "_" + output_area + "_rain_hour_" + file_start + "-" + file_end + "_BJT"
       else
         out_name = init_bjt + "_national_accum_" + sprinti("%0.2i",accum_hours) + "h_" + file_start + "-" + file_end + "_BJT"
       end if

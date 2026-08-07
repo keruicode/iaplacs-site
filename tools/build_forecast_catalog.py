@@ -231,7 +231,7 @@ def build_yunnan_airport_frames(
         is_national = accumulation_hours is None and "_WRF_AllRain_" in path.name
         lead_label = lead_label_from_name(path.name)
         if is_hail_warning:
-            frame_id, lead, lead_label = "airport_hail_warning", 2, "冰雹区域图"
+            frame_id, lead, lead_label = "airport_hail_warning", 2, "冰雹预警"
         elif is_national:
             frame_id, lead, lead_label = "airport_national", 1, "中国西南部"
         elif accumulation_hours is None:
@@ -314,7 +314,7 @@ def build_yunnan_airport_product(
         "category": "机场服务",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": "WORK_yn 云南逐小时降水与冰雹区域图，标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场位置。",
+        "description": "WORK_yn 云南逐小时降水与冰雹预警图，标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场位置。",
         "metrics": metrics,
         "frames": frames,
     }
@@ -925,8 +925,8 @@ def regional_frame_meta(
         return (
             f"{accumulation_prefix}_hail_warning",
             2,
-            "冰雹区域图",
-            "当前显示：冰雹区域图",
+            "冰雹预警",
+            "当前显示：冰雹预警",
         )
     if "_WRF_AllRain_" in key:
         return (national_id, 1, national_label, f"当前显示：{national_label}")
@@ -948,7 +948,7 @@ def build_ningxia_product(run_id: str, frames: list[dict], generated_at: str) ->
         "category": "宁夏预报",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": "默认显示宁夏区域图，可切换中国中部和冰雹区域图。",
+        "description": "默认显示宁夏区域图，可切换中国中部和冰雹预警图。",
         "metrics": [
             {"label": "起报时次", "value": run_id.replace("_", " ") + " UTC"},
             {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},
@@ -984,7 +984,7 @@ def build_xinjiang_product(run_id: str, frames: list[dict], generated_at: str) -
         "category": "新疆预报",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": "默认显示新疆区域图，可切换中国西部和冰雹区域图。",
+        "description": "默认显示新疆区域图，可切换中国西部和冰雹预警图。",
         "metrics": [
             {"label": "起报时次", "value": run_id.replace("_", " ") + " UTC"},
             {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},
@@ -1257,8 +1257,8 @@ def frame_meta(run_id: str, key: str) -> dict:
         return {
             "id": "shangrao_hail_warning",
             "lead": 2,
-            "lead_label": "冰雹区域图",
-            "valid_label": "当前显示：冰雹区域图",
+            "lead_label": "冰雹预警",
+            "valid_label": "当前显示：冰雹预警",
         }
     if "_combined_overview" in key:
         return {
