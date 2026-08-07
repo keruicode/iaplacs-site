@@ -98,15 +98,21 @@ begin
     national_lat_labels = (/"20~S~o~N~N", "30~S~o~N~N", \
                             "40~S~o~N~N", "50~S~o~N~N"/)
   end if
-  ; CMA hourly precipitation classes: no rain, 0-2.5, 2.5-5, 5-10,
-  ; 10-25, 25-50, 50-100 and above 100 mm. Accumulations retain their
-  ; existing operational palette.
-  if (accum_hours.eq.1) then
+  ; Frozen hydrometeor accumulation is typically much smaller than total
+  ; precipitation.  Use a dedicated quasi-logarithmic scale so weak signals
+  ; remain visible while all values above 1 mm share the highest class.
+  if (component_mode.eq."frozen") then
+    rain_levs = (/0.0, 0.01, 0.05, 0.10, 0.25, 0.50, 1.00/)
+    fill_colors = (/2,3,4,5,6,7,8,9/)
+  else if (accum_hours.eq.1) then
+    ; CMA hourly precipitation classes: no rain, 0-2.5, 2.5-5, 5-10,
+    ; 10-25, 25-50, 50-100 and above 100 mm.
     rain_levs = (/0.0, 2.5, 5.0, 10.0, 25.0, 50.0, 100.0/)
     fill_colors = (/2,3,4,5,6,7,8,9/)
   else
     rain_levs = (/0.0, 0.1, 10.0, 25.0, 50.0, 100.0, 250.0/)
     fill_colors = (/2,2,3,4,5,6,7,8/)
+  end if
   end if
   wks_type = "png"
   wks_type@wkWidth = 1800
@@ -303,10 +309,13 @@ begin
       res@lbAutoManage = False
       res@lbLabelAutoStride = False
       res@lbLabelStride = 1
-      if (accum_hours.eq.1) then
+      if (component_mode.eq."frozen") then
+        res@lbLabelStrings = (/"0", "0.01", "0.05", "0.1", "0.25", "0.5", "1"/)
+      else if (accum_hours.eq.1) then
         res@lbLabelStrings = (/"0", "2.5", "5", "10", "25", "50", "100"/)
       else
         res@lbLabelStrings = (/"0", "0.1", "10", "25", "50", "100", "250"/)
+      end if
       end if
       res@lbLabelFont = "Times-Bold"
       res@lbLabelFontColor = "black"
