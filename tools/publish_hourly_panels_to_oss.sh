@@ -148,7 +148,9 @@ convert_panels "$regional_dir" "$regional_id" 0
 # retain the original geometry used by the existing overview builder.
 convert_panels "$national_dir" "$national_id" 1
 if [[ -n "$extra_dir" ]]; then
-  convert_panels "$extra_dir" "$extra_id" 0
+  # Hail warnings now use the same wide large-domain renderer as each
+  # service's China-sector map, so trim the square NCL canvas as well.
+  convert_panels "$extra_dir" "$extra_id" 1
 fi
 
 incoming="hourly_panels_${family}_${run_prefix}"

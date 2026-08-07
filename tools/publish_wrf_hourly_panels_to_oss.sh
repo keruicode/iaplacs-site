@@ -19,7 +19,10 @@ args=(
   --regional-dir "$regional_dir"
   --national-dir "$national_dir"
 )
-if [[ -d "$hail_dir" ]] && compgen -G "$hail_dir/${RUN_PREFIX}_rain_hour_*_BJT.png" >/dev/null; then
+if [[ -d "$hail_dir" ]] && {
+  compgen -G "$hail_dir/${RUN_PREFIX}_rain_hour_*_BJT.png" >/dev/null ||
+    compgen -G "$hail_dir/${RUN_PREFIX}_shangrao_hail_warning_rain_hour_*_BJT.png" >/dev/null
+}; then
   args+=(--extra-id shangrao_hail_warning --extra-dir "$hail_dir")
 fi
 
