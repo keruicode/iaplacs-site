@@ -7,6 +7,7 @@ set -Eeuo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RENDERER="${RENDERER:-$SCRIPT_DIR/render_worknx_yunnan_airports_overview.sh}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-$SCRIPT_DIR/worknx_yunnan_airports_overview}"
+WORK_YN_ROOT="${WORK_YN_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK_yn}"
 LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/logs}"
 GITHUB_HOST="${GITHUB_HOST:-server02}"
 GIT_URL="${GIT_URL:-git@github.com:keruicode/iaplacs-site.git}"
@@ -23,12 +24,13 @@ mkdir -p "$LOG_DIR"
 
 usage() {
   cat <<'EOF'
-Usage: publish_worknx_yunnan_airports_to_github.sh [--latest | --recent COUNT | --output-run YYYYMMDD_HH]
+Usage: publish_worknx_yunnan_airports_to_github.sh [--latest | --recent COUNT | --run YYYYMMDD_HH | --output-run YYYYMMDD_HH]
 
 Renders Yunnan airport regional and nationwide products through the latest
 available lead, uploads PNG/WebP/preview assets to OSS, and commits only the
 forecast catalog to GitHub.
 --output-run republishes an already rendered run without running NCL again.
+--run renders and publishes exactly one UTC model run.
 EOF
 }
 
@@ -41,6 +43,9 @@ if [[ "${1:-}" == "--recent" ]]; then
 elif [[ "${1:-}" == "--output-run" ]]; then
   mode="--output-run"
   output_run="${2:-}"
+elif [[ "${1:-}" == "--run" ]]; then
+  mode="--run"
+  output_run="${2:-}"
 elif [[ -n "${1:-}" && "${1:-}" != "--latest" ]]; then
   usage >&2
   exit 64
@@ -50,8 +55,9 @@ if [[ "$mode" != "--output-run" && ! "$count" =~ ^[1-9][0-9]*$ ]]; then
   echo "ERROR: recent count must be a positive integer" >&2
   exit 64
 fi
-if [[ "$mode" == "--output-run" && ! "$output_run" =~ ^[0-9]{8}_[0-9]{2}$ ]]; then
-  echo "ERROR: output run must use YYYYMMDD_HH" >&2
+if [[ "$mode" == "--output-run" || "$mode" == "--run" ]] \
+  && [[ ! "$output_run" =~ ^[0-9]{8}_[0-9]{2}$ ]]; then
+  echo "ERROR: run must use YYYYMMDD_HH" >&2
   exit 64
 fi
 if [[ ! -x "$RENDERER" ]]; then
@@ -126,6 +132,14 @@ if [[ "$mode" == "--recent" ]]; then
   "$RENDERER" --recent "$count"
 elif [[ "$mode" == "--latest" ]]; then
   "$RENDERER" --latest
+elif [[ "$mode" == "--run" ]]; then
+  run_directory="${output_run/_/}"
+  if [[ "$(basename "$WORK_YN_ROOT")" != "$run_directory" ]]; then
+    WORK_YN_ROOT="$WORK_YN_ROOT/$run_directory"
+  fi
+  export WORK_YN_ROOT
+  "$RENDERER" --latest
+  mode="--output-run"
 fi
 
 if [[ "$mode" == "--output-run" ]]; then

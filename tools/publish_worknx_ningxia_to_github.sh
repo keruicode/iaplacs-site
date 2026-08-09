@@ -9,6 +9,7 @@ RENDERER="${RENDERER:-$SCRIPT_DIR/render_worknx_ningxia_overview.sh}"
 PUBLISHER="${PUBLISHER:-$SCRIPT_DIR/publish_worknx_summary_to_github.sh}"
 HOURLY_PUBLISHER="${HOURLY_PUBLISHER:-$SCRIPT_DIR/publish_hourly_panels_to_oss.sh}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-$SCRIPT_DIR/worknx_ningxia_overview}"
+WORK_NX_ROOT="${WORK_NX_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK_nx}"
 SERVICE_LABEL="${SERVICE_LABEL:-Ningxia}"
 SERVICE_FILE_TOKEN="${SERVICE_FILE_TOKEN:-Ningxia}"
 PUBLISH_FAMILY="${PUBLISH_FAMILY:-worknx_summary}"
@@ -21,11 +22,12 @@ esac
 
 usage() {
   cat <<'EOF'
-Usage: publish_worknx_ningxia_to_github.sh [--latest | --recent COUNT | --output-run YYYYMMDD_HH]
+Usage: publish_worknx_ningxia_to_github.sh [--latest | --recent COUNT | --run YYYYMMDD_HH | --output-run YYYYMMDD_HH]
 
 Renders Ningxia regional and nationwide products through the latest available
 lead, then publishes each matching overview through the existing publisher.
 --output-run republishes an already rendered run without running NCL again.
+--run renders and publishes exactly one UTC model run.
 EOF
 }
 
@@ -38,6 +40,9 @@ if [[ "${1:-}" == "--recent" ]]; then
 elif [[ "${1:-}" == "--output-run" ]]; then
   mode="--output-run"
   output_run="${2:-}"
+elif [[ "${1:-}" == "--run" ]]; then
+  mode="--run"
+  output_run="${2:-}"
 elif [[ -n "${1:-}" && "${1:-}" != "--latest" ]]; then
   usage >&2
   exit 64
@@ -47,8 +52,9 @@ if [[ "$mode" != "--output-run" && ! "$count" =~ ^[1-9][0-9]*$ ]]; then
   echo "ERROR: recent count must be a positive integer" >&2
   exit 64
 fi
-if [[ "$mode" == "--output-run" && ! "$output_run" =~ ^[0-9]{8}_[0-9]{2}$ ]]; then
-  echo "ERROR: output run must use YYYYMMDD_HH" >&2
+if [[ "$mode" == "--output-run" || "$mode" == "--run" ]] \
+  && [[ ! "$output_run" =~ ^[0-9]{8}_[0-9]{2}$ ]]; then
+  echo "ERROR: run must use YYYYMMDD_HH" >&2
   exit 64
 fi
 if [[ ! -x "$RENDERER" ]]; then
@@ -80,6 +86,14 @@ if [[ "$mode" == "--recent" ]]; then
   "$RENDERER" --recent "$count"
 elif [[ "$mode" == "--latest" ]]; then
   "$RENDERER" --latest
+elif [[ "$mode" == "--run" ]]; then
+  run_directory="${output_run/_/}"
+  if [[ "$(basename "$WORK_NX_ROOT")" != "$run_directory" ]]; then
+    WORK_NX_ROOT="$WORK_NX_ROOT/$run_directory"
+  fi
+  export WORK_NX_ROOT
+  "$RENDERER" --latest
+  mode="--output-run"
 fi
 
 if [[ "$mode" == "--output-run" ]]; then

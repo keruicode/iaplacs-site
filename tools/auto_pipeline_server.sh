@@ -96,7 +96,20 @@ latest_publishable_wrf() {
 	return 1
 }
 
-SOURCE_WRF="$(latest_publishable_wrf || true)"
+if [ -n "${IAPLACS_SOURCE_WRF:-}" ]; then
+	SOURCE_WRF="$IAPLACS_SOURCE_WRF"
+	if [ ! -f "$SOURCE_WRF" ]; then
+		echo "ERROR: requested IAPLACS_SOURCE_WRF does not exist: $SOURCE_WRF" >&2
+		exit 1
+	fi
+	if ! wrf_completed_successfully "$SOURCE_WRF"; then
+		echo "ERROR: requested IAPLACS_SOURCE_WRF is not complete: $SOURCE_WRF" >&2
+		exit 1
+	fi
+	printf 'Using requested WRF source: %s\n' "$SOURCE_WRF"
+else
+	SOURCE_WRF="$(latest_publishable_wrf || true)"
+fi
 if [ -z "$SOURCE_WRF" ]; then
 	echo "No publishable WORK wrfout available; defer publication."
 	exit 0

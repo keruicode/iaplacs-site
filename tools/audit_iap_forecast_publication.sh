@@ -10,6 +10,7 @@ LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/logs}"
 GITHUB_HOST="${GITHUB_HOST:-server02}"
 PUBLIC_CATALOG_URL="${PUBLIC_CATALOG_URL:-https://iaplacs.xyz/data/current/forecast-runs.json}"
 OUTPUT_AUDIT_RUNS="${OUTPUT_AUDIT_RUNS:-5}"
+MODEL_AUDIT_RUNS="${MODEL_AUDIT_RUNS:-8}"
 PYTHON_BIN="${PYTHON_BIN:-/public/software/apps/conda/latest/bin/python3}"
 NCDUMP_BIN="${NCDUMP_BIN:-/public/software/apps/conda/latest/bin/ncdump}"
 DRY_RUN=0
@@ -35,6 +36,10 @@ fi
 
 [[ "$OUTPUT_AUDIT_RUNS" =~ ^[1-9][0-9]*$ ]] || {
   echo "ERROR: OUTPUT_AUDIT_RUNS must be a positive integer" >&2
+  exit 64
+}
+[[ "$MODEL_AUDIT_RUNS" =~ ^[1-9][0-9]*$ ]] || {
+  echo "ERROR: MODEL_AUDIT_RUNS must be a positive integer" >&2
   exit 64
 }
 
@@ -337,15 +342,16 @@ audit_shangrao_output() {
   run_action "$SCRIPT_DIR/publish_wrf_montages_with_hourly_to_github.sh"
 }
 
-latest_completed_wrf() {
-  local root="$1" run_dir candidate rsl
+list_completed_wrf() {
+  local root="$1" run_dir candidate rsl emitted=0
   while IFS= read -r run_dir; do
     candidate="$(find "$run_dir/gfs/wrf" -maxdepth 1 -type f -name 'wrfout_d01_*' -print 2>/dev/null | sort -r | head -n 1)"
     [[ -n "$candidate" ]] || continue
     rsl="$(dirname "$candidate")/rsl.error.0000"
     if [[ -f "$rsl" ]] && tail -n 200 "$rsl" | grep -q 'SUCCESS COMPLETE WRF'; then
       printf '%s\n' "$candidate"
-      return 0
+      ((emitted += 1))
+      (( emitted >= MODEL_AUDIT_RUNS )) && return 0
     fi
   done < <(
     find "$root" -mindepth 1 -maxdepth 1 -type d -name '20????????' -printf '%p\n' \
@@ -373,40 +379,38 @@ PY
 submit_missing_render() {
   local family="$1" model_root="$2" output_root="$3" renderer="$4"
   local prefix source expected time_count expected_count rendered_windows rendered_count
-  source="$(latest_completed_wrf "$model_root" || true)"
-  [[ -n "$source" ]] || return
-  prefix="$(utc_wrf_prefix "$source")"
-  [[ -n "$prefix" ]] || return
-  time_count="$(wrf_time_count "$source")"
-  expected_count="$(expected_hourly_count "$time_count")"
-  if (( expected_count < 1 )); then
-    log "${family^^} completed model output $prefix has unusable Time count: ${time_count:-unknown}"
-    return
-  fi
-  expected="$prefix"
-  if [[ "$family" == "shangrao" ]]; then
-    expected="$(bjt_wrf_prefix "$prefix")"
-    rendered_windows="$(panel_windows "$SCRIPT_DIR/wrf_hourly_png" "${expected}_")"
-    rendered_count="$(window_count "$rendered_windows")"
-    if [[ -s "$SCRIPT_DIR/latest_wrf_prefixes.txt" ]] \
-      && grep -qx "$expected" "$SCRIPT_DIR/latest_wrf_prefixes.txt" \
-      && (( rendered_count == expected_count )); then
-      return
+  while IFS= read -r source; do
+    [[ -n "$source" ]] || continue
+    prefix="$(utc_wrf_prefix "$source")"
+    [[ -n "$prefix" ]] || continue
+    time_count="$(wrf_time_count "$source")"
+    expected_count="$(expected_hourly_count "$time_count")"
+    if (( expected_count < 1 )); then
+      log "${family^^} completed model output $prefix has unusable Time count: ${time_count:-unknown}"
+      continue
     fi
-  else
-    rendered_windows="$(panel_windows "$output_root/$expected/captioned_t13_t48" '')"
+    expected="$prefix"
+    if [[ "$family" == "shangrao" ]]; then
+      expected="$(bjt_wrf_prefix "$prefix")"
+      rendered_windows="$(panel_windows "$SCRIPT_DIR/wrf_hourly_png" "${expected}_")"
+    else
+      rendered_windows="$(panel_windows "$output_root/$expected/captioned_t13_t48" '')"
+    fi
     rendered_count="$(window_count "$rendered_windows")"
     if (( rendered_count == expected_count )); then
-      return
+      continue
     fi
-  fi
-  log "${family^^} completed model output $prefix needs full render: Time=$time_count expected=$expected_count rendered=${rendered_count:-0}"
-  ((MISSING_RENDER_REPAIRS += 1))
-  if [[ "$family" == "shangrao" ]]; then
-    run_action env IAPLACS_FORCE_RENDER=1 "$SCRIPT_DIR/submit_wrf_pipeline.sh"
-  else
-    run_action "$renderer" --latest
-  fi
+
+    log "${family^^} completed model output $prefix needs full render: Time=$time_count expected=$expected_count rendered=${rendered_count:-0}"
+    ((MISSING_RENDER_REPAIRS += 1))
+    if [[ "$family" == "shangrao" ]]; then
+      run_action env IAPLACS_SOURCE_WRF="$source" IAPLACS_FORCE_RENDER=1 "$SCRIPT_DIR/submit_wrf_pipeline.sh"
+    else
+      run_action "$renderer" --run "$expected"
+    fi
+    # Repair at most one historical gap per family in each hourly audit.
+    return
+  done < <(list_completed_wrf "$model_root")
 }
 
 log "publication audit started (dry_run=$DRY_RUN)"
