@@ -73,7 +73,21 @@ begin
   end if
 
   ; These are geographic coordinates, not montage pixel positions.
-  if (region_mode.eq."xinjiang") then
+  if (region_mode.eq."yunnan") then
+    ; WORK_yn switched from a 9 km, 387x387 grid to a 3 km, 720x720 grid.
+    ; Keep the complete high-resolution domain visible without surrounding it
+    ; with the mostly empty nationwide 72-138E / 16-55N canvas.
+    lon_min = 90.0
+    lon_max = 112.0
+    lat_min = 12.0
+    lat_max = 32.0
+    national_lon_ticks = (/90.0, 95.0, 100.0, 105.0, 110.0/)
+    national_lon_labels = (/"90~S~o~N~E", "95~S~o~N~E", "100~S~o~N~E", \
+                            "105~S~o~N~E", "110~S~o~N~E"/)
+    national_lat_ticks = (/15.0, 20.0, 25.0, 30.0/)
+    national_lat_labels = (/"15~S~o~N~N", "20~S~o~N~N", \
+                            "25~S~o~N~N", "30~S~o~N~N"/)
+  else if (region_mode.eq."xinjiang") then
     ; WORK_xj d01 spans roughly 63.7-116.3E and 20.9-54.1N. Use the
     ; complete model domain so precipitation is not clipped at the edges.
     lon_min = 64.0
@@ -97,6 +111,7 @@ begin
     national_lat_ticks = (/20.0, 30.0, 40.0, 50.0/)
     national_lat_labels = (/"20~S~o~N~N", "30~S~o~N~N", \
                             "40~S~o~N~N", "50~S~o~N~N"/)
+  end if
   end if
   ; Frozen hydrometeor accumulation is typically much smaller than total
   ; precipitation.  Use a dedicated quasi-logarithmic scale so weak signals
@@ -237,8 +252,16 @@ begin
       res@mpMaxLonF = lon_max
       res@mpMinLatF = lat_min
       res@mpMaxLatF = lat_max
-      res@sfXArray = lon_axis
-      res@sfYArray = lat_axis
+      if (region_mode.eq."yunnan") then
+        ; The Lambert grid is curvilinear.  Its new 3 km domain is both denser
+        ; and more compact, so retain the native two-dimensional coordinates
+        ; rather than approximating it with center-row/column axes.
+        res@sfXArray = lon2d
+        res@sfYArray = lat2d
+      else
+        res@sfXArray = lon_axis
+        res@sfYArray = lat_axis
+      end if
       ; Native NCL tickmarks for a cylindrical-equidistant map.  Explicit
       ; geographic values prevent MapPlot's built-in automatic 5-degree ticks
       ; from replacing the intended labelled intervals after montage trimming.
@@ -340,8 +363,13 @@ begin
       end if
       draw(plot)
       frame(wks)
-      delete([/plot, wks, rain_h/])
+      if (province_shp_file.ne."" .and. fileexists(province_shp_file)) then
+        delete([/province_shp_line, province_shp_res/])
+      end if
+      ; Explicitly release the per-panel resource list.  This is important for
+      ; WORK_yn because each resource now carries two 720x720 coordinate arrays.
+      delete([/plot, wks, rain_h, res/])
     end do
-    delete([/f, times, rain_all/])
+    delete([/f, times, rain_all, lat2d, lon2d, lat_axis, lon_axis/])
   end do
 end

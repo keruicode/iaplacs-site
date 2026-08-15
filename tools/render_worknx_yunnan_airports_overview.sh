@@ -328,6 +328,7 @@ render_source() {
   WORK_NX_WRF_DIR="$wrf_dir" \
     WORK_NX_NATIONAL_PNG_DIR="$frozen_panel_dir" \
     WORK_NX_NATIONAL_PROVINCE_SHP_FILE="$YUNNAN_PROVINCE_SHP_FILE" \
+    WORK_NX_NATIONAL_REGION_MODE=yunnan \
     RAIN_COMPONENT_MODE=frozen \
     RAIN_OUTPUT_AREA=yunnan_hail_warning \
     "$NCL_BIN" "$NATIONAL_NCL_SCRIPT"
@@ -349,6 +350,7 @@ render_source() {
   WORK_NX_WRF_DIR="$wrf_dir" \
     WORK_NX_NATIONAL_PNG_DIR="$national_panel_dir" \
     WORK_NX_NATIONAL_PROVINCE_SHP_FILE="$YUNNAN_PROVINCE_SHP_FILE" \
+    WORK_NX_NATIONAL_REGION_MODE=yunnan \
     "$NCL_BIN" "$NATIONAL_NCL_SCRIPT"
   local national_panels=() national_captioned_panels=()
   mapfile -t national_panels < <(find "$national_panel_dir" -maxdepth 1 -type f -name '*_national_rain_hour_*_BJT.png' -print | sort)
@@ -371,6 +373,7 @@ render_source() {
     WORK_NX_WRF_DIR="$wrf_dir" \
       WORK_NX_NATIONAL_PNG_DIR="$panel_dir" \
       WORK_NX_NATIONAL_PROVINCE_SHP_FILE="$YUNNAN_PROVINCE_SHP_FILE" \
+      WORK_NX_NATIONAL_REGION_MODE=yunnan \
       RAIN_ACCUM_HOURS="$accum_hours" \
       "$NCL_BIN" "$NATIONAL_NCL_SCRIPT"
     while IFS= read -r accum_source; do
