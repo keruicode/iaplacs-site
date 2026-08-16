@@ -255,7 +255,9 @@ begin
       if (region_mode.eq."yunnan") then
         ; The Lambert grid is curvilinear.  Its new 3 km domain is both denser
         ; and more compact, so retain the native two-dimensional coordinates
-        ; rather than approximating it with center-row/column axes.
+        ; for the tightly cropped regional canvas. The nationwide canvas uses
+        ; stable center-row/column axes to avoid NCL ARSCAM failures outside
+        ; the compact model domain.
         res@sfXArray = lon2d
         res@sfYArray = lat2d
       else
