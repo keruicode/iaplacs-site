@@ -9,6 +9,7 @@ OUTPUT_ROOT="${OUTPUT_ROOT:-$SCRIPT_DIR/worknx_ningxia_overview}"
 SERVICE_LABEL="${SERVICE_LABEL:-Ningxia}"
 SERVICE_FILE_TOKEN="${SERVICE_FILE_TOKEN:-Ningxia}"
 REGION_MODE="${REGION_MODE:-ningxia}"
+NATIONAL_REGION_MODE="${NATIONAL_REGION_MODE:-$REGION_MODE}"
 HAIL_OUTPUT_AREA="${HAIL_OUTPUT_AREA:-${REGION_MODE}_hail_warning}"
 NCL_SCRIPT="${NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_ningxia_hour_bjt.ncl}"
 NATIONAL_NCL_SCRIPT="${NATIONAL_NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_national_hour_bjt.ncl}"
@@ -264,7 +265,7 @@ render_source() {
     WORK_NX_WRF_DIR="$wrf_dir" \
       WORK_NX_NATIONAL_PNG_DIR="$frozen_panel_dir" \
       WORK_NX_NATIONAL_PROVINCE_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
-      WORK_NX_NATIONAL_REGION_MODE="$REGION_MODE" \
+      WORK_NX_NATIONAL_REGION_MODE="$NATIONAL_REGION_MODE" \
       RAIN_COMPONENT_MODE=frozen \
       RAIN_OUTPUT_AREA="$HAIL_OUTPUT_AREA" \
       "$NCL_BIN" "$NATIONAL_NCL_SCRIPT"
@@ -288,7 +289,7 @@ render_source() {
   WORK_NX_WRF_DIR="$wrf_dir" \
     WORK_NX_NATIONAL_PNG_DIR="$national_panel_dir" \
     WORK_NX_NATIONAL_PROVINCE_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
-    WORK_NX_NATIONAL_REGION_MODE="$REGION_MODE" \
+    WORK_NX_NATIONAL_REGION_MODE="$NATIONAL_REGION_MODE" \
     "$NCL_BIN" "$NATIONAL_NCL_SCRIPT"
   local national_panels=() national_captioned_panels=()
   mapfile -t national_panels < <(find "$national_panel_dir" -maxdepth 1 -type f -name '*_national_rain_hour_*_BJT.png' -print | sort)
@@ -314,7 +315,7 @@ render_source() {
     WORK_NX_WRF_DIR="$wrf_dir" \
       WORK_NX_NATIONAL_PNG_DIR="$panel_dir" \
       WORK_NX_NATIONAL_PROVINCE_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
-      WORK_NX_NATIONAL_REGION_MODE="$REGION_MODE" \
+      WORK_NX_NATIONAL_REGION_MODE="$NATIONAL_REGION_MODE" \
       RAIN_ACCUM_HOURS="$accum_hours" \
       "$NCL_BIN" "$NATIONAL_NCL_SCRIPT"
     while IFS= read -r accum_source; do
