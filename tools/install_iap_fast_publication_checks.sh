@@ -47,7 +47,7 @@ awk '
 cat >> "$CRON_TMP" <<EOF
 # IAPLACS fast publication checks begin
 2,12,22,32,42,52 * * * * $AUDITOR >> $LOG_DIR/publication-audit.log 2>&1
-5,15,25,35,45,55 * * * * $YUNNAN_CHECK >> $LOG_DIR/yunnan-airport-publish.log 2>&1
+7,17,27,37,47,57 * * * * $YUNNAN_CHECK >> $LOG_DIR/yunnan-airport-publish.log 2>&1
 # IAPLACS fast publication checks end
 EOF
 

@@ -70,12 +70,22 @@ log() {
 }
 
 run_action() {
+  local status
   if (( DRY_RUN )); then
     log "DRY-RUN: $*"
     return 0
   fi
   log "RUN: $*"
-  "$@"
+  if "$@"; then
+    return 0
+  else
+    status=$?
+  fi
+  if (( status == 75 )); then
+    log "BUSY: service publisher is already running; defer this action"
+    return 0
+  fi
+  return "$status"
 }
 
 panel_windows() {
