@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
 # Cron-safe wrapper for the Yunnan airport WORK_yn product. It publishes only
-# when a newer complete wrfout_d01 run is available, so hourly checks are cheap
-# after the latest run has already been published.
+# when the selected wrfout signature changes, so frequent checks are cheap.
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -49,6 +48,12 @@ if [[ ! "$MIN_TIME_COUNT" =~ ^[1-9][0-9]*$ ]]; then
 fi
 
 mkdir -p "$STATE_DIR"
+exec 6>"$STATE_DIR/yunnan_airport_check.lock"
+if ! flock -n 6; then
+  echo "$(date '+%F %T') Yunnan airport check already running; skip"
+  exit 0
+fi
+
 now_epoch="$(date +%s)"
 latest_source=""
 latest_prefix=""

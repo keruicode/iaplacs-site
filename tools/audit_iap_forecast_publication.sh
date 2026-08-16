@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Hourly publication auditor for IAP. It validates the public GitHub Pages
+# Frequent publication auditor for IAP. It validates the public GitHub Pages
 # catalog from server02, then repairs only incomplete already-rendered runs.
 # Model directories under zhoubj are read-only inputs.
 set -Eeuo pipefail
@@ -13,6 +13,9 @@ OUTPUT_AUDIT_RUNS="${OUTPUT_AUDIT_RUNS:-5}"
 MODEL_AUDIT_RUNS="${MODEL_AUDIT_RUNS:-8}"
 PYTHON_BIN="${PYTHON_BIN:-/public/software/apps/conda/latest/bin/python3}"
 NCDUMP_BIN="${NCDUMP_BIN:-/public/software/apps/conda/latest/bin/ncdump}"
+# A frequent audit must never queue behind a long renderer. Skip a busy service
+# and let the next scheduled audit retry it instead.
+export PUBLISH_LOCK_WAIT_SECONDS="${PUBLISH_LOCK_WAIT_SECONDS:-0}"
 DRY_RUN=0
 MISSING_RENDER_REPAIRS=0
 
