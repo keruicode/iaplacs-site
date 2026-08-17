@@ -252,11 +252,19 @@ for source in "${sources[@]}"; do
 
   echo "Publishing Yunnan airport regional overview: $source"
   ssh "$GITHUB_HOST" "mkdir -p ~/incoming/airport_yunnan_${run_prefix}"
-  rsync -av \
+  # Stage the exact current publication set before synchronizing it.  Directly
+  # rsyncing an argument list only adds files on the remote side, which leaves
+  # obsolete overview grids behind when a short forecast changes its layout.
+  publish_stage="$(mktemp -d "$run_dir/.publish-stage.XXXXXX")"
+  cp -p \
     "${asset_files[@]}" \
     "$run_dir/manifest_fragment.json" \
     "$run_dir/airport_precip_totals.json" \
+    "$publish_stage/"
+  rsync -av --delete \
+    "$publish_stage/" \
     "$GITHUB_HOST:~/incoming/airport_yunnan_${run_prefix}/"
+  rm -rf "$publish_stage"
 
   remote_env_cmd=$(
     printf 'RUN_PREFIX=%q GIT_URL=%q REMOTE_SITE_REPO=%q GITHUB_KEY=%q GIT_USER_NAME=%q GIT_USER_EMAIL=%q IAPLACS_ASSET_FORCE_UPLOAD=%q bash -s' \

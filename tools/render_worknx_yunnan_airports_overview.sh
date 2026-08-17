@@ -309,8 +309,12 @@ render_source() {
     echo "ERROR: expected $((last_lead - 12)) panels, found ${panel_count} for $run_prefix" >&2
     return 1
   fi
-  overview_rows=$(((panel_count + 5) / 6))
-  overview_grid="6x${overview_rows}"
+  if (( panel_count == 12 )); then
+    overview_grid="3x4"
+  else
+    overview_rows=$(((panel_count + 5) / 6))
+    overview_grid="6x${overview_rows}"
+  fi
   overview="$run_dir/Precip_hourly_WRF_YunnanAirports_T13_T${last_lead}_InitUTC_${run_date}_${run_hour}_00_combined_overview_${overview_grid}_grid.png"
   national_overview="$run_dir/Precip_hourly_WRF_AllRain_T13_T${last_lead}_InitUTC_${run_date}_${run_hour}_00_combined_overview_${overview_grid}_grid.png"
 
