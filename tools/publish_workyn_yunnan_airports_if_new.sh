@@ -118,6 +118,9 @@ if [[ "$dry_run" == "1" ]]; then
   exit 0
 fi
 
-"$PUBLISHER" --latest
+# Publish the exact completed source selected above.  The output root can still
+# contain an older incomplete directory from before this guard was introduced;
+# --latest would sort by output mtime and could republish that stale product.
+"$PUBLISHER" --run "$latest_prefix"
 printf '%s\n' "$latest_signature" > "$LAST_PREFIX_FILE"
 echo "Recorded Yunnan airport source signature: $latest_signature"
