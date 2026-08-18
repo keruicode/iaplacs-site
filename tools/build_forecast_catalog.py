@@ -20,6 +20,9 @@ DEFAULT_ASSET_BASE_URL = (
     "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs"
 )
 MAX_RUNS = int(os.environ.get("IAPLACS_MAX_RUNS", "5"))
+MIN_COMPLETED_YUNNAN_PANELS = int(
+    os.environ.get("IAPLACS_MIN_COMPLETED_YUNNAN_PANELS", "12")
+)
 ASSET_BASE_URL = os.environ.get(
     "IAPLACS_ASSET_BASE_URL", DEFAULT_ASSET_BASE_URL
 ).strip().rstrip("/")
@@ -1437,6 +1440,8 @@ def merge_existing_runs(
             continue
         if id_prefix and not run_id.startswith(id_prefix):
             continue
+        if id_prefix == "airport_yunnan_" and not yunnan_airport_run_is_complete(run):
+            continue
         merged[run_id] = run
 
     for run in local_runs:
@@ -1449,6 +1454,17 @@ def merge_existing_runs(
     runs = list(merged.values())
     runs.sort(key=lambda item: item.get("run_time", ""), reverse=True)
     return runs[:MAX_RUNS]
+
+
+def yunnan_airport_run_is_complete(run: dict) -> bool:
+    """Reject retained airport runs that were published before WRF completed."""
+    for product in run.get("products", []):
+        if product.get("id") != "airport_yunnan_precip_series":
+            continue
+        for frame in product.get("frames", []):
+            if frame.get("id") == "airport_region":
+                return len(frame.get("individual_frames") or []) >= MIN_COMPLETED_YUNNAN_PANELS
+    return False
 
 
 def preserve_individual_frames(current_run: dict, existing_run: dict) -> None:
