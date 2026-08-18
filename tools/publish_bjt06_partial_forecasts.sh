@@ -310,7 +310,10 @@ if prepare_snapshot shangrao "$WORK_ROOT"; then
   fi
 fi
 
-for family in ningxia yunnan xinjiang; do
+# WORK_yn must never publish an incomplete snapshot: its panel count controls
+# the airport page layout. Completed Yunnan runs publish through the normal
+# frequent checker; the other early-morning services retain this snapshot path.
+for family in ningxia xinjiang; do
   case "$family" in
     ningxia) model_root="$WORK_NX_ROOT" ;;
     yunnan) model_root="$WORK_YN_ROOT" ;;

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Cron-safe wrapper for the Yunnan airport WORK_yn product. It publishes only
-# when the selected wrfout signature changes, so frequent checks are cheap.
+# completed WRF runs and records their source signatures for cheap frequent checks.
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -9,7 +9,6 @@ WORK_YN_ROOT="${WORK_YN_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK_yn}"
 PUBLISHER="${PUBLISHER:-$SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh}"
 STATE_DIR="${STATE_DIR:-$SCRIPT_DIR/state}"
 LAST_PREFIX_FILE="${LAST_PREFIX_FILE:-$STATE_DIR/yunnan_airport_last_published.txt}"
-MIN_FILE_AGE_SECONDS="${MIN_FILE_AGE_SECONDS:-1200}"
 MIN_WRFOUT_BYTES="${MIN_WRFOUT_BYTES:-20000000000}"
 MIN_TIME_COUNT="${MIN_TIME_COUNT:-14}"
 NCDUMP_BIN="${NCDUMP_BIN:-/public/software/apps/conda/latest/bin/ncdump}"
@@ -54,7 +53,6 @@ if ! flock -n 6; then
   exit 0
 fi
 
-now_epoch="$(date +%s)"
 latest_source=""
 latest_prefix=""
 latest_size=""
@@ -80,10 +78,7 @@ while IFS= read -r source_path; do
   fi
   time_count="$(wrf_time_count "$source_path")"
   [[ "$time_count" =~ ^[0-9]+$ ]] && (( time_count >= MIN_TIME_COUNT )) || continue
-  complete=0
-  if wrf_completed_successfully "$source_path"; then
-    complete=1
-  elif (( now_epoch - source_epoch < MIN_FILE_AGE_SECONDS )); then
+  if ! wrf_completed_successfully "$source_path"; then
     continue
   fi
   base="$(basename "$source_path")"
@@ -93,7 +88,7 @@ while IFS= read -r source_path; do
     latest_size="$source_size"
     latest_epoch="$source_epoch"
     latest_time_count="$time_count"
-    latest_complete="$complete"
+    latest_complete=1
     break
   fi
 done < <(
@@ -103,7 +98,7 @@ done < <(
 )
 
 if [[ -z "$latest_prefix" ]]; then
-  echo "No complete stable WORK_yn wrfout found."
+  echo "No completed WORK_yn wrfout found."
   exit 0
 fi
 

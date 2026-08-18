@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# Render a Yunnan airport hourly precipitation overview from WORK_yn.
-# Panels start at T13 after the first 12 spin-up hours and grow as WRF writes.
+# Render a completed Yunnan airport hourly precipitation overview from WORK_yn.
+# Panels start at T13 after the first 12 spin-up hours.
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -14,7 +14,6 @@ NCL_BIN="${NCL_BIN:-/public/software/apps/ncl_ncarg/ncl630/bin/ncl}"
 NCL_ROOT="${NCL_ROOT:-/public/software/apps/ncl_ncarg/ncl630}"
 NCDUMP_BIN="${NCDUMP_BIN:-/public/software/apps/conda/latest/bin/ncdump}"
 PYTHON_BIN="${PYTHON_BIN:-}"
-MIN_FILE_AGE_SECONDS="${MIN_FILE_AGE_SECONDS:-1200}"
 MIN_WRFOUT_BYTES="${MIN_WRFOUT_BYTES:-8000000000}"
 MIN_TIME_COUNT="${MIN_TIME_COUNT:-14}"
 YUNNAN_PROVINCE_SHP_FILE="${YUNNAN_PROVINCE_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
@@ -24,7 +23,7 @@ usage() {
   cat <<'EOF'
 Usage: render_worknx_yunnan_airports_overview.sh [--latest | --recent COUNT]
 
-Renders Yunnan panels from T13 through the latest available lead with airport
+Renders completed Yunnan panels from T13 through the latest available lead with airport
 markers, plus a nationwide counterpart and airport point-precipitation totals.
 EOF
 }
@@ -98,7 +97,6 @@ if [[ -n "$YUNNAN_CITY_SHP_FILE" && ! -f "$YUNNAN_CITY_SHP_FILE" ]]; then
 fi
 
 mkdir -p "$OUTPUT_ROOT"
-now_epoch="$(date +%s)"
 sources=()
 
 wrf_time_count() {
@@ -113,16 +111,13 @@ wrf_completed_successfully() {
 
 while IFS= read -r line; do
   source_path="$line"
-  source_epoch="$(stat -c '%Y' "$source_path")"
   source_size="$(stat -c '%s' "$source_path")"
   if (( source_size < MIN_WRFOUT_BYTES )); then
     continue
   fi
   time_count="$(wrf_time_count "$source_path")"
   [[ "$time_count" =~ ^[0-9]+$ ]] && (( time_count >= MIN_TIME_COUNT )) || continue
-  if ! wrf_completed_successfully "$source_path"; then
-    (( now_epoch - source_epoch >= MIN_FILE_AGE_SECONDS )) || continue
-  fi
+  wrf_completed_successfully "$source_path" || continue
   sources+=("$source_path")
   [[ "${#sources[@]}" -ge "$count" ]] && break
 done < <(
@@ -132,7 +127,7 @@ done < <(
 )
 
 if [[ "${#sources[@]}" -eq 0 ]]; then
-  echo "ERROR: no stable WORK_yn wrfout source found" >&2
+  echo "ERROR: no completed WORK_yn wrfout source found" >&2
   exit 1
 fi
 
