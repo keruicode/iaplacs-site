@@ -21,6 +21,7 @@ const HOURLY_PRECIP_PRODUCT_IDS = {
   airport: new Set([
     "airport_yunnan_precip_series",
     "tianhe_airport_yunnan_precip_series",
+    "airport_aviation_preview",
   ]),
   ningxia: new Set([
     "ningxia_precip_series",
@@ -42,15 +43,30 @@ const AIRPORT_RATING_OPTIONS = [
   { id: "inaccurate", label: "不准" },
   { id: "fair", label: "一般" },
 ];
+const requestedPreview = new URLSearchParams(window.location.search).get("preview");
+const isAirportAviationPreview =
+  requestedPreview === "aviation-20260818_00" &&
+  document.body.dataset.experimentalPreviewManifestUrl;
 
 const pageConfig = {
   service: document.body.dataset.service || "airport",
-  manifestUrl: document.body.dataset.manifestUrl || "./data/current/forecast-runs.json",
+  manifestUrl: isAirportAviationPreview
+    ? document.body.dataset.experimentalPreviewManifestUrl
+    : document.body.dataset.manifestUrl || "./data/current/forecast-runs.json",
   fallbackManifestUrl:
     document.body.dataset.fallbackManifestUrl || "./data/current/manifest.json",
   assetBase: document.body.dataset.assetBase || "./",
-  refreshMs: Number(document.body.dataset.refreshMs || DEFAULT_REFRESH_MS),
-  sources: [
+  refreshMs: isAirportAviationPreview
+    ? 0
+    : Number(document.body.dataset.refreshMs || DEFAULT_REFRESH_MS),
+  sources: isAirportAviationPreview ? [
+    {
+      id: "aviation-preview",
+      label: "航空气象试验预览",
+      manifestUrl: document.body.dataset.experimentalPreviewManifestUrl,
+      fallbackManifestUrl: document.body.dataset.experimentalPreviewManifestUrl,
+    },
+  ] : [
     {
       id: "huan",
       label: "寰",
@@ -74,9 +90,13 @@ const pageConfig = {
         "./data/tianhe/current/manifest.json",
     },
   ],
-  defaultSource: document.body.dataset.defaultSource || "huan",
-  forceDefaultSource: document.body.dataset.forceDefaultSource === "true",
-  autoSelectLatestSource: document.body.dataset.autoSelectLatestSource === "true",
+  defaultSource: isAirportAviationPreview
+    ? "aviation-preview"
+    : document.body.dataset.defaultSource || "huan",
+  forceDefaultSource:
+    isAirportAviationPreview || document.body.dataset.forceDefaultSource === "true",
+  autoSelectLatestSource:
+    !isAirportAviationPreview && document.body.dataset.autoSelectLatestSource === "true",
   airportRatingsApiUrl: document.body.dataset.airportRatingsApiUrl || "",
 };
 

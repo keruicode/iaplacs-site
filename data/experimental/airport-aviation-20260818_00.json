@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "site": { "name": "IAP-LACS Forecast", "domain": "iaplacs.xyz" },
+  "published_at": "2026-08-19T07:55:00+08:00",
+  "services": {
+    "airport": {
+      "title": "云南机场航空气象试验预览",
+      "note": "一次性试验图集，仅供方法与图面审阅；未纳入机场服务的循环发布。",
+      "latest_run": "airport_aviation_preview_20260818_00",
+      "runs": [
+        {
+          "id": "airport_aviation_preview_20260818_00",
+          "label": "2026-08-18 08:00 BJT",
+          "run_time": "2026-08-18T08:00:00+08:00",
+          "published_at": "2026-08-19T07:55:00+08:00",
+          "summary": "试验性云南机场航空气象诊断，独立于正式降水产品。",
+          "products": [
+            {
+              "id": "airport_aviation_preview",
+              "title": "云南机场航空气象诊断",
+              "category": "试验预览",
+              "unit": "Temperature / wind / shear",
+              "color": "#7351a6",
+              "description": "2米气温与10米风、10–500米矢量垂直风切、10米风速水平梯度；覆盖德宏芒市、西双版纳嘎洒和普洱澜沧景迈机场。",
+              "metrics": [
+                { "label": "起报时次", "value": "20260818 00 UTC" },
+                { "label": "有效时段", "value": "08-18 21:00 至 08-19 08:00 BJT" },
+                { "label": "图像数量", "value": "12" },
+                { "label": "发布状态", "value": "试验预览，未纳入循环" }
+              ],
+              "frames": [
+                {
+                  "id": "aviation_diagnostics",
+                  "lead": 0,
+                  "lead_label": "3×4 拼图",
+                  "valid_label": "T13–T24 | 2026-08-18 21:00 至 2026-08-19 08:00 BJT",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/experimental/airport_aviation_20260818_00/aviation_diagnostics_T13_T24_3x4.webp",
+                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/experimental/airport_aviation_20260818_00/aviation_diagnostics_T13_T24_3x4.png"
+                },
+                {
+                  "id": "aviation_station_meteogram",
+                  "lead": 1,
+                  "lead_label": "机场时间序列",
+                  "valid_label": "T13–T24 | 北京时间",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/experimental/airport_aviation_20260818_00/airport_surface_low_level_meteogram.webp",
+                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/experimental/airport_aviation_20260818_00/airport_surface_low_level_meteogram.png"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
