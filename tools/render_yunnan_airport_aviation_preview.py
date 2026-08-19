@@ -22,7 +22,7 @@ import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import font_manager
-from matplotlib.lines import Line2D
+from matplotlib.patches import Polygon
 from netCDF4 import Dataset
 
 
@@ -176,8 +176,19 @@ def decorate(ax, province, cities):
         ax.plot(line[:, 0], line[:, 1], color="black", linewidth=1.35, zorder=4)
     for line in cities:
         ax.plot(line[:, 0], line[:, 1], color="#404040", linewidth=0.55, zorder=4)
+    # Use a real aircraft silhouette rather than a marker glyph: fonts on IAP
+    # do not consistently include the airplane Unicode character or a suitable
+    # icon.  This matches the outlined marker used by the airport precipitation
+    # product and remains legible over every color interval.
+    plane_template = np.array([
+        (1.8, 0.0), (-1.1, 0.34), (-0.35, 0.08), (-1.35, 0.86),
+        (0.1, 0.0), (-1.1, -0.34), (1.8, 0.0),
+    ])
     for name, latitude, longitude in AIRPORTS:
-        ax.scatter(longitude, latitude, s=42, marker="<", color="#0b4fa1", edgecolor="white", linewidth=0.7, zorder=7)
+        outer = plane_template * 0.135 + np.array((longitude, latitude))
+        inner = plane_template * 0.103 + np.array((longitude, latitude))
+        ax.add_patch(Polygon(outer, closed=True, facecolor="white", edgecolor="white", linewidth=1.2, zorder=8))
+        ax.add_patch(Polygon(inner, closed=True, facecolor="#111111", edgecolor="none", zorder=9))
     ax.set_xlim(west, east)
     ax.set_ylim(south, north)
     ax.set_xticks(np.arange(98, 108, 2))
