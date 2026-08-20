@@ -22,6 +22,10 @@ const HOURLY_PRECIP_PRODUCT_IDS = {
     "airport_yunnan_precip_series",
     "tianhe_airport_yunnan_precip_series",
     "airport_aviation_preview",
+    "airport_aviation_temperature",
+    "airport_aviation_wind",
+    "airport_aviation_vertical_shear",
+    "airport_aviation_horizontal_gradient",
   ]),
   ningxia: new Set([
     "ningxia_precip_series",
