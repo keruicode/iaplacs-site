@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import font_manager
 from matplotlib.font_manager import FontProperties
-from matplotlib.patches import Circle, Polygon
+from matplotlib.patches import Polygon
 from netCDF4 import Dataset
 
 
@@ -37,11 +37,16 @@ AIRPORTS = (
 REGION = (97.0, 107.0, 21.0, 30.0)  # west, east, south, north
 CHINESE_FONT = None
 
-PRODUCTS = (
+PLOT_PRODUCTS = (
     ("temperature", "2米气温", "温度（℃）"),
     ("wind", "10米风场", "风速（米/秒）"),
     ("vertical_shear", "10-500米垂直风切", "风切（米/秒）"),
     ("horizontal_gradient", "10米水平风速梯度", "梯度（米/秒/千米）"),
+)
+
+PRODUCTS = (
+    ("temperature", "气温", "温度（℃）", ("temperature",)),
+    ("wind", "风场", "风场诊断", ("wind", "vertical_shear", "horizontal_gradient")),
 )
 
 
@@ -192,7 +197,7 @@ def diagnostics(ds, index, row0, row1, col0, col1, cosine, sine, terrain, dx, dy
     return t2, u10, v10, vertical_shear, horizontal_gradient
 
 
-def decorate(ax, province, cities, show_x=True, show_y=True, tick_size=12, plane_scale=0.135):
+def decorate(ax, province, cities, show_x=True, show_y=True, tick_size=12, plane_scale=0.085):
     west, east, south, north = REGION
     for line in province:
         ax.plot(line[:, 0], line[:, 1], color="black", linewidth=1.55, zorder=4)
@@ -207,14 +212,10 @@ def decorate(ax, province, cities, show_x=True, show_y=True, tick_size=12, plane
         (0.1, 0.0), (-1.1, -0.34), (1.8, 0.0),
     ])
     for name, latitude, longitude in AIRPORTS:
-        ax.add_patch(Circle(
-            (longitude, latitude), radius=plane_scale * 1.25,
-            facecolor="white", edgecolor="black", linewidth=1.15, zorder=8,
-        ))
         outer = plane_template * plane_scale + np.array((longitude, latitude))
-        inner = plane_template * (plane_scale * 0.80) + np.array((longitude, latitude))
-        ax.add_patch(Polygon(outer, closed=True, facecolor="white", edgecolor="black", linewidth=2.0, zorder=9))
-        ax.add_patch(Polygon(inner, closed=True, facecolor="#050505", edgecolor="#050505", linewidth=0.5, zorder=10))
+        inner = plane_template * (plane_scale * 0.78) + np.array((longitude, latitude))
+        ax.add_patch(Polygon(outer, closed=True, facecolor="white", edgecolor="white", linewidth=1.15, zorder=8))
+        ax.add_patch(Polygon(inner, closed=True, facecolor="#050505", edgecolor="#050505", linewidth=0.45, zorder=9))
     ax.set_xlim(west, east)
     ax.set_ylim(south, north)
     ax.set_xticks(np.arange(98, 108, 2))
@@ -234,7 +235,10 @@ def ec_temperature_cmap():
 
 
 def ec_wind_cmap():
-    return plt.get_cmap("viridis", 9)
+    return colors.ListedColormap([
+        "#2c7bb6", "#00a6ca", "#00ccbc", "#90eb9d", "#ffff8c",
+        "#f9d057", "#f29e2e", "#e76818", "#d7191c",
+    ])
 
 
 def product_field(kind, data):
@@ -294,7 +298,7 @@ def single_map(path, lon, lat, data, kind, product_title, unit, valid_time, prov
     color_axis = figure.add_subplot(grid[1, 0])
     image, bounds = plot_product(
         axis, lon, lat, data, kind, province, cities,
-        tick_size=14, plane_scale=0.150, target_vectors=32,
+        tick_size=16, plane_scale=0.090, target_vectors=32,
     )
     figure.suptitle(valid_time, fontsize=24, fontweight="bold", y=0.985, **cn_props())
     colorbar = figure.colorbar(image, cax=color_axis, orientation="horizontal")
@@ -305,7 +309,7 @@ def single_map(path, lon, lat, data, kind, product_title, unit, valid_time, prov
 
 def montage(time_steps, output, lon, lat, kind, product_title, unit, province, cities):
     figure, axes = plt.subplots(3, 4, figsize=(18.2, 15.1))
-    figure.subplots_adjust(left=0.045, right=0.992, bottom=0.105, top=0.885, wspace=0.105, hspace=0.165)
+    figure.subplots_adjust(left=0.095, right=0.992, bottom=0.105, top=0.885, wspace=0.105, hspace=0.165)
     image = None
     bounds = None
     for index, axis in enumerate(axes.flat):
@@ -317,8 +321,8 @@ def montage(time_steps, output, lon, lat, kind, product_title, unit, province, c
             axis, lon, lat, data, kind, province, cities,
             show_x=index // 4 == 2,
             show_y=index % 4 == 0,
-            tick_size=9.5,
-            plane_scale=0.092,
+            tick_size=13,
+            plane_scale=0.055,
             target_vectors=18,
         )
         axis.set_title(valid_interval(valid_time), fontsize=12.5, pad=4, fontweight="bold")
@@ -375,66 +379,69 @@ def write_web_manifest(output, times):
         "iaplacs/data/experimental/airport_aviation_20260818_00"
     )
     products = []
-    for key, title, unit in PRODUCTS:
-        panels = []
-        for lead, valid_time in enumerate(times, 13):
-            stamp = valid_time.astimezone(BJT).strftime("%Y%m%d_%H")
-            relative = "hourly_%s/%s_%s" % (key, key, stamp)
-            panels.append({
-                "id": "aviation_%s_%s" % (key, stamp),
-                "lead": lead,
-                "lead_label": valid_interval(valid_time),
-                "valid_label": valid_interval(valid_time),
-                "valid_time": valid_time.astimezone(BJT).isoformat(),
-                "file": "%s/%s.webp" % (asset_root, relative),
-                "full_file": "%s/%s.png" % (asset_root, relative),
+    for product_key, title, unit, plot_keys in PRODUCTS:
+        frames = []
+        for frame_index, plot_key in enumerate(plot_keys):
+            plot_title, plot_unit = next(item[1:] for item in PLOT_PRODUCTS if item[0] == plot_key)
+            panels = []
+            for lead, valid_time in enumerate(times, 13):
+                stamp = valid_time.astimezone(BJT).strftime("%Y%m%d_%H")
+                relative = "hourly_%s/%s_%s" % (plot_key, plot_key, stamp)
+                panels.append({
+                    "id": "aviation_%s_%s" % (plot_key, stamp),
+                    "lead": lead,
+                    "lead_label": valid_interval(valid_time),
+                    "valid_label": valid_interval(valid_time),
+                    "valid_time": valid_time.astimezone(BJT).isoformat(),
+                    "file": "%s/%s.webp" % (asset_root, relative),
+                    "full_file": "%s/%s.png" % (asset_root, relative),
+                })
+            frames.append({
+                "id": "aviation_%s_overview" % plot_key,
+                "lead": frame_index,
+                "lead_label": plot_title,
+                "valid_label": "T13-T24",
+                "file": "%s/%s_T13_T24_3x4.webp" % (asset_root, plot_key),
+                "full_file": "%s/%s_T13_T24_3x4.png" % (asset_root, plot_key),
+                "individual_frames": panels,
             })
-        product_entry = {
-            "id": "airport_aviation_%s" % key,
+        if product_key == "temperature":
+            frames.append({
+                "id": "aviation_station_series",
+                "lead": len(frames),
+                "lead_label": "时间序列",
+                "valid_label": "T13-T24",
+                "file": "%s/airport_meteorological_timeseries.webp" % asset_root,
+                "full_file": "%s/airport_meteorological_timeseries.png" % asset_root,
+            })
+        products.append({
+            "id": "airport_aviation_%s" % product_key,
             "title": title,
             "category": "机场航空气象试验",
             "unit": unit,
-            "color": "#166ab6",
-            "description": "三机场航空气象试验图件。",
+            "color": "#166ab6" if product_key == "temperature" else "#168f7a",
+            "description": "云南三机场航空气象试验图集。",
             "metrics": [
                 {"label": "起报时次", "value": "20260818 00 UTC"},
                 {"label": "有效时段", "value": "08-18 21时 至 08-19 08时 BJT"},
                 {"label": "图像数量", "value": "12"},
             ],
-            "frames": [{
-                "id": "aviation_%s_overview" % key,
-                "lead": 0,
-                "lead_label": "拼图",
-                "valid_label": "T13-T24",
-                "file": "%s/%s_T13_T24_3x4.webp" % (asset_root, key),
-                "full_file": "%s/%s_T13_T24_3x4.png" % (asset_root, key),
-                "individual_frames": panels,
-            }],
-        }
-        if key == "temperature":
-            product_entry["frames"].append({
-                "id": "aviation_station_series",
-                "lead": 1,
-                "lead_label": "三机场时间序列",
-                "valid_label": "T13-T24",
-                "file": "%s/airport_meteorological_timeseries.webp" % asset_root,
-                "full_file": "%s/airport_meteorological_timeseries.png" % asset_root,
-            })
-        products.append(product_entry)
+            "frames": frames,
+        })
     catalog = {
         "schema_version": 1,
         "site": {"name": "IAP-LACS Forecast", "domain": "iaplacs.xyz"},
         "published_at": datetime.now(BJT).isoformat(timespec="seconds"),
         "services": {"airport": {
             "title": "云南机场航空气象试验预览",
-            "note": "一次性试验图集，不纳入机场服务的循环发布。",
+            "note": "云南三机场航空气象试验图集。",
             "latest_run": "airport_aviation_preview_20260818_00",
             "runs": [{
                 "id": "airport_aviation_preview_20260818_00",
                 "label": "2026-08-18 08:00 BJT",
                 "run_time": "2026-08-18T08:00:00+08:00",
                 "published_at": datetime.now(BJT).isoformat(timespec="seconds"),
-                "summary": "云南机场航空气象试验产品。",
+                "summary": "云南三机场航空气象试验图集。",
                 "products": products,
             }],
         }},
@@ -450,7 +457,7 @@ def main():
     if not args.input.is_file():
         raise SystemExit("WRF file not found: %s" % args.input)
     output = args.output
-    hourly_dirs = {key: output / ("hourly_" + key) for key, _, _ in PRODUCTS}
+    hourly_dirs = {key: output / ("hourly_" + key) for key, _, _ in PLOT_PRODUCTS}
     for directory in hourly_dirs.values():
         directory.mkdir(parents=True, exist_ok=True)
     province = shp_lines(args.province_shp)
@@ -478,7 +485,7 @@ def main():
             data = diagnostics(ds, index, row0, row1, col0, col1, cosine, sine, terrain, dx, dy)
             label = valid_interval(valid_time)
             stamp = valid_time.astimezone(BJT).strftime("%Y%m%d_%H")
-            for key, title, unit in PRODUCTS:
+            for key, title, unit in PLOT_PRODUCTS:
                 panel = hourly_dirs[key] / ("%s_%s.png" % (key, stamp))
                 single_map(panel, crop_lon, crop_lat, data, key, title, unit, label, province, cities)
             time_steps.append((data, valid_time))
@@ -487,7 +494,7 @@ def main():
                 station_values[station]["wind"].append(float(math.hypot(data[1][y - row0, x - col0], data[2][y - row0, x - col0])))
                 station_values[station]["vertical"].append(float(data[3][y - row0, x - col0]))
                 station_values[station]["horizontal"].append(float(data[4][y - row0, x - col0]))
-    for key, title, unit in PRODUCTS:
+    for key, title, unit in PLOT_PRODUCTS:
         montage(time_steps, output / (key + "_T13_T24_3x4.png"), crop_lon, crop_lat,
                 key, title, unit, province, cities)
     station_meteogram(output / "airport_meteorological_timeseries.png", [moment.astimezone(BJT) for moment in times],
@@ -499,7 +506,7 @@ def main():
         "initialization_bjt": "2026-08-18 08:00 BJT",
         "lead_indices": "T13–T24",
         "valid_times_bjt": [moment.astimezone(BJT).isoformat() for moment in times],
-        "products": [title for _, title, _ in PRODUCTS],
+        "products": [title for _, title, _, _ in PRODUCTS],
         "airports": [airport[0] for airport in AIRPORTS],
     }
     (output / "preview_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")

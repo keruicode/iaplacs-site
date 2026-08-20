@@ -4,27 +4,27 @@
     "name": "IAP-LACS Forecast",
     "domain": "iaplacs.xyz"
   },
-  "published_at": "2026-08-20T22:05:23+08:00",
+  "published_at": "2026-08-20T22:46:38+08:00",
   "services": {
     "airport": {
       "title": "云南机场航空气象试验预览",
-      "note": "一次性试验图集，不纳入机场服务的循环发布。",
+      "note": "云南三机场航空气象试验图集。",
       "latest_run": "airport_aviation_preview_20260818_00",
       "runs": [
         {
           "id": "airport_aviation_preview_20260818_00",
           "label": "2026-08-18 08:00 BJT",
           "run_time": "2026-08-18T08:00:00+08:00",
-          "published_at": "2026-08-20T22:05:23+08:00",
-          "summary": "云南机场航空气象试验产品。",
+          "published_at": "2026-08-20T22:46:38+08:00",
+          "summary": "云南三机场航空气象试验图集。",
           "products": [
             {
               "id": "airport_aviation_temperature",
-              "title": "2米气温",
+              "title": "气温",
               "category": "机场航空气象试验",
               "unit": "温度（℃）",
               "color": "#166ab6",
-              "description": "三机场航空气象试验图件。",
+              "description": "云南三机场航空气象试验图集。",
               "metrics": [
                 {
                   "label": "起报时次",
@@ -43,7 +43,7 @@
                 {
                   "id": "aviation_temperature_overview",
                   "lead": 0,
-                  "lead_label": "拼图",
+                  "lead_label": "2米气温",
                   "valid_label": "T13-T24",
                   "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/experimental/airport_aviation_20260818_00/temperature_T13_T24_3x4.webp",
                   "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/experimental/airport_aviation_20260818_00/temperature_T13_T24_3x4.png",
@@ -161,7 +161,7 @@
                 {
                   "id": "aviation_station_series",
                   "lead": 1,
-                  "lead_label": "三机场时间序列",
+                  "lead_label": "时间序列",
                   "valid_label": "T13-T24",
                   "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/experimental/airport_aviation_20260818_00/airport_meteorological_timeseries.webp",
                   "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/experimental/airport_aviation_20260818_00/airport_meteorological_timeseries.png"
@@ -170,11 +170,11 @@
             },
             {
               "id": "airport_aviation_wind",
-              "title": "10米风场",
+              "title": "风场",
               "category": "机场航空气象试验",
-              "unit": "风速（米/秒）",
-              "color": "#166ab6",
-              "description": "三机场航空气象试验图件。",
+              "unit": "风场诊断",
+              "color": "#168f7a",
+              "description": "云南三机场航空气象试验图集。",
               "metrics": [
                 {
                   "label": "起报时次",
@@ -193,7 +193,7 @@
                 {
                   "id": "aviation_wind_overview",
                   "lead": 0,
-                  "lead_label": "拼图",
+                  "lead_label": "10米风场",
                   "valid_label": "T13-T24",
                   "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/experimental/airport_aviation_20260818_00/wind_T13_T24_3x4.webp",
                   "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/experimental/airport_aviation_20260818_00/wind_T13_T24_3x4.png",
@@ -307,35 +307,11 @@
                       "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/experimental/airport_aviation_20260818_00/hourly_wind/wind_20260819_08.png"
                     }
                   ]
-                }
-              ]
-            },
-            {
-              "id": "airport_aviation_vertical_shear",
-              "title": "10-500米垂直风切",
-              "category": "机场航空气象试验",
-              "unit": "风切（米/秒）",
-              "color": "#166ab6",
-              "description": "三机场航空气象试验图件。",
-              "metrics": [
-                {
-                  "label": "起报时次",
-                  "value": "20260818 00 UTC"
                 },
-                {
-                  "label": "有效时段",
-                  "value": "08-18 21时 至 08-19 08时 BJT"
-                },
-                {
-                  "label": "图像数量",
-                  "value": "12"
-                }
-              ],
-              "frames": [
                 {
                   "id": "aviation_vertical_shear_overview",
-                  "lead": 0,
-                  "lead_label": "拼图",
+                  "lead": 1,
+                  "lead_label": "10-500米垂直风切",
                   "valid_label": "T13-T24",
                   "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/experimental/airport_aviation_20260818_00/vertical_shear_T13_T24_3x4.webp",
                   "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/experimental/airport_aviation_20260818_00/vertical_shear_T13_T24_3x4.png",
@@ -449,35 +425,11 @@
                       "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/experimental/airport_aviation_20260818_00/hourly_vertical_shear/vertical_shear_20260819_08.png"
                     }
                   ]
-                }
-              ]
-            },
-            {
-              "id": "airport_aviation_horizontal_gradient",
-              "title": "10米水平风速梯度",
-              "category": "机场航空气象试验",
-              "unit": "梯度（米/秒/千米）",
-              "color": "#166ab6",
-              "description": "三机场航空气象试验图件。",
-              "metrics": [
-                {
-                  "label": "起报时次",
-                  "value": "20260818 00 UTC"
                 },
-                {
-                  "label": "有效时段",
-                  "value": "08-18 21时 至 08-19 08时 BJT"
-                },
-                {
-                  "label": "图像数量",
-                  "value": "12"
-                }
-              ],
-              "frames": [
                 {
                   "id": "aviation_horizontal_gradient_overview",
-                  "lead": 0,
-                  "lead_label": "拼图",
+                  "lead": 2,
+                  "lead_label": "10米水平风速梯度",
                   "valid_label": "T13-T24",
                   "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/experimental/airport_aviation_20260818_00/horizontal_gradient_T13_T24_3x4.webp",
                   "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/experimental/airport_aviation_20260818_00/horizontal_gradient_T13_T24_3x4.png",
