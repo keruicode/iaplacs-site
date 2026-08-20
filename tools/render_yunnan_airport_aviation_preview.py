@@ -197,12 +197,12 @@ def diagnostics(ds, index, row0, row1, col0, col1, cosine, sine, terrain, dx, dy
     return t2, u10, v10, vertical_shear, horizontal_gradient
 
 
-def decorate(ax, province, cities, show_x=True, show_y=True, tick_size=12, plane_scale=0.085):
+def decorate(ax, province, cities, show_x=True, show_y=True, tick_size=12, plane_scale=0.120):
     west, east, south, north = REGION
     for line in province:
-        ax.plot(line[:, 0], line[:, 1], color="black", linewidth=1.55, zorder=4)
+        ax.plot(line[:, 0], line[:, 1], color="black", linewidth=2.25, zorder=4)
     for line in cities:
-        ax.plot(line[:, 0], line[:, 1], color="#404040", linewidth=0.70, zorder=4)
+        ax.plot(line[:, 0], line[:, 1], color="#404040", linewidth=0.90, zorder=4)
     # Use a real aircraft silhouette rather than a marker glyph: fonts on IAP
     # do not consistently include the airplane Unicode character or a suitable
     # icon.  This matches the outlined marker used by the airport precipitation
@@ -236,8 +236,8 @@ def ec_temperature_cmap():
 
 def ec_wind_cmap():
     return colors.ListedColormap([
-        "#2c7bb6", "#00a6ca", "#00ccbc", "#90eb9d", "#ffff8c",
-        "#f9d057", "#f29e2e", "#e76818", "#d7191c",
+        "#ffffff", "#eaf4ff", "#b9dcf4", "#73b9dc", "#2c8cbe",
+        "#35b779", "#8fd34e", "#f4e85b", "#f6a33c", "#d73027",
     ])
 
 
@@ -246,7 +246,7 @@ def product_field(kind, data):
     if kind == "temperature":
         return temperature, [-30, -20, -10, 0, 5, 10, 15, 20, 25, 30, 35, 40, 50], ec_temperature_cmap()
     if kind == "wind":
-        return np.hypot(u10, v10), [0, 2, 4, 6, 8, 10, 12, 15, 20, 25], ec_wind_cmap()
+        return np.hypot(u10, v10), [0, 2, 4, 6, 8, 10, 12, 15, 20, 25, 30], ec_wind_cmap()
     if kind == "vertical_shear":
         return vertical_shear, [0, 2, 4, 6, 8, 10, 12, 15, 20, 25, 30], plt.get_cmap("YlOrRd", 10)
     return horizontal_gradient, [0, 0.1, 0.2, 0.3, 0.5, 0.75, 1, 1.5, 2, 3], plt.get_cmap("PuBuGn", 9)
@@ -268,8 +268,8 @@ def plot_product(ax, lon, lat, data, kind, province, cities, **decorate_options)
         # those calm vectors; the discrete wind-speed fill still shows them.
         active = np.hypot(wind_u, wind_v) >= 2.5
         ax.barbs(wind_lon[active], wind_lat[active], wind_u[active], wind_v[active],
-                 length=5.4 if target_vectors >= 30 else 4.3,
-                 linewidth=0.95, barbcolor="#062ea8", flagcolor="#062ea8", zorder=6)
+                 length=5.8 if target_vectors >= 30 else 4.8,
+                 linewidth=1.45, barbcolor="#17324d", flagcolor="#17324d", zorder=6)
     decorate(ax, province, cities, **decorate_options)
     return image, bounds
 
@@ -298,9 +298,9 @@ def single_map(path, lon, lat, data, kind, product_title, unit, valid_time, prov
     color_axis = figure.add_subplot(grid[1, 0])
     image, bounds = plot_product(
         axis, lon, lat, data, kind, province, cities,
-        tick_size=16, plane_scale=0.090, target_vectors=32,
+        tick_size=18, plane_scale=0.120, target_vectors=32,
     )
-    figure.suptitle(valid_time, fontsize=24, fontweight="bold", y=0.985, **cn_props())
+    figure.suptitle(valid_time, fontsize=28, fontweight="bold", y=0.985, **cn_props())
     colorbar = figure.colorbar(image, cax=color_axis, orientation="horizontal")
     style_colorbar(colorbar, bounds, unit, label_size=15, tick_size=12, horizontal=True)
     figure.savefig(str(path), dpi=420, bbox_inches="tight", pad_inches=0.04)
@@ -321,11 +321,11 @@ def montage(time_steps, output, lon, lat, kind, product_title, unit, province, c
             axis, lon, lat, data, kind, province, cities,
             show_x=index // 4 == 2,
             show_y=index % 4 == 0,
-            tick_size=13,
-            plane_scale=0.055,
+            tick_size=16,
+            plane_scale=0.075,
             target_vectors=18,
         )
-        axis.set_title(valid_interval(valid_time), fontsize=12.5, pad=4, fontweight="bold")
+        axis.set_title(valid_interval(valid_time), fontsize=16, pad=5, fontweight="bold")
     figure.suptitle("Forecast Initialization: 2026-08-18 08:00 BJT",
                     fontsize=25, y=0.958, fontweight="bold")
     color_axis = figure.add_axes([0.205, 0.047, 0.59, 0.018])
@@ -335,16 +335,20 @@ def montage(time_steps, output, lon, lat, kind, product_title, unit, province, c
     plt.close(figure)
 
 
-def station_meteogram(output, times, station_data):
-    figure, axes = plt.subplots(2, 2, figsize=(16.4, 9.6), sharex=True)
+def station_meteogram(output, times, station_data, selected_keys):
     x = np.arange(len(times))
     labels = [moment.strftime("%m-%d\n%H时") for moment in times]
-    series = (
+    all_series = (
         ("temperature", "2米气温", "温度（℃）"),
         ("wind", "10米风速", "风速（米/秒）"),
         ("vertical", "10-500米垂直风切", "风切（米/秒）"),
         ("horizontal", "10米水平风速梯度", "梯度（米/秒/千米）"),
     )
+    series = tuple(item for item in all_series if item[0] in selected_keys)
+    figure, axes = plt.subplots(
+        len(series), 1, figsize=(16.4, 3.9 * len(series)), sharex=True, squeeze=False,
+    )
+    axes = axes[:, 0]
     palette = ("#cb3e38", "#1b64a5", "#129b78")
     legend_handles = []
     for axis, (key, title, ylabel) in zip(axes.flat, series):
@@ -354,7 +358,7 @@ def station_meteogram(output, times, station_data):
                 marker="o", markersize=5.0, markeredgecolor="white", markeredgewidth=0.8,
                 label=name,
             )
-            if key == "temperature":
+            if key == selected_keys[0]:
                 legend_handles.append(line)
         axis.set_title(title, fontsize=18, loc="left", pad=7, fontweight="bold", **cn_props())
         axis.set_ylabel(ylabel, fontsize=14, fontweight="bold", **cn_props())
@@ -367,7 +371,7 @@ def station_meteogram(output, times, station_data):
         loc="upper center", bbox_to_anchor=(0.5, 0.985), ncol=3,
         frameon=False, fontsize=16, prop=CHINESE_FONT,
     )
-    figure.tight_layout(rect=(0, 0, 1, 0.93))
+    figure.tight_layout(rect=(0, 0, 1, 0.91))
     figure.savefig(str(output), dpi=420, bbox_inches="tight", pad_inches=0.04)
     plt.close(figure)
 
@@ -407,12 +411,21 @@ def write_web_manifest(output, times):
             })
         if product_key == "temperature":
             frames.append({
-                "id": "aviation_station_series",
+                "id": "aviation_temperature_series",
                 "lead": len(frames),
                 "lead_label": "时间序列",
                 "valid_label": "T13-T24",
-                "file": "%s/airport_meteorological_timeseries.webp" % asset_root,
-                "full_file": "%s/airport_meteorological_timeseries.png" % asset_root,
+                "file": "%s/airport_temperature_timeseries.webp" % asset_root,
+                "full_file": "%s/airport_temperature_timeseries.png" % asset_root,
+            })
+        else:
+            frames.append({
+                "id": "aviation_wind_series",
+                "lead": len(frames),
+                "lead_label": "时间序列",
+                "valid_label": "T13-T24",
+                "file": "%s/airport_wind_timeseries.webp" % asset_root,
+                "full_file": "%s/airport_wind_timeseries.png" % asset_root,
             })
         products.append({
             "id": "airport_aviation_%s" % product_key,
@@ -497,8 +510,16 @@ def main():
     for key, title, unit in PLOT_PRODUCTS:
         montage(time_steps, output / (key + "_T13_T24_3x4.png"), crop_lon, crop_lat,
                 key, title, unit, province, cities)
-    station_meteogram(output / "airport_meteorological_timeseries.png", [moment.astimezone(BJT) for moment in times],
-                      [(airport[0], station_values[index]) for index, airport in enumerate(AIRPORTS)])
+    station_data = [(airport[0], station_values[index]) for index, airport in enumerate(AIRPORTS)]
+    station_meteogram(
+        output / "airport_temperature_timeseries.png",
+        [moment.astimezone(BJT) for moment in times], station_data, ("temperature",),
+    )
+    station_meteogram(
+        output / "airport_wind_timeseries.png",
+        [moment.astimezone(BJT) for moment in times], station_data,
+        ("wind", "vertical", "horizontal"),
+    )
     manifest = {
         "experimental": True,
         "publishable": False,
