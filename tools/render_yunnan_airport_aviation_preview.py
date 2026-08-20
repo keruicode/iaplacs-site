@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import font_manager
 from matplotlib.font_manager import FontProperties
-from matplotlib.patches import Polygon
+from matplotlib.patches import Circle, Polygon
 from netCDF4 import Dataset
 
 
@@ -72,7 +72,7 @@ def configure_matplotlib():
                 CHINESE_FONT = FontProperties(fname=str(font_path))
             break
     plt.rcParams.update({
-        "font.family": ["Times New Roman", "Songti SC", "DejaVu Serif"],
+        "font.family": ["Times New Roman", "Songti SC"],
         "font.weight": "bold",
         "axes.labelweight": "bold",
         "axes.titleweight": "bold",
@@ -207,10 +207,14 @@ def decorate(ax, province, cities, show_x=True, show_y=True, tick_size=12, plane
         (0.1, 0.0), (-1.1, -0.34), (1.8, 0.0),
     ])
     for name, latitude, longitude in AIRPORTS:
+        ax.add_patch(Circle(
+            (longitude, latitude), radius=plane_scale * 1.25,
+            facecolor="white", edgecolor="black", linewidth=1.15, zorder=8,
+        ))
         outer = plane_template * plane_scale + np.array((longitude, latitude))
-        inner = plane_template * (plane_scale * 0.76) + np.array((longitude, latitude))
-        ax.add_patch(Polygon(outer, closed=True, facecolor="white", edgecolor="white", linewidth=1.2, zorder=8))
-        ax.add_patch(Polygon(inner, closed=True, facecolor="#111111", edgecolor="none", zorder=9))
+        inner = plane_template * (plane_scale * 0.80) + np.array((longitude, latitude))
+        ax.add_patch(Polygon(outer, closed=True, facecolor="white", edgecolor="black", linewidth=2.0, zorder=9))
+        ax.add_patch(Polygon(inner, closed=True, facecolor="#050505", edgecolor="#050505", linewidth=0.5, zorder=10))
     ax.set_xlim(west, east)
     ax.set_ylim(south, north)
     ax.set_xticks(np.arange(98, 108, 2))
@@ -224,27 +228,24 @@ def decorate(ax, province, cities, show_x=True, show_y=True, tick_size=12, plane
 
 def ec_temperature_cmap():
     return colors.ListedColormap([
-        "#78f24b", "#41e856", "#18d968", "#66f58d", "#bdf698", "#f4f39b",
-        "#ffe179", "#ffd052", "#ffbb2c", "#ff971d", "#ff6b22", "#f84236", "#bd0d12",
+        "#313695", "#4575b4", "#74add1", "#abd9e9", "#e0f3f8", "#ffffbf",
+        "#fee090", "#fdae61", "#f46d43", "#d73027", "#a50026", "#7f0000",
     ])
 
 
 def ec_wind_cmap():
-    return colors.ListedColormap([
-        "#0b1f5c", "#1559d4", "#107ee2", "#00a9c8", "#00c980", "#14d844",
-        "#91e52c", "#e8e52b", "#ffad23", "#ff6530", "#f51780",
-    ])
+    return plt.get_cmap("viridis", 9)
 
 
 def product_field(kind, data):
     temperature, u10, v10, vertical_shear, horizontal_gradient = data
     if kind == "temperature":
-        return temperature, [0, 4, 8, 12, 16, 18, 20, 22, 24, 26, 28, 30, 32, 35], ec_temperature_cmap()
+        return temperature, [-30, -20, -10, 0, 5, 10, 15, 20, 25, 30, 35, 40, 50], ec_temperature_cmap()
     if kind == "wind":
-        return np.hypot(u10, v10), [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 18], ec_wind_cmap()
+        return np.hypot(u10, v10), [0, 2, 4, 6, 8, 10, 12, 15, 20, 25], ec_wind_cmap()
     if kind == "vertical_shear":
-        return vertical_shear, [0, 2, 4, 6, 8, 10, 12, 15, 18, 22, 26], ec_wind_cmap()
-    return horizontal_gradient, [0, 0.15, 0.3, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6], ec_wind_cmap()
+        return vertical_shear, [0, 2, 4, 6, 8, 10, 12, 15, 20, 25, 30], plt.get_cmap("YlOrRd", 10)
+    return horizontal_gradient, [0, 0.1, 0.2, 0.3, 0.5, 0.75, 1, 1.5, 2, 3], plt.get_cmap("PuBuGn", 9)
 
 
 def plot_product(ax, lon, lat, data, kind, province, cities, **decorate_options):
@@ -272,10 +273,18 @@ def plot_product(ax, lon, lat, data, kind, province, cities, **decorate_options)
 def style_colorbar(colorbar, bounds, unit, label_size=14, tick_size=12, horizontal=False):
     colorbar.set_ticks(bounds)
     colorbar.ax.tick_params(labelsize=tick_size, width=1.6, length=4, pad=3)
+    for label in colorbar.ax.get_xticklabels() + colorbar.ax.get_yticklabels():
+        label.set_fontweight("bold")
     if horizontal:
         colorbar.set_label(unit, fontsize=label_size, labelpad=7, **cn_props())
     else:
         colorbar.set_label(unit, fontsize=label_size, labelpad=9, **cn_props())
+
+
+def valid_interval(moment):
+    start = moment.astimezone(BJT)
+    end = start + timedelta(hours=1)
+    return "%s-%s BJT" % (start.strftime("%m-%d %H:%M"), end.strftime("%H:%M"))
 
 
 def single_map(path, lon, lat, data, kind, product_title, unit, valid_time, province, cities):
@@ -287,7 +296,7 @@ def single_map(path, lon, lat, data, kind, product_title, unit, valid_time, prov
         axis, lon, lat, data, kind, province, cities,
         tick_size=14, plane_scale=0.150, target_vectors=32,
     )
-    figure.suptitle("%s\n%s" % (product_title, valid_time), fontsize=23, fontweight="bold", **cn_props())
+    figure.suptitle(valid_time, fontsize=24, fontweight="bold", y=0.985, **cn_props())
     colorbar = figure.colorbar(image, cax=color_axis, orientation="horizontal")
     style_colorbar(colorbar, bounds, unit, label_size=15, tick_size=12, horizontal=True)
     figure.savefig(str(path), dpi=420, bbox_inches="tight", pad_inches=0.04)
@@ -296,7 +305,7 @@ def single_map(path, lon, lat, data, kind, product_title, unit, valid_time, prov
 
 def montage(time_steps, output, lon, lat, kind, product_title, unit, province, cities):
     figure, axes = plt.subplots(3, 4, figsize=(18.2, 15.1))
-    figure.subplots_adjust(left=0.045, right=0.992, bottom=0.105, top=0.900, wspace=0.105, hspace=0.165)
+    figure.subplots_adjust(left=0.045, right=0.992, bottom=0.105, top=0.885, wspace=0.105, hspace=0.165)
     image = None
     bounds = None
     for index, axis in enumerate(axes.flat):
@@ -312,10 +321,9 @@ def montage(time_steps, output, lon, lat, kind, product_title, unit, province, c
             plane_scale=0.092,
             target_vectors=18,
         )
-        axis.set_title(valid_time.astimezone(BJT).strftime("%m月%d日 %H时 BJT"),
-                       fontsize=13, pad=7, **cn_props())
-    figure.suptitle("%s | 2026年8月18日08时起报（BJT）" % product_title,
-                    fontsize=25, y=0.965, **cn_props())
+        axis.set_title(valid_interval(valid_time), fontsize=12.5, pad=4, fontweight="bold")
+    figure.suptitle("Forecast Initialization: 2026-08-18 08:00 BJT",
+                    fontsize=25, y=0.958, fontweight="bold")
     color_axis = figure.add_axes([0.205, 0.047, 0.59, 0.018])
     colorbar = figure.colorbar(image, cax=color_axis, orientation="horizontal")
     style_colorbar(colorbar, bounds, unit, label_size=14, tick_size=11, horizontal=True)
@@ -344,19 +352,18 @@ def station_meteogram(output, times, station_data):
             )
             if key == "temperature":
                 legend_handles.append(line)
-        axis.set_title(title, fontsize=17, loc="left", pad=9, **cn_props())
-        axis.set_ylabel(ylabel, fontsize=13, **cn_props())
-        axis.grid(axis="y", color="#d9d9d9", linewidth=0.8)
-        axis.tick_params(labelsize=11, top=True, right=True, pad=4)
+        axis.set_title(title, fontsize=18, loc="left", pad=7, fontweight="bold", **cn_props())
+        axis.set_ylabel(ylabel, fontsize=14, fontweight="bold", **cn_props())
+        axis.grid(axis="y", color="#d9d9d9", linewidth=0.7)
+        axis.tick_params(labelsize=12, top=True, right=True, pad=3, width=2.0, length=6)
         axis.set_xticks(x)
-        axis.set_xticklabels(labels, fontsize=10.5, **cn_props())
-    figure.suptitle("云南三机场地面气象与低层风诊断时间序列（北京时间）", fontsize=23, y=0.99, **cn_props())
+        axis.set_xticklabels(labels, fontsize=11, fontweight="bold", **cn_props())
     figure.legend(
         legend_handles, [airport[0] for airport in AIRPORTS],
-        loc="upper center", bbox_to_anchor=(0.5, 0.948), ncol=3,
-        frameon=False, fontsize=12, prop=CHINESE_FONT,
+        loc="upper center", bbox_to_anchor=(0.5, 0.985), ncol=3,
+        frameon=False, fontsize=16, prop=CHINESE_FONT,
     )
-    figure.tight_layout(rect=(0, 0, 1, 0.885))
+    figure.tight_layout(rect=(0, 0, 1, 0.93))
     figure.savefig(str(output), dpi=420, bbox_inches="tight", pad_inches=0.04)
     plt.close(figure)
 
@@ -376,18 +383,19 @@ def write_web_manifest(output, times):
             panels.append({
                 "id": "aviation_%s_%s" % (key, stamp),
                 "lead": lead,
-                "lead_label": valid_time.astimezone(BJT).strftime("%m-%d %H时"),
+                "lead_label": valid_interval(valid_time),
+                "valid_label": valid_interval(valid_time),
                 "valid_time": valid_time.astimezone(BJT).isoformat(),
                 "file": "%s/%s.webp" % (asset_root, relative),
                 "full_file": "%s/%s.png" % (asset_root, relative),
             })
-        products.append({
+        product_entry = {
             "id": "airport_aviation_%s" % key,
             "title": title,
             "category": "机场航空气象试验",
             "unit": unit,
             "color": "#166ab6",
-            "description": "2026年8月18日08时起报的云南机场试验产品，仅供图面与方法审阅。",
+            "description": "三机场航空气象试验图件。",
             "metrics": [
                 {"label": "起报时次", "value": "20260818 00 UTC"},
                 {"label": "有效时段", "value": "08-18 21时 至 08-19 08时 BJT"},
@@ -397,32 +405,22 @@ def write_web_manifest(output, times):
                 "id": "aviation_%s_overview" % key,
                 "lead": 0,
                 "lead_label": "拼图",
-                "valid_label": "T13-T24 | 北京时间",
+                "valid_label": "T13-T24",
                 "file": "%s/%s_T13_T24_3x4.webp" % (asset_root, key),
                 "full_file": "%s/%s_T13_T24_3x4.png" % (asset_root, key),
                 "individual_frames": panels,
             }],
-        })
-    products.append({
-        "id": "airport_aviation_station_series",
-        "title": "三机场时间序列",
-        "category": "机场航空气象试验",
-        "unit": "温度、风速与风切",
-        "color": "#438f72",
-        "description": "德宏芒市、西双版纳嘎洒、普洱澜沧景迈三机场的气温、风场与低层风切对比。",
-        "metrics": [
-            {"label": "起报时次", "value": "20260818 00 UTC"},
-            {"label": "有效时段", "value": "08-18 21时 至 08-19 08时 BJT"},
-        ],
-        "frames": [{
-            "id": "aviation_station_series",
-            "lead": 0,
-            "lead_label": "时间序列",
-            "valid_label": "T13-T24 | 北京时间",
-            "file": "%s/airport_meteorological_timeseries.webp" % asset_root,
-            "full_file": "%s/airport_meteorological_timeseries.png" % asset_root,
-        }],
-    })
+        }
+        if key == "temperature":
+            product_entry["frames"].append({
+                "id": "aviation_station_series",
+                "lead": 1,
+                "lead_label": "三机场时间序列",
+                "valid_label": "T13-T24",
+                "file": "%s/airport_meteorological_timeseries.webp" % asset_root,
+                "full_file": "%s/airport_meteorological_timeseries.png" % asset_root,
+            })
+        products.append(product_entry)
     catalog = {
         "schema_version": 1,
         "site": {"name": "IAP-LACS Forecast", "domain": "iaplacs.xyz"},
@@ -478,7 +476,7 @@ def main():
         station_values = [{"temperature": [], "wind": [], "vertical": [], "horizontal": []} for _ in AIRPORTS]
         for index, valid_time in zip(range(args.start, end), times):
             data = diagnostics(ds, index, row0, row1, col0, col1, cosine, sine, terrain, dx, dy)
-            label = valid_time.astimezone(BJT).strftime("有效时间：%Y年%m月%d日 %H时 BJT")
+            label = valid_interval(valid_time)
             stamp = valid_time.astimezone(BJT).strftime("%Y%m%d_%H")
             for key, title, unit in PRODUCTS:
                 panel = hourly_dirs[key] / ("%s_%s.png" % (key, stamp))
@@ -501,7 +499,7 @@ def main():
         "initialization_bjt": "2026-08-18 08:00 BJT",
         "lead_indices": "T13–T24",
         "valid_times_bjt": [moment.astimezone(BJT).isoformat() for moment in times],
-        "products": [title for _, title, _ in PRODUCTS] + ["三机场时间序列"],
+        "products": [title for _, title, _ in PRODUCTS],
         "airports": [airport[0] for airport in AIRPORTS],
     }
     (output / "preview_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")

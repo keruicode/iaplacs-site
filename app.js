@@ -1050,13 +1050,15 @@ function renderMetrics(product) {
 
 function renderProductNote(run, product, frame) {
   if (!els.productNote) return;
-  const parts = [
-    product.description,
-    run.summary,
-    pageConfig.service === "shangrao"
-      ? ""
-      : frame.valid_label || (frame.valid_time ? `有效时间 ${formatTime(frame.valid_time)}` : ""),
-  ].filter(Boolean);
+  const parts = isAirportAviationPreview
+    ? [product.description]
+    : [
+        product.description,
+        run.summary,
+        pageConfig.service === "shangrao"
+          ? ""
+          : frame.valid_label || (frame.valid_time ? `有效时间 ${formatTime(frame.valid_time)}` : ""),
+      ].filter(Boolean);
   els.productNote.textContent = parts.join(" ");
 }
 
