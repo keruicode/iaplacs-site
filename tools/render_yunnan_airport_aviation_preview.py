@@ -81,11 +81,11 @@ def configure_matplotlib():
         "font.weight": "bold",
         "axes.labelweight": "bold",
         "axes.titleweight": "bold",
-        "axes.linewidth": 2.0,
-        "xtick.major.width": 1.8,
-        "ytick.major.width": 1.8,
-        "xtick.major.size": 5.5,
-        "ytick.major.size": 5.5,
+        "axes.linewidth": 3.0,
+        "xtick.major.width": 2.6,
+        "ytick.major.width": 2.6,
+        "xtick.major.size": 7.0,
+        "ytick.major.size": 7.0,
         "xtick.direction": "in",
         "ytick.direction": "in",
         "savefig.facecolor": "white",
@@ -200,9 +200,9 @@ def diagnostics(ds, index, row0, row1, col0, col1, cosine, sine, terrain, dx, dy
 def decorate(ax, province, cities, show_x=True, show_y=True, tick_size=12, plane_scale=0.120):
     west, east, south, north = REGION
     for line in province:
-        ax.plot(line[:, 0], line[:, 1], color="black", linewidth=2.25, zorder=4)
+        ax.plot(line[:, 0], line[:, 1], color="black", linewidth=3.0, zorder=4)
     for line in cities:
-        ax.plot(line[:, 0], line[:, 1], color="#404040", linewidth=0.90, zorder=4)
+        ax.plot(line[:, 0], line[:, 1], color="#404040", linewidth=1.05, zorder=4)
     # Use a real aircraft silhouette rather than a marker glyph: fonts on IAP
     # do not consistently include the airplane Unicode character or a suitable
     # icon.  This matches the outlined marker used by the airport precipitation
@@ -222,7 +222,10 @@ def decorate(ax, province, cities, show_x=True, show_y=True, tick_size=12, plane
     ax.set_yticks(np.arange(22, 31, 2))
     ax.set_xticklabels(["%d°E" % value for value in ax.get_xticks()], fontsize=tick_size, fontweight="bold")
     ax.set_yticklabels(["%d°N" % value for value in ax.get_yticks()], fontsize=tick_size, fontweight="bold")
-    ax.tick_params(top=True, right=True, pad=3, labeltop=False, labelright=False)
+    for spine in ax.spines.values():
+        spine.set_linewidth(3.0)
+    ax.tick_params(top=True, right=True, pad=3, labeltop=False, labelright=False,
+                   width=2.6, length=7.0)
     ax.tick_params(labelbottom=show_x, labelleft=show_y)
     ax.set_aspect("equal", adjustable="box")
 
@@ -269,7 +272,7 @@ def plot_product(ax, lon, lat, data, kind, province, cities, **decorate_options)
         active = np.hypot(wind_u, wind_v) >= 2.5
         ax.barbs(wind_lon[active], wind_lat[active], wind_u[active], wind_v[active],
                  length=5.8 if target_vectors >= 30 else 4.8,
-                 linewidth=1.45, barbcolor="#17324d", flagcolor="#17324d", zorder=6)
+                 linewidth=1.70, barbcolor="#17324d", flagcolor="#17324d", zorder=6)
     decorate(ax, province, cities, **decorate_options)
     return image, bounds
 
@@ -298,7 +301,7 @@ def single_map(path, lon, lat, data, kind, product_title, unit, valid_time, prov
     color_axis = figure.add_subplot(grid[1, 0])
     image, bounds = plot_product(
         axis, lon, lat, data, kind, province, cities,
-        tick_size=18, plane_scale=0.120, target_vectors=32,
+        tick_size=20, plane_scale=0.120, target_vectors=32,
     )
     figure.suptitle(valid_time, fontsize=28, fontweight="bold", y=0.985, **cn_props())
     colorbar = figure.colorbar(image, cax=color_axis, orientation="horizontal")
@@ -309,7 +312,7 @@ def single_map(path, lon, lat, data, kind, product_title, unit, valid_time, prov
 
 def montage(time_steps, output, lon, lat, kind, product_title, unit, province, cities):
     figure, axes = plt.subplots(3, 4, figsize=(18.2, 15.1))
-    figure.subplots_adjust(left=0.095, right=0.992, bottom=0.105, top=0.885, wspace=0.105, hspace=0.165)
+    figure.subplots_adjust(left=0.115, right=0.992, bottom=0.115, top=0.885, wspace=0.105, hspace=0.165)
     image = None
     bounds = None
     for index, axis in enumerate(axes.flat):
@@ -321,11 +324,11 @@ def montage(time_steps, output, lon, lat, kind, product_title, unit, province, c
             axis, lon, lat, data, kind, province, cities,
             show_x=index // 4 == 2,
             show_y=index % 4 == 0,
-            tick_size=16,
+            tick_size=19,
             plane_scale=0.075,
             target_vectors=18,
         )
-        axis.set_title(valid_interval(valid_time), fontsize=16, pad=5, fontweight="bold")
+        axis.set_title(valid_interval(valid_time), fontsize=18, pad=5, fontweight="bold")
     figure.suptitle("Forecast Initialization: 2026-08-18 08:00 BJT",
                     fontsize=25, y=0.958, fontweight="bold")
     color_axis = figure.add_axes([0.205, 0.047, 0.59, 0.018])
@@ -345,8 +348,11 @@ def station_meteogram(output, times, station_data, selected_keys):
         ("horizontal", "10米水平风速梯度", "梯度（米/秒/千米）"),
     )
     series = tuple(item for item in all_series if item[0] in selected_keys)
+    # A single temperature panel needs more vertical room than the stacked
+    # wind diagnostics; otherwise the long 12-hour axis makes it look flat.
+    figure_height = 5.3 if len(series) == 1 else 3.9 * len(series)
     figure, axes = plt.subplots(
-        len(series), 1, figsize=(16.4, 3.9 * len(series)), sharex=True, squeeze=False,
+        len(series), 1, figsize=(16.4, figure_height), sharex=True, squeeze=False,
     )
     axes = axes[:, 0]
     palette = ("#cb3e38", "#1b64a5", "#129b78")
@@ -360,16 +366,17 @@ def station_meteogram(output, times, station_data, selected_keys):
             )
             if key == selected_keys[0]:
                 legend_handles.append(line)
-        axis.set_title(title, fontsize=18, loc="left", pad=7, fontweight="bold", **cn_props())
-        axis.set_ylabel(ylabel, fontsize=14, fontweight="bold", **cn_props())
+        axis.set_title(title, fontsize=19, loc="left", pad=7, fontweight="bold", **cn_props())
+        axis.set_ylabel(ylabel, fontsize=15, fontweight="bold", **cn_props())
         axis.grid(axis="y", color="#d9d9d9", linewidth=0.7)
-        axis.tick_params(labelsize=12, top=True, right=True, pad=3, width=2.0, length=6)
+        axis.tick_params(labelsize=13, top=True, right=True, pad=3, width=2.6, length=7)
         axis.set_xticks(x)
-        axis.set_xticklabels(labels, fontsize=11, fontweight="bold", **cn_props())
+        axis.set_xticklabels(labels, fontsize=12, fontweight="bold", **cn_props())
     figure.legend(
         legend_handles, [airport[0] for airport in AIRPORTS],
         loc="upper center", bbox_to_anchor=(0.5, 0.985), ncol=3,
-        frameon=False, fontsize=16, prop=CHINESE_FONT,
+        frameon=False, fontsize=19, prop=CHINESE_FONT,
+        handlelength=2.8, columnspacing=2.0,
     )
     figure.tight_layout(rect=(0, 0, 1, 0.91))
     figure.savefig(str(output), dpi=420, bbox_inches="tight", pad_inches=0.04)
