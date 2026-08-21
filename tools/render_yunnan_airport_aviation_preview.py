@@ -38,8 +38,8 @@ REGION = (97.0, 107.0, 21.0, 30.0)  # west, east, south, north
 CHINESE_FONT = None
 
 PLOT_PRODUCTS = (
-    ("temperature", "2米气温", "温度（℃）"),
-    ("wind", "10米风场", "风速（米/秒）"),
+    ("temperature", "气温", "温度（℃）"),
+    ("wind", "风场", "风速（米/秒）"),
     ("vertical_shear", "10-500米垂直风切", "风切（米/秒）"),
     ("horizontal_gradient", "10米水平风速梯度", "梯度（米/秒/千米）"),
 )
@@ -303,7 +303,7 @@ def single_map(path, lon, lat, data, kind, product_title, unit, valid_time, prov
     color_axis = figure.add_subplot(grid[1, 0])
     image, bounds = plot_product(
         axis, lon, lat, data, kind, province, cities,
-        tick_size=20, plane_scale=0.180, target_vectors=32,
+        tick_size=20, plane_scale=0.250, target_vectors=32,
     )
     figure.suptitle(valid_time, fontsize=28, fontweight="bold", y=0.985, **cn_props())
     colorbar = figure.colorbar(image, cax=color_axis, orientation="horizontal")
@@ -330,7 +330,7 @@ def montage(time_steps, output, lon, lat, kind, product_title, unit, province, c
             show_x=index // 4 == 2,
             show_y=index % 4 == 0,
             tick_size=19,
-            plane_scale=0.120,
+            plane_scale=0.180,
             target_vectors=18,
         )
         axis.set_title(valid_interval(valid_time), fontsize=18, pad=5, fontweight="bold")
@@ -347,7 +347,7 @@ def station_meteogram(output, times, station_data, selected_keys):
     x = np.arange(len(times))
     labels = [moment.strftime("%m-%d\n%H时") for moment in times]
     all_series = (
-        ("temperature", "2米气温", "温度（℃）"),
+        ("temperature", "气温", "温度（℃）"),
         ("wind", "10米风速", "风速（米/秒）"),
         ("vertical", "10-500米垂直风切", "风切（米/秒）"),
         ("horizontal", "10米水平风速梯度", "梯度（米/秒/千米）"),
