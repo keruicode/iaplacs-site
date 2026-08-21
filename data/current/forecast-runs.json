@@ -9,7 +9,7 @@
     "airport": {
       "title": "机场气象服务",
       "subtitle": "Airport weather service",
-      "note": "机场服务页展示 WORK_yn 云南区域36小时降水拼图，并单独列出德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点的累计降水；2米气温和10米风场入口继续保留。",
+      "note": "机场服务页展示 WORK_yn 云南区域降水、气温和风场预报，并单独列出德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点的降水信息。",
       "latest_run": "airport_yunnan_20260820_06",
       "runs": [
         {
@@ -466,82 +466,646 @@
               ]
             },
             {
-              "id": "airport_temperature",
-              "title": "机场 2 米气温",
+              "id": "airport_aviation_temperature",
+              "title": "气温",
               "category": "机场服务",
-              "unit": "degC",
-              "color": "#b73b3b",
+              "unit": "温度（℃）",
+              "color": "#166ab6",
               "description": "",
               "metrics": [
                 {
-                  "label": "区域最高",
-                  "value": "36.2 degC"
+                  "label": "起报时次",
+                  "value": "20260820 06 UTC"
                 },
                 {
-                  "label": "区域最低",
-                  "value": "17.4 degC"
+                  "label": "生成时间",
+                  "value": "2026-08-21 06:47 BJT"
                 },
                 {
-                  "label": "产品状态",
-                  "value": "样例接入"
+                  "label": "图像数量",
+                  "value": "2"
                 }
               ],
               "frames": [
                 {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f024.svg",
-                  "bytes": 1544
+                  "id": "aviation_temperature_overview",
+                  "lead": 0,
+                  "lead_label": "2米气温",
+                  "valid_label": "T13-T24",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/temperature_T13_T24_4x3.webp",
+                  "individual_frames": [
+                    {
+                      "id": "aviation_temperature_20260821_03",
+                      "lead": 13,
+                      "lead_label": "08-21 03:00-04:00 BJT",
+                      "valid_label": "08-21 03:00-04:00 BJT",
+                      "valid_time": "2026-08-21T03:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_03.webp",
+                      "bytes": 833524,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_03.png",
+                      "full_bytes": 940846
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_04",
+                      "lead": 14,
+                      "lead_label": "08-21 04:00-05:00 BJT",
+                      "valid_label": "08-21 04:00-05:00 BJT",
+                      "valid_time": "2026-08-21T04:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_04.webp",
+                      "bytes": 834246,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_04.png",
+                      "full_bytes": 941814
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_05",
+                      "lead": 15,
+                      "lead_label": "08-21 05:00-06:00 BJT",
+                      "valid_label": "08-21 05:00-06:00 BJT",
+                      "valid_time": "2026-08-21T05:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_05.webp",
+                      "bytes": 831310,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_05.png",
+                      "full_bytes": 944127
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_06",
+                      "lead": 16,
+                      "lead_label": "08-21 06:00-07:00 BJT",
+                      "valid_label": "08-21 06:00-07:00 BJT",
+                      "valid_time": "2026-08-21T06:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_06.webp",
+                      "bytes": 828086,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_06.png",
+                      "full_bytes": 943938
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_07",
+                      "lead": 17,
+                      "lead_label": "08-21 07:00-08:00 BJT",
+                      "valid_label": "08-21 07:00-08:00 BJT",
+                      "valid_time": "2026-08-21T07:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_07.webp",
+                      "bytes": 819332,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_07.png",
+                      "full_bytes": 944108
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_08",
+                      "lead": 18,
+                      "lead_label": "08-21 08:00-09:00 BJT",
+                      "valid_label": "08-21 08:00-09:00 BJT",
+                      "valid_time": "2026-08-21T08:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_08.webp",
+                      "bytes": 813220,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_08.png",
+                      "full_bytes": 940518
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_09",
+                      "lead": 19,
+                      "lead_label": "08-21 09:00-10:00 BJT",
+                      "valid_label": "08-21 09:00-10:00 BJT",
+                      "valid_time": "2026-08-21T09:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_09.webp",
+                      "bytes": 847860,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_09.png",
+                      "full_bytes": 941762
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_10",
+                      "lead": 20,
+                      "lead_label": "08-21 10:00-11:00 BJT",
+                      "valid_label": "08-21 10:00-11:00 BJT",
+                      "valid_time": "2026-08-21T10:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_10.webp",
+                      "bytes": 863616,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_10.png",
+                      "full_bytes": 939048
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_11",
+                      "lead": 21,
+                      "lead_label": "08-21 11:00-12:00 BJT",
+                      "valid_label": "08-21 11:00-12:00 BJT",
+                      "valid_time": "2026-08-21T11:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_11.webp",
+                      "bytes": 890124,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_11.png",
+                      "full_bytes": 940187
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_12",
+                      "lead": 22,
+                      "lead_label": "08-21 12:00-13:00 BJT",
+                      "valid_label": "08-21 12:00-13:00 BJT",
+                      "valid_time": "2026-08-21T12:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_12.webp",
+                      "bytes": 909542,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_12.png",
+                      "full_bytes": 942332
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_13",
+                      "lead": 23,
+                      "lead_label": "08-21 13:00-14:00 BJT",
+                      "valid_label": "08-21 13:00-14:00 BJT",
+                      "valid_time": "2026-08-21T13:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_13.webp",
+                      "bytes": 910754,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_13.png",
+                      "full_bytes": 940260
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_14",
+                      "lead": 24,
+                      "lead_label": "08-21 14:00-15:00 BJT",
+                      "valid_label": "08-21 14:00-15:00 BJT",
+                      "valid_time": "2026-08-21T14:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_14.webp",
+                      "bytes": 915598,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_14.png",
+                      "full_bytes": 939782
+                    }
+                  ],
+                  "bytes": 4237740,
+                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/temperature_T13_T24_4x3.png",
+                  "full_bytes": 3995694
                 },
                 {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f048.svg",
-                  "bytes": 1544
+                  "id": "aviation_temperature_series",
+                  "lead": 1,
+                  "lead_label": "时间序列",
+                  "valid_label": "T13-T24",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/airport_temperature_timeseries.webp",
+                  "bytes": 236924,
+                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/airport_temperature_timeseries.png",
+                  "full_bytes": 438257
                 }
               ]
             },
             {
-              "id": "airport_wind",
-              "title": "机场 10 米风场",
+              "id": "airport_aviation_wind",
+              "title": "风场",
               "category": "机场服务",
-              "unit": "m/s",
-              "color": "#2c5f9e",
+              "unit": "风场诊断",
+              "color": "#168f7a",
               "description": "",
               "metrics": [
                 {
-                  "label": "最大风速",
-                  "value": "15.8 m/s"
+                  "label": "起报时次",
+                  "value": "20260820 06 UTC"
                 },
                 {
-                  "label": "主导风向",
-                  "value": "SE"
+                  "label": "生成时间",
+                  "value": "2026-08-21 06:47 BJT"
                 },
                 {
-                  "label": "产品状态",
-                  "value": "样例接入"
+                  "label": "图像数量",
+                  "value": "4"
                 }
               ],
               "frames": [
                 {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f024.svg",
-                  "bytes": 2150
+                  "id": "aviation_wind_overview",
+                  "lead": 0,
+                  "lead_label": "10米风场",
+                  "valid_label": "T13-T24",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/wind_T13_T24_4x3.webp",
+                  "individual_frames": [
+                    {
+                      "id": "aviation_wind_20260821_03",
+                      "lead": 13,
+                      "lead_label": "08-21 03:00-04:00 BJT",
+                      "valid_label": "08-21 03:00-04:00 BJT",
+                      "valid_time": "2026-08-21T03:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_03.webp",
+                      "bytes": 1121184,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_03.png",
+                      "full_bytes": 1434351
+                    },
+                    {
+                      "id": "aviation_wind_20260821_04",
+                      "lead": 14,
+                      "lead_label": "08-21 04:00-05:00 BJT",
+                      "valid_label": "08-21 04:00-05:00 BJT",
+                      "valid_time": "2026-08-21T04:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_04.webp",
+                      "bytes": 1114014,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_04.png",
+                      "full_bytes": 1437419
+                    },
+                    {
+                      "id": "aviation_wind_20260821_05",
+                      "lead": 15,
+                      "lead_label": "08-21 05:00-06:00 BJT",
+                      "valid_label": "08-21 05:00-06:00 BJT",
+                      "valid_time": "2026-08-21T05:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_05.webp",
+                      "bytes": 1079032,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_05.png",
+                      "full_bytes": 1398219
+                    },
+                    {
+                      "id": "aviation_wind_20260821_06",
+                      "lead": 16,
+                      "lead_label": "08-21 06:00-07:00 BJT",
+                      "valid_label": "08-21 06:00-07:00 BJT",
+                      "valid_time": "2026-08-21T06:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_06.webp",
+                      "bytes": 1060594,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_06.png",
+                      "full_bytes": 1380392
+                    },
+                    {
+                      "id": "aviation_wind_20260821_07",
+                      "lead": 17,
+                      "lead_label": "08-21 07:00-08:00 BJT",
+                      "valid_label": "08-21 07:00-08:00 BJT",
+                      "valid_time": "2026-08-21T07:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_07.webp",
+                      "bytes": 1050534,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_07.png",
+                      "full_bytes": 1350661
+                    },
+                    {
+                      "id": "aviation_wind_20260821_08",
+                      "lead": 18,
+                      "lead_label": "08-21 08:00-09:00 BJT",
+                      "valid_label": "08-21 08:00-09:00 BJT",
+                      "valid_time": "2026-08-21T08:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_08.webp",
+                      "bytes": 1035342,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_08.png",
+                      "full_bytes": 1353710
+                    },
+                    {
+                      "id": "aviation_wind_20260821_09",
+                      "lead": 19,
+                      "lead_label": "08-21 09:00-10:00 BJT",
+                      "valid_label": "08-21 09:00-10:00 BJT",
+                      "valid_time": "2026-08-21T09:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_09.webp",
+                      "bytes": 1009354,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_09.png",
+                      "full_bytes": 1358473
+                    },
+                    {
+                      "id": "aviation_wind_20260821_10",
+                      "lead": 20,
+                      "lead_label": "08-21 10:00-11:00 BJT",
+                      "valid_label": "08-21 10:00-11:00 BJT",
+                      "valid_time": "2026-08-21T10:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_10.webp",
+                      "bytes": 1009238,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_10.png",
+                      "full_bytes": 1372952
+                    },
+                    {
+                      "id": "aviation_wind_20260821_11",
+                      "lead": 21,
+                      "lead_label": "08-21 11:00-12:00 BJT",
+                      "valid_label": "08-21 11:00-12:00 BJT",
+                      "valid_time": "2026-08-21T11:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_11.webp",
+                      "bytes": 1032184,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_11.png",
+                      "full_bytes": 1424642
+                    },
+                    {
+                      "id": "aviation_wind_20260821_12",
+                      "lead": 22,
+                      "lead_label": "08-21 12:00-13:00 BJT",
+                      "valid_label": "08-21 12:00-13:00 BJT",
+                      "valid_time": "2026-08-21T12:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_12.webp",
+                      "bytes": 1088270,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_12.png",
+                      "full_bytes": 1499533
+                    },
+                    {
+                      "id": "aviation_wind_20260821_13",
+                      "lead": 23,
+                      "lead_label": "08-21 13:00-14:00 BJT",
+                      "valid_label": "08-21 13:00-14:00 BJT",
+                      "valid_time": "2026-08-21T13:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_13.webp",
+                      "bytes": 1155866,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_13.png",
+                      "full_bytes": 1582880
+                    },
+                    {
+                      "id": "aviation_wind_20260821_14",
+                      "lead": 24,
+                      "lead_label": "08-21 14:00-15:00 BJT",
+                      "valid_label": "08-21 14:00-15:00 BJT",
+                      "valid_time": "2026-08-21T14:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_14.webp",
+                      "bytes": 1175194,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_14.png",
+                      "full_bytes": 1598249
+                    }
+                  ],
+                  "bytes": 4575064,
+                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/wind_T13_T24_4x3.png",
+                  "full_bytes": 5560911
                 },
                 {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f048.svg",
-                  "bytes": 2141
+                  "id": "aviation_vertical_shear_overview",
+                  "lead": 0,
+                  "lead_label": "10-500米垂直风切",
+                  "valid_label": "T13-T24",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/vertical_shear_T13_T24_4x3.webp",
+                  "individual_frames": [
+                    {
+                      "id": "aviation_vertical_shear_20260821_03",
+                      "lead": 13,
+                      "lead_label": "08-21 03:00-04:00 BJT",
+                      "valid_label": "08-21 03:00-04:00 BJT",
+                      "valid_time": "2026-08-21T03:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_03.webp",
+                      "bytes": 1153072,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_03.png",
+                      "full_bytes": 1019750
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_04",
+                      "lead": 14,
+                      "lead_label": "08-21 04:00-05:00 BJT",
+                      "valid_label": "08-21 04:00-05:00 BJT",
+                      "valid_time": "2026-08-21T04:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_04.webp",
+                      "bytes": 1146542,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_04.png",
+                      "full_bytes": 1017616
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_05",
+                      "lead": 15,
+                      "lead_label": "08-21 05:00-06:00 BJT",
+                      "valid_label": "08-21 05:00-06:00 BJT",
+                      "valid_time": "2026-08-21T05:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_05.webp",
+                      "bytes": 1134156,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_05.png",
+                      "full_bytes": 1019589
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_06",
+                      "lead": 16,
+                      "lead_label": "08-21 06:00-07:00 BJT",
+                      "valid_label": "08-21 06:00-07:00 BJT",
+                      "valid_time": "2026-08-21T06:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_06.webp",
+                      "bytes": 1084302,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_06.png",
+                      "full_bytes": 1013868
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_07",
+                      "lead": 17,
+                      "lead_label": "08-21 07:00-08:00 BJT",
+                      "valid_label": "08-21 07:00-08:00 BJT",
+                      "valid_time": "2026-08-21T07:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_07.webp",
+                      "bytes": 1080632,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_07.png",
+                      "full_bytes": 1011103
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_08",
+                      "lead": 18,
+                      "lead_label": "08-21 08:00-09:00 BJT",
+                      "valid_label": "08-21 08:00-09:00 BJT",
+                      "valid_time": "2026-08-21T08:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_08.webp",
+                      "bytes": 1055014,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_08.png",
+                      "full_bytes": 1006784
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_09",
+                      "lead": 19,
+                      "lead_label": "08-21 09:00-10:00 BJT",
+                      "valid_label": "08-21 09:00-10:00 BJT",
+                      "valid_time": "2026-08-21T09:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_09.webp",
+                      "bytes": 1020932,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_09.png",
+                      "full_bytes": 996599
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_10",
+                      "lead": 20,
+                      "lead_label": "08-21 10:00-11:00 BJT",
+                      "valid_label": "08-21 10:00-11:00 BJT",
+                      "valid_time": "2026-08-21T10:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_10.webp",
+                      "bytes": 969226,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_10.png",
+                      "full_bytes": 981149
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_11",
+                      "lead": 21,
+                      "lead_label": "08-21 11:00-12:00 BJT",
+                      "valid_label": "08-21 11:00-12:00 BJT",
+                      "valid_time": "2026-08-21T11:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_11.webp",
+                      "bytes": 945560,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_11.png",
+                      "full_bytes": 976254
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_12",
+                      "lead": 22,
+                      "lead_label": "08-21 12:00-13:00 BJT",
+                      "valid_label": "08-21 12:00-13:00 BJT",
+                      "valid_time": "2026-08-21T12:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_12.webp",
+                      "bytes": 965584,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_12.png",
+                      "full_bytes": 975336
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_13",
+                      "lead": 23,
+                      "lead_label": "08-21 13:00-14:00 BJT",
+                      "valid_label": "08-21 13:00-14:00 BJT",
+                      "valid_time": "2026-08-21T13:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_13.webp",
+                      "bytes": 945700,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_13.png",
+                      "full_bytes": 973939
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_14",
+                      "lead": 24,
+                      "lead_label": "08-21 14:00-15:00 BJT",
+                      "valid_label": "08-21 14:00-15:00 BJT",
+                      "valid_time": "2026-08-21T14:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_14.webp",
+                      "bytes": 948252,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_14.png",
+                      "full_bytes": 973709
+                    }
+                  ],
+                  "bytes": 4809510,
+                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/vertical_shear_T13_T24_4x3.png",
+                  "full_bytes": 4422361
+                },
+                {
+                  "id": "aviation_horizontal_gradient_overview",
+                  "lead": 0,
+                  "lead_label": "10米水平风速梯度",
+                  "valid_label": "T13-T24",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/horizontal_gradient_T13_T24_4x3.webp",
+                  "individual_frames": [
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_03",
+                      "lead": 13,
+                      "lead_label": "08-21 03:00-04:00 BJT",
+                      "valid_label": "08-21 03:00-04:00 BJT",
+                      "valid_time": "2026-08-21T03:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_03.webp",
+                      "bytes": 1707514,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_03.png",
+                      "full_bytes": 1196175
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_04",
+                      "lead": 14,
+                      "lead_label": "08-21 04:00-05:00 BJT",
+                      "valid_label": "08-21 04:00-05:00 BJT",
+                      "valid_time": "2026-08-21T04:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_04.webp",
+                      "bytes": 1701578,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_04.png",
+                      "full_bytes": 1195397
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_05",
+                      "lead": 15,
+                      "lead_label": "08-21 05:00-06:00 BJT",
+                      "valid_label": "08-21 05:00-06:00 BJT",
+                      "valid_time": "2026-08-21T05:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_05.webp",
+                      "bytes": 1678968,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_05.png",
+                      "full_bytes": 1194976
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_06",
+                      "lead": 16,
+                      "lead_label": "08-21 06:00-07:00 BJT",
+                      "valid_label": "08-21 06:00-07:00 BJT",
+                      "valid_time": "2026-08-21T06:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_06.webp",
+                      "bytes": 1660064,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_06.png",
+                      "full_bytes": 1190006
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_07",
+                      "lead": 17,
+                      "lead_label": "08-21 07:00-08:00 BJT",
+                      "valid_label": "08-21 07:00-08:00 BJT",
+                      "valid_time": "2026-08-21T07:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_07.webp",
+                      "bytes": 1666890,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_07.png",
+                      "full_bytes": 1191466
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_08",
+                      "lead": 18,
+                      "lead_label": "08-21 08:00-09:00 BJT",
+                      "valid_label": "08-21 08:00-09:00 BJT",
+                      "valid_time": "2026-08-21T08:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_08.webp",
+                      "bytes": 1663688,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_08.png",
+                      "full_bytes": 1192008
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_09",
+                      "lead": 19,
+                      "lead_label": "08-21 09:00-10:00 BJT",
+                      "valid_label": "08-21 09:00-10:00 BJT",
+                      "valid_time": "2026-08-21T09:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_09.webp",
+                      "bytes": 1603668,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_09.png",
+                      "full_bytes": 1179067
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_10",
+                      "lead": 20,
+                      "lead_label": "08-21 10:00-11:00 BJT",
+                      "valid_label": "08-21 10:00-11:00 BJT",
+                      "valid_time": "2026-08-21T10:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_10.webp",
+                      "bytes": 1524520,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_10.png",
+                      "full_bytes": 1162269
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_11",
+                      "lead": 21,
+                      "lead_label": "08-21 11:00-12:00 BJT",
+                      "valid_label": "08-21 11:00-12:00 BJT",
+                      "valid_time": "2026-08-21T11:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_11.webp",
+                      "bytes": 1504576,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_11.png",
+                      "full_bytes": 1157015
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_12",
+                      "lead": 22,
+                      "lead_label": "08-21 12:00-13:00 BJT",
+                      "valid_label": "08-21 12:00-13:00 BJT",
+                      "valid_time": "2026-08-21T12:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_12.webp",
+                      "bytes": 1486546,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_12.png",
+                      "full_bytes": 1160310
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_13",
+                      "lead": 23,
+                      "lead_label": "08-21 13:00-14:00 BJT",
+                      "valid_label": "08-21 13:00-14:00 BJT",
+                      "valid_time": "2026-08-21T13:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_13.webp",
+                      "bytes": 1496876,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_13.png",
+                      "full_bytes": 1162655
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_14",
+                      "lead": 24,
+                      "lead_label": "08-21 14:00-15:00 BJT",
+                      "valid_label": "08-21 14:00-15:00 BJT",
+                      "valid_time": "2026-08-21T14:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_14.webp",
+                      "bytes": 1481970,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_14.png",
+                      "full_bytes": 1164574
+                    }
+                  ],
+                  "bytes": 7810648,
+                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/horizontal_gradient_T13_T24_4x3.png",
+                  "full_bytes": 5531264
+                },
+                {
+                  "id": "aviation_wind_series",
+                  "lead": 3,
+                  "lead_label": "时间序列",
+                  "valid_label": "T13-T24",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/airport_wind_timeseries.webp",
+                  "bytes": 620716,
+                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/airport_wind_timeseries.png",
+                  "full_bytes": 1194379
                 }
               ]
             }
@@ -949,86 +1513,6 @@
                   "preview_bytes": 463052,
                   "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260819_18/Precip_hourly_WRF_YunnanAirportsFrozen_T13_T24_InitUTC_2026-08-19_18_00_combined_overview_3x4_grid.png",
                   "full_bytes": 1989476
-                }
-              ]
-            },
-            {
-              "id": "airport_temperature",
-              "title": "机场 2 米气温",
-              "category": "机场服务",
-              "unit": "degC",
-              "color": "#b73b3b",
-              "description": "",
-              "metrics": [
-                {
-                  "label": "区域最高",
-                  "value": "36.2 degC"
-                },
-                {
-                  "label": "区域最低",
-                  "value": "17.4 degC"
-                },
-                {
-                  "label": "产品状态",
-                  "value": "样例接入"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f024.svg",
-                  "bytes": 1544
-                },
-                {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f048.svg",
-                  "bytes": 1544
-                }
-              ]
-            },
-            {
-              "id": "airport_wind",
-              "title": "机场 10 米风场",
-              "category": "机场服务",
-              "unit": "m/s",
-              "color": "#2c5f9e",
-              "description": "",
-              "metrics": [
-                {
-                  "label": "最大风速",
-                  "value": "15.8 m/s"
-                },
-                {
-                  "label": "主导风向",
-                  "value": "SE"
-                },
-                {
-                  "label": "产品状态",
-                  "value": "样例接入"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f024.svg",
-                  "bytes": 2150
-                },
-                {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f048.svg",
-                  "bytes": 2141
                 }
               ]
             }
@@ -1470,86 +1954,6 @@
                   "full_bytes": 273216
                 }
               ]
-            },
-            {
-              "id": "airport_temperature",
-              "title": "机场 2 米气温",
-              "category": "机场服务",
-              "unit": "degC",
-              "color": "#b73b3b",
-              "description": "",
-              "metrics": [
-                {
-                  "label": "区域最高",
-                  "value": "36.2 degC"
-                },
-                {
-                  "label": "区域最低",
-                  "value": "17.4 degC"
-                },
-                {
-                  "label": "产品状态",
-                  "value": "样例接入"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f024.svg",
-                  "bytes": 1544
-                },
-                {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f048.svg",
-                  "bytes": 1544
-                }
-              ]
-            },
-            {
-              "id": "airport_wind",
-              "title": "机场 10 米风场",
-              "category": "机场服务",
-              "unit": "m/s",
-              "color": "#2c5f9e",
-              "description": "",
-              "metrics": [
-                {
-                  "label": "最大风速",
-                  "value": "15.8 m/s"
-                },
-                {
-                  "label": "主导风向",
-                  "value": "SE"
-                },
-                {
-                  "label": "产品状态",
-                  "value": "样例接入"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f024.svg",
-                  "bytes": 2150
-                },
-                {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f048.svg",
-                  "bytes": 2141
-                }
-              ]
             }
           ]
         },
@@ -1957,86 +2361,6 @@
                   "full_bytes": 2018448
                 }
               ]
-            },
-            {
-              "id": "airport_temperature",
-              "title": "机场 2 米气温",
-              "category": "机场服务",
-              "unit": "degC",
-              "color": "#b73b3b",
-              "description": "",
-              "metrics": [
-                {
-                  "label": "区域最高",
-                  "value": "36.2 degC"
-                },
-                {
-                  "label": "区域最低",
-                  "value": "17.4 degC"
-                },
-                {
-                  "label": "产品状态",
-                  "value": "样例接入"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f024.svg",
-                  "bytes": 1544
-                },
-                {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f048.svg",
-                  "bytes": 1544
-                }
-              ]
-            },
-            {
-              "id": "airport_wind",
-              "title": "机场 10 米风场",
-              "category": "机场服务",
-              "unit": "m/s",
-              "color": "#2c5f9e",
-              "description": "",
-              "metrics": [
-                {
-                  "label": "最大风速",
-                  "value": "15.8 m/s"
-                },
-                {
-                  "label": "主导风向",
-                  "value": "SE"
-                },
-                {
-                  "label": "产品状态",
-                  "value": "样例接入"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f024.svg",
-                  "bytes": 2150
-                },
-                {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f048.svg",
-                  "bytes": 2141
-                }
-              ]
             }
           ]
         },
@@ -2442,86 +2766,6 @@
                   "preview_bytes": 469696,
                   "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260818_18/Precip_hourly_WRF_YunnanAirportsFrozen_T13_T24_InitUTC_2026-08-18_18_00_combined_overview_3x4_grid.png",
                   "full_bytes": 2037731
-                }
-              ]
-            },
-            {
-              "id": "airport_temperature",
-              "title": "机场 2 米气温",
-              "category": "机场服务",
-              "unit": "degC",
-              "color": "#b73b3b",
-              "description": "",
-              "metrics": [
-                {
-                  "label": "区域最高",
-                  "value": "36.2 degC"
-                },
-                {
-                  "label": "区域最低",
-                  "value": "17.4 degC"
-                },
-                {
-                  "label": "产品状态",
-                  "value": "样例接入"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f024.svg",
-                  "bytes": 1544
-                },
-                {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f048.svg",
-                  "bytes": 1544
-                }
-              ]
-            },
-            {
-              "id": "airport_wind",
-              "title": "机场 10 米风场",
-              "category": "机场服务",
-              "unit": "m/s",
-              "color": "#2c5f9e",
-              "description": "",
-              "metrics": [
-                {
-                  "label": "最大风速",
-                  "value": "15.8 m/s"
-                },
-                {
-                  "label": "主导风向",
-                  "value": "SE"
-                },
-                {
-                  "label": "产品状态",
-                  "value": "样例接入"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f024.svg",
-                  "bytes": 2150
-                },
-                {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f048.svg",
-                  "bytes": 2141
                 }
               ]
             }
@@ -2532,7 +2776,7 @@
     "main": {
       "title": "机场气象服务",
       "subtitle": "Airport weather service",
-      "note": "机场服务页展示 WORK_yn 云南区域36小时降水拼图，并单独列出德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点的累计降水；2米气温和10米风场入口继续保留。",
+      "note": "机场服务页展示 WORK_yn 云南区域降水、气温和风场预报，并单独列出德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点的降水信息。",
       "latest_run": "airport_yunnan_20260820_06",
       "runs": [
         {
@@ -2989,82 +3233,646 @@
               ]
             },
             {
-              "id": "airport_temperature",
-              "title": "机场 2 米气温",
+              "id": "airport_aviation_temperature",
+              "title": "气温",
               "category": "机场服务",
-              "unit": "degC",
-              "color": "#b73b3b",
+              "unit": "温度（℃）",
+              "color": "#166ab6",
               "description": "",
               "metrics": [
                 {
-                  "label": "区域最高",
-                  "value": "36.2 degC"
+                  "label": "起报时次",
+                  "value": "20260820 06 UTC"
                 },
                 {
-                  "label": "区域最低",
-                  "value": "17.4 degC"
+                  "label": "生成时间",
+                  "value": "2026-08-21 06:47 BJT"
                 },
                 {
-                  "label": "产品状态",
-                  "value": "样例接入"
+                  "label": "图像数量",
+                  "value": "2"
                 }
               ],
               "frames": [
                 {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f024.svg",
-                  "bytes": 1544
+                  "id": "aviation_temperature_overview",
+                  "lead": 0,
+                  "lead_label": "2米气温",
+                  "valid_label": "T13-T24",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/temperature_T13_T24_4x3.webp",
+                  "individual_frames": [
+                    {
+                      "id": "aviation_temperature_20260821_03",
+                      "lead": 13,
+                      "lead_label": "08-21 03:00-04:00 BJT",
+                      "valid_label": "08-21 03:00-04:00 BJT",
+                      "valid_time": "2026-08-21T03:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_03.webp",
+                      "bytes": 833524,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_03.png",
+                      "full_bytes": 940846
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_04",
+                      "lead": 14,
+                      "lead_label": "08-21 04:00-05:00 BJT",
+                      "valid_label": "08-21 04:00-05:00 BJT",
+                      "valid_time": "2026-08-21T04:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_04.webp",
+                      "bytes": 834246,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_04.png",
+                      "full_bytes": 941814
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_05",
+                      "lead": 15,
+                      "lead_label": "08-21 05:00-06:00 BJT",
+                      "valid_label": "08-21 05:00-06:00 BJT",
+                      "valid_time": "2026-08-21T05:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_05.webp",
+                      "bytes": 831310,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_05.png",
+                      "full_bytes": 944127
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_06",
+                      "lead": 16,
+                      "lead_label": "08-21 06:00-07:00 BJT",
+                      "valid_label": "08-21 06:00-07:00 BJT",
+                      "valid_time": "2026-08-21T06:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_06.webp",
+                      "bytes": 828086,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_06.png",
+                      "full_bytes": 943938
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_07",
+                      "lead": 17,
+                      "lead_label": "08-21 07:00-08:00 BJT",
+                      "valid_label": "08-21 07:00-08:00 BJT",
+                      "valid_time": "2026-08-21T07:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_07.webp",
+                      "bytes": 819332,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_07.png",
+                      "full_bytes": 944108
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_08",
+                      "lead": 18,
+                      "lead_label": "08-21 08:00-09:00 BJT",
+                      "valid_label": "08-21 08:00-09:00 BJT",
+                      "valid_time": "2026-08-21T08:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_08.webp",
+                      "bytes": 813220,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_08.png",
+                      "full_bytes": 940518
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_09",
+                      "lead": 19,
+                      "lead_label": "08-21 09:00-10:00 BJT",
+                      "valid_label": "08-21 09:00-10:00 BJT",
+                      "valid_time": "2026-08-21T09:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_09.webp",
+                      "bytes": 847860,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_09.png",
+                      "full_bytes": 941762
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_10",
+                      "lead": 20,
+                      "lead_label": "08-21 10:00-11:00 BJT",
+                      "valid_label": "08-21 10:00-11:00 BJT",
+                      "valid_time": "2026-08-21T10:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_10.webp",
+                      "bytes": 863616,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_10.png",
+                      "full_bytes": 939048
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_11",
+                      "lead": 21,
+                      "lead_label": "08-21 11:00-12:00 BJT",
+                      "valid_label": "08-21 11:00-12:00 BJT",
+                      "valid_time": "2026-08-21T11:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_11.webp",
+                      "bytes": 890124,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_11.png",
+                      "full_bytes": 940187
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_12",
+                      "lead": 22,
+                      "lead_label": "08-21 12:00-13:00 BJT",
+                      "valid_label": "08-21 12:00-13:00 BJT",
+                      "valid_time": "2026-08-21T12:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_12.webp",
+                      "bytes": 909542,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_12.png",
+                      "full_bytes": 942332
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_13",
+                      "lead": 23,
+                      "lead_label": "08-21 13:00-14:00 BJT",
+                      "valid_label": "08-21 13:00-14:00 BJT",
+                      "valid_time": "2026-08-21T13:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_13.webp",
+                      "bytes": 910754,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_13.png",
+                      "full_bytes": 940260
+                    },
+                    {
+                      "id": "aviation_temperature_20260821_14",
+                      "lead": 24,
+                      "lead_label": "08-21 14:00-15:00 BJT",
+                      "valid_label": "08-21 14:00-15:00 BJT",
+                      "valid_time": "2026-08-21T14:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_14.webp",
+                      "bytes": 915598,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_temperature/temperature_20260821_14.png",
+                      "full_bytes": 939782
+                    }
+                  ],
+                  "bytes": 4237740,
+                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/temperature_T13_T24_4x3.png",
+                  "full_bytes": 3995694
                 },
                 {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f048.svg",
-                  "bytes": 1544
+                  "id": "aviation_temperature_series",
+                  "lead": 1,
+                  "lead_label": "时间序列",
+                  "valid_label": "T13-T24",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/airport_temperature_timeseries.webp",
+                  "bytes": 236924,
+                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/airport_temperature_timeseries.png",
+                  "full_bytes": 438257
                 }
               ]
             },
             {
-              "id": "airport_wind",
-              "title": "机场 10 米风场",
+              "id": "airport_aviation_wind",
+              "title": "风场",
               "category": "机场服务",
-              "unit": "m/s",
-              "color": "#2c5f9e",
+              "unit": "风场诊断",
+              "color": "#168f7a",
               "description": "",
               "metrics": [
                 {
-                  "label": "最大风速",
-                  "value": "15.8 m/s"
+                  "label": "起报时次",
+                  "value": "20260820 06 UTC"
                 },
                 {
-                  "label": "主导风向",
-                  "value": "SE"
+                  "label": "生成时间",
+                  "value": "2026-08-21 06:47 BJT"
                 },
                 {
-                  "label": "产品状态",
-                  "value": "样例接入"
+                  "label": "图像数量",
+                  "value": "4"
                 }
               ],
               "frames": [
                 {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f024.svg",
-                  "bytes": 2150
+                  "id": "aviation_wind_overview",
+                  "lead": 0,
+                  "lead_label": "10米风场",
+                  "valid_label": "T13-T24",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/wind_T13_T24_4x3.webp",
+                  "individual_frames": [
+                    {
+                      "id": "aviation_wind_20260821_03",
+                      "lead": 13,
+                      "lead_label": "08-21 03:00-04:00 BJT",
+                      "valid_label": "08-21 03:00-04:00 BJT",
+                      "valid_time": "2026-08-21T03:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_03.webp",
+                      "bytes": 1121184,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_03.png",
+                      "full_bytes": 1434351
+                    },
+                    {
+                      "id": "aviation_wind_20260821_04",
+                      "lead": 14,
+                      "lead_label": "08-21 04:00-05:00 BJT",
+                      "valid_label": "08-21 04:00-05:00 BJT",
+                      "valid_time": "2026-08-21T04:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_04.webp",
+                      "bytes": 1114014,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_04.png",
+                      "full_bytes": 1437419
+                    },
+                    {
+                      "id": "aviation_wind_20260821_05",
+                      "lead": 15,
+                      "lead_label": "08-21 05:00-06:00 BJT",
+                      "valid_label": "08-21 05:00-06:00 BJT",
+                      "valid_time": "2026-08-21T05:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_05.webp",
+                      "bytes": 1079032,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_05.png",
+                      "full_bytes": 1398219
+                    },
+                    {
+                      "id": "aviation_wind_20260821_06",
+                      "lead": 16,
+                      "lead_label": "08-21 06:00-07:00 BJT",
+                      "valid_label": "08-21 06:00-07:00 BJT",
+                      "valid_time": "2026-08-21T06:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_06.webp",
+                      "bytes": 1060594,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_06.png",
+                      "full_bytes": 1380392
+                    },
+                    {
+                      "id": "aviation_wind_20260821_07",
+                      "lead": 17,
+                      "lead_label": "08-21 07:00-08:00 BJT",
+                      "valid_label": "08-21 07:00-08:00 BJT",
+                      "valid_time": "2026-08-21T07:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_07.webp",
+                      "bytes": 1050534,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_07.png",
+                      "full_bytes": 1350661
+                    },
+                    {
+                      "id": "aviation_wind_20260821_08",
+                      "lead": 18,
+                      "lead_label": "08-21 08:00-09:00 BJT",
+                      "valid_label": "08-21 08:00-09:00 BJT",
+                      "valid_time": "2026-08-21T08:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_08.webp",
+                      "bytes": 1035342,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_08.png",
+                      "full_bytes": 1353710
+                    },
+                    {
+                      "id": "aviation_wind_20260821_09",
+                      "lead": 19,
+                      "lead_label": "08-21 09:00-10:00 BJT",
+                      "valid_label": "08-21 09:00-10:00 BJT",
+                      "valid_time": "2026-08-21T09:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_09.webp",
+                      "bytes": 1009354,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_09.png",
+                      "full_bytes": 1358473
+                    },
+                    {
+                      "id": "aviation_wind_20260821_10",
+                      "lead": 20,
+                      "lead_label": "08-21 10:00-11:00 BJT",
+                      "valid_label": "08-21 10:00-11:00 BJT",
+                      "valid_time": "2026-08-21T10:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_10.webp",
+                      "bytes": 1009238,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_10.png",
+                      "full_bytes": 1372952
+                    },
+                    {
+                      "id": "aviation_wind_20260821_11",
+                      "lead": 21,
+                      "lead_label": "08-21 11:00-12:00 BJT",
+                      "valid_label": "08-21 11:00-12:00 BJT",
+                      "valid_time": "2026-08-21T11:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_11.webp",
+                      "bytes": 1032184,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_11.png",
+                      "full_bytes": 1424642
+                    },
+                    {
+                      "id": "aviation_wind_20260821_12",
+                      "lead": 22,
+                      "lead_label": "08-21 12:00-13:00 BJT",
+                      "valid_label": "08-21 12:00-13:00 BJT",
+                      "valid_time": "2026-08-21T12:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_12.webp",
+                      "bytes": 1088270,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_12.png",
+                      "full_bytes": 1499533
+                    },
+                    {
+                      "id": "aviation_wind_20260821_13",
+                      "lead": 23,
+                      "lead_label": "08-21 13:00-14:00 BJT",
+                      "valid_label": "08-21 13:00-14:00 BJT",
+                      "valid_time": "2026-08-21T13:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_13.webp",
+                      "bytes": 1155866,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_13.png",
+                      "full_bytes": 1582880
+                    },
+                    {
+                      "id": "aviation_wind_20260821_14",
+                      "lead": 24,
+                      "lead_label": "08-21 14:00-15:00 BJT",
+                      "valid_label": "08-21 14:00-15:00 BJT",
+                      "valid_time": "2026-08-21T14:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_14.webp",
+                      "bytes": 1175194,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_wind/wind_20260821_14.png",
+                      "full_bytes": 1598249
+                    }
+                  ],
+                  "bytes": 4575064,
+                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/wind_T13_T24_4x3.png",
+                  "full_bytes": 5560911
                 },
                 {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f048.svg",
-                  "bytes": 2141
+                  "id": "aviation_vertical_shear_overview",
+                  "lead": 0,
+                  "lead_label": "10-500米垂直风切",
+                  "valid_label": "T13-T24",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/vertical_shear_T13_T24_4x3.webp",
+                  "individual_frames": [
+                    {
+                      "id": "aviation_vertical_shear_20260821_03",
+                      "lead": 13,
+                      "lead_label": "08-21 03:00-04:00 BJT",
+                      "valid_label": "08-21 03:00-04:00 BJT",
+                      "valid_time": "2026-08-21T03:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_03.webp",
+                      "bytes": 1153072,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_03.png",
+                      "full_bytes": 1019750
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_04",
+                      "lead": 14,
+                      "lead_label": "08-21 04:00-05:00 BJT",
+                      "valid_label": "08-21 04:00-05:00 BJT",
+                      "valid_time": "2026-08-21T04:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_04.webp",
+                      "bytes": 1146542,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_04.png",
+                      "full_bytes": 1017616
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_05",
+                      "lead": 15,
+                      "lead_label": "08-21 05:00-06:00 BJT",
+                      "valid_label": "08-21 05:00-06:00 BJT",
+                      "valid_time": "2026-08-21T05:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_05.webp",
+                      "bytes": 1134156,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_05.png",
+                      "full_bytes": 1019589
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_06",
+                      "lead": 16,
+                      "lead_label": "08-21 06:00-07:00 BJT",
+                      "valid_label": "08-21 06:00-07:00 BJT",
+                      "valid_time": "2026-08-21T06:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_06.webp",
+                      "bytes": 1084302,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_06.png",
+                      "full_bytes": 1013868
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_07",
+                      "lead": 17,
+                      "lead_label": "08-21 07:00-08:00 BJT",
+                      "valid_label": "08-21 07:00-08:00 BJT",
+                      "valid_time": "2026-08-21T07:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_07.webp",
+                      "bytes": 1080632,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_07.png",
+                      "full_bytes": 1011103
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_08",
+                      "lead": 18,
+                      "lead_label": "08-21 08:00-09:00 BJT",
+                      "valid_label": "08-21 08:00-09:00 BJT",
+                      "valid_time": "2026-08-21T08:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_08.webp",
+                      "bytes": 1055014,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_08.png",
+                      "full_bytes": 1006784
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_09",
+                      "lead": 19,
+                      "lead_label": "08-21 09:00-10:00 BJT",
+                      "valid_label": "08-21 09:00-10:00 BJT",
+                      "valid_time": "2026-08-21T09:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_09.webp",
+                      "bytes": 1020932,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_09.png",
+                      "full_bytes": 996599
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_10",
+                      "lead": 20,
+                      "lead_label": "08-21 10:00-11:00 BJT",
+                      "valid_label": "08-21 10:00-11:00 BJT",
+                      "valid_time": "2026-08-21T10:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_10.webp",
+                      "bytes": 969226,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_10.png",
+                      "full_bytes": 981149
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_11",
+                      "lead": 21,
+                      "lead_label": "08-21 11:00-12:00 BJT",
+                      "valid_label": "08-21 11:00-12:00 BJT",
+                      "valid_time": "2026-08-21T11:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_11.webp",
+                      "bytes": 945560,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_11.png",
+                      "full_bytes": 976254
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_12",
+                      "lead": 22,
+                      "lead_label": "08-21 12:00-13:00 BJT",
+                      "valid_label": "08-21 12:00-13:00 BJT",
+                      "valid_time": "2026-08-21T12:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_12.webp",
+                      "bytes": 965584,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_12.png",
+                      "full_bytes": 975336
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_13",
+                      "lead": 23,
+                      "lead_label": "08-21 13:00-14:00 BJT",
+                      "valid_label": "08-21 13:00-14:00 BJT",
+                      "valid_time": "2026-08-21T13:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_13.webp",
+                      "bytes": 945700,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_13.png",
+                      "full_bytes": 973939
+                    },
+                    {
+                      "id": "aviation_vertical_shear_20260821_14",
+                      "lead": 24,
+                      "lead_label": "08-21 14:00-15:00 BJT",
+                      "valid_label": "08-21 14:00-15:00 BJT",
+                      "valid_time": "2026-08-21T14:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_14.webp",
+                      "bytes": 948252,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_vertical_shear/vertical_shear_20260821_14.png",
+                      "full_bytes": 973709
+                    }
+                  ],
+                  "bytes": 4809510,
+                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/vertical_shear_T13_T24_4x3.png",
+                  "full_bytes": 4422361
+                },
+                {
+                  "id": "aviation_horizontal_gradient_overview",
+                  "lead": 0,
+                  "lead_label": "10米水平风速梯度",
+                  "valid_label": "T13-T24",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/horizontal_gradient_T13_T24_4x3.webp",
+                  "individual_frames": [
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_03",
+                      "lead": 13,
+                      "lead_label": "08-21 03:00-04:00 BJT",
+                      "valid_label": "08-21 03:00-04:00 BJT",
+                      "valid_time": "2026-08-21T03:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_03.webp",
+                      "bytes": 1707514,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_03.png",
+                      "full_bytes": 1196175
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_04",
+                      "lead": 14,
+                      "lead_label": "08-21 04:00-05:00 BJT",
+                      "valid_label": "08-21 04:00-05:00 BJT",
+                      "valid_time": "2026-08-21T04:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_04.webp",
+                      "bytes": 1701578,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_04.png",
+                      "full_bytes": 1195397
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_05",
+                      "lead": 15,
+                      "lead_label": "08-21 05:00-06:00 BJT",
+                      "valid_label": "08-21 05:00-06:00 BJT",
+                      "valid_time": "2026-08-21T05:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_05.webp",
+                      "bytes": 1678968,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_05.png",
+                      "full_bytes": 1194976
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_06",
+                      "lead": 16,
+                      "lead_label": "08-21 06:00-07:00 BJT",
+                      "valid_label": "08-21 06:00-07:00 BJT",
+                      "valid_time": "2026-08-21T06:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_06.webp",
+                      "bytes": 1660064,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_06.png",
+                      "full_bytes": 1190006
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_07",
+                      "lead": 17,
+                      "lead_label": "08-21 07:00-08:00 BJT",
+                      "valid_label": "08-21 07:00-08:00 BJT",
+                      "valid_time": "2026-08-21T07:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_07.webp",
+                      "bytes": 1666890,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_07.png",
+                      "full_bytes": 1191466
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_08",
+                      "lead": 18,
+                      "lead_label": "08-21 08:00-09:00 BJT",
+                      "valid_label": "08-21 08:00-09:00 BJT",
+                      "valid_time": "2026-08-21T08:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_08.webp",
+                      "bytes": 1663688,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_08.png",
+                      "full_bytes": 1192008
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_09",
+                      "lead": 19,
+                      "lead_label": "08-21 09:00-10:00 BJT",
+                      "valid_label": "08-21 09:00-10:00 BJT",
+                      "valid_time": "2026-08-21T09:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_09.webp",
+                      "bytes": 1603668,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_09.png",
+                      "full_bytes": 1179067
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_10",
+                      "lead": 20,
+                      "lead_label": "08-21 10:00-11:00 BJT",
+                      "valid_label": "08-21 10:00-11:00 BJT",
+                      "valid_time": "2026-08-21T10:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_10.webp",
+                      "bytes": 1524520,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_10.png",
+                      "full_bytes": 1162269
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_11",
+                      "lead": 21,
+                      "lead_label": "08-21 11:00-12:00 BJT",
+                      "valid_label": "08-21 11:00-12:00 BJT",
+                      "valid_time": "2026-08-21T11:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_11.webp",
+                      "bytes": 1504576,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_11.png",
+                      "full_bytes": 1157015
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_12",
+                      "lead": 22,
+                      "lead_label": "08-21 12:00-13:00 BJT",
+                      "valid_label": "08-21 12:00-13:00 BJT",
+                      "valid_time": "2026-08-21T12:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_12.webp",
+                      "bytes": 1486546,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_12.png",
+                      "full_bytes": 1160310
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_13",
+                      "lead": 23,
+                      "lead_label": "08-21 13:00-14:00 BJT",
+                      "valid_label": "08-21 13:00-14:00 BJT",
+                      "valid_time": "2026-08-21T13:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_13.webp",
+                      "bytes": 1496876,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_13.png",
+                      "full_bytes": 1162655
+                    },
+                    {
+                      "id": "aviation_horizontal_gradient_20260821_14",
+                      "lead": 24,
+                      "lead_label": "08-21 14:00-15:00 BJT",
+                      "valid_label": "08-21 14:00-15:00 BJT",
+                      "valid_time": "2026-08-21T14:00:00+08:00",
+                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_14.webp",
+                      "bytes": 1481970,
+                      "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/hourly_horizontal_gradient/horizontal_gradient_20260821_14.png",
+                      "full_bytes": 1164574
+                    }
+                  ],
+                  "bytes": 7810648,
+                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/horizontal_gradient_T13_T24_4x3.png",
+                  "full_bytes": 5531264
+                },
+                {
+                  "id": "aviation_wind_series",
+                  "lead": 3,
+                  "lead_label": "时间序列",
+                  "valid_label": "T13-T24",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/airport_wind_timeseries.webp",
+                  "bytes": 620716,
+                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260820_06/aviation/airport_wind_timeseries.png",
+                  "full_bytes": 1194379
                 }
               ]
             }
@@ -3472,86 +4280,6 @@
                   "preview_bytes": 463052,
                   "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260819_18/Precip_hourly_WRF_YunnanAirportsFrozen_T13_T24_InitUTC_2026-08-19_18_00_combined_overview_3x4_grid.png",
                   "full_bytes": 1989476
-                }
-              ]
-            },
-            {
-              "id": "airport_temperature",
-              "title": "机场 2 米气温",
-              "category": "机场服务",
-              "unit": "degC",
-              "color": "#b73b3b",
-              "description": "",
-              "metrics": [
-                {
-                  "label": "区域最高",
-                  "value": "36.2 degC"
-                },
-                {
-                  "label": "区域最低",
-                  "value": "17.4 degC"
-                },
-                {
-                  "label": "产品状态",
-                  "value": "样例接入"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f024.svg",
-                  "bytes": 1544
-                },
-                {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f048.svg",
-                  "bytes": 1544
-                }
-              ]
-            },
-            {
-              "id": "airport_wind",
-              "title": "机场 10 米风场",
-              "category": "机场服务",
-              "unit": "m/s",
-              "color": "#2c5f9e",
-              "description": "",
-              "metrics": [
-                {
-                  "label": "最大风速",
-                  "value": "15.8 m/s"
-                },
-                {
-                  "label": "主导风向",
-                  "value": "SE"
-                },
-                {
-                  "label": "产品状态",
-                  "value": "样例接入"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f024.svg",
-                  "bytes": 2150
-                },
-                {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f048.svg",
-                  "bytes": 2141
                 }
               ]
             }
@@ -3993,86 +4721,6 @@
                   "full_bytes": 273216
                 }
               ]
-            },
-            {
-              "id": "airport_temperature",
-              "title": "机场 2 米气温",
-              "category": "机场服务",
-              "unit": "degC",
-              "color": "#b73b3b",
-              "description": "",
-              "metrics": [
-                {
-                  "label": "区域最高",
-                  "value": "36.2 degC"
-                },
-                {
-                  "label": "区域最低",
-                  "value": "17.4 degC"
-                },
-                {
-                  "label": "产品状态",
-                  "value": "样例接入"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f024.svg",
-                  "bytes": 1544
-                },
-                {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f048.svg",
-                  "bytes": 1544
-                }
-              ]
-            },
-            {
-              "id": "airport_wind",
-              "title": "机场 10 米风场",
-              "category": "机场服务",
-              "unit": "m/s",
-              "color": "#2c5f9e",
-              "description": "",
-              "metrics": [
-                {
-                  "label": "最大风速",
-                  "value": "15.8 m/s"
-                },
-                {
-                  "label": "主导风向",
-                  "value": "SE"
-                },
-                {
-                  "label": "产品状态",
-                  "value": "样例接入"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f024.svg",
-                  "bytes": 2150
-                },
-                {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f048.svg",
-                  "bytes": 2141
-                }
-              ]
             }
           ]
         },
@@ -4480,86 +5128,6 @@
                   "full_bytes": 2018448
                 }
               ]
-            },
-            {
-              "id": "airport_temperature",
-              "title": "机场 2 米气温",
-              "category": "机场服务",
-              "unit": "degC",
-              "color": "#b73b3b",
-              "description": "",
-              "metrics": [
-                {
-                  "label": "区域最高",
-                  "value": "36.2 degC"
-                },
-                {
-                  "label": "区域最低",
-                  "value": "17.4 degC"
-                },
-                {
-                  "label": "产品状态",
-                  "value": "样例接入"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f024.svg",
-                  "bytes": 1544
-                },
-                {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f048.svg",
-                  "bytes": 1544
-                }
-              ]
-            },
-            {
-              "id": "airport_wind",
-              "title": "机场 10 米风场",
-              "category": "机场服务",
-              "unit": "m/s",
-              "color": "#2c5f9e",
-              "description": "",
-              "metrics": [
-                {
-                  "label": "最大风速",
-                  "value": "15.8 m/s"
-                },
-                {
-                  "label": "主导风向",
-                  "value": "SE"
-                },
-                {
-                  "label": "产品状态",
-                  "value": "样例接入"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f024.svg",
-                  "bytes": 2150
-                },
-                {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f048.svg",
-                  "bytes": 2141
-                }
-              ]
             }
           ]
         },
@@ -4965,86 +5533,6 @@
                   "preview_bytes": 469696,
                   "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/airport_yunnan_20260818_18/Precip_hourly_WRF_YunnanAirportsFrozen_T13_T24_InitUTC_2026-08-18_18_00_combined_overview_3x4_grid.png",
                   "full_bytes": 2037731
-                }
-              ]
-            },
-            {
-              "id": "airport_temperature",
-              "title": "机场 2 米气温",
-              "category": "机场服务",
-              "unit": "degC",
-              "color": "#b73b3b",
-              "description": "",
-              "metrics": [
-                {
-                  "label": "区域最高",
-                  "value": "36.2 degC"
-                },
-                {
-                  "label": "区域最低",
-                  "value": "17.4 degC"
-                },
-                {
-                  "label": "产品状态",
-                  "value": "样例接入"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f024.svg",
-                  "bytes": 1544
-                },
-                {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/temp_f048.svg",
-                  "bytes": 1544
-                }
-              ]
-            },
-            {
-              "id": "airport_wind",
-              "title": "机场 10 米风场",
-              "category": "机场服务",
-              "unit": "m/s",
-              "color": "#2c5f9e",
-              "description": "",
-              "metrics": [
-                {
-                  "label": "最大风速",
-                  "value": "15.8 m/s"
-                },
-                {
-                  "label": "主导风向",
-                  "value": "SE"
-                },
-                {
-                  "label": "产品状态",
-                  "value": "样例接入"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "f024",
-                  "lead": 24,
-                  "lead_label": "F024",
-                  "valid_time": "2026-07-10T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f024.svg",
-                  "bytes": 2150
-                },
-                {
-                  "id": "f048",
-                  "lead": 48,
-                  "lead_label": "F048",
-                  "valid_time": "2026-07-11T08:00:00+08:00",
-                  "file": "./data/current/maps/wind_f048.svg",
-                  "bytes": 2141
                 }
               ]
             }
