@@ -242,6 +242,10 @@ for source in "${sources[@]}"; do
       exit 1
     fi
   done
+  if [[ ! -f "$run_dir/aviation/production_manifest.json" ]]; then
+    echo "ERROR: missing aviation production manifest: $run_dir/aviation/production_manifest.json" >&2
+    exit 1
+  fi
 
   while IFS= read -r accum_source; do
     [[ -n "$accum_source" ]] || continue
@@ -261,6 +265,12 @@ for source in "${sources[@]}"; do
     "$run_dir/manifest_fragment.json" \
     "$run_dir/airport_precip_totals.json" \
     "$publish_stage/"
+  if [[ -d "$run_dir/aviation" ]]; then
+    while IFS= read -r aviation_source; do
+      make_webp "$aviation_source"
+    done < <(find "$run_dir/aviation" -type f -name '*.png' | sort)
+    rsync -a --delete "$run_dir/aviation/" "$publish_stage/aviation/"
+  fi
   rsync -av --delete \
     "$publish_stage/" \
     "$GITHUB_HOST:~/incoming/airport_yunnan_${run_prefix}/"
@@ -360,7 +370,7 @@ publish_oss_assets() {
     if [ -z "$first_relative" ]; then
       first_relative="$relative"
     fi
-  done < <(find "$DEST" -maxdepth 1 -type f \( -name '*.webp' -o -name '*.png' \) -print0)
+  done < <(find "$DEST" -type f \( -name '*.webp' -o -name '*.png' \) -print0)
 
   if [ -z "$first_relative" ]; then
     echo "ERROR: no Yunnan airport raster files found for OSS upload under $DEST" >&2

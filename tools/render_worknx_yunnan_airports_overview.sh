@@ -10,6 +10,7 @@ OUTPUT_ROOT="${OUTPUT_ROOT:-$SCRIPT_DIR/worknx_yunnan_airports_overview}"
 NCL_SCRIPT="${NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_yunnan_airport_hour_bjt.ncl}"
 NATIONAL_NCL_SCRIPT="${NATIONAL_NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_national_hour_bjt.ncl}"
 POINT_SCRIPT="${POINT_SCRIPT:-$SCRIPT_DIR/extract_yunnan_airport_precip.py}"
+AVIATION_RENDERER="${AVIATION_RENDERER:-$SCRIPT_DIR/render_yunnan_airport_aviation_preview.py}"
 NCL_BIN="${NCL_BIN:-/public/software/apps/ncl_ncarg/ncl630/bin/ncl}"
 NCL_ROOT="${NCL_ROOT:-/public/software/apps/ncl_ncarg/ncl630}"
 NCDUMP_BIN="${NCDUMP_BIN:-/public/software/apps/conda/latest/bin/ncdump}"
@@ -80,6 +81,10 @@ if [[ ! -f "$NATIONAL_NCL_SCRIPT" ]]; then
 fi
 if [[ ! -f "$POINT_SCRIPT" ]]; then
   echo "ERROR: point extraction script not found: $POINT_SCRIPT" >&2
+  exit 1
+fi
+if [[ ! -f "$AVIATION_RENDERER" ]]; then
+  echo "ERROR: aviation renderer not found: $AVIATION_RENDERER" >&2
   exit 1
 fi
 [[ -x "$NCL_BIN" ]] || { echo "ERROR: ncl is required: $NCL_BIN" >&2; exit 127; }
@@ -391,6 +396,19 @@ render_source() {
       touch -r "$source_path" "$accum_overview"
     done < <(find "$panel_dir" -maxdepth 1 -type f -name "*_national_accum_$(printf '%02d' "$accum_hours")h_*_BJT.png" | sort)
   done
+  rm -rf "$run_dir/aviation"
+  mkdir -p "$run_dir/aviation"
+  aviation_count=$((last_lead - 12))
+  echo "Rendering Yunnan airport aviation products T13-T${last_lead} for $run_prefix"
+  "$PYTHON_BIN" "$AVIATION_RENDERER" \
+    --input "$source_path" \
+    --output "$run_dir/aviation" \
+    --province-shp "$YUNNAN_PROVINCE_SHP_FILE" \
+    --city-shp "$YUNNAN_CITY_SHP_FILE" \
+    --start 13 \
+    --count "$aviation_count" \
+    --run-id "$run_prefix" \
+    --production
   "$PYTHON_BIN" "$POINT_SCRIPT" --wrf-dir "$wrf_dir" --output "$totals_json" --start 13 --end "$last_lead"
   write_manifest "$manifest_json" "$run_prefix" "$source_path" "$overview" "$totals_json" "$last_lead"
   echo "Rendered $overview"

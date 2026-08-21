@@ -69,6 +69,7 @@ def main() -> None:
         "airport",
         id_prefix="airport_yunnan_",
     )
+    airport_yunnan_runs = remove_legacy_airport_sample_products(airport_yunnan_runs)
     airport_yunnan_runs = normalize_yunnan_airport_run_metrics(airport_yunnan_runs)
     airport_runs = airport_yunnan_runs or build_airport_sample_runs()
     wrf_runs = merge_existing_runs(build_wrf_runs(), existing_catalog, "shangrao")
@@ -82,9 +83,9 @@ def main() -> None:
         airport_runs + ningxia_runs + shangrao_runs + xinjiang_runs
     )
     airport_note = (
-        "机场服务页展示 WORK_yn 云南区域36小时降水拼图，并单独列出德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点的累计降水；2米气温和10米风场入口继续保留。"
+        "机场服务页展示 WORK_yn 云南区域降水、气温和风场预报，并单独列出德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点的降水信息。"
         if airport_yunnan_runs
-        else "主页作为机场服务入口，当前保留降水、2米气温和10米风场样例产品；后续可替换为机场实况、短临和专用模式产品。"
+        else "主页作为机场服务入口，当前展示机场降水、气温和风场产品。"
     )
     catalog = {
         "schema_version": 1,
@@ -182,7 +183,9 @@ def build_yunnan_airport_runs() -> list[dict]:
                         for hours in (12, 24)
                         if (frames := build_yunnan_airport_frames(run_dir, fragment, accumulation_hours=hours))
                     ],
-                    *build_airport_sample_products(include_precip=False),
+                    *build_yunnan_airport_aviation_products(
+                        run_dir, run_id, generated_at
+                    ),
                 ],
             }
         )
@@ -323,6 +326,84 @@ def build_yunnan_airport_product(
     }
 
 
+def build_yunnan_airport_aviation_products(
+    run_dir: Path, run_id: str, generated_at: str
+) -> list[dict]:
+    """Build production aviation products emitted beside a Yunnan run."""
+    aviation_dir = run_dir / "aviation"
+    manifest_path = aviation_dir / "production_manifest.json"
+    if not manifest_path.exists():
+        return []
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    products = []
+
+    def resolve_asset(relative_name: str) -> Path:
+        return aviation_dir / relative_name
+
+    def public_asset(path: Path) -> Path:
+        webp = path.with_suffix(".webp")
+        return webp if webp.exists() else path
+
+    def convert_frame(source: dict) -> dict:
+        png_path = resolve_asset(source["file"])
+        main_path = public_asset(png_path)
+        if not main_path.exists():
+            return {}
+        frame = dict(source)
+        frame["file"] = forecast_asset_url(main_path)
+        frame["bytes"] = main_path.stat().st_size
+        if main_path != png_path and png_path.exists():
+            frame["full_file"] = forecast_asset_url(png_path)
+            frame["full_bytes"] = png_path.stat().st_size
+        if source.get("individual_frames"):
+            individual = []
+            for panel in source["individual_frames"]:
+                converted = convert_frame(panel)
+                if converted:
+                    individual.append(converted)
+            frame["individual_frames"] = individual
+        return frame
+
+    for source_product in manifest.get("products", []):
+        frames = []
+        for source_frame in source_product.get("frames", []):
+            converted = convert_frame(source_frame)
+            if converted:
+                frames.append(converted)
+        if not frames:
+            continue
+        title = source_product.get("title") or "机场航空气象"
+        products.append(
+            {
+                "id": source_product.get("id"),
+                "title": title,
+                "category": "机场服务",
+                "unit": source_product.get("unit", ""),
+                "color": "#166ab6" if (source_product.get("id") or "").endswith("temperature") else "#168f7a",
+                "description": "",
+                "metrics": [
+                    {"label": "起报时次", "value": run_id.replace("_", " ") + " UTC"},
+                    {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},
+                    {"label": "图像数量", "value": str(len(frames))},
+                ],
+                "frames": frames,
+            }
+        )
+    return products
+
+
+def remove_legacy_airport_sample_products(runs: list[dict]) -> list[dict]:
+    """Remove the old static sample products after aviation products go live."""
+    legacy_ids = {"airport_temperature", "airport_wind"}
+    for run in runs:
+        run["products"] = [
+            product
+            for product in run.get("products", [])
+            if product.get("id") not in legacy_ids
+        ]
+    return runs
+
+
 def build_yunnan_airport_accumulation_product(
     run_id: str, frames: list[dict], generated_at: str, hours: int
 ) -> dict:
@@ -412,7 +493,12 @@ def attach_latest_cma_24h_observation(runs: list[dict]) -> None:
         (
             index
             for index, product in enumerate(products)
-            if product.get("id") in {"airport_temperature", "airport_wind"}
+            if product.get("id") in {
+                "airport_temperature",
+                "airport_wind",
+                "airport_aviation_temperature",
+                "airport_aviation_wind",
+            }
         ),
         len(products),
     )

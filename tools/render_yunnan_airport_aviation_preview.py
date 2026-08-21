@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Render one-off Yunnan airport aviation diagnostics from a completed WRF run.
+"""Render Yunnan airport aviation diagnostics from a completed WRF run.
 
-This tool deliberately has no catalog, OSS, Git, or cron integration.  It is
-for reviewing experimental aviation products before a separate publication
-decision is made.
+The same renderer supports a one-off preview and the production WORK_yn
+publisher.  Publication, OSS upload, and Git operations remain in the shell
+publisher so rendering stays deterministic and independently testable.
 """
 
 from __future__ import print_function
@@ -58,6 +58,8 @@ def arguments():
     parser.add_argument("--city-shp", required=True, type=Path)
     parser.add_argument("--start", default=13, type=int)
     parser.add_argument("--count", default=12, type=int)
+    parser.add_argument("--run-id", default="20260818_00")
+    parser.add_argument("--production", action="store_true")
     return parser.parse_args()
 
 
@@ -301,7 +303,7 @@ def single_map(path, lon, lat, data, kind, product_title, unit, valid_time, prov
     color_axis = figure.add_subplot(grid[1, 0])
     image, bounds = plot_product(
         axis, lon, lat, data, kind, province, cities,
-        tick_size=20, plane_scale=0.120, target_vectors=32,
+        tick_size=20, plane_scale=0.180, target_vectors=32,
     )
     figure.suptitle(valid_time, fontsize=28, fontweight="bold", y=0.985, **cn_props())
     colorbar = figure.colorbar(image, cax=color_axis, orientation="horizontal")
@@ -310,12 +312,15 @@ def single_map(path, lon, lat, data, kind, product_title, unit, valid_time, prov
     plt.close(figure)
 
 
-def montage(time_steps, output, lon, lat, kind, product_title, unit, province, cities):
-    figure, axes = plt.subplots(3, 4, figsize=(18.2, 15.1))
+def montage(time_steps, output, lon, lat, kind, product_title, unit, province, cities, initialization_label):
+    columns = 4
+    rows = max(1, int(math.ceil(len(time_steps) / float(columns))))
+    figure, axes = plt.subplots(rows, columns, figsize=(18.2, max(15.1, 5.0 * rows)))
+    axes = np.asarray(axes).reshape(-1)
     figure.subplots_adjust(left=0.115, right=0.992, bottom=0.115, top=0.885, wspace=0.105, hspace=0.165)
     image = None
     bounds = None
-    for index, axis in enumerate(axes.flat):
+    for index, axis in enumerate(axes):
         if index >= len(time_steps):
             axis.set_axis_off()
             continue
@@ -325,11 +330,11 @@ def montage(time_steps, output, lon, lat, kind, product_title, unit, province, c
             show_x=index // 4 == 2,
             show_y=index % 4 == 0,
             tick_size=19,
-            plane_scale=0.075,
+            plane_scale=0.120,
             target_vectors=18,
         )
         axis.set_title(valid_interval(valid_time), fontsize=18, pad=5, fontweight="bold")
-    figure.suptitle("Forecast Initialization: 2026-08-18 08:00 BJT",
+    figure.suptitle("Forecast Initialization: %s" % initialization_label,
                     fontsize=25, y=0.958, fontweight="bold")
     color_axis = figure.add_axes([0.205, 0.047, 0.59, 0.018])
     colorbar = figure.colorbar(image, cax=color_axis, orientation="horizontal")
@@ -366,24 +371,92 @@ def station_meteogram(output, times, station_data, selected_keys):
             )
             if key == selected_keys[0]:
                 legend_handles.append(line)
-        axis.set_title(title, fontsize=19, loc="left", pad=7, fontweight="bold", **cn_props())
-        axis.set_ylabel(ylabel, fontsize=15, fontweight="bold", **cn_props())
+        axis.set_title(title, fontsize=22, loc="left", pad=9, fontweight="bold", **cn_props())
+        axis.set_ylabel(ylabel, fontsize=18, fontweight="bold", **cn_props())
         axis.grid(axis="y", color="#d9d9d9", linewidth=0.7)
-        axis.tick_params(labelsize=13, top=True, right=True, pad=3, width=2.6, length=7)
+        axis.tick_params(labelsize=16, top=True, right=True, pad=4, width=2.8, length=8)
         axis.set_xticks(x)
-        axis.set_xticklabels(labels, fontsize=12, fontweight="bold", **cn_props())
+        axis.set_xticklabels(labels, fontsize=15, fontweight="bold", **cn_props())
     figure.legend(
         legend_handles, [airport[0] for airport in AIRPORTS],
         loc="upper center", bbox_to_anchor=(0.5, 0.985), ncol=3,
-        frameon=False, fontsize=19, prop=CHINESE_FONT,
-        handlelength=2.8, columnspacing=2.0,
+        frameon=False, fontsize=23, prop=CHINESE_FONT,
+        handlelength=3.2, columnspacing=2.4,
     )
     figure.tight_layout(rect=(0, 0, 1, 0.91))
     figure.savefig(str(output), dpi=420, bbox_inches="tight", pad_inches=0.04)
     plt.close(figure)
 
 
-def write_web_manifest(output, times):
+def montage_filename(kind, start, time_count):
+    last = start + time_count - 1
+    rows = max(1, int(math.ceil(time_count / 4.0)))
+    return "%s_T%02d_T%02d_4x%d.png" % (kind, start, last, rows)
+
+
+def write_production_manifest(output, run_id, input_path, times, start):
+    """Describe production assets for build_forecast_catalog.py."""
+    plot_meta = {key: (title, unit) for key, title, unit in PLOT_PRODUCTS}
+    last = start + len(times) - 1
+    products = []
+    for product_key, title, unit, plot_keys in PRODUCTS:
+        frames = []
+        for plot_key in plot_keys:
+            plot_title, plot_unit = plot_meta[plot_key]
+            panels = []
+            for lead, valid_time in enumerate(times, start):
+                stamp = valid_time.astimezone(BJT).strftime("%Y%m%d_%H")
+                panels.append({
+                    "id": "aviation_%s_%s" % (plot_key, stamp),
+                    "lead": lead,
+                    "lead_label": valid_interval(valid_time),
+                    "valid_label": valid_interval(valid_time),
+                    "valid_time": valid_time.astimezone(BJT).isoformat(),
+                    "file": "hourly_%s/%s_%s.png" % (plot_key, plot_key, stamp),
+                })
+            frames.append({
+                "id": "aviation_%s_overview" % plot_key,
+                "lead": 0,
+                "lead_label": plot_title,
+                "valid_label": "T%02d-T%02d" % (start, last),
+                "file": montage_filename(plot_key, start, len(times)),
+                "individual_frames": panels,
+            })
+        series_name = "airport_%s_timeseries.png" % (
+            "temperature" if product_key == "temperature" else "wind"
+        )
+        frames.append({
+            "id": "aviation_%s_series" % product_key,
+            "lead": len(frames),
+            "lead_label": "时间序列",
+            "valid_label": "T%02d-T%02d" % (start, last),
+            "file": series_name,
+        })
+        products.append({
+            "id": "airport_aviation_%s" % product_key,
+            "title": title,
+            "unit": unit,
+            "plot_keys": list(plot_keys),
+            "frames": frames,
+        })
+    payload = {
+        "run_id": run_id,
+        "source_wrfout": str(input_path),
+        "initialization_bjt": datetime.strptime(run_id, "%Y%m%d_%H").replace(
+            tzinfo=timezone.utc
+        ).astimezone(BJT).strftime("%Y-%m-%d %H:%M BJT"),
+        "start_lead": start,
+        "end_lead": last,
+        "valid_times_bjt": [moment.astimezone(BJT).isoformat() for moment in times],
+        "products": products,
+        "airports": [airport[0] for airport in AIRPORTS],
+    }
+    (output / "production_manifest.json").write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+
+
+def write_web_manifest(output, times, start=13):
     """Emit the static-page manifest for this isolated, one-off preview only."""
     asset_root = (
         "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/"
@@ -411,9 +484,9 @@ def write_web_manifest(output, times):
                 "id": "aviation_%s_overview" % plot_key,
                 "lead": frame_index,
                 "lead_label": plot_title,
-                "valid_label": "T13-T24",
-                "file": "%s/%s_T13_T24_3x4.webp" % (asset_root, plot_key),
-                "full_file": "%s/%s_T13_T24_3x4.png" % (asset_root, plot_key),
+                "valid_label": "T%02d-T%02d" % (start, start + len(times) - 1),
+                "file": "%s/%s" % (asset_root, montage_filename(plot_key, start, len(times)).replace(".png", ".webp")),
+                "full_file": "%s/%s" % (asset_root, montage_filename(plot_key, start, len(times))),
                 "individual_frames": panels,
             })
         if product_key == "temperature":
@@ -421,7 +494,7 @@ def write_web_manifest(output, times):
                 "id": "aviation_temperature_series",
                 "lead": len(frames),
                 "lead_label": "时间序列",
-                "valid_label": "T13-T24",
+                "valid_label": "T%02d-T%02d" % (start, start + len(times) - 1),
                 "file": "%s/airport_temperature_timeseries.webp" % asset_root,
                 "full_file": "%s/airport_temperature_timeseries.png" % asset_root,
             })
@@ -440,7 +513,7 @@ def write_web_manifest(output, times):
             "category": "机场航空气象试验",
             "unit": unit,
             "color": "#166ab6" if product_key == "temperature" else "#168f7a",
-            "description": "云南三机场航空气象试验图集。",
+            "description": "",
             "metrics": [
                 {"label": "起报时次", "value": "20260818 00 UTC"},
                 {"label": "有效时段", "value": "08-18 21时 至 08-19 08时 BJT"},
@@ -454,14 +527,14 @@ def write_web_manifest(output, times):
         "published_at": datetime.now(BJT).isoformat(timespec="seconds"),
         "services": {"airport": {
             "title": "云南机场航空气象试验预览",
-            "note": "云南三机场航空气象试验图集。",
+            "note": "",
             "latest_run": "airport_aviation_preview_20260818_00",
             "runs": [{
                 "id": "airport_aviation_preview_20260818_00",
                 "label": "2026-08-18 08:00 BJT",
                 "run_time": "2026-08-18T08:00:00+08:00",
                 "published_at": datetime.now(BJT).isoformat(timespec="seconds"),
-                "summary": "云南三机场航空气象试验图集。",
+                "summary": "",
                 "products": products,
             }],
         }},
@@ -483,6 +556,9 @@ def main():
     province = shp_lines(args.province_shp)
     cities = shp_lines(args.city_shp)
     time_steps = []
+    initialization_label = datetime.strptime(args.run_id, "%Y%m%d_%H").replace(
+        tzinfo=timezone.utc
+    ).astimezone(BJT).strftime("%Y-%m-%d %H:%M BJT")
     with Dataset(str(args.input)) as ds:
         count = len(ds.dimensions["Time"])
         end = min(args.start + args.count, count)
@@ -515,8 +591,18 @@ def main():
                 station_values[station]["vertical"].append(float(data[3][y - row0, x - col0]))
                 station_values[station]["horizontal"].append(float(data[4][y - row0, x - col0]))
     for key, title, unit in PLOT_PRODUCTS:
-        montage(time_steps, output / (key + "_T13_T24_3x4.png"), crop_lon, crop_lat,
-                key, title, unit, province, cities)
+        montage(
+            time_steps,
+            output / montage_filename(key, args.start, len(times)),
+            crop_lon,
+            crop_lat,
+            key,
+            title,
+            unit,
+            province,
+            cities,
+            initialization_label,
+        )
     station_data = [(airport[0], station_values[index]) for index, airport in enumerate(AIRPORTS)]
     station_meteogram(
         output / "airport_temperature_timeseries.png",
@@ -528,17 +614,22 @@ def main():
         ("wind", "vertical", "horizontal"),
     )
     manifest = {
-        "experimental": True,
-        "publishable": False,
+        "experimental": not args.production,
+        "publishable": args.production,
         "source_wrfout": str(args.input),
-        "initialization_bjt": "2026-08-18 08:00 BJT",
-        "lead_indices": "T13–T24",
+        "initialization_bjt": initialization_label,
+        "lead_indices": "T%d–T%d" % (args.start, args.start + len(times) - 1),
         "valid_times_bjt": [moment.astimezone(BJT).isoformat() for moment in times],
         "products": [title for _, title, _, _ in PRODUCTS],
         "airports": [airport[0] for airport in AIRPORTS],
     }
-    (output / "preview_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
-    write_web_manifest(output, [moment.astimezone(BJT) for moment in times])
+    (output / ("production_manifest.json" if args.production else "preview_manifest.json")).write_text(
+        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    if args.production:
+        write_production_manifest(output, args.run_id, args.input, times, args.start)
+    else:
+        write_web_manifest(output, [moment.astimezone(BJT) for moment in times], args.start)
     print("wrote preview to %s" % output)
 
 
