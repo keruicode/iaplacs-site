@@ -297,17 +297,17 @@ def valid_interval(moment):
 
 
 def single_map(path, lon, lat, data, kind, product_title, unit, valid_time, province, cities):
-    figure = plt.figure(figsize=(10.8, 9.2), layout="constrained")
-    grid = figure.add_gridspec(2, 1, height_ratios=(28, 1), hspace=0.06)
+    figure = plt.figure(figsize=(12.0, 9.2), layout="constrained")
+    grid = figure.add_gridspec(1, 2, width_ratios=(32, 1), wspace=0.04)
     axis = figure.add_subplot(grid[0, 0])
-    color_axis = figure.add_subplot(grid[1, 0])
+    color_axis = figure.add_subplot(grid[0, 1])
     image, bounds = plot_product(
         axis, lon, lat, data, kind, province, cities,
         tick_size=20, plane_scale=0.250, target_vectors=32,
     )
     figure.suptitle(valid_time, fontsize=28, fontweight="bold", y=0.985, **cn_props())
-    colorbar = figure.colorbar(image, cax=color_axis, orientation="horizontal")
-    style_colorbar(colorbar, bounds, unit, label_size=15, tick_size=12, horizontal=True)
+    colorbar = figure.colorbar(image, cax=color_axis, orientation="vertical")
+    style_colorbar(colorbar, bounds, unit, label_size=16, tick_size=13)
     figure.savefig(str(path), dpi=420, bbox_inches="tight", pad_inches=0.04)
     plt.close(figure)
 
@@ -317,7 +317,7 @@ def montage(time_steps, output, lon, lat, kind, product_title, unit, province, c
     rows = max(1, int(math.ceil(len(time_steps) / float(columns))))
     figure, axes = plt.subplots(rows, columns, figsize=(18.2, max(15.1, 5.0 * rows)))
     axes = np.asarray(axes).reshape(-1)
-    figure.subplots_adjust(left=0.115, right=0.992, bottom=0.115, top=0.885, wspace=0.105, hspace=0.165)
+    figure.subplots_adjust(left=0.085, right=0.875, bottom=0.075, top=0.885, wspace=0.105, hspace=0.165)
     image = None
     bounds = None
     for index, axis in enumerate(axes):
@@ -327,7 +327,7 @@ def montage(time_steps, output, lon, lat, kind, product_title, unit, province, c
         data, valid_time = time_steps[index]
         image, bounds = plot_product(
             axis, lon, lat, data, kind, province, cities,
-            show_x=index // 4 == 2,
+            show_x=index // columns == rows - 1,
             show_y=index % 4 == 0,
             tick_size=19,
             plane_scale=0.180,
@@ -336,9 +336,9 @@ def montage(time_steps, output, lon, lat, kind, product_title, unit, province, c
         axis.set_title(valid_interval(valid_time), fontsize=18, pad=5, fontweight="bold")
     figure.suptitle("Forecast Initialization: %s" % initialization_label,
                     fontsize=25, y=0.958, fontweight="bold")
-    color_axis = figure.add_axes([0.205, 0.047, 0.59, 0.018])
-    colorbar = figure.colorbar(image, cax=color_axis, orientation="horizontal")
-    style_colorbar(colorbar, bounds, unit, label_size=14, tick_size=11, horizontal=True)
+    color_axis = figure.add_axes([0.905, 0.155, 0.018, 0.67])
+    colorbar = figure.colorbar(image, cax=color_axis, orientation="vertical")
+    style_colorbar(colorbar, bounds, unit, label_size=16, tick_size=13)
     figure.savefig(str(output), dpi=420, bbox_inches="tight", pad_inches=0.03)
     plt.close(figure)
 
