@@ -298,7 +298,7 @@ render_source() {
       if (( regional_time_count < time_count )); then
         time_count="$regional_time_count"
       fi
-      echo "Using nested $regional_domain for Yunnan regional precipitation and airport points: $regional_source_path"
+      echo "Using nested $regional_domain for Yunnan regional precipitation, airport points, and aviation diagnostics: $regional_source_path"
     else
       echo "WARNING: nested d02 is not usable for $run_prefix; using d01 regional data" >&2
     fi
@@ -422,7 +422,7 @@ render_source() {
   aviation_count=$((last_lead - 12))
   echo "Rendering Yunnan airport aviation products T13-T${last_lead} for $run_prefix"
   "$PYTHON_BIN" "$AVIATION_RENDERER" \
-    --input "$source_path" \
+    --input "$regional_source_path" \
     --output "$run_dir/aviation" \
     --province-shp "$YUNNAN_PROVINCE_SHP_FILE" \
     --city-shp "$YUNNAN_CITY_SHP_FILE" \
