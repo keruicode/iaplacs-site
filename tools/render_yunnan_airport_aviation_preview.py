@@ -201,10 +201,13 @@ def diagnostics(ds, index, row0, row1, col0, col1, cosine, sine, terrain, dx, dy
 
 def decorate(ax, province, cities, show_x=True, show_y=True, tick_size=12, plane_scale=0.120):
     west, east, south, north = REGION
-    for line in province:
-        ax.plot(line[:, 0], line[:, 1], color="black", linewidth=3.0, zorder=4)
     for line in cities:
-        ax.plot(line[:, 0], line[:, 1], color="#404040", linewidth=1.05, zorder=4)
+        ax.plot(line[:, 0], line[:, 1], color="#404040", linewidth=1.6, zorder=4)
+    # Draw the province outline last so coincident city segments cannot cover
+    # it.  The 5 pt stroke remains distinct after the 6000 px WebP resize and
+    # matches the visual hierarchy of the precipitation products.
+    for line in province:
+        ax.plot(line[:, 0], line[:, 1], color="black", linewidth=5.0, zorder=5)
     # Use a real aircraft silhouette rather than a marker glyph: fonts on IAP
     # do not consistently include the airplane Unicode character or a suitable
     # icon.  This matches the outlined marker used by the airport precipitation
