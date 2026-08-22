@@ -59,6 +59,10 @@ latest_size=""
 latest_epoch=""
 latest_time_count=""
 latest_complete=0
+latest_regional_domain=""
+latest_regional_size=""
+latest_regional_epoch=""
+latest_regional_time_count=""
 
 wrf_time_count() {
   "$NCDUMP_BIN" -h "$1" 2>/dev/null | awk '/Time = UNLIMITED/ && !seen { gsub(/[^0-9]/, "", $0); print; seen=1 }'
@@ -89,6 +93,20 @@ while IFS= read -r source_path; do
     latest_epoch="$source_epoch"
     latest_time_count="$time_count"
     latest_complete=1
+    latest_regional_domain="d01"
+    latest_regional_size="$source_size"
+    latest_regional_epoch="$source_epoch"
+    latest_regional_time_count="$time_count"
+    nested_source="${source_path/wrfout_d01_/wrfout_d02_}"
+    if [[ -f "$nested_source" ]]; then
+      nested_time_count="$(wrf_time_count "$nested_source")"
+      if [[ "$nested_time_count" =~ ^[0-9]+$ ]] && (( nested_time_count >= MIN_TIME_COUNT )); then
+        latest_regional_domain="d02"
+        latest_regional_size="$(stat -c '%s' "$nested_source")"
+        latest_regional_epoch="$(stat -c '%Y' "$nested_source")"
+        latest_regional_time_count="$nested_time_count"
+      fi
+    fi
     break
   fi
 done < <(
@@ -102,7 +120,7 @@ if [[ -z "$latest_prefix" ]]; then
   exit 0
 fi
 
-latest_signature="${latest_prefix}|${latest_size}|${latest_epoch}|${latest_time_count}|${latest_complete}"
+latest_signature="${latest_prefix}|${latest_size}|${latest_epoch}|${latest_time_count}|${latest_complete}|${latest_regional_domain}|${latest_regional_size}|${latest_regional_epoch}|${latest_regional_time_count}"
 last_signature=""
 if [[ -f "$LAST_PREFIX_FILE" ]]; then
   last_signature="$(tr -d '\r\n' < "$LAST_PREFIX_FILE")"

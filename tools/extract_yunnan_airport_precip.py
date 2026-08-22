@@ -43,6 +43,7 @@ AIRPORTS = [
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--wrf-dir", required=True, type=Path)
+    parser.add_argument("--domain", choices=("d01", "d02"), default="d01")
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--start", default=13, type=int)
     parser.add_argument("--end", default=48, type=int)
@@ -109,7 +110,7 @@ def accumulated_precipitation(
     return total
 
 
-def extract_file(path: Path, start: int, end: int, max_distance_deg: float) -> dict:
+def extract_file(path: Path, start: int, end: int, max_distance_deg: float, domain: str) -> dict:
     with Dataset(path) as ds:
         time_count = len(ds.dimensions["Time"])
         if time_count <= start:
@@ -158,7 +159,7 @@ def extract_file(path: Path, start: int, end: int, max_distance_deg: float) -> d
                         "status": "nearest_grid",
                         "total_mm": total_mm,
                         **hourly_peak,
-                        "note": "机场点超出当前 WORK_yn d01 网格覆盖范围，数值取最近网格",
+                        "note": f"机场点超出当前 WORK_yn {domain} 网格覆盖范围，数值取最近网格",
                     }
                 )
                 continue
@@ -174,6 +175,7 @@ def extract_file(path: Path, start: int, end: int, max_distance_deg: float) -> d
 
         return {
             "source_wrfout": str(path),
+            "source_domain": domain,
             "lead_start": start,
             "lead_end": end_idx,
             "unit": "mm",
@@ -186,11 +188,13 @@ def extract_file(path: Path, start: int, end: int, max_distance_deg: float) -> d
 
 def main() -> None:
     args = parse_args()
-    wrf_files = sorted(args.wrf_dir.glob("wrfout_d01_*"))
+    wrf_files = sorted(args.wrf_dir.glob(f"wrfout_{args.domain}_*"))
     if not wrf_files:
-        raise SystemExit(f"no wrfout_d01_* files in {args.wrf_dir}")
+        raise SystemExit(f"no wrfout_{args.domain}_* files in {args.wrf_dir}")
 
-    payload = extract_file(wrf_files[0], args.start, args.end, args.max_distance_deg)
+    payload = extract_file(
+        wrf_files[0], args.start, args.end, args.max_distance_deg, args.domain
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n",

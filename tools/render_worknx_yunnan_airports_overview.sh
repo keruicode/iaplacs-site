@@ -212,8 +212,8 @@ caption_accumulation() {
 }
 
 write_manifest() {
-  local manifest_path="$1" run_prefix="$2" source_path="$3" overview="$4" totals_json="$5" last_lead="$6"
-  "$PYTHON_BIN" - "$manifest_path" "$run_prefix" "$source_path" "$overview" "$totals_json" "$last_lead" <<'PY'
+  local manifest_path="$1" run_prefix="$2" source_path="$3" regional_source_path="$4" regional_domain="$5" overview="$6" totals_json="$7" last_lead="$8"
+  "$PYTHON_BIN" - "$manifest_path" "$run_prefix" "$source_path" "$regional_source_path" "$regional_domain" "$overview" "$totals_json" "$last_lead" <<'PY'
 import json
 import sys
 from datetime import datetime, timedelta, timezone
@@ -222,9 +222,11 @@ from pathlib import Path
 manifest_path = Path(sys.argv[1])
 run_prefix = sys.argv[2]
 source_path = Path(sys.argv[3])
-overview = Path(sys.argv[4])
-totals_path = Path(sys.argv[5])
-last_lead = int(sys.argv[6])
+regional_source_path = Path(sys.argv[4])
+regional_domain = sys.argv[5]
+overview = Path(sys.argv[6])
+totals_path = Path(sys.argv[7])
+last_lead = int(sys.argv[8])
 bjt = timezone(timedelta(hours=8))
 run_dt_utc = datetime.strptime(run_prefix, "%Y%m%d_%H").replace(tzinfo=timezone.utc)
 run_dt_bjt = run_dt_utc.astimezone(bjt)
@@ -236,6 +238,8 @@ with totals_path.open(encoding="utf-8") as handle:
 payload = {
     "run_prefix": run_prefix,
     "source_image": str(source_path),
+    "regional_source_image": str(regional_source_path),
+    "regional_source_domain": regional_domain,
     "file": f"./data/current/maps/airport_yunnan_{run_prefix}/{overview.name}",
     "run_time": run_dt_bjt.isoformat(),
     "valid_time": valid_dt_bjt.isoformat(),
@@ -248,7 +252,7 @@ PY
 }
 
 render_source() {
-  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview totals_json manifest_json time_count last_lead panel_count overview_rows overview_grid national_panel_dir national_caption_dir national_overview frozen_panel_dir frozen_caption_dir frozen_overview init_bjt
+  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview totals_json manifest_json time_count regional_source_path regional_domain regional_time_count nested_candidate last_lead panel_count overview_rows overview_grid national_panel_dir national_caption_dir national_overview frozen_panel_dir frozen_caption_dir frozen_overview init_bjt
   base="$(basename "$source_path")"
   if [[ "$base" =~ wrfout_d01_([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2}):[0-9]{2}:[0-9]{2} ]]; then
     run_date="${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]}"
@@ -283,6 +287,22 @@ render_source() {
     echo "ERROR: T13 is not available in $source_path" >&2
     return 1
   }
+  regional_source_path="$source_path"
+  regional_domain="d01"
+  nested_candidate="${source_path/wrfout_d01_/wrfout_d02_}"
+  if [[ -f "$nested_candidate" ]]; then
+    regional_time_count="$(wrf_time_count "$nested_candidate")"
+    if [[ "$regional_time_count" =~ ^[0-9]+$ ]] && (( regional_time_count >= MIN_TIME_COUNT )); then
+      regional_source_path="$nested_candidate"
+      regional_domain="d02"
+      if (( regional_time_count < time_count )); then
+        time_count="$regional_time_count"
+      fi
+      echo "Using nested $regional_domain for Yunnan regional precipitation and airport points: $regional_source_path"
+    else
+      echo "WARNING: nested d02 is not usable for $run_prefix; using d01 regional data" >&2
+    fi
+  fi
   last_lead=$((time_count - 1))
 
   mkdir -p "$panel_dir" "$caption_dir" "$national_panel_dir" "$national_caption_dir" \
@@ -295,6 +315,7 @@ render_source() {
     "$run_dir"/Precip_hourly_WRF_AllRain_T13_T*_InitUTC_"${run_date}"_"${run_hour}"_00_combined_overview_*_grid.*
   echo "Rendering Yunnan airport T13-T${last_lead} panels for $run_prefix from $wrf_dir"
   WORK_YN_WRF_DIR="$wrf_dir" \
+    WORK_YN_REGIONAL_DOMAIN="$regional_domain" \
     WORK_YN_YUNNAN_AIRPORT_PNG_DIR="$panel_dir" \
     YUNNAN_PROVINCE_SHP_FILE="$YUNNAN_PROVINCE_SHP_FILE" \
     YUNNAN_CITY_SHP_FILE="$YUNNAN_CITY_SHP_FILE" \
@@ -326,7 +347,7 @@ render_source() {
 
   montage "${captioned_panels[@]}" -tile "$overview_grid" -geometry '100%x100%+2+2' -background white "$overview"
   add_overview_header "$overview" "$init_bjt"
-  touch -r "$source_path" "$overview"
+  touch -r "$regional_source_path" "$overview"
 
   echo "Rendering Yunnan airport hail-warning T13-T${last_lead} panels for $run_prefix"
   WORK_NX_WRF_DIR="$wrf_dir" \
@@ -409,8 +430,8 @@ render_source() {
     --count "$aviation_count" \
     --run-id "$run_prefix" \
     --production
-  "$PYTHON_BIN" "$POINT_SCRIPT" --wrf-dir "$wrf_dir" --output "$totals_json" --start 13 --end "$last_lead"
-  write_manifest "$manifest_json" "$run_prefix" "$source_path" "$overview" "$totals_json" "$last_lead"
+  "$PYTHON_BIN" "$POINT_SCRIPT" --wrf-dir "$wrf_dir" --domain "$regional_domain" --output "$totals_json" --start 13 --end "$last_lead"
+  write_manifest "$manifest_json" "$run_prefix" "$source_path" "$regional_source_path" "$regional_domain" "$overview" "$totals_json" "$last_lead"
   echo "Rendered $overview"
 }
 

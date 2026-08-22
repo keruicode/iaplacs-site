@@ -39,6 +39,7 @@ end
 begin
   wrf_dir = getenv("WORK_YN_WRF_DIR")
   out_dir = getenv("WORK_YN_YUNNAN_AIRPORT_PNG_DIR")
+  regional_domain = getenv("WORK_YN_REGIONAL_DOMAIN")
   province_shp_file = getenv("YUNNAN_PROVINCE_SHP_FILE")
   city_shp_file = getenv("YUNNAN_CITY_SHP_FILE")
   accum_hours_text = getenv("RAIN_ACCUM_HOURS")
@@ -57,6 +58,13 @@ begin
   end if
   if (out_dir.eq."") then
     out_dir = "worknx_yunnan_airport_hourly_png"
+  end if
+  if (ismissing(regional_domain) .or. regional_domain.eq."") then
+    regional_domain = "d01"
+  end if
+  if (regional_domain.ne."d01" .and. regional_domain.ne."d02") then
+    print("ERROR: WORK_YN_REGIONAL_DOMAIN must be d01 or d02, got " + regional_domain)
+    exit
   end if
   if (ismissing(province_shp_file)) then
     province_shp_file = ""
@@ -86,9 +94,9 @@ begin
   end if
 
   system("mkdir -p " + out_dir)
-  files = systemfunc("ls -1 " + wrf_dir + "/wrfout_d01_*")
+  files = systemfunc("ls -1 " + wrf_dir + "/wrfout_" + regional_domain + "_*")
   if (dimsizes(files).eq.0) then
-    print("ERROR: no wrfout_d01 files in " + wrf_dir)
+    print("ERROR: no wrfout_" + regional_domain + " files in " + wrf_dir)
     exit
   end if
 
