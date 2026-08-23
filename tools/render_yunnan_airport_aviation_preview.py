@@ -356,21 +356,61 @@ def montage(time_steps, output, lon, lat, kind, product_title, unit, province, c
     plt.close(figure)
 
 
+def style_meteogram_time_axis(axis, times, show_labels):
+    """Use sparse hour ticks and a separate centred date row."""
+    x = np.arange(len(times))
+    axis.set_xlim(-0.5, len(times) - 0.5)
+
+    tick_step = 3
+    tick_indices = list(range(0, len(times), tick_step))
+    if tick_indices[-1] != len(times) - 1 and len(times) - 1 - tick_indices[-1] > 1:
+        tick_indices.append(len(times) - 1)
+    axis.set_xticks(tick_indices)
+    axis.set_xticks(x, minor=True)
+    axis.tick_params(axis="x", which="major", width=3.0, length=9, pad=7)
+    axis.tick_params(axis="x", which="minor", width=1.8, length=4)
+
+    day_groups = []
+    start = 0
+    for index in range(1, len(times) + 1):
+        if index == len(times) or times[index].date() != times[start].date():
+            day_groups.append((start, index - 1, times[start]))
+            start = index
+    for group_index, (begin, end, moment) in enumerate(day_groups):
+        if group_index % 2 == 0:
+            axis.axvspan(begin - 0.5, end + 0.5, color="#f2f6fb", zorder=0)
+        if begin:
+            axis.axvline(begin - 0.5, color="#9aa9b9", linewidth=1.5, zorder=1)
+        if show_labels:
+            axis.text(
+                0.5 * (begin + end), -0.205, moment.strftime("%m月%d日"),
+                transform=axis.get_xaxis_transform(), ha="center", va="top",
+                fontsize=22, fontweight="bold", clip_on=False, **cn_sized_props(22)
+            )
+
+    if show_labels:
+        axis.set_xticklabels(
+            [times[index].strftime("%H时") for index in tick_indices],
+            fontsize=22, fontweight="bold", **cn_sized_props(22)
+        )
+    else:
+        axis.tick_params(axis="x", which="both", labelbottom=False)
+
+
 def station_meteogram(output, times, station_data, selected_keys):
     x = np.arange(len(times))
-    labels = [moment.strftime("%m-%d\n%H时") for moment in times]
     all_series = (
-        ("temperature", "2米气温", "2米气温（℃）"),
-        ("wind", "10米风场", "10米风速（米/秒）"),
-        ("vertical", "10-500米垂直风切", "10米风与500米风差（米/秒）"),
-        ("horizontal", "10米水平风速梯度", "10米风速梯度（米/秒/千米）"),
+        ("temperature", "2米气温", "2米气温\n（℃）"),
+        ("wind", "10米风场", "10米风速\n（米/秒）"),
+        ("vertical", "10-500米垂直风切", "10-500米风差\n（米/秒）"),
+        ("horizontal", "10米水平风速梯度", "10米风速梯度\n（米/秒/千米）"),
     )
     series = tuple(item for item in all_series if item[0] in selected_keys)
-    # A single temperature panel needs more vertical room than the stacked
-    # wind diagnostics; otherwise the long 12-hour axis makes it look flat.
-    figure_height = 7.1 if len(series) == 1 else 5.2 * len(series)
+    # Use a wide canvas so the three diagnostics fill the image viewer instead
+    # of being constrained by a portrait source image.
+    figure_height = 6.8 if len(series) == 1 else 12.4
     figure, axes = plt.subplots(
-        len(series), 1, figsize=(13.4, figure_height), sharex=True, squeeze=False,
+        len(series), 1, figsize=(18.2, figure_height), sharex=True, squeeze=False,
     )
     axes = axes[:, 0]
     palette = ("#cb3e38", "#1b64a5", "#129b78")
@@ -388,19 +428,18 @@ def station_meteogram(output, times, station_data, selected_keys):
             title, fontsize=36, loc="left", pad=16, fontweight="bold", **cn_sized_props(36)
         )
         axis.set_ylabel(
-            ylabel, fontsize=28, labelpad=16, fontweight="bold", **cn_sized_props(28)
+            ylabel, fontsize=24, labelpad=12, fontweight="bold", **cn_sized_props(24)
         )
         axis.grid(axis="y", color="#d9d9d9", linewidth=1.0)
         axis.tick_params(labelsize=22, top=True, right=True, pad=7, width=3.0, length=9)
-        axis.set_xticks(x)
-        axis.set_xticklabels(labels, fontsize=20, fontweight="bold", **cn_sized_props(20))
+        style_meteogram_time_axis(axis, times, axis is axes[-1])
     figure.legend(
         legend_handles, [airport[0] for airport in AIRPORTS],
         loc="upper center", bbox_to_anchor=(0.5, 0.985), ncol=3,
         frameon=False, fontsize=32, prop=cn_sized_props(32).get("fontproperties"),
         handlelength=3.6, columnspacing=3.4, handletextpad=0.9,
     )
-    figure.tight_layout(rect=(0.018, 0.02, 0.995, 0.87), h_pad=2.8)
+    figure.tight_layout(rect=(0.018, 0.055, 0.995, 0.855), h_pad=2.2)
     figure.savefig(str(output), dpi=420, bbox_inches="tight", pad_inches=0.04)
     plt.close(figure)
 
