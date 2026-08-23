@@ -38,15 +38,15 @@ REGION = (97.0, 107.0, 21.0, 30.0)  # west, east, south, north
 CHINESE_FONT = None
 
 PLOT_PRODUCTS = (
-    ("temperature", "气温", "温度（℃）"),
-    ("wind", "风场", "风速（米/秒）"),
+    ("temperature", "2米气温", "2米气温（℃）"),
+    ("wind", "10米风场", "10米风速（米/秒）"),
     ("vertical_shear", "10-500米垂直风切", "风切（米/秒）"),
     ("horizontal_gradient", "10米水平风速梯度", "梯度（米/秒/千米）"),
 )
 
 PRODUCTS = (
-    ("temperature", "气温", "温度（℃）", ("temperature",)),
-    ("wind", "风场", "风场诊断", ("wind", "vertical_shear", "horizontal_gradient")),
+    ("temperature", "2米气温", "2米气温（℃）", ("temperature",)),
+    ("wind", "10米风场", "10米风场与风切诊断", ("wind", "vertical_shear", "horizontal_gradient")),
 )
 
 
@@ -96,6 +96,16 @@ def configure_matplotlib():
 
 def cn_props():
     return {"fontproperties": CHINESE_FONT} if CHINESE_FONT else {}
+
+
+def cn_sized_props(size):
+    """Return a Chinese font property object without losing the requested size."""
+    if not CHINESE_FONT:
+        return {}
+    properties = CHINESE_FONT.copy()
+    properties.set_size(size)
+    properties.set_weight("bold")
+    return {"fontproperties": properties}
 
 
 def shp_lines(path):
@@ -358,9 +368,9 @@ def station_meteogram(output, times, station_data, selected_keys):
     series = tuple(item for item in all_series if item[0] in selected_keys)
     # A single temperature panel needs more vertical room than the stacked
     # wind diagnostics; otherwise the long 12-hour axis makes it look flat.
-    figure_height = 6.4 if len(series) == 1 else 4.8 * len(series)
+    figure_height = 7.1 if len(series) == 1 else 5.2 * len(series)
     figure, axes = plt.subplots(
-        len(series), 1, figsize=(16.4, figure_height), sharex=True, squeeze=False,
+        len(series), 1, figsize=(13.4, figure_height), sharex=True, squeeze=False,
     )
     axes = axes[:, 0]
     palette = ("#cb3e38", "#1b64a5", "#129b78")
@@ -368,25 +378,29 @@ def station_meteogram(output, times, station_data, selected_keys):
     for axis, (key, title, ylabel) in zip(axes.flat, series):
         for index, (name, values) in enumerate(station_data):
             line, = axis.plot(
-                x, values[key], color=palette[index], linewidth=3.6,
-                marker="o", markersize=6.0, markeredgecolor="white", markeredgewidth=1.0,
+                x, values[key], color=palette[index], linewidth=4.0,
+                marker="o", markersize=6.6, markeredgecolor="white", markeredgewidth=1.1,
                 label=name,
             )
             if key == selected_keys[0]:
                 legend_handles.append(line)
-        axis.set_title(title, fontsize=32, loc="left", pad=14, fontweight="bold", **cn_props())
-        axis.set_ylabel(ylabel, fontsize=24, labelpad=14, fontweight="bold", **cn_props())
-        axis.grid(axis="y", color="#d9d9d9", linewidth=0.9)
-        axis.tick_params(labelsize=20, top=True, right=True, pad=6, width=3.0, length=9)
+        axis.set_title(
+            title, fontsize=36, loc="left", pad=16, fontweight="bold", **cn_sized_props(36)
+        )
+        axis.set_ylabel(
+            ylabel, fontsize=28, labelpad=16, fontweight="bold", **cn_sized_props(28)
+        )
+        axis.grid(axis="y", color="#d9d9d9", linewidth=1.0)
+        axis.tick_params(labelsize=22, top=True, right=True, pad=7, width=3.0, length=9)
         axis.set_xticks(x)
-        axis.set_xticklabels(labels, fontsize=18, fontweight="bold", **cn_props())
+        axis.set_xticklabels(labels, fontsize=20, fontweight="bold", **cn_sized_props(20))
     figure.legend(
         legend_handles, [airport[0] for airport in AIRPORTS],
         loc="upper center", bbox_to_anchor=(0.5, 0.985), ncol=3,
-        frameon=False, fontsize=26, prop=CHINESE_FONT,
-        handlelength=3.4, columnspacing=3.0, handletextpad=0.8,
+        frameon=False, fontsize=32, prop=cn_sized_props(32).get("fontproperties"),
+        handlelength=3.6, columnspacing=3.4, handletextpad=0.9,
     )
-    figure.tight_layout(rect=(0.015, 0.02, 0.995, 0.89), h_pad=2.4)
+    figure.tight_layout(rect=(0.018, 0.02, 0.995, 0.87), h_pad=2.8)
     figure.savefig(str(output), dpi=420, bbox_inches="tight", pad_inches=0.04)
     plt.close(figure)
 
