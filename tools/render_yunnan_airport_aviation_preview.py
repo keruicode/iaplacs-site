@@ -358,7 +358,7 @@ def montage(time_steps, output, lon, lat, kind, product_title, unit, province, c
 
 
 def style_meteogram_time_axis(axis, times, show_labels):
-    """Use sparse hour ticks and a separate centred date row."""
+    """Use sparse hour ticks and a separate centred date row on a white field."""
     x = np.arange(len(times))
     axis.set_xlim(-0.5, len(times) - 0.5)
 
@@ -382,9 +382,7 @@ def style_meteogram_time_axis(axis, times, show_labels):
         if index == len(times) or times[index].date() != times[start].date():
             day_groups.append((start, index - 1, times[start]))
             start = index
-    for group_index, (begin, end, moment) in enumerate(day_groups):
-        if group_index % 2 == 0:
-            axis.axvspan(begin - 0.5, end + 0.5, color="#f2f6fb", zorder=0)
+    for begin, end, moment in day_groups:
         if begin:
             axis.axvline(begin, color="#9aa9b9", linewidth=1.5, zorder=1)
         if show_labels:
@@ -403,6 +401,41 @@ def style_meteogram_time_axis(axis, times, show_labels):
         axis.tick_params(axis="x", which="both", labelbottom=False)
 
 
+def style_meteogram_y_axis(axis, key, station_data):
+    """Use readable fixed intervals and retain both ends of each value scale."""
+    values = np.concatenate([
+        np.asarray(series[key], dtype=float) for _, series in station_data
+    ])
+    values = values[np.isfinite(values)]
+    maximum = float(values.max()) if values.size else 0.0
+
+    if key == "temperature":
+        minimum = float(values.min()) if values.size else 0.0
+        lower = 2.0 * math.floor(minimum / 2.0)
+        upper = 2.0 * math.ceil(maximum / 2.0)
+        if upper <= lower:
+            upper = lower + 2.0
+        ticks = np.arange(lower, upper + 0.1, 2.0)
+    elif key == "wind":
+        lower = 0.0
+        upper = max(6.0, 2.0 * math.ceil(maximum / 2.0))
+        ticks = np.arange(lower, upper + 0.1, 2.0)
+    elif key == "vertical":
+        lower = 0.0
+        upper = max(20.0, 10.0 * math.ceil(maximum / 10.0))
+        ticks = np.arange(lower, upper + 0.1, 10.0)
+    else:
+        lower = 0.0
+        upper = max(1.0, 0.25 * math.ceil(maximum / 0.25))
+        ticks = np.arange(lower, upper + 0.001, 0.25)
+
+    axis.set_ylim(lower, upper)
+    axis.set_yticks(ticks)
+    axis.set_yticklabels(
+        ["%g" % tick for tick in ticks], fontsize=22, fontweight="bold"
+    )
+
+
 def station_meteogram(output, times, station_data, selected_keys):
     x = np.arange(len(times))
     all_series = (
@@ -414,7 +447,7 @@ def station_meteogram(output, times, station_data, selected_keys):
     series = tuple(item for item in all_series if item[0] in selected_keys)
     # Use a wide canvas so the three diagnostics fill the image viewer instead
     # of being constrained by a portrait source image.
-    figure_height = 6.8 if len(series) == 1 else 12.4
+    figure_height = 7.6 if len(series) == 1 else 14.4
     figure, axes = plt.subplots(
         len(series), 1, figsize=(18.2, figure_height), sharex=True, squeeze=False,
     )
@@ -422,6 +455,7 @@ def station_meteogram(output, times, station_data, selected_keys):
     palette = ("#cb3e38", "#1b64a5", "#129b78")
     legend_handles = []
     for axis, (key, title, ylabel) in zip(axes.flat, series):
+        axis.set_facecolor("white")
         for index, (name, values) in enumerate(station_data):
             line, = axis.plot(
                 x, values[key], color=palette[index], linewidth=4.0,
@@ -438,6 +472,7 @@ def station_meteogram(output, times, station_data, selected_keys):
         )
         axis.grid(axis="y", color="#d9d9d9", linewidth=1.0)
         axis.tick_params(labelsize=22, top=True, right=True, pad=7, width=3.0, length=9)
+        style_meteogram_y_axis(axis, key, station_data)
         style_meteogram_time_axis(axis, times, axis is axes[-1])
     figure.legend(
         legend_handles, [airport[0] for airport in AIRPORTS],
@@ -445,7 +480,7 @@ def station_meteogram(output, times, station_data, selected_keys):
         frameon=False, fontsize=32, prop=cn_sized_props(32).get("fontproperties"),
         handlelength=3.6, columnspacing=3.4, handletextpad=0.9,
     )
-    figure.tight_layout(rect=(0.018, 0.055, 0.995, 0.855), h_pad=2.2)
+    figure.tight_layout(rect=(0.035, 0.075, 0.995, 0.855), h_pad=2.8)
     figure.savefig(str(output), dpi=420, bbox_inches="tight", pad_inches=0.04)
     plt.close(figure)
 
