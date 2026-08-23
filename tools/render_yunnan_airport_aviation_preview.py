@@ -330,7 +330,8 @@ def montage(time_steps, output, lon, lat, kind, product_title, unit, province, c
     rows = max(1, int(math.ceil(len(time_steps) / float(columns))))
     figure, axes = plt.subplots(rows, columns, figsize=(18.2, max(15.1, 5.0 * rows)))
     axes = np.asarray(axes).reshape(-1)
-    figure.subplots_adjust(left=0.085, right=0.875, bottom=0.075, top=0.885, wspace=0.105, hspace=0.165)
+    axes_top = 0.945 if rows <= 3 else 0.962
+    figure.subplots_adjust(left=0.085, right=0.875, bottom=0.075, top=axes_top, wspace=0.105, hspace=0.165)
     image = None
     bounds = None
     for index, axis in enumerate(axes):
@@ -348,7 +349,7 @@ def montage(time_steps, output, lon, lat, kind, product_title, unit, province, c
         )
         axis.set_title(valid_interval(valid_time), fontsize=18, pad=5, fontweight="bold")
     figure.suptitle("Forecast Initialization: %s" % initialization_label,
-                    fontsize=25, y=0.958, fontweight="bold")
+                    fontsize=25, y=0.975, fontweight="bold")
     color_axis = figure.add_axes([0.905, 0.155, 0.018, 0.67])
     colorbar = figure.colorbar(image, cax=color_axis, orientation="vertical")
     style_colorbar(colorbar, bounds, unit, label_size=16, tick_size=13)
@@ -363,6 +364,11 @@ def style_meteogram_time_axis(axis, times, show_labels):
 
     tick_step = 3
     tick_indices = list(range(0, len(times), tick_step))
+    midnight_indices = [index for index, moment in enumerate(times) if moment.hour == 0]
+    for midnight in midnight_indices:
+        tick_indices = [index for index in tick_indices if abs(index - midnight) > 1]
+        tick_indices.append(midnight)
+    tick_indices = sorted(set(tick_indices))
     if tick_indices[-1] != len(times) - 1 and len(times) - 1 - tick_indices[-1] > 1:
         tick_indices.append(len(times) - 1)
     axis.set_xticks(tick_indices)
@@ -380,7 +386,7 @@ def style_meteogram_time_axis(axis, times, show_labels):
         if group_index % 2 == 0:
             axis.axvspan(begin - 0.5, end + 0.5, color="#f2f6fb", zorder=0)
         if begin:
-            axis.axvline(begin - 0.5, color="#9aa9b9", linewidth=1.5, zorder=1)
+            axis.axvline(begin, color="#9aa9b9", linewidth=1.5, zorder=1)
         if show_labels:
             axis.text(
                 0.5 * (begin + end), -0.205, moment.strftime("%m月%d日"),
