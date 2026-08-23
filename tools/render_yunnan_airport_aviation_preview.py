@@ -350,15 +350,15 @@ def station_meteogram(output, times, station_data, selected_keys):
     x = np.arange(len(times))
     labels = [moment.strftime("%m-%d\n%H时") for moment in times]
     all_series = (
-        ("temperature", "气温", "温度（℃）"),
-        ("wind", "10米风速", "风速（米/秒）"),
-        ("vertical", "10-500米垂直风切", "风切（米/秒）"),
-        ("horizontal", "10米水平风速梯度", "梯度（米/秒/千米）"),
+        ("temperature", "2米气温", "2米气温（℃）"),
+        ("wind", "10米风场", "10米风速（米/秒）"),
+        ("vertical", "10-500米垂直风切", "10米风与500米风差（米/秒）"),
+        ("horizontal", "10米水平风速梯度", "10米风速梯度（米/秒/千米）"),
     )
     series = tuple(item for item in all_series if item[0] in selected_keys)
     # A single temperature panel needs more vertical room than the stacked
     # wind diagnostics; otherwise the long 12-hour axis makes it look flat.
-    figure_height = 5.3 if len(series) == 1 else 3.9 * len(series)
+    figure_height = 6.4 if len(series) == 1 else 4.8 * len(series)
     figure, axes = plt.subplots(
         len(series), 1, figsize=(16.4, figure_height), sharex=True, squeeze=False,
     )
@@ -368,25 +368,25 @@ def station_meteogram(output, times, station_data, selected_keys):
     for axis, (key, title, ylabel) in zip(axes.flat, series):
         for index, (name, values) in enumerate(station_data):
             line, = axis.plot(
-                x, values[key], color=palette[index], linewidth=3.0,
-                marker="o", markersize=5.0, markeredgecolor="white", markeredgewidth=0.8,
+                x, values[key], color=palette[index], linewidth=3.6,
+                marker="o", markersize=6.0, markeredgecolor="white", markeredgewidth=1.0,
                 label=name,
             )
             if key == selected_keys[0]:
                 legend_handles.append(line)
-        axis.set_title(title, fontsize=22, loc="left", pad=9, fontweight="bold", **cn_props())
-        axis.set_ylabel(ylabel, fontsize=18, fontweight="bold", **cn_props())
-        axis.grid(axis="y", color="#d9d9d9", linewidth=0.7)
-        axis.tick_params(labelsize=16, top=True, right=True, pad=4, width=2.8, length=8)
+        axis.set_title(title, fontsize=32, loc="left", pad=14, fontweight="bold", **cn_props())
+        axis.set_ylabel(ylabel, fontsize=24, labelpad=14, fontweight="bold", **cn_props())
+        axis.grid(axis="y", color="#d9d9d9", linewidth=0.9)
+        axis.tick_params(labelsize=20, top=True, right=True, pad=6, width=3.0, length=9)
         axis.set_xticks(x)
-        axis.set_xticklabels(labels, fontsize=15, fontweight="bold", **cn_props())
+        axis.set_xticklabels(labels, fontsize=18, fontweight="bold", **cn_props())
     figure.legend(
         legend_handles, [airport[0] for airport in AIRPORTS],
         loc="upper center", bbox_to_anchor=(0.5, 0.985), ncol=3,
-        frameon=False, fontsize=23, prop=CHINESE_FONT,
-        handlelength=3.2, columnspacing=2.4,
+        frameon=False, fontsize=26, prop=CHINESE_FONT,
+        handlelength=3.4, columnspacing=3.0, handletextpad=0.8,
     )
-    figure.tight_layout(rect=(0, 0, 1, 0.91))
+    figure.tight_layout(rect=(0.015, 0.02, 0.995, 0.89), h_pad=2.4)
     figure.savefig(str(output), dpi=420, bbox_inches="tight", pad_inches=0.04)
     plt.close(figure)
 
