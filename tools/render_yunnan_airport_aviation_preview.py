@@ -34,7 +34,8 @@ AIRPORTS = (
     ("西双版纳嘎洒国际机场", 21.973611, 100.762222),
     ("普洱澜沧景迈机场", 22.417778, 99.783889),
 )
-REGION = (97.0, 107.0, 21.0, 30.0)  # west, east, south, north
+DEFAULT_REGION = (97.0, 107.0, 21.0, 30.0)  # west, east, south, north
+NESTED_DOMAIN_MARGIN = 0.10  # degrees; preserve a narrow border around d02
 CHINESE_FONT = None
 
 PLOT_PRODUCTS = (
@@ -59,6 +60,7 @@ def arguments():
     parser.add_argument("--start", default=13, type=int)
     parser.add_argument("--count", default=12, type=int)
     parser.add_argument("--run-id", default="20260818_00")
+    parser.add_argument("--regional-domain", choices=("d01", "d02"), default="d01")
     parser.add_argument("--production", action="store_true")
     return parser.parse_args()
 
@@ -148,11 +150,28 @@ def wrf_times(ds):
     return values
 
 
-def crop_indices(lat, lon):
-    west, east, south, north = REGION
-    mid_y, mid_x = lat.shape[0] // 2, lat.shape[1] // 2
-    rows = np.where((lat[:, mid_x] >= south - 0.3) & (lat[:, mid_x] <= north + 0.3))[0]
-    cols = np.where((lon[mid_y, :] >= west - 0.3) & (lon[mid_y, :] <= east + 0.3))[0]
+def display_region(lat, lon, regional_domain):
+    """Return the operational regional map extent for the selected WRF domain."""
+    if regional_domain == "d02":
+        return (
+            float(np.nanmin(lon)) - NESTED_DOMAIN_MARGIN,
+            float(np.nanmax(lon)) + NESTED_DOMAIN_MARGIN,
+            float(np.nanmin(lat)) - NESTED_DOMAIN_MARGIN,
+            float(np.nanmax(lat)) + NESTED_DOMAIN_MARGIN,
+        )
+    return DEFAULT_REGION
+
+
+def crop_indices(lat, lon, region):
+    west, east, south, north = region
+    inside = (
+        (lat >= south - NESTED_DOMAIN_MARGIN)
+        & (lat <= north + NESTED_DOMAIN_MARGIN)
+        & (lon >= west - NESTED_DOMAIN_MARGIN)
+        & (lon <= east + NESTED_DOMAIN_MARGIN)
+    )
+    rows = np.where(inside.any(axis=1))[0]
+    cols = np.where(inside.any(axis=0))[0]
     if not len(rows) or not len(cols):
         raise RuntimeError("could not determine a Yunnan crop from WRF coordinates")
     return int(rows[0]), int(rows[-1]), int(cols[0]), int(cols[-1])
@@ -209,8 +228,17 @@ def diagnostics(ds, index, row0, row1, col0, col1, cosine, sine, terrain, dx, dy
     return t2, u10, v10, vertical_shear, horizontal_gradient
 
 
-def decorate(ax, province, cities, show_x=True, show_y=True, tick_size=12, plane_scale=0.120):
-    west, east, south, north = REGION
+def coordinate_ticks(lower, upper, spacing=2.0):
+    first = spacing * math.ceil(lower / spacing)
+    last = spacing * math.floor(upper / spacing)
+    ticks = np.arange(first, last + 0.01, spacing)
+    if len(ticks) >= 2:
+        return ticks
+    return np.linspace(lower, upper, 3)
+
+
+def decorate(ax, province, cities, region, show_x=True, show_y=True, tick_size=12, plane_scale=0.120):
+    west, east, south, north = region
     for line in cities:
         ax.plot(line[:, 0], line[:, 1], color="#404040", linewidth=1.6, zorder=4)
     # Draw the province outline last so coincident city segments cannot cover
@@ -233,8 +261,8 @@ def decorate(ax, province, cities, show_x=True, show_y=True, tick_size=12, plane
         ax.add_patch(Polygon(inner, closed=True, facecolor="#050505", edgecolor="#050505", linewidth=0.45, zorder=9))
     ax.set_xlim(west, east)
     ax.set_ylim(south, north)
-    ax.set_xticks(np.arange(98, 108, 2))
-    ax.set_yticks(np.arange(22, 31, 2))
+    ax.set_xticks(coordinate_ticks(west, east))
+    ax.set_yticks(coordinate_ticks(south, north))
     ax.set_xticklabels(["%d°E" % value for value in ax.get_xticks()], fontsize=tick_size, fontweight="bold")
     ax.set_yticklabels(["%d°N" % value for value in ax.get_yticks()], fontsize=tick_size, fontweight="bold")
     for spine in ax.spines.values():
@@ -270,7 +298,7 @@ def product_field(kind, data):
     return horizontal_gradient, [0, 0.1, 0.2, 0.3, 0.5, 0.75, 1, 1.5, 2, 3], plt.get_cmap("PuBuGn", 9)
 
 
-def plot_product(ax, lon, lat, data, kind, province, cities, **decorate_options):
+def plot_product(ax, lon, lat, data, kind, province, cities, region, **decorate_options):
     value, bounds, cmap = product_field(kind, data)
     norm = colors.BoundaryNorm(bounds, cmap.N, clip=True)
     image = ax.pcolormesh(lon, lat, value, shading="auto", cmap=cmap, norm=norm, zorder=1)
@@ -288,7 +316,7 @@ def plot_product(ax, lon, lat, data, kind, province, cities, **decorate_options)
         ax.barbs(wind_lon[active], wind_lat[active], wind_u[active], wind_v[active],
                  length=5.8 if target_vectors >= 30 else 4.8,
                  linewidth=1.70, barbcolor="#17324d", flagcolor="#17324d", zorder=6)
-    decorate(ax, province, cities, **decorate_options)
+    decorate(ax, province, cities, region, **decorate_options)
     return image, bounds
 
 
@@ -309,13 +337,13 @@ def valid_interval(moment):
     return "%s-%s BJT" % (start.strftime("%m-%d %H:%M"), end.strftime("%H:%M"))
 
 
-def single_map(path, lon, lat, data, kind, product_title, unit, valid_time, province, cities):
+def single_map(path, lon, lat, data, kind, product_title, unit, valid_time, province, cities, region):
     figure = plt.figure(figsize=(12.0, 9.2), layout="constrained")
     grid = figure.add_gridspec(1, 2, width_ratios=(32, 1), wspace=0.04)
     axis = figure.add_subplot(grid[0, 0])
     color_axis = figure.add_subplot(grid[0, 1])
     image, bounds = plot_product(
-        axis, lon, lat, data, kind, province, cities,
+        axis, lon, lat, data, kind, province, cities, region,
         tick_size=20, plane_scale=0.250, target_vectors=32,
     )
     figure.suptitle(valid_time, fontsize=28, fontweight="bold", y=0.985, **cn_props())
@@ -325,7 +353,7 @@ def single_map(path, lon, lat, data, kind, product_title, unit, valid_time, prov
     plt.close(figure)
 
 
-def montage(time_steps, output, lon, lat, kind, product_title, unit, province, cities, initialization_label):
+def montage(time_steps, output, lon, lat, kind, product_title, unit, province, cities, region, initialization_label):
     columns = 4
     rows = max(1, int(math.ceil(len(time_steps) / float(columns))))
     figure, axes = plt.subplots(rows, columns, figsize=(18.2, max(15.1, 5.0 * rows)))
@@ -340,7 +368,7 @@ def montage(time_steps, output, lon, lat, kind, product_title, unit, province, c
             continue
         data, valid_time = time_steps[index]
         image, bounds = plot_product(
-            axis, lon, lat, data, kind, province, cities,
+            axis, lon, lat, data, kind, province, cities, region,
             show_x=index // columns == rows - 1,
             show_y=index % 4 == 0,
             tick_size=19,
@@ -664,7 +692,8 @@ def main():
         times = wrf_times(ds)[args.start:end]
         lat = np.asarray(ds.variables["XLAT"][0], dtype=float)
         lon = np.asarray(ds.variables["XLONG"][0], dtype=float)
-        row0, row1, col0, col1 = crop_indices(lat, lon)
+        region = display_region(lat, lon, args.regional_domain)
+        row0, row1, col0, col1 = crop_indices(lat, lon, region)
         selection = np.s_[row0:row1 + 1, col0:col1 + 1]
         crop_lat, crop_lon = lat[selection], lon[selection]
         cosine = np.asarray(ds.variables.get("COSALPHA", 1.0)[0, selection[0], selection[1]] if "COSALPHA" in ds.variables else np.ones_like(crop_lat), dtype=float)
@@ -680,7 +709,7 @@ def main():
             stamp = valid_time.astimezone(BJT).strftime("%Y%m%d_%H")
             for key, title, unit in PLOT_PRODUCTS:
                 panel = hourly_dirs[key] / ("%s_%s.png" % (key, stamp))
-                single_map(panel, crop_lon, crop_lat, data, key, title, unit, label, province, cities)
+                single_map(panel, crop_lon, crop_lat, data, key, title, unit, label, province, cities, region)
             time_steps.append((data, valid_time))
             for station, (y, x) in enumerate(station_indexes):
                 station_values[station]["temperature"].append(float(data[0][y - row0, x - col0]))
@@ -698,6 +727,7 @@ def main():
             unit,
             province,
             cities,
+            region,
             initialization_label,
         )
     station_data = [(airport[0], station_values[index]) for index, airport in enumerate(AIRPORTS)]

@@ -429,6 +429,7 @@ render_source() {
     --start 13 \
     --count "$aviation_count" \
     --run-id "$run_prefix" \
+    --regional-domain "$regional_domain" \
     --production
   "$PYTHON_BIN" "$POINT_SCRIPT" --wrf-dir "$wrf_dir" --domain "$regional_domain" --output "$totals_json" --start 13 --end "$last_lead"
   write_manifest "$manifest_json" "$run_prefix" "$source_path" "$regional_source_path" "$regional_domain" "$overview" "$totals_json" "$last_lead"

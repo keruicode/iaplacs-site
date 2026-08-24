@@ -100,12 +100,6 @@ begin
     exit
   end if
 
-  ; Yunnan bounding box with a small margin.
-  lon_min = 97.0
-  lon_max = 106.7
-  lat_min = 21.0
-  lat_max = 29.7
-
   airport_lons = (/98.533300, 100.762222, 99.783889/)
   airport_lats = (/24.400000, 21.973611, 22.417778/)
   plane_scale_outer = 0.245
@@ -143,6 +137,20 @@ begin
 
     lat2d = f->XLAT(0,:,:)
     lon2d = f->XLONG(0,:,:)
+    ; d02 is the operational regional domain. Follow its actual geographic
+    ; coverage with a narrow border so future nested-domain updates do not
+    ; retain the obsolete Yunnan-only window or create excess blank space.
+    if (regional_domain.eq."d02") then
+      lon_min = min(lon2d) - 0.10
+      lon_max = max(lon2d) + 0.10
+      lat_min = min(lat2d) - 0.10
+      lat_max = max(lat2d) + 0.10
+    else
+      lon_min = 97.0
+      lon_max = 106.7
+      lat_min = 21.0
+      lat_max = 29.7
+    end if
     if (component_mode.eq."frozen") then
       if (isfilevar(f, "GRAUPELNC") .and. isfilevar(f, "HAILNC")) then
         rain_all = f->GRAUPELNC + f->HAILNC
