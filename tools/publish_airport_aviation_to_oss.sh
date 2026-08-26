@@ -60,9 +60,18 @@ PY
   touch -r "$source" "$output"
 }
 
-while IFS= read -r source; do
-  make_webp "$source"
-done < <(find "$aviation_dir" -type f -name '*.png' | sort)
+if [[ "${AVIATION_SKIP_WEBP_CONVERSION:-0}" != "1" ]]; then
+  while IFS= read -r source; do
+    make_webp "$source"
+  done < <(find "$aviation_dir" -type f -name '*.png' | sort)
+fi
+
+png_count="$(find "$aviation_dir" -type f -name '*.png' | wc -l | tr -d ' ')"
+webp_count="$(find "$aviation_dir" -type f -name '*.webp' | wc -l | tr -d ' ')"
+[[ "$png_count" -gt 0 && "$png_count" == "$webp_count" ]] || {
+  echo "ERROR: aviation PNG/WebP count mismatch: png=$png_count webp=$webp_count" >&2
+  exit 1
+}
 
 incoming="airport_aviation_${family}_${run_prefix}"
 ssh "$GITHUB_HOST" "rm -rf ~/incoming/$incoming && mkdir -p ~/incoming/$incoming"
