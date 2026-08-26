@@ -33,7 +33,11 @@ const HOURLY_PRECIP_PRODUCT_IDS = {
     "wrf_rain_montage",
     "tianhe_shangrao_precip_series",
   ]),
-  xinjiang: new Set(["xinjiang_precip_series"]),
+  xinjiang: new Set([
+    "xinjiang_precip_series",
+    "xinjiang_airport_aviation_temperature",
+    "xinjiang_airport_aviation_wind",
+  ]),
 };
 const AIRPORT_RATING_TARGETS = [
   { id: "dehong_mangshi", label: "德宏芒市机场" },

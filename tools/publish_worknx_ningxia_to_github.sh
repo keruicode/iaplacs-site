@@ -13,6 +13,8 @@ WORK_NX_ROOT="${WORK_NX_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK_nx}"
 SERVICE_LABEL="${SERVICE_LABEL:-Ningxia}"
 SERVICE_FILE_TOKEN="${SERVICE_FILE_TOKEN:-Ningxia}"
 PUBLISH_FAMILY="${PUBLISH_FAMILY:-worknx_summary}"
+AVIATION_ENABLED="${AVIATION_ENABLED:-0}"
+AVIATION_PUBLISHER="${AVIATION_PUBLISHER:-$SCRIPT_DIR/publish_airport_aviation_to_oss.sh}"
 
 case "$PUBLISH_FAMILY" in
   worknx_summary) HAIL_FRAME_ID="ningxia_hail_warning" ;;
@@ -67,6 +69,10 @@ if [[ ! -x "$PUBLISHER" ]]; then
 fi
 if [[ ! -x "$HOURLY_PUBLISHER" ]]; then
   echo "ERROR: hourly publisher is not executable: $HOURLY_PUBLISHER" >&2
+  exit 1
+fi
+if [[ "$AVIATION_ENABLED" == "1" && ! -x "$AVIATION_PUBLISHER" ]]; then
+  echo "ERROR: aviation publisher is not executable: $AVIATION_PUBLISHER" >&2
   exit 1
 fi
 
@@ -196,5 +202,11 @@ for source in "${sources[@]}"; do
       --run-prefix "$run_prefix" \
       --regional-dir "$source_dir/captioned_t13_t48" \
       --national-dir "$source_dir/national_captioned_t13_t48"
+  fi
+  if [[ "$AVIATION_ENABLED" == "1" ]]; then
+    "$AVIATION_PUBLISHER" \
+      --family "$PUBLISH_FAMILY" \
+      --run-prefix "$run_prefix" \
+      --aviation-dir "$source_dir/aviation"
   fi
 done

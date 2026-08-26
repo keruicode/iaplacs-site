@@ -22,6 +22,12 @@ MIN_TIME_COUNT="${MIN_TIME_COUNT:-14}"
 NINGXIA_SHP_FILE="${NINGXIA_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
 NINGXIA_PROVINCE_SHP_FILE="${NINGXIA_PROVINCE_SHP_FILE:-$NINGXIA_SHP_FILE}"
 NINGXIA_COUNTY_SHP_FILE="${NINGXIA_COUNTY_SHP_FILE:-$SCRIPT_DIR/SHP/ningxia_city_county.shp}"
+AVIATION_ENABLED="${AVIATION_ENABLED:-0}"
+AVIATION_RENDERER="${AVIATION_RENDERER:-$SCRIPT_DIR/render_yunnan_airport_aviation_preview.py}"
+AVIATION_PROFILE="${AVIATION_PROFILE:-yunnan}"
+AVIATION_PYTHON_BIN="${AVIATION_PYTHON_BIN:-/public/software/apps/conda/latest/bin/python3}"
+AVIATION_PROVINCE_SHP_FILE="${AVIATION_PROVINCE_SHP_FILE:-$NINGXIA_PROVINCE_SHP_FILE}"
+AVIATION_CITY_SHP_FILE="${AVIATION_CITY_SHP_FILE:-$NINGXIA_COUNTY_SHP_FILE}"
 
 usage() {
   cat <<'EOF'
@@ -68,6 +74,11 @@ fi
 command -v montage >/dev/null || { echo "ERROR: ImageMagick montage is required" >&2; exit 127; }
 command -v convert >/dev/null || { echo "ERROR: ImageMagick convert is required" >&2; exit 127; }
 [[ -x "$NCDUMP_BIN" ]] || { echo "ERROR: ncdump is required: $NCDUMP_BIN" >&2; exit 127; }
+if [[ "$AVIATION_ENABLED" == "1" ]]; then
+  [[ -f "$AVIATION_RENDERER" ]] || { echo "ERROR: aviation renderer not found: $AVIATION_RENDERER" >&2; exit 1; }
+  [[ -x "$AVIATION_PYTHON_BIN" ]] || { echo "ERROR: aviation Python not found: $AVIATION_PYTHON_BIN" >&2; exit 127; }
+  [[ -f "$AVIATION_PROVINCE_SHP_FILE" ]] || { echo "ERROR: aviation province SHP not found: $AVIATION_PROVINCE_SHP_FILE" >&2; exit 1; }
+fi
 export NCARG_ROOT="$NCL_ROOT"
 
 if [[ -n "$NINGXIA_PROVINCE_SHP_FILE" && ! -f "$NINGXIA_PROVINCE_SHP_FILE" ]]; then
@@ -196,7 +207,7 @@ caption_accumulation() {
 }
 
 render_source() {
-  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview time_count last_lead panel_count overview_rows overview_grid national_panel_dir national_caption_dir national_overview init_bjt frozen_panel_dir frozen_caption_dir frozen_overview
+  local source_path="$1" base run_date run_hour run_prefix wrf_dir run_dir panel_dir caption_dir overview time_count last_lead panel_count overview_rows overview_grid national_panel_dir national_caption_dir national_overview init_bjt frozen_panel_dir frozen_caption_dir frozen_overview regional_source_path regional_domain regional_time_count nested_candidate aviation_count
   base="$(basename "$source_path")"
   if [[ ! "$base" =~ wrfout_d01_([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2}):[0-9]{2}:[0-9]{2} ]]; then
     echo "ERROR: cannot parse run time from $base" >&2
@@ -219,6 +230,24 @@ render_source() {
     echo "ERROR: T13 is not available in $source_path" >&2
     return 1
   }
+  regional_source_path="$source_path"
+  regional_domain="d01"
+  if [[ "$AVIATION_ENABLED" == "1" && "$REGION_MODE" == "xinjiang" ]]; then
+    nested_candidate="${source_path/wrfout_d01_/wrfout_d02_}"
+    if [[ -f "$nested_candidate" ]]; then
+      regional_time_count="$(wrf_time_count "$nested_candidate")"
+      if [[ "$regional_time_count" =~ ^[0-9]+$ ]] && (( regional_time_count >= MIN_TIME_COUNT )); then
+        regional_source_path="$nested_candidate"
+        regional_domain="d02"
+        if (( regional_time_count < time_count )); then
+          time_count="$regional_time_count"
+        fi
+        echo "Using nested d02 for $SERVICE_LABEL regional precipitation and aviation diagnostics: $regional_source_path"
+      else
+        echo "WARNING: nested d02 is not usable for $run_prefix; using d01 regional data" >&2
+      fi
+    fi
+  fi
   last_lead=$((time_count - 1))
 
   mkdir -p "$panel_dir" "$caption_dir" "$national_panel_dir" "$national_caption_dir"
@@ -234,6 +263,7 @@ render_source() {
     NINGXIA_PROVINCE_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE" \
     NINGXIA_COUNTY_SHP_FILE="$NINGXIA_COUNTY_SHP_FILE" \
     WORK_NX_REGION_MODE="$REGION_MODE" \
+    WORK_NX_REGIONAL_DOMAIN="$regional_domain" \
     RAIN_COMPONENT_MODE=total \
     "$NCL_BIN" "$NCL_SCRIPT"
 
@@ -256,7 +286,7 @@ render_source() {
 
   montage "${captioned_panels[@]}" -tile "$overview_grid" -geometry '100%x100%+2+2' -background white "$overview"
   add_overview_header "$overview" "$init_bjt"
-  touch -r "$source_path" "$overview"
+  touch -r "$regional_source_path" "$overview"
 
   if [[ "$REGION_MODE" == "ningxia" || "$REGION_MODE" == "xinjiang" ]]; then
     mkdir -p "$frozen_panel_dir" "$frozen_caption_dir"
@@ -334,6 +364,28 @@ render_source() {
       touch -r "$source_path" "$accum_overview"
     done < <(find "$panel_dir" -maxdepth 1 -type f -name "*_national_accum_$(printf '%02d' "$accum_hours")h_*_BJT.png" | sort)
   done
+  if [[ "$AVIATION_ENABLED" == "1" ]]; then
+    local aviation_args=()
+    rm -rf "$run_dir/aviation"
+    mkdir -p "$run_dir/aviation"
+    aviation_count=$((last_lead - 12))
+    aviation_args=(
+      --input "$regional_source_path"
+      --output "$run_dir/aviation"
+      --province-shp "$AVIATION_PROVINCE_SHP_FILE"
+      --start 13
+      --count "$aviation_count"
+      --run-id "$run_prefix"
+      --regional-domain "$regional_domain"
+      --profile "$AVIATION_PROFILE"
+      --production
+    )
+    if [[ -n "$AVIATION_CITY_SHP_FILE" ]]; then
+      aviation_args+=(--city-shp "$AVIATION_CITY_SHP_FILE")
+    fi
+    echo "Rendering $SERVICE_LABEL airport aviation products T13-T${last_lead} from $regional_domain"
+    "$AVIATION_PYTHON_BIN" "$AVIATION_RENDERER" "${aviation_args[@]}"
+  fi
   echo "Rendered $overview"
 }
 

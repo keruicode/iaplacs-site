@@ -44,6 +44,7 @@ begin
   accum_hours_text = getenv("RAIN_ACCUM_HOURS")
   legacy_shp_file = getenv("NINGXIA_SHP_FILE")
   region_mode = getenv("WORK_NX_REGION_MODE")
+  regional_domain = getenv("WORK_NX_REGIONAL_DOMAIN")
   component_mode = getenv("RAIN_COMPONENT_MODE")
 
   if (wrf_dir.eq."") then
@@ -75,18 +76,25 @@ begin
   if (ismissing(region_mode)) then
     region_mode = "ningxia"
   end if
+  if (ismissing(regional_domain) .or. regional_domain.eq."") then
+    regional_domain = "d01"
+  end if
+  if (regional_domain.ne."d01" .and. regional_domain.ne."d02") then
+    print("ERROR: WORK_NX_REGIONAL_DOMAIN must be d01 or d02")
+    exit
+  end if
   if (ismissing(component_mode) .or. component_mode.eq."") then
     component_mode = "total"
   end if
 
   system("mkdir -p " + out_dir)
-  files = systemfunc("ls -1 " + wrf_dir + "/wrfout_d01_*")
+  files = systemfunc("ls -1 " + wrf_dir + "/wrfout_" + regional_domain + "_*")
   if (dimsizes(files).eq.0) then
-    print("ERROR: no wrfout_d01 files in " + wrf_dir)
+    print("ERROR: no wrfout_" + regional_domain + " files in " + wrf_dir)
     exit
   end if
 
-  if (region_mode.eq."xinjiang") then
+  if (region_mode.eq."xinjiang" .and. regional_domain.eq."d01") then
     ; Xinjiang plus a narrow surrounding margin.
     lon_min = 72.0
     lon_max = 97.0
@@ -131,6 +139,14 @@ begin
 
     lat2d = f->XLAT(0,:,:)
     lon2d = f->XLONG(0,:,:)
+    if (region_mode.eq."xinjiang" .and. regional_domain.eq."d02") then
+      ; Follow the complete nested grid with only a narrow map margin.  The
+      ; fallback d01 path above retains the established Xinjiang view.
+      lon_min = min(lon2d) - 0.10
+      lon_max = max(lon2d) + 0.10
+      lat_min = min(lat2d) - 0.10
+      lat_max = max(lat2d) + 0.10
+    end if
     ; WORK_nx d01 is nearly regular over Ningxia.  Plot a compact local
     ; rectangular subset with one-dimensional axes: NCL 6.6.2 can crash when
     ; the whole 400x400 curvilinear field is supplied as sfXArray/sfYArray.
@@ -239,7 +255,7 @@ begin
       res@mpMaxLatF = lat_max
       res@sfXArray = lon_axis
       res@sfYArray = lat_axis
-      if (region_mode.eq."xinjiang") then
+      if (region_mode.eq."xinjiang" .and. regional_domain.eq."d01") then
         res@tmXBMode = "Explicit"
         res@tmXBValues = (/75.0, 80.0, 85.0, 90.0, 95.0/)
         res@tmXBLabels = (/"75~S~o~N~E", "80~S~o~N~E", "85~S~o~N~E", \
@@ -250,8 +266,13 @@ begin
                            "45~S~o~N~N", "50~S~o~N~N"/)
       else
         res@pmTickMarkDisplayMode = "Always"
-        res@gsnMajorLonSpacing = 1.0
-        res@gsnMajorLatSpacing = 1.0
+        if (region_mode.eq."xinjiang") then
+          res@gsnMajorLonSpacing = 2.0
+          res@gsnMajorLatSpacing = 2.0
+        else
+          res@gsnMajorLonSpacing = 1.0
+          res@gsnMajorLatSpacing = 1.0
+        end if
       end if
       res@tmXMajorGrid = False
       res@tmYMajorGrid = False

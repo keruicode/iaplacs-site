@@ -217,6 +217,59 @@ print(",".join("%s-%s" % window for window in sorted(set(windows))))
 PY
 }
 
+public_product_exists() {
+  local service="$1" run_id="$2" product_id="$3"
+  "$PYTHON_BIN" - "$AUDIT_CATALOG" "$service" "$run_id" "$product_id" <<'PY'
+from __future__ import print_function
+import json
+import sys
+
+catalog_path, service, run_id, product_id = sys.argv[1:]
+with open(catalog_path, "r") as handle:
+    payload = json.load(handle)
+service_data = payload.get("services", {}).get(service, {})
+run = next((item for item in service_data.get("runs", []) if item.get("id") == run_id), None)
+if run is None:
+    raise SystemExit(1)
+if not any(item.get("id") == product_id and item.get("frames") for item in run.get("products", [])):
+    raise SystemExit(1)
+PY
+}
+
+xinjiang_aviation_is_current() {
+  local run="$1" output="$2" manifest="$output/aviation/production_manifest.json"
+  local source_domain profile end_lead airport_count expected_end run_directory nested nested_count
+  [[ -f "$manifest" ]] || return 1
+  read -r source_domain profile end_lead airport_count < <(
+    "$PYTHON_BIN" - "$manifest" <<'PY'
+from __future__ import print_function
+import json
+import os
+import sys
+
+with open(sys.argv[1], "r") as handle:
+    payload = json.load(handle)
+source = os.path.basename(payload.get("source_wrfout", ""))
+domain = "d02" if source.startswith("wrfout_d02_") else "d01"
+print(domain, payload.get("profile", ""), payload.get("end_lead", -1), len(payload.get("airports", [])))
+PY
+  )
+  expected_end=$(( $(window_count "$(panel_windows "$output/captioned_t13_t48" '')") + 12 ))
+  [[ "$profile" == "xinjiang" && "$airport_count" == "1" && "$end_lead" == "$expected_end" ]] || return 1
+
+  run_directory="${run/_/}"
+  nested="$(find "/data1/elpt_2022_00083/zhoubj/WORK_xj/$run_directory/gfs/wrf" \
+    -maxdepth 1 -type f -name 'wrfout_d02_*' -print 2>/dev/null | head -n 1)"
+  if [[ -n "$nested" ]]; then
+    nested_count="$(wrf_time_count "$nested")"
+    if [[ "$nested_count" =~ ^[0-9]+$ ]] && (( nested_count >= 14 )); then
+      [[ "$source_domain" == "d02" ]]
+      return
+    fi
+  fi
+  [[ "$source_domain" == "d01" ]]
+}
+
 local_sequences_are_valid() {
   local basis="$1" run="$2" region="$3" national="$4" expected
   expected="$(expected_first_start "$basis" "$run")"
@@ -259,7 +312,7 @@ audit_ningxia_output() {
 
 audit_xinjiang_output() {
   local run="$1" output="$SCRIPT_DIR/workxj_xinjiang_overview/$run"
-  local region national frozen public_region public_national public_frozen region_count national_count frozen_count
+  local region national frozen public_region public_national public_frozen region_count national_count frozen_count latest_run aviation_public=1
   region="$(panel_windows "$output/captioned_t13_t48" '')"
   national="$(panel_windows "$output/national_captioned_t13_t48" '')"
   frozen="$(panel_windows "$output/frozen_captioned_t13_t48" '')"
@@ -276,13 +329,25 @@ audit_xinjiang_output() {
     run_action "$SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh" --latest
     return
   fi
+  latest_run="$(list_output_runs "$SCRIPT_DIR/workxj_xinjiang_overview" | head -n 1)"
+  if [[ "$run" == "$latest_run" ]] && ! xinjiang_aviation_is_current "$run" "$output"; then
+    log "XINJIANG $run aviation output missing or stale; rerender exact run"
+    run_action "$SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh" --run "$run"
+    return
+  fi
   public_region="$(public_windows xinjiang "$run" xinjiang_region 2>/dev/null || true)"
   public_national="$(public_windows xinjiang "$run" workxj_national 2>/dev/null || true)"
   public_frozen=""
   if [[ -n "$frozen" ]]; then
     public_frozen="$(public_windows xinjiang "$run" xinjiang_hail_warning 2>/dev/null || true)"
   fi
-  if [[ "$public_region" == "$region" && "$public_national" == "$national" && "$public_frozen" == "$frozen" ]]; then
+  if [[ "$run" == "$latest_run" ]] && {
+    ! public_product_exists xinjiang "$run" xinjiang_airport_aviation_temperature \
+      || ! public_product_exists xinjiang "$run" xinjiang_airport_aviation_wind;
+  }; then
+    aviation_public=0
+  fi
+  if [[ "$public_region" == "$region" && "$public_national" == "$national" && "$public_frozen" == "$frozen" && "$aviation_public" == "1" ]]; then
     log "XINJIANG $run verified: region=$region_count national=$national_count hail=$frozen_count first=${region%%,*}"
     return
   fi

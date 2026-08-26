@@ -183,8 +183,8 @@ def build_yunnan_airport_runs() -> list[dict]:
                         for hours in (12, 24)
                         if (frames := build_yunnan_airport_frames(run_dir, fragment, accumulation_hours=hours))
                     ],
-                    *build_yunnan_airport_aviation_products(
-                        run_dir, run_id, generated_at
+                    *build_airport_aviation_products(
+                        run_dir, run_id, generated_at, category="机场服务"
                     ),
                 ],
             }
@@ -326,10 +326,10 @@ def build_yunnan_airport_product(
     }
 
 
-def build_yunnan_airport_aviation_products(
-    run_dir: Path, run_id: str, generated_at: str
+def build_airport_aviation_products(
+    run_dir: Path, run_id: str, generated_at: str, *, category: str
 ) -> list[dict]:
-    """Build production aviation products emitted beside a Yunnan run."""
+    """Build production aviation products emitted beside a regional run."""
     aviation_dir = run_dir / "aviation"
     manifest_path = aviation_dir / "production_manifest.json"
     if not manifest_path.exists():
@@ -377,7 +377,7 @@ def build_yunnan_airport_aviation_products(
             {
                 "id": source_product.get("id"),
                 "title": title,
-                "category": "机场服务",
+                "category": category,
                 "unit": source_product.get("unit", ""),
                 "color": "#166ab6" if (source_product.get("id") or "").endswith("temperature") else "#168f7a",
                 "description": "",
@@ -845,6 +845,9 @@ def build_xinjiang_runs() -> list[dict]:
                             )
                         )
                     ],
+                    *build_airport_aviation_products(
+                        run_dir, run_id, generated_at, category="新疆预报"
+                    ),
                 ],
             }
         )
@@ -1535,6 +1538,12 @@ def merge_existing_runs(
         if run_id:
             if run_id in merged:
                 preserve_individual_frames(run, merged[run_id])
+                if service_key == "xinjiang":
+                    preserve_missing_products(
+                        run,
+                        merged[run_id],
+                        prefix="xinjiang_airport_aviation_",
+                    )
             merged[run_id] = run
 
     runs = list(merged.values())
@@ -1574,6 +1583,19 @@ def preserve_individual_frames(current_run: dict, existing_run: dict) -> None:
             existing_frame = existing_frames.get(str(frame.get("id", "")))
             if existing_frame and existing_frame.get("individual_frames"):
                 frame["individual_frames"] = existing_frame["individual_frames"]
+
+
+def preserve_missing_products(
+    current_run: dict, existing_run: dict, *, prefix: str
+) -> None:
+    """Retain OSS-only products after temporary server-side rasters are cleaned."""
+    current_ids = {
+        str(product.get("id", "")) for product in current_run.get("products", [])
+    }
+    for product in existing_run.get("products", []):
+        product_id = str(product.get("id", ""))
+        if product_id.startswith(prefix) and product_id not in current_ids:
+            current_run.setdefault("products", []).append(product)
 
 
 def latest_published_at(runs: list[dict]) -> str:

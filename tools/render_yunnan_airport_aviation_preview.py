@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Render Yunnan airport aviation diagnostics from a completed WRF run.
+"""Render regional airport aviation diagnostics from a completed WRF run.
 
-The same renderer supports a one-off preview and the production WORK_yn
-publisher.  Publication, OSS upload, and Git operations remain in the shell
-publisher so rendering stays deterministic and independently testable.
+The same renderer supports one-off previews and the production WORK_yn/WORK_xj
+publishers. Publication, OSS upload, and Git operations remain in shell so the
+scientific rendering stays deterministic and independently testable.
 """
 
 from __future__ import print_function
@@ -29,12 +29,23 @@ from netCDF4 import Dataset
 
 BJT = timezone(timedelta(hours=8))
 GRAVITY = 9.80665
-AIRPORTS = (
-    ("德宏芒市国际机场", 24.400000, 98.533300),
-    ("西双版纳嘎洒国际机场", 21.973611, 100.762222),
-    ("普洱澜沧景迈机场", 22.417778, 99.783889),
-)
-DEFAULT_REGION = (97.0, 107.0, 21.0, 30.0)  # west, east, south, north
+REGION_PROFILES = {
+    "yunnan": {
+        "airports": (
+            ("德宏芒市国际机场", 24.400000, 98.533300),
+            ("西双版纳嘎洒国际机场", 21.973611, 100.762222),
+            ("普洱澜沧景迈机场", 22.417778, 99.783889),
+        ),
+        "default_region": (97.0, 107.0, 21.0, 30.0),
+        "product_prefix": "airport_aviation",
+    },
+    "xinjiang": {
+        # ZWWW aerodrome reference point from the CAAC aerodrome chart.
+        "airports": (("乌鲁木齐天山国际机场", 43.907100, 87.474200),),
+        "default_region": (72.0, 97.0, 34.0, 50.0),
+        "product_prefix": "xinjiang_airport_aviation",
+    },
+}
 NESTED_DOMAIN_MARGIN = 0.10  # degrees; preserve a narrow border around d02
 CHINESE_FONT = None
 
@@ -56,11 +67,12 @@ def arguments():
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--province-shp", required=True, type=Path)
-    parser.add_argument("--city-shp", required=True, type=Path)
+    parser.add_argument("--city-shp", type=Path)
     parser.add_argument("--start", default=13, type=int)
     parser.add_argument("--count", default=12, type=int)
     parser.add_argument("--run-id", default="20260818_00")
     parser.add_argument("--regional-domain", choices=("d01", "d02"), default="d01")
+    parser.add_argument("--profile", choices=tuple(REGION_PROFILES), default="yunnan")
     parser.add_argument("--production", action="store_true")
     return parser.parse_args()
 
@@ -112,6 +124,8 @@ def cn_sized_props(size):
 
 def shp_lines(path):
     """Read PolyLine/Polygon records from a simple ESRI .shp without GIS deps."""
+    if path is None:
+        return []
     lines = []
     with path.open("rb") as handle:
         handle.read(100)
@@ -150,7 +164,7 @@ def wrf_times(ds):
     return values
 
 
-def display_region(lat, lon, regional_domain):
+def display_region(lat, lon, regional_domain, default_region):
     """Return the operational regional map extent for the selected WRF domain."""
     if regional_domain == "d02":
         return (
@@ -159,7 +173,7 @@ def display_region(lat, lon, regional_domain):
             float(np.nanmin(lat)) - NESTED_DOMAIN_MARGIN,
             float(np.nanmax(lat)) + NESTED_DOMAIN_MARGIN,
         )
-    return DEFAULT_REGION
+    return default_region
 
 
 def crop_indices(lat, lon, region):
@@ -173,7 +187,7 @@ def crop_indices(lat, lon, region):
     rows = np.where(inside.any(axis=1))[0]
     cols = np.where(inside.any(axis=0))[0]
     if not len(rows) or not len(cols):
-        raise RuntimeError("could not determine a Yunnan crop from WRF coordinates")
+        raise RuntimeError("could not determine a regional crop from WRF coordinates")
     return int(rows[0]), int(rows[-1]), int(cols[0]), int(cols[-1])
 
 
@@ -237,7 +251,17 @@ def coordinate_ticks(lower, upper, spacing=2.0):
     return np.linspace(lower, upper, 3)
 
 
-def decorate(ax, province, cities, region, show_x=True, show_y=True, tick_size=12, plane_scale=0.120):
+def decorate(
+    ax,
+    province,
+    cities,
+    region,
+    airports,
+    show_x=True,
+    show_y=True,
+    tick_size=12,
+    plane_scale=0.120,
+):
     west, east, south, north = region
     for line in cities:
         ax.plot(line[:, 0], line[:, 1], color="#404040", linewidth=1.6, zorder=4)
@@ -254,7 +278,7 @@ def decorate(ax, province, cities, region, show_x=True, show_y=True, tick_size=1
         (1.8, 0.0), (-1.1, 0.34), (-0.35, 0.08), (-1.35, 0.86),
         (0.1, 0.0), (-1.1, -0.34), (1.8, 0.0),
     ])
-    for name, latitude, longitude in AIRPORTS:
+    for name, latitude, longitude in airports:
         outer = plane_template * plane_scale + np.array((longitude, latitude))
         inner = plane_template * (plane_scale * 0.78) + np.array((longitude, latitude))
         ax.add_patch(Polygon(outer, closed=True, facecolor="white", edgecolor="white", linewidth=1.15, zorder=8))
@@ -298,7 +322,9 @@ def product_field(kind, data):
     return horizontal_gradient, [0, 0.1, 0.2, 0.3, 0.5, 0.75, 1, 1.5, 2, 3], plt.get_cmap("PuBuGn", 9)
 
 
-def plot_product(ax, lon, lat, data, kind, province, cities, region, **decorate_options):
+def plot_product(
+    ax, lon, lat, data, kind, province, cities, region, airports, **decorate_options
+):
     value, bounds, cmap = product_field(kind, data)
     norm = colors.BoundaryNorm(bounds, cmap.N, clip=True)
     image = ax.pcolormesh(lon, lat, value, shading="auto", cmap=cmap, norm=norm, zorder=1)
@@ -316,7 +342,7 @@ def plot_product(ax, lon, lat, data, kind, province, cities, region, **decorate_
         ax.barbs(wind_lon[active], wind_lat[active], wind_u[active], wind_v[active],
                  length=5.8 if target_vectors >= 30 else 4.8,
                  linewidth=1.70, barbcolor="#17324d", flagcolor="#17324d", zorder=6)
-    decorate(ax, province, cities, region, **decorate_options)
+    decorate(ax, province, cities, region, airports, **decorate_options)
     return image, bounds
 
 
@@ -337,14 +363,28 @@ def valid_interval(moment):
     return "%s-%s BJT" % (start.strftime("%m-%d %H:%M"), end.strftime("%H:%M"))
 
 
-def single_map(path, lon, lat, data, kind, product_title, unit, valid_time, province, cities, region):
+def single_map(
+    path,
+    lon,
+    lat,
+    data,
+    kind,
+    product_title,
+    unit,
+    valid_time,
+    province,
+    cities,
+    region,
+    airports,
+    plane_scale,
+):
     figure = plt.figure(figsize=(12.0, 9.2), layout="constrained")
     grid = figure.add_gridspec(1, 2, width_ratios=(32, 1), wspace=0.04)
     axis = figure.add_subplot(grid[0, 0])
     color_axis = figure.add_subplot(grid[0, 1])
     image, bounds = plot_product(
-        axis, lon, lat, data, kind, province, cities, region,
-        tick_size=20, plane_scale=0.250, target_vectors=32,
+        axis, lon, lat, data, kind, province, cities, region, airports,
+        tick_size=20, plane_scale=plane_scale, target_vectors=32,
     )
     figure.suptitle(valid_time, fontsize=28, fontweight="bold", y=0.985, **cn_props())
     colorbar = figure.colorbar(image, cax=color_axis, orientation="vertical")
@@ -353,7 +393,21 @@ def single_map(path, lon, lat, data, kind, product_title, unit, valid_time, prov
     plt.close(figure)
 
 
-def montage(time_steps, output, lon, lat, kind, product_title, unit, province, cities, region, initialization_label):
+def montage(
+    time_steps,
+    output,
+    lon,
+    lat,
+    kind,
+    product_title,
+    unit,
+    province,
+    cities,
+    region,
+    airports,
+    plane_scale,
+    initialization_label,
+):
     columns = 4
     rows = max(1, int(math.ceil(len(time_steps) / float(columns))))
     figure, axes = plt.subplots(rows, columns, figsize=(18.2, max(15.1, 5.0 * rows)))
@@ -368,11 +422,11 @@ def montage(time_steps, output, lon, lat, kind, product_title, unit, province, c
             continue
         data, valid_time = time_steps[index]
         image, bounds = plot_product(
-            axis, lon, lat, data, kind, province, cities, region,
+            axis, lon, lat, data, kind, province, cities, region, airports,
             show_x=index // columns == rows - 1,
             show_y=index % 4 == 0,
             tick_size=19,
-            plane_scale=0.180,
+            plane_scale=plane_scale,
             target_vectors=18,
         )
         axis.set_title(valid_interval(valid_time), fontsize=18, pad=5, fontweight="bold")
@@ -464,7 +518,7 @@ def style_meteogram_y_axis(axis, key, station_data):
     )
 
 
-def station_meteogram(output, times, station_data, selected_keys):
+def station_meteogram(output, times, station_data, selected_keys, airports):
     x = np.arange(len(times))
     all_series = (
         ("temperature", "2米气温", "2米气温\n（℃）"),
@@ -503,8 +557,8 @@ def station_meteogram(output, times, station_data, selected_keys):
         style_meteogram_y_axis(axis, key, station_data)
         style_meteogram_time_axis(axis, times, axis is axes[-1])
     figure.legend(
-        legend_handles, [airport[0] for airport in AIRPORTS],
-        loc="upper center", bbox_to_anchor=(0.5, 0.985), ncol=3,
+        legend_handles, [airport[0] for airport in airports],
+        loc="upper center", bbox_to_anchor=(0.5, 0.985), ncol=min(3, len(airports)),
         frameon=False, fontsize=32, prop=cn_sized_props(32).get("fontproperties"),
         handlelength=3.6, columnspacing=3.4, handletextpad=0.9,
     )
@@ -519,7 +573,9 @@ def montage_filename(kind, start, time_count):
     return "%s_T%02d_T%02d_4x%d.png" % (kind, start, last, rows)
 
 
-def write_production_manifest(output, run_id, input_path, times, start):
+def write_production_manifest(
+    output, run_id, input_path, times, start, airports, product_prefix, profile
+):
     """Describe production assets for build_forecast_catalog.py."""
     plot_meta = {key: (title, unit) for key, title, unit in PLOT_PRODUCTS}
     last = start + len(times) - 1
@@ -558,7 +614,7 @@ def write_production_manifest(output, run_id, input_path, times, start):
             "file": series_name,
         })
         products.append({
-            "id": "airport_aviation_%s" % product_key,
+            "id": "%s_%s" % (product_prefix, product_key),
             "title": title,
             "unit": unit,
             "plot_keys": list(plot_keys),
@@ -574,7 +630,8 @@ def write_production_manifest(output, run_id, input_path, times, start):
         "end_lead": last,
         "valid_times_bjt": [moment.astimezone(BJT).isoformat() for moment in times],
         "products": products,
-        "airports": [airport[0] for airport in AIRPORTS],
+        "profile": profile,
+        "airports": [airport[0] for airport in airports],
     }
     (output / "production_manifest.json").write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
@@ -675,6 +732,10 @@ def main():
     if not args.input.is_file():
         raise SystemExit("WRF file not found: %s" % args.input)
     output = args.output
+    profile = REGION_PROFILES[args.profile]
+    airports = profile["airports"]
+    default_region = profile["default_region"]
+    product_prefix = profile["product_prefix"]
     hourly_dirs = {key: output / ("hourly_" + key) for key, _, _ in PLOT_PRODUCTS}
     for directory in hourly_dirs.values():
         directory.mkdir(parents=True, exist_ok=True)
@@ -692,7 +753,23 @@ def main():
         times = wrf_times(ds)[args.start:end]
         lat = np.asarray(ds.variables["XLAT"][0], dtype=float)
         lon = np.asarray(ds.variables["XLONG"][0], dtype=float)
-        region = display_region(lat, lon, args.regional_domain)
+        region = display_region(lat, lon, args.regional_domain, default_region)
+        if args.profile == "yunnan":
+            single_plane_scale = 0.250
+            montage_plane_scale = 0.180
+        else:
+            domain_width = region[1] - region[0]
+            single_plane_scale = min(0.55, max(0.24, domain_width * 0.021))
+            montage_plane_scale = min(0.45, max(0.18, domain_width * 0.016))
+        for airport_name, airport_lat, airport_lon in airports:
+            if not (
+                region[0] <= airport_lon <= region[1]
+                and region[2] <= airport_lat <= region[3]
+            ):
+                raise SystemExit(
+                    "%s is outside the selected %s domain: %.4fE %.4fN"
+                    % (airport_name, args.regional_domain, airport_lon, airport_lat)
+                )
         row0, row1, col0, col1 = crop_indices(lat, lon, region)
         selection = np.s_[row0:row1 + 1, col0:col1 + 1]
         crop_lat, crop_lon = lat[selection], lon[selection]
@@ -701,15 +778,34 @@ def main():
         terrain = np.asarray(ds.variables["HGT"][0, selection[0], selection[1]], dtype=float)
         dx = float(getattr(ds, "DX", 3000.0))
         dy = float(getattr(ds, "DY", 3000.0))
-        station_indexes = [nearest(lat, lon, airport[1], airport[2]) for airport in AIRPORTS]
-        station_values = [{"temperature": [], "wind": [], "vertical": [], "horizontal": []} for _ in AIRPORTS]
+        station_indexes = [
+            nearest(lat, lon, airport[1], airport[2]) for airport in airports
+        ]
+        station_values = [
+            {"temperature": [], "wind": [], "vertical": [], "horizontal": []}
+            for _ in airports
+        ]
         for index, valid_time in zip(range(args.start, end), times):
             data = diagnostics(ds, index, row0, row1, col0, col1, cosine, sine, terrain, dx, dy)
             label = valid_interval(valid_time)
             stamp = valid_time.astimezone(BJT).strftime("%Y%m%d_%H")
             for key, title, unit in PLOT_PRODUCTS:
                 panel = hourly_dirs[key] / ("%s_%s.png" % (key, stamp))
-                single_map(panel, crop_lon, crop_lat, data, key, title, unit, label, province, cities, region)
+                single_map(
+                    panel,
+                    crop_lon,
+                    crop_lat,
+                    data,
+                    key,
+                    title,
+                    unit,
+                    label,
+                    province,
+                    cities,
+                    region,
+                    airports,
+                    single_plane_scale,
+                )
             time_steps.append((data, valid_time))
             for station, (y, x) in enumerate(station_indexes):
                 station_values[station]["temperature"].append(float(data[0][y - row0, x - col0]))
@@ -728,17 +824,25 @@ def main():
             province,
             cities,
             region,
+            airports,
+            montage_plane_scale,
             initialization_label,
         )
-    station_data = [(airport[0], station_values[index]) for index, airport in enumerate(AIRPORTS)]
+    station_data = [
+        (airport[0], station_values[index]) for index, airport in enumerate(airports)
+    ]
     station_meteogram(
         output / "airport_temperature_timeseries.png",
-        [moment.astimezone(BJT) for moment in times], station_data, ("temperature",),
+        [moment.astimezone(BJT) for moment in times],
+        station_data,
+        ("temperature",),
+        airports,
     )
     station_meteogram(
         output / "airport_wind_timeseries.png",
         [moment.astimezone(BJT) for moment in times], station_data,
         ("wind", "vertical", "horizontal"),
+        airports,
     )
     manifest = {
         "experimental": not args.production,
@@ -748,13 +852,23 @@ def main():
         "lead_indices": "T%d–T%d" % (args.start, args.start + len(times) - 1),
         "valid_times_bjt": [moment.astimezone(BJT).isoformat() for moment in times],
         "products": [title for _, title, _, _ in PRODUCTS],
-        "airports": [airport[0] for airport in AIRPORTS],
+        "profile": args.profile,
+        "airports": [airport[0] for airport in airports],
     }
     (output / ("production_manifest.json" if args.production else "preview_manifest.json")).write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
     if args.production:
-        write_production_manifest(output, args.run_id, args.input, times, args.start)
+        write_production_manifest(
+            output,
+            args.run_id,
+            args.input,
+            times,
+            args.start,
+            airports,
+            product_prefix,
+            args.profile,
+        )
     else:
         write_web_manifest(output, [moment.astimezone(BJT) for moment in times], args.start)
     print("wrote preview to %s" % output)
