@@ -253,7 +253,7 @@ def coordinate_ticks(lower, upper, spacing=2.0):
 
 def coordinate_tick_spacing(lower, upper):
     """Keep labels readable on both compact nests and wide parent domains."""
-    return 4.0 if upper - lower > 18.0 else 2.0
+    return 8.0 if upper - lower > 18.0 else 2.0
 
 
 def decorate(
