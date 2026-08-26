@@ -251,6 +251,11 @@ def coordinate_ticks(lower, upper, spacing=2.0):
     return np.linspace(lower, upper, 3)
 
 
+def coordinate_tick_spacing(lower, upper):
+    """Keep labels readable on both compact nests and wide parent domains."""
+    return 4.0 if upper - lower > 18.0 else 2.0
+
+
 def decorate(
     ax,
     province,
@@ -285,7 +290,9 @@ def decorate(
         ax.add_patch(Polygon(inner, closed=True, facecolor="#050505", edgecolor="#050505", linewidth=0.45, zorder=9))
     ax.set_xlim(west, east)
     ax.set_ylim(south, north)
-    ax.set_xticks(coordinate_ticks(west, east))
+    ax.set_xticks(
+        coordinate_ticks(west, east, coordinate_tick_spacing(west, east))
+    )
     ax.set_yticks(coordinate_ticks(south, north))
     ax.set_xticklabels(["%d°E" % value for value in ax.get_xticks()], fontsize=tick_size, fontweight="bold")
     ax.set_yticklabels(["%d°N" % value for value in ax.get_yticks()], fontsize=tick_size, fontweight="bold")
