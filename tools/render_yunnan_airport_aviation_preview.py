@@ -259,6 +259,16 @@ def coordinate_tick_spacing(lower, upper):
     return 8.0 if upper - lower > 18.0 else 2.0
 
 
+def latitude_ticks(lower, upper):
+    """Use a four-degree latitude cadence on broad parent domains."""
+    if upper - lower >= 14.0:
+        first = math.ceil(lower)
+        ticks = np.arange(first, upper + 0.01, 4.0)
+        if len(ticks) >= 2:
+            return ticks
+    return coordinate_ticks(lower, upper)
+
+
 def line_intersects_region(line, region):
     """Avoid sending off-map SHP records through every Matplotlib panel."""
     west, east, south, north = region
@@ -280,8 +290,6 @@ def decorate(
     show_y=True,
     tick_size=12,
     plane_scale=0.120,
-    hide_left_x_label=False,
-    hide_right_x_label=False,
 ):
     west, east, south, north = region
     for line in cities:
@@ -313,13 +321,14 @@ def decorate(
     ax.set_xticks(
         coordinate_ticks(west, east, coordinate_tick_spacing(west, east))
     )
-    ax.set_yticks(coordinate_ticks(south, north))
+    ax.set_yticks(latitude_ticks(south, north))
     x_labels = ["%d°E" % value for value in ax.get_xticks()]
-    if hide_left_x_label and x_labels:
-        x_labels[0] = ""
-    if hide_right_x_label and x_labels:
-        x_labels[-1] = ""
-    ax.set_xticklabels(x_labels, fontsize=tick_size, fontweight="bold")
+    x_texts = ax.set_xticklabels(x_labels, fontsize=tick_size, fontweight="bold")
+    # Keep every panel's edge coordinates.  Align the first and last labels
+    # toward the map interior so adjacent montage panels do not collide.
+    if x_texts:
+        x_texts[0].set_horizontalalignment("left")
+        x_texts[-1].set_horizontalalignment("right")
     ax.set_yticklabels(["%d°N" % value for value in ax.get_yticks()], fontsize=tick_size, fontweight="bold")
     for spine in ax.spines.values():
         spine.set_linewidth(3.0)
@@ -461,8 +470,6 @@ def montage(
             tick_size=19,
             plane_scale=plane_scale,
             target_vectors=18,
-            hide_left_x_label=index % columns > 0,
-            hide_right_x_label=index % columns < columns - 1,
         )
         axis.set_title(valid_interval(valid_time), fontsize=18, pad=5, fontweight="bold")
     figure.suptitle("Forecast Initialization: %s" % initialization_label,
