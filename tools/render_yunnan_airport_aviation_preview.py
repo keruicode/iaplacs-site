@@ -138,7 +138,10 @@ def shp_lines(path):
             if len(content) < 44:
                 continue
             shape_type = struct.unpack("<i", content[:4])[0]
-            if shape_type not in (3, 5):
+            # PolyLineZ/PolygonZ keep the same XY header and point layout as
+            # their 2-D counterparts, followed by optional Z/M arrays.  The
+            # operational China province layer is PolygonZ (15).
+            if shape_type not in (3, 5, 13, 15):
                 continue
             part_count, point_count = struct.unpack("<2i", content[36:44])
             part_offset = 44
@@ -256,6 +259,17 @@ def coordinate_tick_spacing(lower, upper):
     return 8.0 if upper - lower > 18.0 else 2.0
 
 
+def line_intersects_region(line, region):
+    """Avoid sending off-map SHP records through every Matplotlib panel."""
+    west, east, south, north = region
+    return not (
+        np.nanmax(line[:, 0]) < west
+        or np.nanmin(line[:, 0]) > east
+        or np.nanmax(line[:, 1]) < south
+        or np.nanmin(line[:, 1]) > north
+    )
+
+
 def decorate(
     ax,
     province,
@@ -266,15 +280,21 @@ def decorate(
     show_y=True,
     tick_size=12,
     plane_scale=0.120,
+    hide_left_x_label=False,
+    hide_right_x_label=False,
 ):
     west, east, south, north = region
     for line in cities:
+        if not line_intersects_region(line, region):
+            continue
         ax.plot(line[:, 0], line[:, 1], color="#404040", linewidth=1.6, zorder=4)
-    # Draw the province outline last so coincident city segments cannot cover
-    # it.  The 5 pt stroke remains distinct after the 6000 px WebP resize and
-    # matches the visual hierarchy of the precipitation products.
+    # A white underlay keeps the province boundary visible over both hot
+    # temperature colours and dark wind-speed fills.
     for line in province:
-        ax.plot(line[:, 0], line[:, 1], color="black", linewidth=5.0, zorder=5)
+        if not line_intersects_region(line, region):
+            continue
+        ax.plot(line[:, 0], line[:, 1], color="white", linewidth=4.8, zorder=5)
+        ax.plot(line[:, 0], line[:, 1], color="black", linewidth=2.8, zorder=6)
     # Use a real aircraft silhouette rather than a marker glyph: fonts on IAP
     # do not consistently include the airplane Unicode character or a suitable
     # icon.  This matches the outlined marker used by the airport precipitation
@@ -286,15 +306,20 @@ def decorate(
     for name, latitude, longitude in airports:
         outer = plane_template * plane_scale + np.array((longitude, latitude))
         inner = plane_template * (plane_scale * 0.78) + np.array((longitude, latitude))
-        ax.add_patch(Polygon(outer, closed=True, facecolor="white", edgecolor="white", linewidth=1.15, zorder=8))
-        ax.add_patch(Polygon(inner, closed=True, facecolor="#050505", edgecolor="#050505", linewidth=0.45, zorder=9))
+        ax.add_patch(Polygon(outer, closed=True, facecolor="white", edgecolor="white", linewidth=1.8, zorder=8))
+        ax.add_patch(Polygon(inner, closed=True, facecolor="#050505", edgecolor="#050505", linewidth=0.65, zorder=9))
     ax.set_xlim(west, east)
     ax.set_ylim(south, north)
     ax.set_xticks(
         coordinate_ticks(west, east, coordinate_tick_spacing(west, east))
     )
     ax.set_yticks(coordinate_ticks(south, north))
-    ax.set_xticklabels(["%d°E" % value for value in ax.get_xticks()], fontsize=tick_size, fontweight="bold")
+    x_labels = ["%d°E" % value for value in ax.get_xticks()]
+    if hide_left_x_label and x_labels:
+        x_labels[0] = ""
+    if hide_right_x_label and x_labels:
+        x_labels[-1] = ""
+    ax.set_xticklabels(x_labels, fontsize=tick_size, fontweight="bold")
     ax.set_yticklabels(["%d°N" % value for value in ax.get_yticks()], fontsize=tick_size, fontweight="bold")
     for spine in ax.spines.values():
         spine.set_linewidth(3.0)
@@ -417,10 +442,11 @@ def montage(
 ):
     columns = 4
     rows = max(1, int(math.ceil(len(time_steps) / float(columns))))
-    figure, axes = plt.subplots(rows, columns, figsize=(18.2, max(15.1, 5.0 * rows)))
+    figure_height = max(10.8, 2.65 * rows + 1.5)
+    figure, axes = plt.subplots(rows, columns, figsize=(18.2, figure_height))
     axes = np.asarray(axes).reshape(-1)
-    axes_top = 0.945 if rows <= 3 else 0.962
-    figure.subplots_adjust(left=0.085, right=0.875, bottom=0.075, top=axes_top, wspace=0.105, hspace=0.165)
+    axes_top = 0.89 if rows <= 3 else 0.91
+    figure.subplots_adjust(left=0.085, right=0.875, bottom=0.065, top=axes_top, wspace=0.085, hspace=0.105)
     image = None
     bounds = None
     for index, axis in enumerate(axes):
@@ -435,6 +461,8 @@ def montage(
             tick_size=19,
             plane_scale=plane_scale,
             target_vectors=18,
+            hide_left_x_label=index % columns > 0,
+            hide_right_x_label=index % columns < columns - 1,
         )
         axis.set_title(valid_interval(valid_time), fontsize=18, pad=5, fontweight="bold")
     figure.suptitle("Forecast Initialization: %s" % initialization_label,
@@ -766,8 +794,8 @@ def main():
             montage_plane_scale = 0.180
         else:
             domain_width = region[1] - region[0]
-            single_plane_scale = min(0.55, max(0.24, domain_width * 0.021))
-            montage_plane_scale = min(0.45, max(0.18, domain_width * 0.016))
+            single_plane_scale = min(0.90, max(0.28, domain_width * 0.035))
+            montage_plane_scale = min(0.75, max(0.22, domain_width * 0.028))
         for airport_name, airport_lat, airport_lon in airports:
             if not (
                 region[0] <= airport_lon <= region[1]

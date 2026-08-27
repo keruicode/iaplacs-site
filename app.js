@@ -970,7 +970,7 @@ function renderRuns() {
       state.productIndex = 0;
       state.leadIndex = 0;
       state.hourlyPanelIndex = 0;
-      state.forecastViewMode = pageConfig.service === "airport" ? "hourly" : "montage";
+      state.forecastViewMode = defaultForecastViewMode(run.products?.[0]);
       state.hasNewLatestRun = false;
       render();
     });
@@ -1003,7 +1003,7 @@ function renderProducts() {
       state.productIndex = index;
       state.leadIndex = defaultLeadIndex(product);
       state.hourlyPanelIndex = 0;
-      state.forecastViewMode = pageConfig.service === "airport" ? "hourly" : "montage";
+      state.forecastViewMode = defaultForecastViewMode(product);
       render();
     });
     els.productList.appendChild(button);
@@ -1082,6 +1082,16 @@ function currentFrame() {
 
 function supportsHourlyView(product = currentProduct()) {
   return HOURLY_PRECIP_PRODUCT_IDS[pageConfig.service]?.has(product?.id) || false;
+}
+
+function defaultForecastViewMode(product) {
+  const xinjiangAviationProduct = [
+    "xinjiang_airport_aviation_temperature",
+    "xinjiang_airport_aviation_wind",
+  ].includes(product?.id);
+  return pageConfig.service === "airport" || xinjiangAviationProduct
+    ? "hourly"
+    : "montage";
 }
 
 function hourlyFrames(frame = currentFrame()) {

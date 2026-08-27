@@ -498,6 +498,8 @@ def attach_latest_cma_24h_observation(runs: list[dict]) -> None:
                 "airport_wind",
                 "airport_aviation_temperature",
                 "airport_aviation_wind",
+                "xinjiang_airport_aviation_temperature",
+                "xinjiang_airport_aviation_wind",
             }
         ),
         len(products),
