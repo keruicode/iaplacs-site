@@ -25,7 +25,7 @@ remote_env_cmd=$(
 ssh "$GITHUB_HOST" "$remote_env_cmd" <<'REMOTE'
 set -Eeuo pipefail
 
-unset LD_LIBRARY_PATH LIBRARY_PATH
+unset LD_LIBRARY_PATH LIBRARY_PATH LD_PRELOAD
 
 : "${GITHUB_KEY:?missing GITHUB_KEY}"
 : "${GIT_URL:?missing GIT_URL}"
@@ -36,8 +36,8 @@ unset LD_LIBRARY_PATH LIBRARY_PATH
 GIT_SSH_WRAPPER="$(mktemp /tmp/iaplacs-cma-git.XXXXXX)"
 cat > "$GIT_SSH_WRAPPER" <<EOF
 #!/usr/bin/env bash
-unset LD_LIBRARY_PATH LIBRARY_PATH
-exec ssh -i "$GITHUB_KEY" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no \
+unset LD_LIBRARY_PATH LIBRARY_PATH LD_PRELOAD
+exec /usr/bin/ssh -i "$GITHUB_KEY" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no \
   -o ConnectTimeout=30 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 "\$@"
 EOF
 chmod 700 "$GIT_SSH_WRAPPER"

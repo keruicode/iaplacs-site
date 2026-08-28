@@ -150,7 +150,7 @@ remote_env_cmd=$(
 ssh "$GITHUB_HOST" "$remote_env_cmd" <<'REMOTE'
 set -Eeuo pipefail
 
-unset LD_LIBRARY_PATH LIBRARY_PATH
+unset LD_LIBRARY_PATH LIBRARY_PATH LD_PRELOAD
 
 IAPLACS_OSS_ENV_FILE="${IAPLACS_OSS_ENV_FILE:-$HOME/.iaplacs-oss.env}"
 if [ -r "$IAPLACS_OSS_ENV_FILE" ]; then
@@ -278,8 +278,8 @@ fi
 GIT_SSH_WRAPPER="$(mktemp /tmp/iaplacs_git_ssh.XXXXXX)"
 cat > "$GIT_SSH_WRAPPER" <<EOF
 #!/usr/bin/env bash
-unset LD_LIBRARY_PATH LIBRARY_PATH
-exec ssh -i "$GITHUB_KEY" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no \
+unset LD_LIBRARY_PATH LIBRARY_PATH LD_PRELOAD
+exec /usr/bin/ssh -i "$GITHUB_KEY" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no \
   -o ConnectTimeout=30 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 "\$@"
 EOF
 chmod 700 "$GIT_SSH_WRAPPER"
