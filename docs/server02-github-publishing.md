@@ -21,10 +21,13 @@ used by automation even though the public `.pub` files are not themselves the
 secret. IAP-LACS therefore keeps automation-only key copies in
 `~/.iaplacs/ssh-state/` (directory mode `0700`, private-key mode `0600`).
 
-`ensure_iaplacs_ssh_state.sh` restores the missing IAP-to-server02 `id_rsa`,
-rewrites the dedicated GitHub key/wrapper, and deliberately does **not** alter
-`authorized_keys`. The latter is login authorization managed by the platform
-or user and must never be blindly replaced by automation.
+`ensure_iaplacs_ssh_state.sh` restores the missing IAP-to-server02 `id_rsa`
+and rewrites the dedicated GitHub key/wrapper. It also retains one explicitly
+managed inbound public-key line, identified by the comment
+`2602005529@qq.com`, in `~/.iaplacs/ssh-state/authorized_keys.iaplacs`.
+When `~/.ssh` is recreated, the script appends that exact line only when it is
+missing. It never removes, replaces, or otherwise changes the remaining
+`authorized_keys` entries managed by the platform or user.
 
 The user crontab runs this recovery once per hour:
 
