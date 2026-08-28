@@ -23,8 +23,8 @@ rm -f "${tmp}.bak"
 cat >> "$tmp" <<EOF
 
 $START
-*/2 * * * * $RECOVERY_SCRIPT >> $LOG_FILE 2>&1
+0 * * * * $RECOVERY_SCRIPT >> $LOG_FILE 2>&1
 $END
 EOF
 crontab "$tmp"
-echo "Installed IAP-LACS SSH recovery cron: every 2 minutes"
+echo "Installed IAP-LACS SSH recovery cron: hourly"
