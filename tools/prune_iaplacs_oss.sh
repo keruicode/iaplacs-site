@@ -27,6 +27,8 @@ set +a
 OSSUTIL_BIN="${IAPLACS_OSSUTIL_BIN:-$HOME/bin/ossutil}"
 RETAIN_RUNS="${IAPLACS_OSS_RETAIN_RUNS:-5}"
 OBJECT_PREFIX="${IAPLACS_OSS_PREFIX:-}"
+SITE_REPO="${IAPLACS_SITE_REPO:-$HOME/iaplacs-site}"
+CATALOG_FILE="${IAPLACS_FORECAST_CATALOG:-$SITE_REPO/data/current/forecast-runs.json}"
 
 if [ ! -x "$OSSUTIL_BIN" ]; then
 	echo "ERROR: ossutil not found or not executable: $OSSUTIL_BIN" >&2
@@ -34,6 +36,10 @@ if [ ! -x "$OSSUTIL_BIN" ]; then
 fi
 if [[ ! "$RETAIN_RUNS" =~ ^[1-9][0-9]*$ ]]; then
 	echo "ERROR: IAPLACS_OSS_RETAIN_RUNS must be a positive integer" >&2
+	exit 1
+fi
+if [ "$MODE" = "--apply" ] && [ ! -r "$CATALOG_FILE" ]; then
+	echo "ERROR: public forecast catalog is not readable: $CATALOG_FILE" >&2
 	exit 1
 fi
 
@@ -73,6 +79,12 @@ while read -r _date _time _offset _zone size _storage _etag object_url; do
 			run_prefix="${run_dir#wrf_montage_}"
 			printf 'wrf_montage\t%s\t%s\t%s\n' "$run_prefix" "$size" "$object_url" >> "$TMP_INVENTORY"
 			;;
+		oss://*/"$MAPS_PREFIX"/airport_yunnan_[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]_[0-9][0-9]/*)
+			relative="${object_url#*"/$MAPS_PREFIX/"}"
+			run_dir="${relative%%/*}"
+			run_prefix="${run_dir#airport_yunnan_}"
+			printf 'airport_yunnan\t%s\t%s\t%s\n' "$run_prefix" "$size" "$object_url" >> "$TMP_INVENTORY"
+			;;
 	esac
 done < "$TMP_LIST"
 
@@ -84,8 +96,9 @@ fi
 deleted_runs=0
 deleted_objects=0
 deleted_bytes=0
+protected_runs=0
 
-for family in worknx_summary workxj_summary wrf_montage; do
+for family in worknx_summary workxj_summary wrf_montage airport_yunnan; do
 	awk -F '\t' -v family="$family" '$1 == family {print $2}' "$TMP_INVENTORY" | sort -ru > "$TMP_RUNS"
 	all_runs=()
 	while IFS= read -r run_prefix; do
@@ -103,6 +116,11 @@ for family in worknx_summary workxj_summary wrf_montage; do
 	fi
 
 	for run_prefix in "${all_runs[@]:RETAIN_RUNS}"; do
+		if [ -r "$CATALOG_FILE" ] && grep -Fq "${family}_${run_prefix}" "$CATALOG_FILE"; then
+			echo "  protect: run=$run_prefix reason=referenced-by-public-catalog"
+			protected_runs=$((protected_runs + 1))
+			continue
+		fi
 		object_count="$(awk -F '\t' -v family="$family" -v run="$run_prefix" '$1 == family && $2 == run {count++} END {print count + 0}' "$TMP_INVENTORY")"
 		object_bytes="$(awk -F '\t' -v family="$family" -v run="$run_prefix" '$1 == family && $2 == run {sum += $3} END {printf "%.0f", sum + 0}' "$TMP_INVENTORY")"
 		cloud_prefix="oss://${IAPLACS_OSS_BUCKET}/${MAPS_PREFIX}/${family}_${run_prefix}/"
@@ -118,7 +136,7 @@ for family in worknx_summary workxj_summary wrf_montage; do
 done
 
 if [ "$MODE" = "--dry-run" ]; then
-	echo "Dry run only: candidate_runs=$deleted_runs candidate_objects=$deleted_objects candidate_bytes=$deleted_bytes"
+	echo "Dry run only: candidate_runs=$deleted_runs candidate_objects=$deleted_objects candidate_bytes=$deleted_bytes protected_runs=$protected_runs"
 else
-	echo "Retention applied: deleted_runs=$deleted_runs deleted_objects=$deleted_objects deleted_bytes=$deleted_bytes"
+	echo "Retention applied: deleted_runs=$deleted_runs deleted_objects=$deleted_objects deleted_bytes=$deleted_bytes protected_runs=$protected_runs"
 fi
