@@ -47,6 +47,7 @@ REGION_PROFILES = {
     },
 }
 NESTED_DOMAIN_MARGIN = 0.10  # degrees; preserve a narrow border around d02
+XINJIANG_NESTED_WEST_MARGIN = 0.50  # include the 72E tick west of the d02 edge
 CHINESE_FONT = None
 
 PLOT_PRODUCTS = (
@@ -167,11 +168,17 @@ def wrf_times(ds):
     return values
 
 
-def display_region(lat, lon, regional_domain, default_region):
+def display_region(
+    lat,
+    lon,
+    regional_domain,
+    default_region,
+    west_margin=NESTED_DOMAIN_MARGIN,
+):
     """Return the operational regional map extent for the selected WRF domain."""
     if regional_domain == "d02":
         return (
-            float(np.nanmin(lon)) - NESTED_DOMAIN_MARGIN,
+            float(np.nanmin(lon)) - west_margin,
             float(np.nanmax(lon)) + NESTED_DOMAIN_MARGIN,
             float(np.nanmin(lat)) - NESTED_DOMAIN_MARGIN,
             float(np.nanmax(lat)) + NESTED_DOMAIN_MARGIN,
@@ -795,7 +802,18 @@ def main():
         times = wrf_times(ds)[args.start:end]
         lat = np.asarray(ds.variables["XLAT"][0], dtype=float)
         lon = np.asarray(ds.variables["XLONG"][0], dtype=float)
-        region = display_region(lat, lon, args.regional_domain, default_region)
+        west_margin = (
+            XINJIANG_NESTED_WEST_MARGIN
+            if args.profile == "xinjiang"
+            else NESTED_DOMAIN_MARGIN
+        )
+        region = display_region(
+            lat,
+            lon,
+            args.regional_domain,
+            default_region,
+            west_margin=west_margin,
+        )
         if args.profile == "yunnan":
             single_plane_scale = 0.250
             montage_plane_scale = 0.180

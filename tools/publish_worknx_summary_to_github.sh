@@ -354,6 +354,16 @@ git pull --rebase
 mkdir -p "$DEST"
 # A single run directory contains national, regional, and accumulated products.
 # Preserve earlier assets from the same run while publishing the next one.
+if [[ "$BASE" == *"_combined_overview_"* ]]; then
+	overview_prefix="${BASE%%_combined_overview_*}"
+	# A run may be redrawn with a different montage grid after its time count
+	# changes. Remove only older layouts of this same semantic product so the
+	# catalog cannot expose both the obsolete and replacement mosaics.
+	for stale_layout in "$DEST/${overview_prefix}_combined_overview_"*_grid.*; do
+		[[ -f "$stale_layout" ]] || continue
+		rm -f -- "$stale_layout"
+	done
+fi
 rsync -av --include="$BASE" --include="$WEBP_BASE" --include="$PREVIEW_BASE" --include="manifest_fragment.json" --exclude='*' "$INCOMING/" "$DEST/"
 publish_oss_assets
 

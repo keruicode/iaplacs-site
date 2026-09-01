@@ -946,6 +946,7 @@ def build_regional_frames(
         groups = primary_groups
 
     frames = []
+    hourly_frames_by_id: dict[str, tuple[float, dict]] = {}
     fragment_file = fragment.get("file", "")
     fragment_stem = Path(fragment_file).stem if fragment_file else ""
     for key, candidates in sorted(groups.items(), key=ningxia_frame_sort_key):
@@ -983,7 +984,15 @@ def build_regional_frames(
             valid_time = fragment.get("valid_time")
             if valid_time:
                 frame["valid_time"] = valid_time
-        frames.append(frame)
+        if accumulation_hours is None:
+            source_mtime = max(candidate.stat().st_mtime for candidate in existing)
+            previous = hourly_frames_by_id.get(frame_id)
+            if previous is None or source_mtime > previous[0]:
+                hourly_frames_by_id[frame_id] = (source_mtime, frame)
+        else:
+            frames.append(frame)
+    if accumulation_hours is None:
+        frames = [item[1] for item in hourly_frames_by_id.values()]
     frames.sort(key=lambda item: (item.get("lead", 0), item["file"]))
     return frames
 

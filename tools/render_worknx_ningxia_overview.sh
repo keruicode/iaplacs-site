@@ -8,6 +8,7 @@ WORK_NX_ROOT="${WORK_NX_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK_nx}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-$SCRIPT_DIR/worknx_ningxia_overview}"
 SERVICE_LABEL="${SERVICE_LABEL:-Ningxia}"
 SERVICE_FILE_TOKEN="${SERVICE_FILE_TOKEN:-Ningxia}"
+TWELVE_PANEL_GRID="${TWELVE_PANEL_GRID:-}"
 REGION_MODE="${REGION_MODE:-ningxia}"
 NATIONAL_REGION_MODE="${NATIONAL_REGION_MODE:-$REGION_MODE}"
 HAIL_OUTPUT_AREA="${HAIL_OUTPUT_AREA:-${REGION_MODE}_hail_warning}"
@@ -256,6 +257,10 @@ render_source() {
   # make the sequence validator reject an otherwise complete rerender.
   rm -f "$panel_dir"/*.png "$caption_dir"/*.png
   rm -f "$national_panel_dir"/*.png "$national_caption_dir"/*.png
+  rm -f \
+    "$run_dir"/Precip_hourly_WRF_"${SERVICE_FILE_TOKEN}"_T13_T*_InitUTC_"${run_date}"_"${run_hour}"_00_combined_overview_*_grid.* \
+    "$run_dir"/Precip_hourly_WRF_"${SERVICE_FILE_TOKEN}"Frozen_T13_T*_InitUTC_"${run_date}"_"${run_hour}"_00_combined_overview_*_grid.* \
+    "$run_dir"/Precip_hourly_WRF_AllRain_T13_T*_InitUTC_"${run_date}"_"${run_hour}"_00_combined_overview_*_grid.*
   echo "Rendering $SERVICE_LABEL T13-T${last_lead} panels for $run_prefix from $wrf_dir"
   WORK_NX_WRF_DIR="$wrf_dir" \
     WORK_NX_NINGXIA_PNG_DIR="$panel_dir" \
@@ -274,8 +279,12 @@ render_source() {
     echo "ERROR: expected $((last_lead - 12)) panels, found ${panel_count} for $run_prefix" >&2
     return 1
   fi
-  overview_rows=$(((panel_count + 5) / 6))
-  overview_grid="6x${overview_rows}"
+  if (( panel_count == 12 )) && [[ -n "$TWELVE_PANEL_GRID" ]]; then
+    overview_grid="$TWELVE_PANEL_GRID"
+  else
+    overview_rows=$(((panel_count + 5) / 6))
+    overview_grid="6x${overview_rows}"
+  fi
   overview="$run_dir/Precip_hourly_WRF_${SERVICE_FILE_TOKEN}_T13_T${last_lead}_InitUTC_${run_date}_${run_hour}_00_combined_overview_${overview_grid}_grid.png"
 
   local captioned_panels=()

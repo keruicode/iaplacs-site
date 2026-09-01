@@ -88,15 +88,15 @@ begin
     national_lat_labels = (/"15~S~o~N~N", "20~S~o~N~N", \
                             "25~S~o~N~N", "30~S~o~N~N"/)
   else if (region_mode.eq."xinjiang") then
-    ; WORK_xj d01 spans roughly 63.7-116.3E and 20.9-54.1N. Use the
-    ; complete model domain so precipitation is not clipped at the edges.
-    lon_min = 64.0
-    lon_max = 117.0
+    ; The September WORK_xj parent grid extends well west of the previous
+    ; domain. Keep its complete 48.46-107.54E / 21.63-57.10N footprint.
+    lon_min = 48.0
+    lon_max = 108.0
     lat_min = 20.0
-    lat_max = 55.0
-    national_lon_ticks = (/65.0, 75.0, 85.0, 95.0, 105.0, 115.0/)
-    national_lon_labels = (/"65~S~o~N~E", "75~S~o~N~E", "85~S~o~N~E", \
-                            "95~S~o~N~E", "105~S~o~N~E", "115~S~o~N~E"/)
+    lat_max = 58.0
+    national_lon_ticks = (/50.0, 60.0, 70.0, 80.0, 90.0, 100.0/)
+    national_lon_labels = (/"50~S~o~N~E", "60~S~o~N~E", "70~S~o~N~E", \
+                            "80~S~o~N~E", "90~S~o~N~E", "100~S~o~N~E"/)
     national_lat_ticks = (/20.0, 30.0, 40.0, 50.0/)
     national_lat_labels = (/"20~S~o~N~N", "30~S~o~N~N", \
                             "40~S~o~N~N", "50~S~o~N~N"/)
