@@ -4,7 +4,7 @@
     "name": "IAP-LACS Forecast",
     "domain": "iaplacs.xyz"
   },
-  "published_at": "2026-09-11T12:35:59+08:00",
+  "published_at": "2026-09-11T14:41:39+08:00",
   "services": {
     "airport": {
       "title": "机场气象服务",
@@ -10864,8 +10864,99 @@
       "title": "宁夏预报",
       "subtitle": "Ningxia forecast",
       "note": "宁夏页面集中展示 WORK_nx 发布的宁夏区域预报图，并可切换同一时次的全国模拟图。新起报时次推送到仓库后，会自动出现在顶部起报时间选择区。",
-      "latest_run": "20260910_12",
+      "latest_run": "20260910_18",
       "runs": [
+        {
+          "id": "20260910_18",
+          "label": "2026-09-11 02:00 BJT",
+          "run_time": "2026-09-11T02:00:00+08:00",
+          "published_at": "2026-09-11T14:41:39+08:00",
+          "summary": "宁夏区域与全国预报图集，共 1 张图",
+          "products": [
+            {
+              "id": "ningxia_precip_series",
+              "title": "降水预报图集",
+              "category": "宁夏预报",
+              "unit": "mm",
+              "color": "#0f68c8",
+              "description": "默认显示宁夏区域图，可切换中国中部和冰雹预警图。",
+              "metrics": [
+                {
+                  "label": "起报时次",
+                  "value": "20260910 18 UTC"
+                },
+                {
+                  "label": "生成时间",
+                  "value": "2026-09-11 14:41 BJT"
+                },
+                {
+                  "label": "图像数量",
+                  "value": "1"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "ningxia_region",
+                  "lead": 0,
+                  "lead_label": "宁夏区域",
+                  "valid_label": "当前显示：宁夏区域",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260910_18/Precip_hourly_WRF_Ningxia_T13_T36_InitUTC_2026-09-10_18_00_combined_overview_6x4_grid.webp",
+                  "bytes": 1540482,
+                  "individual_frames": [],
+                  "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260910_18/Precip_hourly_WRF_Ningxia_T13_T36_InitUTC_2026-09-10_18_00_combined_overview_6x4_grid.preview.webp",
+                  "preview_bytes": 372756,
+                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260910_18/Precip_hourly_WRF_Ningxia_T13_T36_InitUTC_2026-09-10_18_00_combined_overview_6x4_grid.png",
+                  "full_bytes": 2208178,
+                  "valid_time": "2026-09-13T02:00:00+08:00"
+                }
+              ]
+            },
+            {
+              "id": "cma_observed_precip_24h",
+              "title": "中央气象台24小时降水实况",
+              "category": "中央气象台实况",
+              "unit": "mm",
+              "color": "#0f68c8",
+              "description": "中央气象台24小时累计降水实况（08/20 BJT）。",
+              "metrics": [
+                {
+                  "label": "数据来源",
+                  "value": "中央气象台"
+                },
+                {
+                  "label": "图像数量",
+                  "value": "3"
+                }
+              ],
+              "frames": [
+                {
+                  "id": "cma_24h_2026091008",
+                  "lead": 2026091008,
+                  "lead_label": "09-09 08-09-10 08",
+                  "valid_label": "2026-09-10 08:00 BJT",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/cma_24h_observation/cma_24h_obs_2026091008_BJT.jpg",
+                  "bytes": 124798
+                },
+                {
+                  "id": "cma_24h_2026091020",
+                  "lead": 2026091020,
+                  "lead_label": "09-09 20-09-10 20",
+                  "valid_label": "2026-09-10 20:00 BJT",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/cma_24h_observation/cma_24h_obs_2026091020_BJT.jpg",
+                  "bytes": 123616
+                },
+                {
+                  "id": "cma_24h_2026091108",
+                  "lead": 2026091108,
+                  "lead_label": "09-10 08-09-11 08",
+                  "valid_label": "2026-09-11 08:00 BJT",
+                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/cma_24h_observation/cma_24h_obs_2026091108_BJT.jpg",
+                  "bytes": 121111
+                }
+              ]
+            }
+          ]
+        },
         {
           "id": "20260910_12",
           "label": "2026-09-10 20:00 BJT",
@@ -11669,50 +11760,6 @@
                   "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260910_12/Precip_accum_24h_WRF_Ningxia_T13_T36_InitUTC_2026-09-10_12_00_2026091108-2026091208_combined_overview_1x1_grid.png",
                   "full_bytes": 251676,
                   "valid_time": "2026-09-12T20:00:00+08:00"
-                }
-              ]
-            },
-            {
-              "id": "cma_observed_precip_24h",
-              "title": "中央气象台24小时降水实况",
-              "category": "中央气象台实况",
-              "unit": "mm",
-              "color": "#0f68c8",
-              "description": "中央气象台24小时累计降水实况（08/20 BJT）。",
-              "metrics": [
-                {
-                  "label": "数据来源",
-                  "value": "中央气象台"
-                },
-                {
-                  "label": "图像数量",
-                  "value": "3"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "cma_24h_2026091008",
-                  "lead": 2026091008,
-                  "lead_label": "09-09 08-09-10 08",
-                  "valid_label": "2026-09-10 08:00 BJT",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/cma_24h_observation/cma_24h_obs_2026091008_BJT.jpg",
-                  "bytes": 124798
-                },
-                {
-                  "id": "cma_24h_2026091020",
-                  "lead": 2026091020,
-                  "lead_label": "09-09 20-09-10 20",
-                  "valid_label": "2026-09-10 20:00 BJT",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/cma_24h_observation/cma_24h_obs_2026091020_BJT.jpg",
-                  "bytes": 123616
-                },
-                {
-                  "id": "cma_24h_2026091108",
-                  "lead": 2026091108,
-                  "lead_label": "09-10 08-09-11 08",
-                  "valid_label": "2026-09-11 08:00 BJT",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/cma_24h_observation/cma_24h_obs_2026091108_BJT.jpg",
-                  "bytes": 121111
                 }
               ]
             }
@@ -14041,814 +14088,6 @@
                   "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_18/Precip_accum_12h_WRF_Ningxia_T13_T36_InitUTC_2026-09-09_18_00_2026091020-2026091108_combined_overview_1x1_grid.png",
                   "full_bytes": 248389,
                   "valid_time": "2026-09-12T02:00:00+08:00"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "20260909_12",
-          "label": "2026-09-09 20:00 BJT",
-          "run_time": "2026-09-09T20:00:00+08:00",
-          "published_at": "2026-09-10T06:39:00+08:00",
-          "summary": "宁夏区域与全国预报图集，共 3 张图",
-          "products": [
-            {
-              "id": "ningxia_precip_series",
-              "title": "降水预报图集",
-              "category": "宁夏预报",
-              "unit": "mm",
-              "color": "#0f68c8",
-              "description": "默认显示宁夏区域图，可切换中国中部和冰雹预警图。",
-              "metrics": [
-                {
-                  "label": "起报时次",
-                  "value": "20260909 12 UTC"
-                },
-                {
-                  "label": "生成时间",
-                  "value": "2026-09-10 06:39 BJT"
-                },
-                {
-                  "label": "图像数量",
-                  "value": "3"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "ningxia_region",
-                  "lead": 0,
-                  "lead_label": "宁夏区域",
-                  "valid_label": "当前显示：宁夏区域",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/Precip_hourly_WRF_Ningxia_T13_T36_InitUTC_2026-09-09_12_00_combined_overview_6x4_grid.webp",
-                  "bytes": 1508538,
-                  "individual_frames": [
-                    {
-                      "id": "ningxia_region_hour_2026091008",
-                      "lead_label": "09-10 08:00-09:00",
-                      "valid_label": "2026-09-10 08:00-09:00 BJT",
-                      "valid_time": "2026-09-10T01:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091008-2026091009_BJT.webp",
-                      "bytes": 106536,
-                      "lead": 1
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091009",
-                      "lead_label": "09-10 09:00-10:00",
-                      "valid_label": "2026-09-10 09:00-10:00 BJT",
-                      "valid_time": "2026-09-10T02:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091009-2026091010_BJT.webp",
-                      "bytes": 106134,
-                      "lead": 2
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091010",
-                      "lead_label": "09-10 10:00-11:00",
-                      "valid_label": "2026-09-10 10:00-11:00 BJT",
-                      "valid_time": "2026-09-10T03:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091010-2026091011_BJT.webp",
-                      "bytes": 105546,
-                      "lead": 3
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091011",
-                      "lead_label": "09-10 11:00-12:00",
-                      "valid_label": "2026-09-10 11:00-12:00 BJT",
-                      "valid_time": "2026-09-10T04:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091011-2026091012_BJT.webp",
-                      "bytes": 105588,
-                      "lead": 4
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091012",
-                      "lead_label": "09-10 12:00-13:00",
-                      "valid_label": "2026-09-10 12:00-13:00 BJT",
-                      "valid_time": "2026-09-10T05:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091012-2026091013_BJT.webp",
-                      "bytes": 106056,
-                      "lead": 5
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091013",
-                      "lead_label": "09-10 13:00-14:00",
-                      "valid_label": "2026-09-10 13:00-14:00 BJT",
-                      "valid_time": "2026-09-10T06:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091013-2026091014_BJT.webp",
-                      "bytes": 105958,
-                      "lead": 6
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091014",
-                      "lead_label": "09-10 14:00-15:00",
-                      "valid_label": "2026-09-10 14:00-15:00 BJT",
-                      "valid_time": "2026-09-10T07:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091014-2026091015_BJT.webp",
-                      "bytes": 106196,
-                      "lead": 7
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091015",
-                      "lead_label": "09-10 15:00-16:00",
-                      "valid_label": "2026-09-10 15:00-16:00 BJT",
-                      "valid_time": "2026-09-10T08:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091015-2026091016_BJT.webp",
-                      "bytes": 105906,
-                      "lead": 8
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091016",
-                      "lead_label": "09-10 16:00-17:00",
-                      "valid_label": "2026-09-10 16:00-17:00 BJT",
-                      "valid_time": "2026-09-10T09:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091016-2026091017_BJT.webp",
-                      "bytes": 105976,
-                      "lead": 9
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091017",
-                      "lead_label": "09-10 17:00-18:00",
-                      "valid_label": "2026-09-10 17:00-18:00 BJT",
-                      "valid_time": "2026-09-10T10:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091017-2026091018_BJT.webp",
-                      "bytes": 106148,
-                      "lead": 10
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091018",
-                      "lead_label": "09-10 18:00-19:00",
-                      "valid_label": "2026-09-10 18:00-19:00 BJT",
-                      "valid_time": "2026-09-10T11:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091018-2026091019_BJT.webp",
-                      "bytes": 107360,
-                      "lead": 11
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091019",
-                      "lead_label": "09-10 19:00-20:00",
-                      "valid_label": "2026-09-10 19:00-20:00 BJT",
-                      "valid_time": "2026-09-10T12:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091019-2026091020_BJT.webp",
-                      "bytes": 107772,
-                      "lead": 12
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091020",
-                      "lead_label": "09-10 20:00-21:00",
-                      "valid_label": "2026-09-10 20:00-21:00 BJT",
-                      "valid_time": "2026-09-10T13:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091020-2026091021_BJT.webp",
-                      "bytes": 106176,
-                      "lead": 13
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091021",
-                      "lead_label": "09-10 21:00-22:00",
-                      "valid_label": "2026-09-10 21:00-22:00 BJT",
-                      "valid_time": "2026-09-10T14:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091021-2026091022_BJT.webp",
-                      "bytes": 108866,
-                      "lead": 14
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091022",
-                      "lead_label": "09-10 22:00-23:00",
-                      "valid_label": "2026-09-10 22:00-23:00 BJT",
-                      "valid_time": "2026-09-10T15:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091022-2026091023_BJT.webp",
-                      "bytes": 109708,
-                      "lead": 15
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091023",
-                      "lead_label": "09-10 23:00-00:00",
-                      "valid_label": "2026-09-10 23:00-00:00 BJT",
-                      "valid_time": "2026-09-10T16:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091023-2026091100_BJT.webp",
-                      "bytes": 109626,
-                      "lead": 16
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091100",
-                      "lead_label": "09-11 00:00-01:00",
-                      "valid_label": "2026-09-11 00:00-01:00 BJT",
-                      "valid_time": "2026-09-10T17:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091100-2026091101_BJT.webp",
-                      "bytes": 106898,
-                      "lead": 17
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091101",
-                      "lead_label": "09-11 01:00-02:00",
-                      "valid_label": "2026-09-11 01:00-02:00 BJT",
-                      "valid_time": "2026-09-10T18:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091101-2026091102_BJT.webp",
-                      "bytes": 105834,
-                      "lead": 18
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091102",
-                      "lead_label": "09-11 02:00-03:00",
-                      "valid_label": "2026-09-11 02:00-03:00 BJT",
-                      "valid_time": "2026-09-10T19:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091102-2026091103_BJT.webp",
-                      "bytes": 106176,
-                      "lead": 19
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091103",
-                      "lead_label": "09-11 03:00-04:00",
-                      "valid_label": "2026-09-11 03:00-04:00 BJT",
-                      "valid_time": "2026-09-10T20:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091103-2026091104_BJT.webp",
-                      "bytes": 106246,
-                      "lead": 20
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091104",
-                      "lead_label": "09-11 04:00-05:00",
-                      "valid_label": "2026-09-11 04:00-05:00 BJT",
-                      "valid_time": "2026-09-10T21:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091104-2026091105_BJT.webp",
-                      "bytes": 106164,
-                      "lead": 21
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091105",
-                      "lead_label": "09-11 05:00-06:00",
-                      "valid_label": "2026-09-11 05:00-06:00 BJT",
-                      "valid_time": "2026-09-10T22:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091105-2026091106_BJT.webp",
-                      "bytes": 106160,
-                      "lead": 22
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091106",
-                      "lead_label": "09-11 06:00-07:00",
-                      "valid_label": "2026-09-11 06:00-07:00 BJT",
-                      "valid_time": "2026-09-10T23:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091106-2026091107_BJT.webp",
-                      "bytes": 105944,
-                      "lead": 23
-                    },
-                    {
-                      "id": "ningxia_region_hour_2026091107",
-                      "lead_label": "09-11 07:00-08:00",
-                      "valid_label": "2026-09-11 07:00-08:00 BJT",
-                      "valid_time": "2026-09-11T00:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_region_rain_hour_2026091107-2026091108_BJT.webp",
-                      "bytes": 106064,
-                      "lead": 24
-                    }
-                  ],
-                  "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/Precip_hourly_WRF_Ningxia_T13_T36_InitUTC_2026-09-09_12_00_combined_overview_6x4_grid.preview.webp",
-                  "preview_bytes": 367572,
-                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/Precip_hourly_WRF_Ningxia_T13_T36_InitUTC_2026-09-09_12_00_combined_overview_6x4_grid.png",
-                  "full_bytes": 2088733
-                },
-                {
-                  "id": "worknx_national",
-                  "lead": 1,
-                  "lead_label": "中国中部",
-                  "valid_label": "当前显示：中国中部",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/Precip_hourly_WRF_AllRain_T13_T36_InitUTC_2026-09-09_12_00_combined_overview_6x4_grid.webp",
-                  "bytes": 1631982,
-                  "individual_frames": [
-                    {
-                      "id": "worknx_national_hour_2026091008",
-                      "lead_label": "09-10 08:00-09:00",
-                      "valid_label": "2026-09-10 08:00-09:00 BJT",
-                      "valid_time": "2026-09-10T01:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091008-2026091009_BJT.webp",
-                      "bytes": 111558,
-                      "lead": 1
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091009",
-                      "lead_label": "09-10 09:00-10:00",
-                      "valid_label": "2026-09-10 09:00-10:00 BJT",
-                      "valid_time": "2026-09-10T02:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091009-2026091010_BJT.webp",
-                      "bytes": 110344,
-                      "lead": 2
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091010",
-                      "lead_label": "09-10 10:00-11:00",
-                      "valid_label": "2026-09-10 10:00-11:00 BJT",
-                      "valid_time": "2026-09-10T03:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091010-2026091011_BJT.webp",
-                      "bytes": 109086,
-                      "lead": 3
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091011",
-                      "lead_label": "09-10 11:00-12:00",
-                      "valid_label": "2026-09-10 11:00-12:00 BJT",
-                      "valid_time": "2026-09-10T04:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091011-2026091012_BJT.webp",
-                      "bytes": 109422,
-                      "lead": 4
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091012",
-                      "lead_label": "09-10 12:00-13:00",
-                      "valid_label": "2026-09-10 12:00-13:00 BJT",
-                      "valid_time": "2026-09-10T05:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091012-2026091013_BJT.webp",
-                      "bytes": 110376,
-                      "lead": 5
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091013",
-                      "lead_label": "09-10 13:00-14:00",
-                      "valid_label": "2026-09-10 13:00-14:00 BJT",
-                      "valid_time": "2026-09-10T06:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091013-2026091014_BJT.webp",
-                      "bytes": 110496,
-                      "lead": 6
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091014",
-                      "lead_label": "09-10 14:00-15:00",
-                      "valid_label": "2026-09-10 14:00-15:00 BJT",
-                      "valid_time": "2026-09-10T07:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091014-2026091015_BJT.webp",
-                      "bytes": 111368,
-                      "lead": 7
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091015",
-                      "lead_label": "09-10 15:00-16:00",
-                      "valid_label": "2026-09-10 15:00-16:00 BJT",
-                      "valid_time": "2026-09-10T08:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091015-2026091016_BJT.webp",
-                      "bytes": 112280,
-                      "lead": 8
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091016",
-                      "lead_label": "09-10 16:00-17:00",
-                      "valid_label": "2026-09-10 16:00-17:00 BJT",
-                      "valid_time": "2026-09-10T09:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091016-2026091017_BJT.webp",
-                      "bytes": 113400,
-                      "lead": 9
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091017",
-                      "lead_label": "09-10 17:00-18:00",
-                      "valid_label": "2026-09-10 17:00-18:00 BJT",
-                      "valid_time": "2026-09-10T10:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091017-2026091018_BJT.webp",
-                      "bytes": 114372,
-                      "lead": 10
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091018",
-                      "lead_label": "09-10 18:00-19:00",
-                      "valid_label": "2026-09-10 18:00-19:00 BJT",
-                      "valid_time": "2026-09-10T11:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091018-2026091019_BJT.webp",
-                      "bytes": 115218,
-                      "lead": 11
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091019",
-                      "lead_label": "09-10 19:00-20:00",
-                      "valid_label": "2026-09-10 19:00-20:00 BJT",
-                      "valid_time": "2026-09-10T12:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091019-2026091020_BJT.webp",
-                      "bytes": 115034,
-                      "lead": 12
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091020",
-                      "lead_label": "09-10 20:00-21:00",
-                      "valid_label": "2026-09-10 20:00-21:00 BJT",
-                      "valid_time": "2026-09-10T13:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091020-2026091021_BJT.webp",
-                      "bytes": 114504,
-                      "lead": 13
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091021",
-                      "lead_label": "09-10 21:00-22:00",
-                      "valid_label": "2026-09-10 21:00-22:00 BJT",
-                      "valid_time": "2026-09-10T14:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091021-2026091022_BJT.webp",
-                      "bytes": 114364,
-                      "lead": 14
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091022",
-                      "lead_label": "09-10 22:00-23:00",
-                      "valid_label": "2026-09-10 22:00-23:00 BJT",
-                      "valid_time": "2026-09-10T15:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091022-2026091023_BJT.webp",
-                      "bytes": 113770,
-                      "lead": 15
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091023",
-                      "lead_label": "09-10 23:00-00:00",
-                      "valid_label": "2026-09-10 23:00-00:00 BJT",
-                      "valid_time": "2026-09-10T16:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091023-2026091100_BJT.webp",
-                      "bytes": 112440,
-                      "lead": 16
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091100",
-                      "lead_label": "09-11 00:00-01:00",
-                      "valid_label": "2026-09-11 00:00-01:00 BJT",
-                      "valid_time": "2026-09-10T17:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091100-2026091101_BJT.webp",
-                      "bytes": 110378,
-                      "lead": 17
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091101",
-                      "lead_label": "09-11 01:00-02:00",
-                      "valid_label": "2026-09-11 01:00-02:00 BJT",
-                      "valid_time": "2026-09-10T18:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091101-2026091102_BJT.webp",
-                      "bytes": 109964,
-                      "lead": 18
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091102",
-                      "lead_label": "09-11 02:00-03:00",
-                      "valid_label": "2026-09-11 02:00-03:00 BJT",
-                      "valid_time": "2026-09-10T19:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091102-2026091103_BJT.webp",
-                      "bytes": 110490,
-                      "lead": 19
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091103",
-                      "lead_label": "09-11 03:00-04:00",
-                      "valid_label": "2026-09-11 03:00-04:00 BJT",
-                      "valid_time": "2026-09-10T20:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091103-2026091104_BJT.webp",
-                      "bytes": 110000,
-                      "lead": 20
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091104",
-                      "lead_label": "09-11 04:00-05:00",
-                      "valid_label": "2026-09-11 04:00-05:00 BJT",
-                      "valid_time": "2026-09-10T21:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091104-2026091105_BJT.webp",
-                      "bytes": 109024,
-                      "lead": 21
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091105",
-                      "lead_label": "09-11 05:00-06:00",
-                      "valid_label": "2026-09-11 05:00-06:00 BJT",
-                      "valid_time": "2026-09-10T22:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091105-2026091106_BJT.webp",
-                      "bytes": 109088,
-                      "lead": 22
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091106",
-                      "lead_label": "09-11 06:00-07:00",
-                      "valid_label": "2026-09-11 06:00-07:00 BJT",
-                      "valid_time": "2026-09-10T23:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091106-2026091107_BJT.webp",
-                      "bytes": 108080,
-                      "lead": 23
-                    },
-                    {
-                      "id": "worknx_national_hour_2026091107",
-                      "lead_label": "09-11 07:00-08:00",
-                      "valid_label": "2026-09-11 07:00-08:00 BJT",
-                      "valid_time": "2026-09-11T00:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_worknx_national_rain_hour_2026091107-2026091108_BJT.webp",
-                      "bytes": 109244,
-                      "lead": 24
-                    }
-                  ],
-                  "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/Precip_hourly_WRF_AllRain_T13_T36_InitUTC_2026-09-09_12_00_combined_overview_6x4_grid.preview.webp",
-                  "preview_bytes": 349086,
-                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/Precip_hourly_WRF_AllRain_T13_T36_InitUTC_2026-09-09_12_00_combined_overview_6x4_grid.png",
-                  "full_bytes": 2412644
-                },
-                {
-                  "id": "ningxia_hail_warning",
-                  "lead": 2,
-                  "lead_label": "冰雹预警",
-                  "valid_label": "当前显示：冰雹预警",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/Precip_hourly_WRF_NingxiaFrozen_T13_T36_InitUTC_2026-09-09_12_00_combined_overview_6x4_grid.webp",
-                  "bytes": 1573370,
-                  "individual_frames": [
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091008",
-                      "lead_label": "09-10 08:00-09:00",
-                      "valid_label": "2026-09-10 08:00-09:00 BJT",
-                      "valid_time": "2026-09-10T01:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091008-2026091009_BJT.webp",
-                      "bytes": 112752,
-                      "lead": 1
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091009",
-                      "lead_label": "09-10 09:00-10:00",
-                      "valid_label": "2026-09-10 09:00-10:00 BJT",
-                      "valid_time": "2026-09-10T02:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091009-2026091010_BJT.webp",
-                      "bytes": 111430,
-                      "lead": 2
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091010",
-                      "lead_label": "09-10 10:00-11:00",
-                      "valid_label": "2026-09-10 10:00-11:00 BJT",
-                      "valid_time": "2026-09-10T03:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091010-2026091011_BJT.webp",
-                      "bytes": 109830,
-                      "lead": 3
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091011",
-                      "lead_label": "09-10 11:00-12:00",
-                      "valid_label": "2026-09-10 11:00-12:00 BJT",
-                      "valid_time": "2026-09-10T04:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091011-2026091012_BJT.webp",
-                      "bytes": 109522,
-                      "lead": 4
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091012",
-                      "lead_label": "09-10 12:00-13:00",
-                      "valid_label": "2026-09-10 12:00-13:00 BJT",
-                      "valid_time": "2026-09-10T05:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091012-2026091013_BJT.webp",
-                      "bytes": 109812,
-                      "lead": 5
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091013",
-                      "lead_label": "09-10 13:00-14:00",
-                      "valid_label": "2026-09-10 13:00-14:00 BJT",
-                      "valid_time": "2026-09-10T06:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091013-2026091014_BJT.webp",
-                      "bytes": 108236,
-                      "lead": 6
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091014",
-                      "lead_label": "09-10 14:00-15:00",
-                      "valid_label": "2026-09-10 14:00-15:00 BJT",
-                      "valid_time": "2026-09-10T07:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091014-2026091015_BJT.webp",
-                      "bytes": 107834,
-                      "lead": 7
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091015",
-                      "lead_label": "09-10 15:00-16:00",
-                      "valid_label": "2026-09-10 15:00-16:00 BJT",
-                      "valid_time": "2026-09-10T08:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091015-2026091016_BJT.webp",
-                      "bytes": 110218,
-                      "lead": 8
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091016",
-                      "lead_label": "09-10 16:00-17:00",
-                      "valid_label": "2026-09-10 16:00-17:00 BJT",
-                      "valid_time": "2026-09-10T09:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091016-2026091017_BJT.webp",
-                      "bytes": 111740,
-                      "lead": 9
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091017",
-                      "lead_label": "09-10 17:00-18:00",
-                      "valid_label": "2026-09-10 17:00-18:00 BJT",
-                      "valid_time": "2026-09-10T10:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091017-2026091018_BJT.webp",
-                      "bytes": 112848,
-                      "lead": 10
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091018",
-                      "lead_label": "09-10 18:00-19:00",
-                      "valid_label": "2026-09-10 18:00-19:00 BJT",
-                      "valid_time": "2026-09-10T11:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091018-2026091019_BJT.webp",
-                      "bytes": 112896,
-                      "lead": 11
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091019",
-                      "lead_label": "09-10 19:00-20:00",
-                      "valid_label": "2026-09-10 19:00-20:00 BJT",
-                      "valid_time": "2026-09-10T12:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091019-2026091020_BJT.webp",
-                      "bytes": 112702,
-                      "lead": 12
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091020",
-                      "lead_label": "09-10 20:00-21:00",
-                      "valid_label": "2026-09-10 20:00-21:00 BJT",
-                      "valid_time": "2026-09-10T13:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091020-2026091021_BJT.webp",
-                      "bytes": 112050,
-                      "lead": 13
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091021",
-                      "lead_label": "09-10 21:00-22:00",
-                      "valid_label": "2026-09-10 21:00-22:00 BJT",
-                      "valid_time": "2026-09-10T14:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091021-2026091022_BJT.webp",
-                      "bytes": 112510,
-                      "lead": 14
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091022",
-                      "lead_label": "09-10 22:00-23:00",
-                      "valid_label": "2026-09-10 22:00-23:00 BJT",
-                      "valid_time": "2026-09-10T15:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091022-2026091023_BJT.webp",
-                      "bytes": 113194,
-                      "lead": 15
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091023",
-                      "lead_label": "09-10 23:00-00:00",
-                      "valid_label": "2026-09-10 23:00-00:00 BJT",
-                      "valid_time": "2026-09-10T16:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091023-2026091100_BJT.webp",
-                      "bytes": 112802,
-                      "lead": 16
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091100",
-                      "lead_label": "09-11 00:00-01:00",
-                      "valid_label": "2026-09-11 00:00-01:00 BJT",
-                      "valid_time": "2026-09-10T17:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091100-2026091101_BJT.webp",
-                      "bytes": 111996,
-                      "lead": 17
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091101",
-                      "lead_label": "09-11 01:00-02:00",
-                      "valid_label": "2026-09-11 01:00-02:00 BJT",
-                      "valid_time": "2026-09-10T18:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091101-2026091102_BJT.webp",
-                      "bytes": 111578,
-                      "lead": 18
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091102",
-                      "lead_label": "09-11 02:00-03:00",
-                      "valid_label": "2026-09-11 02:00-03:00 BJT",
-                      "valid_time": "2026-09-10T19:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091102-2026091103_BJT.webp",
-                      "bytes": 112232,
-                      "lead": 19
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091103",
-                      "lead_label": "09-11 03:00-04:00",
-                      "valid_label": "2026-09-11 03:00-04:00 BJT",
-                      "valid_time": "2026-09-10T20:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091103-2026091104_BJT.webp",
-                      "bytes": 111574,
-                      "lead": 20
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091104",
-                      "lead_label": "09-11 04:00-05:00",
-                      "valid_label": "2026-09-11 04:00-05:00 BJT",
-                      "valid_time": "2026-09-10T21:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091104-2026091105_BJT.webp",
-                      "bytes": 111150,
-                      "lead": 21
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091105",
-                      "lead_label": "09-11 05:00-06:00",
-                      "valid_label": "2026-09-11 05:00-06:00 BJT",
-                      "valid_time": "2026-09-10T22:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091105-2026091106_BJT.webp",
-                      "bytes": 110894,
-                      "lead": 22
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091106",
-                      "lead_label": "09-11 06:00-07:00",
-                      "valid_label": "2026-09-11 06:00-07:00 BJT",
-                      "valid_time": "2026-09-10T23:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091106-2026091107_BJT.webp",
-                      "bytes": 110844,
-                      "lead": 23
-                    },
-                    {
-                      "id": "ningxia_hail_warning_hour_2026091107",
-                      "lead_label": "09-11 07:00-08:00",
-                      "valid_label": "2026-09-11 07:00-08:00 BJT",
-                      "valid_time": "2026-09-11T00:00:00Z",
-                      "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/20260909_12_ningxia_hail_warning_rain_hour_2026091107-2026091108_BJT.webp",
-                      "bytes": 111308,
-                      "lead": 24
-                    }
-                  ],
-                  "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/Precip_hourly_WRF_NingxiaFrozen_T13_T36_InitUTC_2026-09-09_12_00_combined_overview_6x4_grid.preview.webp",
-                  "preview_bytes": 355292,
-                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/Precip_hourly_WRF_NingxiaFrozen_T13_T36_InitUTC_2026-09-09_12_00_combined_overview_6x4_grid.png",
-                  "full_bytes": 2414660
-                }
-              ]
-            },
-            {
-              "id": "ningxia_accum_12h",
-              "title": "12小时累计降水",
-              "category": "宁夏预报",
-              "unit": "mm",
-              "color": "#0f68c8",
-              "description": "全国12小时累计降水（08-20 / 20-08 BJT）。",
-              "metrics": [
-                {
-                  "label": "起报时次",
-                  "value": "20260909 12 UTC"
-                },
-                {
-                  "label": "累计时段",
-                  "value": "08-20 / 20-08 BJT"
-                },
-                {
-                  "label": "生成时间",
-                  "value": "2026-09-10 06:39 BJT"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "ningxia_accum_12h",
-                  "lead": 0,
-                  "lead_label": "09-10 08-09-10 20",
-                  "valid_label": "",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/Precip_accum_12h_WRF_Ningxia_T13_T36_InitUTC_2026-09-09_12_00_2026091008-2026091020_combined_overview_1x1_grid.webp",
-                  "bytes": 145902,
-                  "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/Precip_accum_12h_WRF_Ningxia_T13_T36_InitUTC_2026-09-09_12_00_2026091008-2026091020_combined_overview_1x1_grid.preview.webp",
-                  "preview_bytes": 104346,
-                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/Precip_accum_12h_WRF_Ningxia_T13_T36_InitUTC_2026-09-09_12_00_2026091008-2026091020_combined_overview_1x1_grid.png",
-                  "full_bytes": 248132
-                },
-                {
-                  "id": "ningxia_accum_12h",
-                  "lead": 0,
-                  "lead_label": "09-10 20-09-11 08",
-                  "valid_label": "",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/Precip_accum_12h_WRF_Ningxia_T13_T36_InitUTC_2026-09-09_12_00_2026091020-2026091108_combined_overview_1x1_grid.webp",
-                  "bytes": 144600,
-                  "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/Precip_accum_12h_WRF_Ningxia_T13_T36_InitUTC_2026-09-09_12_00_2026091020-2026091108_combined_overview_1x1_grid.preview.webp",
-                  "preview_bytes": 103614,
-                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/Precip_accum_12h_WRF_Ningxia_T13_T36_InitUTC_2026-09-09_12_00_2026091020-2026091108_combined_overview_1x1_grid.png",
-                  "full_bytes": 248064
-                }
-              ]
-            },
-            {
-              "id": "ningxia_accum_24h",
-              "title": "24小时累计降水",
-              "category": "宁夏预报",
-              "unit": "mm",
-              "color": "#0f68c8",
-              "description": "全国24小时累计降水（08-08 / 20-20 BJT）。",
-              "metrics": [
-                {
-                  "label": "起报时次",
-                  "value": "20260909 12 UTC"
-                },
-                {
-                  "label": "累计时段",
-                  "value": "08-08 / 20-20 BJT"
-                },
-                {
-                  "label": "生成时间",
-                  "value": "2026-09-10 06:39 BJT"
-                }
-              ],
-              "frames": [
-                {
-                  "id": "ningxia_accum_24h",
-                  "lead": 0,
-                  "lead_label": "09-10 08-09-11 08",
-                  "valid_label": "",
-                  "file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/Precip_accum_24h_WRF_Ningxia_T13_T36_InitUTC_2026-09-09_12_00_2026091008-2026091108_combined_overview_1x1_grid.webp",
-                  "bytes": 157154,
-                  "preview_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/Precip_accum_24h_WRF_Ningxia_T13_T36_InitUTC_2026-09-09_12_00_2026091008-2026091108_combined_overview_1x1_grid.preview.webp",
-                  "preview_bytes": 109830,
-                  "full_file": "https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com/iaplacs/data/current/maps/worknx_summary_20260909_12/Precip_accum_24h_WRF_Ningxia_T13_T36_InitUTC_2026-09-09_12_00_2026091008-2026091108_combined_overview_1x1_grid.png",
-                  "full_bytes": 252659,
-                  "valid_time": "2026-09-11T20:00:00+08:00"
                 }
               ]
             }
