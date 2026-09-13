@@ -278,6 +278,7 @@ local_sequences_are_valid() {
 }
 
 audit_ningxia_output() {
+  [[ "$(TZ=Asia/Shanghai date +%Y%m%d%H%M)" < "202609131130" ]] && return 0
   local run="$1" output="$SCRIPT_DIR/worknx_ningxia_overview/$run"
   # Older Ningxia products remain archived; never reinterpret their source as WORK.
   [[ "$run" < "20260912_18" ]] && return 0
@@ -461,6 +462,9 @@ PY
 
 submit_missing_render() {
   local family="$1" model_root="$2" output_root="$3" renderer="$4"
+  if [[ "$family" == "ningxia" ]] && [[ "$(TZ=Asia/Shanghai date +%Y%m%d%H%M)" < "202609131130" ]]; then
+    return 0
+  fi
   local prefix source expected time_count expected_count rendered_windows rendered_count
   while IFS= read -r source; do
     [[ -n "$source" ]] || continue

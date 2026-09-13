@@ -72,7 +72,11 @@ def main() -> None:
     airport_yunnan_runs = remove_legacy_airport_sample_products(airport_yunnan_runs)
     airport_yunnan_runs = normalize_yunnan_airport_run_metrics(airport_yunnan_runs)
     airport_runs = airport_yunnan_runs or build_airport_sample_runs()
-    wrf_runs = []
+    wrf_runs = (
+        merge_existing_runs(build_wrf_runs(), existing_catalog, "shangrao")
+        if datetime.now(BJT) < datetime(2026, 9, 13, 11, 30, tzinfo=BJT)
+        else []
+    )
     ningxia_runs = merge_existing_runs(build_ningxia_runs(), existing_catalog, "ningxia")
     xinjiang_runs = merge_existing_runs(build_xinjiang_runs(), existing_catalog, "xinjiang")
     for runs in (airport_runs, wrf_runs, ningxia_runs, xinjiang_runs):

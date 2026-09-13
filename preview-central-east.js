@@ -10,9 +10,9 @@ const ACCESS_TOKEN_VALUE = "iaplacs_access_granted_v1";
 const DATA_SOURCE_TOKEN_KEY = "iaplacs_forecast_source";
 const AIRPORT_RATING_CLIENT_ID_KEY = "iaplacs_airport_rating_client_v1";
 const NINGXIA_PRODUCT_TITLE = "降水预报图集";
-const NINGXIA_PRODUCT_DESCRIPTION = "默认显示宁夏区域图，可切换中国中部和冰雹预警图。";
+const NINGXIA_PRODUCT_DESCRIPTION = "默认显示宁夏区域图，可切换中国中东部和冰雹预警图。";
 const NATIONAL_FRAME_LABELS = {
-  worknx_national: "中国中部",
+  worknx_national: "中国中东部",
   shangrao_national: "中国东南部",
   airport_national: "中国西南部",
   workxj_national: "中国西部",
@@ -612,8 +612,8 @@ function normalizeNingxiaFrames(frames) {
           ...frame,
           id: "worknx_national",
           lead: 1,
-          lead_label: "中国中部",
-          valid_label: "当前显示：中国中部",
+          lead_label: "中国中东部",
+          valid_label: "当前显示：中国中东部",
         };
       }
       if (source.includes("_wrf_ningxia_")) {

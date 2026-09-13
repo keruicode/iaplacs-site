@@ -5,49 +5,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="IAP-LACS 上饶专项天气服务页面，按起报时次展示服务器定时发布的预报产品。"
+      content="IAP-LACS 中国中东部预报，提供宁夏区域、中国中东部降水及冰雹预警。"
     />
-    <title>上饶专项服务 | IAP-LACS Forecast</title>
+    <title>中国中东部预览 | IAP-LACS Forecast</title>
+    <meta name="robots" content="noindex,nofollow" />
     <link rel="dns-prefetch" href="//iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com" />
     <link rel="preconnect" href="https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com" crossorigin />
-    <link rel="icon" type="image/png" sizes="512x512" href="../assets/brand/iaplacs-tab-icon-20260725.png?v=20260725-04" />
-    <link rel="apple-touch-icon" href="../assets/brand/iaplacs-tab-icon-20260725.png?v=20260725-04" />
-    <link rel="stylesheet" href="../styles.css?v=20260802-01" />
+    <link rel="icon" type="image/png" sizes="512x512" href="./assets/brand/iaplacs-tab-icon-20260725.png?v=20260725-04" />
+    <link rel="apple-touch-icon" href="./assets/brand/iaplacs-tab-icon-20260725.png?v=20260725-04" />
+    <link rel="stylesheet" href="./styles.css?v=20260802-01" />
   </head>
   <body
     class="auth-lock"
-    data-service="shangrao"
-    data-manifest-url="../data/current/forecast-runs.json"
-    data-fallback-manifest-url="../data/current/manifest.json"
-    data-huan-manifest-url="../data/current/forecast-runs.json"
-    data-huan-fallback-manifest-url="../data/current/manifest.json"
-    data-tianhe-manifest-url="../data/tianhe/current/forecast-runs.json"
-    data-tianhe-fallback-manifest-url="../data/tianhe/current/manifest.json"
+    data-service="ningxia"
+    data-manifest-url="./data/current/forecast-runs.json"
+    data-fallback-manifest-url="./data/current/manifest.json"
+    data-huan-manifest-url="./data/current/forecast-runs.json"
+    data-huan-fallback-manifest-url="./data/current/manifest.json"
+    data-tianhe-manifest-url="./data/tianhe/current/forecast-runs.json"
+    data-tianhe-fallback-manifest-url="./data/tianhe/current/manifest.json"
     data-default-source="tianhe"
     data-auto-select-latest-source="true"
-    data-asset-base="../"
+    data-asset-base="./"
     data-refresh-ms="120000"
   >
     <header class="topbar">
       <div class="brand">
         <img
           class="brand-icon"
-          src="../assets/brand/logo-lacs-blue-icon.png"
+          src="./assets/brand/logo-lacs-blue-icon.png"
           alt=""
           aria-hidden="true"
         />
         <div class="brand-copy">
           <p class="brand-title">中国科学院大气物理研究所云降水物理与强风暴实验室</p>
           <p class="brand-subtitle">LABORATORY OF CLOUD-PRECIPITATION PHYSICS AND SEVERE STORMS(LACS), IAP, CAS</p>
-          <h1 class="sr-only">上饶专项服务</h1>
+          <h1 class="sr-only">宁夏预报</h1>
         </div>
       </div>
       <div class="topbar-actions">
         <nav class="home-service-links" aria-label="服务入口">
-          <a class="home-service-link" href="../">中国中部</a>
-          <a class="home-service-link primary" href="../shangrao/" aria-current="page">中国东南部</a>
-          <a class="home-service-link" href="../airpots/">中国西南部</a>
-          <a class="home-service-link" href="../xinjiang/">中国西北部</a>
+          <a class="home-service-link primary" href="./preview-central-east.html" aria-current="page">中国中东部</a>
+          <a class="home-service-link" href="./airpots/">中国西南部</a>
+          <a class="home-service-link" href="./xinjiang/">中国西北部</a>
         </nav>
         <div class="run-state" aria-live="polite">
           <span class="status-dot"></span>
@@ -56,7 +56,14 @@
       </div>
     </header>
 
-    <section class="run-switchbar" aria-label="上饶起报时间">
+    <section class="maintenance-notice" aria-label="运行公告">
+      <p class="maintenance-notice-label">运行公告</p>
+      <p>
+        2026年7月24日（周五）20:00至2026年7月29日（周三）09:00，地球系统数值模拟装置基础设施进行年度检修维护，期间停机并停止所有服务。网站图件目前由天河临时环境生成。
+      </p>
+    </section>
+
+    <section class="run-switchbar" aria-label="宁夏起报时间">
       <div class="run-switch-heading-row">
         <div class="run-switch-heading">
           <p class="eyebrow">Initial Time</p>
@@ -67,21 +74,24 @@
           &#8635;
         </button>
       </div>
-      <div id="runList" class="run-list run-list-horizontal" aria-label="上饶起报时间"></div>
+      <div id="runList" class="run-list run-list-horizontal" aria-label="宁夏起报时间"></div>
     </section>
 
     <main class="workspace service-workspace">
-      <section class="control-panel" aria-label="上饶服务控制">
+      <section class="control-panel" aria-label="宁夏预报控制">
         <div class="panel-heading">
           <p class="eyebrow">FORECAST</p>
-          <h2>中国东南部</h2>
+          <h2>中国中东部</h2>
         </div>
-
         <div id="productList" class="product-list"></div>
 
+        <div class="meta-block">
+          <p class="meta-label">服务说明</p>
+          <p id="sourceNote" class="meta-copy"></p>
+        </div>
       </section>
 
-      <section class="map-panel" aria-label="上饶预报图">
+      <section class="map-panel" aria-label="宁夏预报图">
         <div class="map-toolbar">
           <div>
             <p id="productUnit" class="eyebrow">--</p>
@@ -103,20 +113,16 @@
           </div>
         </div>
 
-        <div id="leadTabs" class="lead-tabs" aria-label="产品图幅"></div>
+        <div id="leadTabs" class="lead-tabs" aria-label="宁夏产品图幅"></div>
         <div id="forecastHourTimeline" class="forecast-hour-timeline" aria-label="逐时预报时间" hidden></div>
 
         <div class="map-stage">
-          <img id="forecastImage" alt="上饶预报产品图" role="button" tabindex="0" draggable="false" decoding="async" fetchpriority="high" aria-label="放大查看当前预报图" />
-          <div class="map-badge">
-            <span id="leadLabel">--</span>
-            <span id="validTime">--</span>
-          </div>
+          <img id="forecastImage" alt="宁夏预报产品图" role="button" tabindex="0" draggable="false" decoding="async" fetchpriority="high" aria-label="放大查看当前预报图" />
         </div>
 
       </section>
 
-      <aside class="insight-panel" aria-label="上饶产品摘要">
+      <aside class="insight-panel" aria-label="宁夏产品摘要">
         <div class="panel-heading">
           <p class="eyebrow">OPERATIONS</p>
           <h2>运行状态</h2>
@@ -124,15 +130,20 @@
 
         <div id="metricGrid" class="metric-grid"></div>
 
+        <div class="product-note-block service-focus-block service-focus-empty" aria-label="服务区域">
+          <div class="note-header">
+            <span>服务区域</span>
+          </div>
+        </div>
       </aside>
     </main>
 
     <footer class="site-footer">
       <span>IAP-LACS Forecast</span>
-      <span>上饶专项服务</span>
-      <span>iaplacs.xyz/shangrao</span>
+      <span>宁夏预报</span>
+      <span>iaplacs.xyz</span>
     </footer>
 
-    <script src="../app.js?v=20260804-05"></script>
+    <script src="./preview-central-east.js?v=20260913"></script>
   </body>
 </html>

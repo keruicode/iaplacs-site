@@ -14,6 +14,10 @@ export WORK_NX_ROOT
 SERVICE_LABEL="${SERVICE_LABEL:-Ningxia}"
 SERVICE_FILE_TOKEN="${SERVICE_FILE_TOKEN:-Ningxia}"
 PUBLISH_FAMILY="${PUBLISH_FAMILY:-worknx_summary}"
+if [[ "$PUBLISH_FAMILY" == "worknx_summary" ]] && [[ "$(TZ=Asia/Shanghai date +%Y%m%d%H%M)" < "202609131130" ]]; then
+  echo "Waiting for central-east release: 2026-09-13 11:30 BJT"
+  exit 0
+fi
 AVIATION_ENABLED="${AVIATION_ENABLED:-0}"
 AVIATION_PUBLISHER="${AVIATION_PUBLISHER:-$SCRIPT_DIR/publish_airport_aviation_to_oss.sh}"
 
