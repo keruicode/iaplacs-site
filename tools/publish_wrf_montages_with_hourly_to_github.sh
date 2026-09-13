@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+echo "Shangrao website publication is retired."
+exit 0
 
 # Publish all current Shangrao montages, then attach hourly regional and
 # national panels for every prefix listed by the active WRF pipeline.

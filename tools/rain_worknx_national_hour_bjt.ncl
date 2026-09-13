@@ -152,6 +152,21 @@ begin
 
     lat2d = f->XLAT(0,:,:)
     lon2d = f->XLONG(0,:,:)
+    if (region_mode.eq."model_domain") then
+      ; Follow the expanded WORK grid; keep a narrow geographic margin.
+      lon_min = floor(min(lon2d))
+      lon_max = ceil(max(lon2d))
+      lat_min = floor(min(lat2d))
+      lat_max = ceil(max(lat2d))
+      delete(national_lon_ticks)
+      delete(national_lon_labels)
+      delete(national_lat_ticks)
+      delete(national_lat_labels)
+      national_lon_ticks = fspan(ceil(lon_min/20.0)*20.0, floor(lon_max/20.0)*20.0, toint(floor(lon_max/20.0)-ceil(lon_min/20.0))+1)
+      national_lat_ticks = fspan(ceil(lat_min/10.0)*10.0, floor(lat_max/10.0)*10.0, toint(floor(lat_max/10.0)-ceil(lat_min/10.0))+1)
+      national_lon_labels = sprinti("%i",toint(national_lon_ticks))+"~S~o~N~E"
+      national_lat_labels = sprinti("%i",toint(national_lat_ticks))+"~S~o~N~N"
+    end if
     nrows = dimsizes(lat2d(:,0))
     ncols = dimsizes(lon2d(0,:))
     lat_axis = lat2d(:,toint(ncols/2))

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+echo "Shangrao website rendering is retired; WORK is published by the Ningxia service."
+exit 0
 
 set -Eeuo pipefail
 

@@ -279,6 +279,8 @@ local_sequences_are_valid() {
 
 audit_ningxia_output() {
   local run="$1" output="$SCRIPT_DIR/worknx_ningxia_overview/$run"
+  # Older Ningxia products remain archived; never reinterpret their source as WORK.
+  [[ "$run" < "20260912_18" ]] && return 0
   local region national frozen public_region public_national public_frozen region_count national_count frozen_count
   region="$(panel_windows "$output/captioned_t13_t48" '')"
   national="$(panel_windows "$output/national_captioned_t13_t48" '')"
@@ -423,6 +425,9 @@ audit_shangrao_output() {
 list_completed_wrf() {
   local root="$1" run_dir candidate rsl emitted=0
   while IFS= read -r run_dir; do
+    if [[ "$root" == "/data1/elpt_2022_00083/zhoubj/WORK" && "$(basename "$run_dir")" < "2026091218" ]]; then
+      continue
+    fi
     candidate="$(find "$run_dir/gfs/wrf" -maxdepth 1 -type f -name 'wrfout_d01_*' -print 2>/dev/null | sort -r | head -n 1)"
     [[ -n "$candidate" ]] || continue
     rsl="$(dirname "$candidate")/rsl.error.0000"
@@ -461,6 +466,9 @@ submit_missing_render() {
     [[ -n "$source" ]] || continue
     prefix="$(utc_wrf_prefix "$source")"
     [[ -n "$prefix" ]] || continue
+    if [[ "$family" == "ningxia" && "$prefix" < "20260912_18" ]]; then
+      continue
+    fi
     time_count="$(wrf_time_count "$source")"
     expected_count="$(expected_hourly_count "$time_count")"
     if (( expected_count < 1 )); then
@@ -496,10 +504,9 @@ if ! fetch_public_catalog; then
   log "public catalog fetch through $GITHUB_HOST failed; skip repairs this hour"
   exit 75
 fi
-submit_missing_render ningxia /data1/elpt_2022_00083/zhoubj/WORK_nx "$SCRIPT_DIR/worknx_ningxia_overview" "$SCRIPT_DIR/publish_worknx_ningxia_to_github.sh"
+submit_missing_render ningxia /data1/elpt_2022_00083/zhoubj/WORK "$SCRIPT_DIR/worknx_ningxia_overview" "$SCRIPT_DIR/publish_worknx_ningxia_to_github.sh"
 submit_missing_render xinjiang /data1/elpt_2022_00083/zhoubj/WORK_xj "$SCRIPT_DIR/workxj_xinjiang_overview" "$SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh"
 submit_missing_render yunnan /data1/elpt_2022_00083/zhoubj/WORK_yn "$SCRIPT_DIR/worknx_yunnan_airports_overview" "$SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh"
-submit_missing_render shangrao /data1/elpt_2022_00083/zhoubj/WORK '' ''
 
 # The catalog was fetched before any repair above. GitHub Pages may need time
 # to publish the new commit, so comparing repaired runs against that stale
@@ -519,9 +526,4 @@ done < <(list_output_runs "$SCRIPT_DIR/workxj_xinjiang_overview")
 while IFS= read -r run; do
   [[ -n "$run" ]] && audit_yunnan_output "$run"
 done < <(list_output_runs "$SCRIPT_DIR/worknx_yunnan_airports_overview")
-if [[ -s "$SCRIPT_DIR/latest_wrf_prefixes.txt" ]]; then
-  while IFS= read -r run; do
-    [[ "$run" =~ ^[0-9]{8}_[0-9]{2}$ ]] && audit_shangrao_output "$run"
-  done < "$SCRIPT_DIR/latest_wrf_prefixes.txt"
-fi
 log "publication audit finished"

@@ -12,7 +12,7 @@ else
 fi
 
 WORK_ROOT="${WORK_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK}"
-WORK_NX_ROOT="${WORK_NX_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK_nx}"
+WORK_NX_ROOT="${WORK_NX_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK}"
 WORK_YN_ROOT="${WORK_YN_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK_yn}"
 WORK_XJ_ROOT="${WORK_XJ_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK_xj}"
 SNAPSHOT_ROOT="${SNAPSHOT_ROOT:-$SCRIPT_DIR/.partial_snapshots}"
@@ -290,7 +290,8 @@ shangrao_job_id=""
 shangrao_ready=0
 
 # Start Shangrao on Slurm, then render other services while that job runs.
-if prepare_snapshot shangrao "$WORK_ROOT"; then
+# Shangrao retired when WORK became the Ningxia central/eastern domain.
+if false; then
   if (( DRY_RUN )); then
     log "shangrao: would submit $PREP_SNAPSHOT and publish after completion"
   else
@@ -313,7 +314,7 @@ fi
 # WORK_yn must never publish an incomplete snapshot: its panel count controls
 # the airport page layout. Completed Yunnan runs publish through the normal
 # frequent checker; the other early-morning services retain this snapshot path.
-for family in ningxia xinjiang; do
+for family in xinjiang; do
   case "$family" in
     ningxia) model_root="$WORK_NX_ROOT" ;;
     yunnan) model_root="$WORK_YN_ROOT" ;;

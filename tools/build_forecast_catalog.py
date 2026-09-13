@@ -72,7 +72,7 @@ def main() -> None:
     airport_yunnan_runs = remove_legacy_airport_sample_products(airport_yunnan_runs)
     airport_yunnan_runs = normalize_yunnan_airport_run_metrics(airport_yunnan_runs)
     airport_runs = airport_yunnan_runs or build_airport_sample_runs()
-    wrf_runs = merge_existing_runs(build_wrf_runs(), existing_catalog, "shangrao")
+    wrf_runs = []
     ningxia_runs = merge_existing_runs(build_ningxia_runs(), existing_catalog, "ningxia")
     xinjiang_runs = merge_existing_runs(build_xinjiang_runs(), existing_catalog, "xinjiang")
     for runs in (airport_runs, wrf_runs, ningxia_runs, xinjiang_runs):
@@ -868,7 +868,7 @@ def build_ningxia_frames(
         region_id="ningxia_region",
         national_id="worknx_national",
         region_label="宁夏区域",
-        national_label="中国中部",
+        national_label="中国中东部",
         accumulation_prefix="ningxia",
     )
 
@@ -1051,7 +1051,7 @@ def build_ningxia_product(run_id: str, frames: list[dict], generated_at: str) ->
         "category": "宁夏预报",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": "默认显示宁夏区域图，可切换中国中部和冰雹预警图。",
+        "description": "默认显示宁夏区域图，可切换中国中东部和冰雹预警图。",
         "metrics": [
             {"label": "起报时次", "value": run_id.replace("_", " ") + " UTC"},
             {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},

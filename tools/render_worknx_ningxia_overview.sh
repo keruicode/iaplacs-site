@@ -4,13 +4,16 @@
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORK_NX_ROOT="${WORK_NX_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK_nx}"
+WORK_NX_ROOT="${WORK_NX_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-$SCRIPT_DIR/worknx_ningxia_overview}"
 SERVICE_LABEL="${SERVICE_LABEL:-Ningxia}"
 SERVICE_FILE_TOKEN="${SERVICE_FILE_TOKEN:-Ningxia}"
 TWELVE_PANEL_GRID="${TWELVE_PANEL_GRID:-}"
 REGION_MODE="${REGION_MODE:-ningxia}"
 NATIONAL_REGION_MODE="${NATIONAL_REGION_MODE:-$REGION_MODE}"
+if [[ "$REGION_MODE" == "ningxia" && "$NATIONAL_REGION_MODE" == "ningxia" ]]; then
+  NATIONAL_REGION_MODE="model_domain"
+fi
 HAIL_OUTPUT_AREA="${HAIL_OUTPUT_AREA:-${REGION_MODE}_hail_warning}"
 NCL_SCRIPT="${NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_ningxia_hour_bjt.ncl}"
 NATIONAL_NCL_SCRIPT="${NATIONAL_NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_national_hour_bjt.ncl}"
@@ -105,6 +108,13 @@ wrf_completed_successfully() {
 
 while IFS= read -r line; do
   source_path="$line"
+  if [[ "$REGION_MODE" == "ningxia" ]]; then
+    source_name="$(basename "$source_path")"
+    [[ "$source_name" =~ ^wrfout_d01_([0-9]{4})-([0-9]{2})-([0-9]{2})_([0-9]{2}): ]] || continue
+    source_run="${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3]}${BASH_REMATCH[4]}"
+    [[ "$source_run" < "2026091218" ]] && continue
+    wrf_completed_successfully "$source_path" || continue
+  fi
   source_epoch="$(stat -c '%Y' "$source_path")"
   source_size="$(stat -c '%s' "$source_path")"
   if (( source_size < MIN_WRFOUT_BYTES )); then
@@ -118,9 +128,18 @@ while IFS= read -r line; do
   sources+=("$source_path")
   [[ "${#sources[@]}" -ge "$count" ]] && break
 done < <(
-  find "$WORK_NX_ROOT" -maxdepth 4 -type f \
-    -name 'wrfout_d01_*' -printf '%p\n' \
-    | sort -r
+  if [[ "$REGION_MODE" == "ningxia" ]]; then
+    if [[ "$(basename "$WORK_NX_ROOT")" =~ ^[0-9]{10}$ ]]; then
+      find "$WORK_NX_ROOT/gfs/wrf" -maxdepth 1 -type f -name 'wrfout_d01_*' -print | sort -r
+    else
+      while IFS= read -r candidate_run; do
+        [[ "$(basename "$candidate_run")" < "2026091218" ]] && continue
+        find "$candidate_run/gfs/wrf" -maxdepth 1 -type f -name 'wrfout_d01_*' -print 2>/dev/null
+      done < <(find "$WORK_NX_ROOT" -mindepth 1 -maxdepth 1 -type d -name '20????????' -print | sort -r)
+    fi
+  else
+    find "$WORK_NX_ROOT" -maxdepth 4 -type f -name 'wrfout_d01_*' -printf '%p\n' | sort -r
+  fi
 )
 
 if [[ "${#sources[@]}" -eq 0 ]]; then

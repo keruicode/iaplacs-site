@@ -3,6 +3,8 @@
 # Submit the Shangrao render pipeline once. Environment overrides such as
 # WORK_ROOT and IAPLACS_FORCE_RENDER are intentionally inherited by Slurm.
 set -Eeuo pipefail
+echo "Shangrao website rendering is retired; WORK is published by the Ningxia service."
+exit 0
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"

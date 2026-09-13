@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+echo "Shangrao website publication is retired."
+exit 0
 
 set -Eeuo pipefail
 
