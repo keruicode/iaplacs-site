@@ -153,9 +153,12 @@ begin
     lat2d = f->XLAT(0,:,:)
     lon2d = f->XLONG(0,:,:)
     if (region_mode.eq."model_domain") then
-      ; Follow the expanded WORK grid; keep a narrow geographic margin.
+      ; Follow the expanded WORK grid, but stop at 150E.  The new parent
+      ; domain reaches well into the western Pacific where much of the frame
+      ; has no useful simulation coverage, making the China land area tiny.
+      ; This applies equally to precipitation and frozen (hail/graupel) maps.
       lon_min = floor(min(lon2d))
-      lon_max = ceil(max(lon2d))
+      lon_max = min((/150.0, ceil(max(lon2d))/))
       lat_min = floor(min(lat2d))
       lat_max = ceil(max(lat2d))
       delete(national_lon_ticks)
