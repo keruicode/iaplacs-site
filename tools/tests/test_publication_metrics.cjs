@@ -29,10 +29,11 @@ const product = { metrics: [
 ] };
 const original = JSON.stringify(product);
 context.renderMetrics(product, { publication_time: "2026-09-26T11:37:33+00:00" });
-assert.equal(blocks.length, 4);
+assert.equal(blocks.length, 3);
 assert.match(blocks[1].innerHTML, /生成时间/);
 assert.match(blocks[2].innerHTML, /发布时间/);
 assert.match(blocks[2].innerHTML, /2026-09-26 19:37 BJT/);
+assert.ok(blocks.every((block) => !block.innerHTML.includes("图像数量")));
 assert.equal(JSON.stringify(product), original);
 assert.equal(context.formatPublicationTime("2026-09-26T16:00:00Z"), "2026-09-27 00:00 BJT");
 assert.equal(context.formatPublicationTime("invalid"), "--");

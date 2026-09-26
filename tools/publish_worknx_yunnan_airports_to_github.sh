@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 
+source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
+
 # Render WORK_yn to a Yunnan airport product through the latest available lead, upload images to OSS,
 # then publish only the JSON catalog to GitHub Pages.
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-RENDERER="${RENDERER:-$SCRIPT_DIR/render_worknx_yunnan_airports_overview.sh}"
+
+SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
+RENDERER="${RENDERER:-$IAPLACS_SCRIPT_DIR/render_worknx_yunnan_airports_overview.sh}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-$SCRIPT_DIR/worknx_yunnan_airports_overview}"
 WORK_YN_ROOT="${WORK_YN_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK_yn}"
 LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/logs}"
@@ -18,7 +22,7 @@ GIT_USER_EMAIL="${GIT_USER_EMAIL:-publisher@iaplacs.xyz}"
 IAPLACS_ASSET_FORCE_UPLOAD="${IAPLACS_ASSET_FORCE_UPLOAD:-1}"
 IAPLACS_WEBP_FORCE="${IAPLACS_WEBP_FORCE:-1}"
 IAPLACS_PREVIEW_FORCE="${IAPLACS_PREVIEW_FORCE:-1}"
-SEQUENCE_VALIDATOR="${SEQUENCE_VALIDATOR:-$SCRIPT_DIR/validate_hourly_panel_sequence.py}"
+SEQUENCE_VALIDATOR="${SEQUENCE_VALIDATOR:-$IAPLACS_SCRIPT_DIR/validate_hourly_panel_sequence.py}"
 
 mkdir -p "$LOG_DIR"
 

@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 
+source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
+
 # Render a regional hourly precipitation overview after T12 spin-up.
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 WORK_NX_ROOT="${WORK_NX_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-$SCRIPT_DIR/worknx_ningxia_overview}"
 SERVICE_LABEL="${SERVICE_LABEL:-Ningxia}"
@@ -15,8 +19,8 @@ if [[ "$REGION_MODE" == "ningxia" && "$NATIONAL_REGION_MODE" == "ningxia" ]]; th
   NATIONAL_REGION_MODE="model_domain"
 fi
 HAIL_OUTPUT_AREA="${HAIL_OUTPUT_AREA:-${REGION_MODE}_hail_warning}"
-NCL_SCRIPT="${NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_ningxia_hour_bjt.ncl}"
-NATIONAL_NCL_SCRIPT="${NATIONAL_NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_national_hour_bjt.ncl}"
+NCL_SCRIPT="${NCL_SCRIPT:-$IAPLACS_SCRIPT_DIR/rain_worknx_ningxia_hour_bjt.ncl}"
+NATIONAL_NCL_SCRIPT="${NATIONAL_NCL_SCRIPT:-$IAPLACS_SCRIPT_DIR/rain_worknx_national_hour_bjt.ncl}"
 NCL_BIN="${NCL_BIN:-/public/software/apps/ncl_ncarg/ncl630/bin/ncl}"
 NCL_ROOT="${NCL_ROOT:-/public/software/apps/ncl_ncarg/ncl630}"
 NCDUMP_BIN="${NCDUMP_BIN:-/public/software/apps/conda/latest/bin/ncdump}"
@@ -27,7 +31,7 @@ NINGXIA_SHP_FILE="${NINGXIA_SHP_FILE:-$SCRIPT_DIR/SHP/省界_region.shp}"
 NINGXIA_PROVINCE_SHP_FILE="${NINGXIA_PROVINCE_SHP_FILE:-$NINGXIA_SHP_FILE}"
 NINGXIA_COUNTY_SHP_FILE="${NINGXIA_COUNTY_SHP_FILE-$SCRIPT_DIR/SHP/ningxia_city_county.shp}"
 AVIATION_ENABLED="${AVIATION_ENABLED:-0}"
-AVIATION_RENDERER="${AVIATION_RENDERER:-$SCRIPT_DIR/render_yunnan_airport_aviation_preview.py}"
+AVIATION_RENDERER="${AVIATION_RENDERER:-$IAPLACS_SCRIPT_DIR/render_yunnan_airport_aviation_preview.py}"
 AVIATION_PROFILE="${AVIATION_PROFILE:-yunnan}"
 AVIATION_PYTHON_BIN="${AVIATION_PYTHON_BIN:-/public/software/apps/conda/latest/bin/python3}"
 AVIATION_PROVINCE_SHP_FILE="${AVIATION_PROVINCE_SHP_FILE:-$NINGXIA_PROVINCE_SHP_FILE}"

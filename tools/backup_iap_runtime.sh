@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
+
 # Create a small, restorable snapshot of the IAP website automation runtime.
 # Forecast rasters, logs, Git metadata, credentials, and SSH keys stay out of
 # the archive on purpose; they are either reproducible, large, or sensitive.
@@ -8,8 +10,10 @@ set -Eeuo pipefail
 SCRIPT_PATH_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [[ -f "$SCRIPT_PATH_DIR/build_forecast_catalog.py" ]]; then
   SCRIPT_DIR="$SCRIPT_PATH_DIR"
+  SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 else
   SCRIPT_DIR="$(cd "$SCRIPT_PATH_DIR/.." && pwd)"
+  SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 fi
 BACKUP_ROOT="${BACKUP_ROOT:-$SCRIPT_DIR/backups/runtime}"
 IAP_HOME_DIR="${IAP_HOME_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
@@ -39,15 +43,20 @@ copy_if_exists() {
   fi
 }
 
+script_roots=("$IAPLACS_SCRIPT_DIR")
+if [[ -d "$SCRIPT_DIR/archive/scripts" ]]; then
+  script_roots+=("$SCRIPT_DIR/archive/scripts")
+fi
 while IFS= read -r -d '' source; do
   copy_if_exists "$source" "$RUNTIME_DIR/$(basename "$source")"
 done < <(
-  find -L "$SCRIPT_DIR" -maxdepth 1 -type f \
+  find -L "${script_roots[@]}" -maxdepth 1 -type f \
     \( -name '*.sh' -o -name '*.py' -o -name '*.ncl' -o -name 'AGENTS.md' \) \
     -print0
 )
 
 copy_if_exists "$SCRIPT_DIR/SHP" "$RUNTIME_DIR/SHP"
+copy_if_exists "$SCRIPT_DIR/fonts" "$RUNTIME_DIR/fonts"
 copy_if_exists "$SCRIPT_DIR/state" "$RUNTIME_DIR/state"
 copy_if_exists "$SCRIPT_DIR/latest_wrf_outputs.txt" "$RUNTIME_DIR/latest_wrf_outputs.txt"
 copy_if_exists "$SCRIPT_DIR/latest_wrf_prefixes.txt" "$RUNTIME_DIR/latest_wrf_prefixes.txt"

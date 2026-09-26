@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
+
+source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
 echo "Shangrao website publication is retired."
 exit 0
 
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 cd "$SCRIPT_DIR"
 
 PNG_DIR="${PNG_DIR:-$SCRIPT_DIR/wrf_hourly_png}"

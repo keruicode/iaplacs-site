@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
 
+source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
+
 # Install or update the managed daily IAP runtime backup cron entry.
 set -Eeuo pipefail
 
 SCRIPT_PATH_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [[ -f "$SCRIPT_PATH_DIR/build_forecast_catalog.py" ]]; then
   SCRIPT_DIR="$SCRIPT_PATH_DIR"
+  SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 else
   SCRIPT_DIR="$(cd "$SCRIPT_PATH_DIR/.." && pwd)"
+  SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 fi
 CRON_ARCHIVE_DIR="${CRON_ARCHIVE_DIR:-$SCRIPT_DIR/crontab_archive}"
 LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/logs}"
-BACKUP_SCRIPT="${BACKUP_SCRIPT:-$SCRIPT_DIR/backup_iap_runtime.sh}"
+BACKUP_SCRIPT="${BACKUP_SCRIPT:-$IAPLACS_SCRIPT_DIR/backup_iap_runtime.sh}"
 
 if [[ ! -x "$BACKUP_SCRIPT" ]]; then
   echo "ERROR: backup script is not executable: $BACKUP_SCRIPT" >&2

@@ -32,13 +32,13 @@ missing. It never removes, replaces, or otherwise changes the remaining
 The user crontab runs this recovery once per hour:
 
 ```cron
-0 * * * * /data1/elpt_2022_00083/kerui/Website/ensure_iaplacs_ssh_state.sh >> /data1/elpt_2022_00083/kerui/Website/logs/ssh-state-recovery.log 2>&1
+0 * * * * /data1/elpt_2022_00083/kerui/Website/scripts/ensure_iaplacs_ssh_state.sh >> /data1/elpt_2022_00083/kerui/Website/logs/ssh-state-recovery.log 2>&1
 ```
 
 Run the following after a `.ssh` reset, or to verify the state immediately:
 
 ```bash
-/data1/elpt_2022_00083/kerui/Website/ensure_iaplacs_ssh_state.sh
+/data1/elpt_2022_00083/kerui/Website/scripts/ensure_iaplacs_ssh_state.sh
 ```
 
 ## Git 1.8 Runtime Issue

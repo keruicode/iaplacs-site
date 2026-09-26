@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 
+source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
+
 # Fetch CMA 24-hour observed precipitation on server02, publish the raster
 # assets to OSS, then refresh the static forecast catalog.
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 GITHUB_HOST="${GITHUB_HOST:-server02}"
 GITHUB_KEY="${GITHUB_KEY:-$HOME/.iaplacs/ssh-state/id_ed25519_iaplacs_github}"
 GIT_URL="${GIT_URL:-git@github.com:keruicode/iaplacs-site.git}"

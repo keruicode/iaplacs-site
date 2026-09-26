@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 
+source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
+
 # Publish regional and national hourly precipitation panels to OSS, then attach
 # them to an existing forecast catalog run without committing raster files.
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 GITHUB_HOST="${GITHUB_HOST:-server02}"
 GIT_URL="${GIT_URL:-git@github.com:keruicode/iaplacs-site.git}"
 REMOTE_SITE_REPO="${REMOTE_SITE_REPO:-}"
@@ -12,7 +16,7 @@ GITHUB_KEY="${GITHUB_KEY:-$HOME/.iaplacs/ssh-state/id_ed25519_iaplacs_github}"
 GIT_USER_NAME="${GIT_USER_NAME:-IAP-LACS Publisher}"
 GIT_USER_EMAIL="${GIT_USER_EMAIL:-publisher@iaplacs.xyz}"
 PYTHON_BIN="${PYTHON_BIN:-$(command -v python3 || command -v python)}"
-SEQUENCE_VALIDATOR="${SEQUENCE_VALIDATOR:-$SCRIPT_DIR/validate_hourly_panel_sequence.py}"
+SEQUENCE_VALIDATOR="${SEQUENCE_VALIDATOR:-$IAPLACS_SCRIPT_DIR/validate_hourly_panel_sequence.py}"
 
 usage() {
   cat <<'EOF'

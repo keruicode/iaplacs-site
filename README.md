@@ -27,6 +27,20 @@ in the browser. The full Chinese deployment, validation, security, and
 maintenance manual is in
 [cloud/airport-ratings-fc/README.md](cloud/airport-ratings-fc/README.md).
 
+## Project Layout
+
+- Website HTML, `app.js`, `styles.css`, `assets/` and `data/` keep their existing public paths.
+- [`tools/`](tools/README.md) contains the current drawing and operations scripts.
+- [`tools/archive/`](tools/archive/README.md) contains retired Tianhe and one-off scripts, not production entry points.
+- [`绘图结果/`](绘图结果/README.md) is the local browsing entry for images and reference figures; public `data/` assets stay in place.
+- [`docs/directory-layout.md`](docs/directory-layout.md) explains the layout and server backup location.
+- `.codex/` contains private maintenance records and local recovery backups; it is ignored by Git.
+
+This organization does not relocate the IAP runtime, change scheduled tasks, or
+change website URLs. The current main service is China central-east from `WORK`;
+Yunnan and Xinjiang use `WORK_yn` and `WORK_xj`. Older route and Tianhe examples
+below describe earlier deployments; use the operations manual for current status.
+
 ## Local Preview
 
 Run from this directory:

@@ -1,16 +1,20 @@
 #!/usr/bin/env bash
 
+source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
+
 # Render a completed Yunnan airport hourly precipitation overview from WORK_yn.
 # Panels start at T13 after the first 12 spin-up hours.
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 WORK_YN_ROOT="${WORK_YN_ROOT:-${WORK_NX_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK_yn}}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-$SCRIPT_DIR/worknx_yunnan_airports_overview}"
-NCL_SCRIPT="${NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_yunnan_airport_hour_bjt.ncl}"
-NATIONAL_NCL_SCRIPT="${NATIONAL_NCL_SCRIPT:-$SCRIPT_DIR/rain_worknx_national_hour_bjt.ncl}"
-POINT_SCRIPT="${POINT_SCRIPT:-$SCRIPT_DIR/extract_yunnan_airport_precip.py}"
-AVIATION_RENDERER="${AVIATION_RENDERER:-$SCRIPT_DIR/render_yunnan_airport_aviation_preview.py}"
+NCL_SCRIPT="${NCL_SCRIPT:-$IAPLACS_SCRIPT_DIR/rain_worknx_yunnan_airport_hour_bjt.ncl}"
+NATIONAL_NCL_SCRIPT="${NATIONAL_NCL_SCRIPT:-$IAPLACS_SCRIPT_DIR/rain_worknx_national_hour_bjt.ncl}"
+POINT_SCRIPT="${POINT_SCRIPT:-$IAPLACS_SCRIPT_DIR/extract_yunnan_airport_precip.py}"
+AVIATION_RENDERER="${AVIATION_RENDERER:-$IAPLACS_SCRIPT_DIR/render_yunnan_airport_aviation_preview.py}"
 NCL_BIN="${NCL_BIN:-/public/software/apps/ncl_ncarg/ncl630/bin/ncl}"
 NCL_ROOT="${NCL_ROOT:-/public/software/apps/ncl_ncarg/ncl630}"
 NCDUMP_BIN="${NCDUMP_BIN:-/public/software/apps/conda/latest/bin/ncdump}"

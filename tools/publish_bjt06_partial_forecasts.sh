@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
+
 # Publish an early, consistent snapshot of the previous UTC 06 run at 06 BJT.
 # Normal publication must replace this snapshot after the WRF run completes.
 set -Eeuo pipefail
@@ -7,8 +9,10 @@ set -Eeuo pipefail
 SCRIPT_PATH_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [[ -f "$SCRIPT_PATH_DIR/build_forecast_catalog.py" ]]; then
   SCRIPT_DIR="$SCRIPT_PATH_DIR"
+  SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 else
   SCRIPT_DIR="$(cd "$SCRIPT_PATH_DIR/.." && pwd)"
+  SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 fi
 
 WORK_ROOT="${WORK_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK}"
@@ -24,8 +28,8 @@ PYTHON_BIN="${PYTHON_BIN:-/public/software/apps/conda/latest/bin/python3}"
 MIN_TIME_COUNT="${MIN_TIME_COUNT:-14}"
 SNAPSHOT_KEEP_RUNS="${SNAPSHOT_KEEP_RUNS:-2}"
 SLURM_WAIT_SECONDS="${SLURM_WAIT_SECONDS:-14400}"
-SUBMITTER="${SUBMITTER:-$SCRIPT_DIR/submit_wrf_pipeline.sh}"
-SHANGRAO_PUBLISHER="${SHANGRAO_PUBLISHER:-$SCRIPT_DIR/publish_wrf_montages_with_hourly_to_github.sh}"
+SUBMITTER="${SUBMITTER:-$IAPLACS_SCRIPT_DIR/submit_wrf_pipeline.sh}"
+SHANGRAO_PUBLISHER="${SHANGRAO_PUBLISHER:-$IAPLACS_SCRIPT_DIR/publish_wrf_montages_with_hourly_to_github.sh}"
 
 DRY_RUN=0
 if [[ "${1:-}" == "--dry-run" ]]; then
@@ -247,13 +251,13 @@ publish_direct() {
   case "$family" in
     ningxia)
       env WORK_NX_ROOT="$family_root" MIN_WRFOUT_BYTES=1 MIN_FILE_AGE_SECONDS=0 \
-        "$SCRIPT_DIR/publish_worknx_ningxia_to_github.sh" --latest ;;
+        "$IAPLACS_SCRIPT_DIR/publish_worknx_ningxia_to_github.sh" --latest ;;
     yunnan)
       env WORK_YN_ROOT="$family_root" MIN_WRFOUT_BYTES=1 MIN_FILE_AGE_SECONDS=0 \
-        "$SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh" --latest ;;
+        "$IAPLACS_SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh" --latest ;;
     xinjiang)
       env WORK_XJ_ROOT="$family_root" MIN_WRFOUT_BYTES=1 MIN_FILE_AGE_SECONDS=0 \
-        "$SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh" --latest ;;
+        "$IAPLACS_SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh" --latest ;;
   esac
 }
 

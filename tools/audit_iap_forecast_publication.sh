@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 
+source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
+
 # Frequent publication auditor for IAP. It validates the public GitHub Pages
 # catalog from server02, then repairs only incomplete already-rendered runs.
 # Model directories under zhoubj are read-only inputs.
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/logs}"
 GITHUB_HOST="${GITHUB_HOST:-server02}"
 PUBLIC_CATALOG_URL="${PUBLIC_CATALOG_URL:-https://iaplacs.xyz/data/current/forecast-runs.json}"
@@ -291,12 +295,12 @@ audit_ningxia_output() {
   frozen_count="$(window_count "$frozen")"
   if ! local_sequences_are_valid utc "$run" "$region" "$national"; then
     log "NINGXIA $run local sequence invalid: region=$region_count national=$national_count; rerender latest run"
-    run_action "$SCRIPT_DIR/publish_worknx_ningxia_to_github.sh" --latest
+    run_action "$IAPLACS_SCRIPT_DIR/publish_worknx_ningxia_to_github.sh" --latest
     return
   fi
   if [[ -n "$frozen" ]] && ! local_sequences_are_valid utc "$run" "$region" "$frozen"; then
     log "NINGXIA $run hail-warning sequence invalid: region=$region_count frozen=$frozen_count; rerender latest run"
-    run_action "$SCRIPT_DIR/publish_worknx_ningxia_to_github.sh" --latest
+    run_action "$IAPLACS_SCRIPT_DIR/publish_worknx_ningxia_to_github.sh" --latest
     return
   fi
   public_region="$(public_windows ningxia "$run" ningxia_region 2>/dev/null || true)"
@@ -310,7 +314,7 @@ audit_ningxia_output() {
     return
   fi
   log "NINGXIA $run public sequence mismatch; republish region=$region_count national=$national_count hail=$frozen_count first=${region%%,*}"
-  run_action "$SCRIPT_DIR/publish_worknx_ningxia_to_github.sh" --output-run "$run"
+  run_action "$IAPLACS_SCRIPT_DIR/publish_worknx_ningxia_to_github.sh" --output-run "$run"
 }
 
 audit_xinjiang_output() {
@@ -324,18 +328,18 @@ audit_xinjiang_output() {
   frozen_count="$(window_count "$frozen")"
   if ! local_sequences_are_valid utc "$run" "$region" "$national"; then
     log "XINJIANG $run local sequence invalid: region=$region_count national=$national_count; rerender latest run"
-    run_action "$SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh" --latest
+    run_action "$IAPLACS_SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh" --latest
     return
   fi
   if [[ -n "$frozen" ]] && ! local_sequences_are_valid utc "$run" "$region" "$frozen"; then
     log "XINJIANG $run hail-warning sequence invalid: region=$region_count frozen=$frozen_count; rerender latest run"
-    run_action "$SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh" --latest
+    run_action "$IAPLACS_SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh" --latest
     return
   fi
   latest_run="$(list_output_runs "$SCRIPT_DIR/workxj_xinjiang_overview" | head -n 1)"
   if [[ "$run" == "$latest_run" ]] && ! xinjiang_aviation_is_current "$run" "$output"; then
     log "XINJIANG $run aviation output missing or stale; rerender exact run"
-    run_action "$SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh" --run "$run"
+    run_action "$IAPLACS_SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh" --run "$run"
     return
   fi
   public_region="$(public_windows xinjiang "$run" xinjiang_region 2>/dev/null || true)"
@@ -355,7 +359,7 @@ audit_xinjiang_output() {
     return
   fi
   log "XINJIANG $run public sequence mismatch; republish region=$region_count national=$national_count hail=$frozen_count first=${region%%,*}"
-  run_action "$SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh" --output-run "$run"
+  run_action "$IAPLACS_SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh" --output-run "$run"
 }
 
 audit_yunnan_output() {
@@ -369,12 +373,12 @@ audit_yunnan_output() {
   frozen_count="$(window_count "$frozen")"
   if ! local_sequences_are_valid utc "$run" "$region" "$national"; then
     log "YUNNAN $run local sequence invalid: region=$region_count national=$national_count; rerender latest run"
-    run_action "$SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh" --latest
+    run_action "$IAPLACS_SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh" --latest
     return
   fi
   if [[ -n "$frozen" ]] && ! local_sequences_are_valid utc "$run" "$region" "$frozen"; then
     log "YUNNAN $run hail-warning sequence invalid: region=$region_count frozen=$frozen_count; rerender latest run"
-    run_action "$SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh" --latest
+    run_action "$IAPLACS_SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh" --latest
     return
   fi
   public_region="$(public_windows airport "airport_yunnan_$run" airport_region 2>/dev/null || true)"
@@ -388,7 +392,7 @@ audit_yunnan_output() {
     return
   fi
   log "YUNNAN $run public sequence mismatch; republish region=$region_count national=$national_count hail=$frozen_count first=${region%%,*}"
-  run_action "$SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh" --output-run "$run"
+  run_action "$IAPLACS_SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh" --output-run "$run"
 }
 
 audit_shangrao_output() {
@@ -401,12 +405,12 @@ audit_shangrao_output() {
   frozen_count="$(window_count "$frozen")"
   if ! local_sequences_are_valid bjt "$run" "$region" "$national"; then
     log "SHANGRAO $run local sequence invalid: region=$region_count national=$national_count; submit forced rerender"
-    run_action env IAPLACS_FORCE_RENDER=1 "$SCRIPT_DIR/submit_wrf_pipeline.sh"
+    run_action env IAPLACS_FORCE_RENDER=1 "$IAPLACS_SCRIPT_DIR/submit_wrf_pipeline.sh"
     return
   fi
   if [[ -n "$frozen" ]] && ! local_sequences_are_valid bjt "$run" "$region" "$frozen"; then
     log "SHANGRAO $run hail-warning sequence invalid: region=$region_count frozen=$frozen_count; submit forced rerender"
-    run_action env IAPLACS_FORCE_RENDER=1 "$SCRIPT_DIR/submit_wrf_pipeline.sh"
+    run_action env IAPLACS_FORCE_RENDER=1 "$IAPLACS_SCRIPT_DIR/submit_wrf_pipeline.sh"
     return
   fi
   public_region="$(public_windows shangrao "$run" shangrao_region 2>/dev/null || true)"
@@ -420,7 +424,7 @@ audit_shangrao_output() {
     return
   fi
   log "SHANGRAO $run public sequence mismatch; republish region=$region_count national=$national_count hail=$frozen_count first=${region%%,*}"
-  run_action "$SCRIPT_DIR/publish_wrf_montages_with_hourly_to_github.sh"
+  run_action "$IAPLACS_SCRIPT_DIR/publish_wrf_montages_with_hourly_to_github.sh"
 }
 
 list_completed_wrf() {
@@ -494,7 +498,7 @@ submit_missing_render() {
     log "${family^^} completed model output $prefix needs full render: Time=$time_count expected=$expected_count rendered=${rendered_count:-0}"
     ((MISSING_RENDER_REPAIRS += 1))
     if [[ "$family" == "shangrao" ]]; then
-      run_action env IAPLACS_SOURCE_WRF="$source" IAPLACS_FORCE_RENDER=1 "$SCRIPT_DIR/submit_wrf_pipeline.sh"
+      run_action env IAPLACS_SOURCE_WRF="$source" IAPLACS_FORCE_RENDER=1 "$IAPLACS_SCRIPT_DIR/submit_wrf_pipeline.sh"
     else
       run_action "$renderer" --run "$expected"
     fi
@@ -508,9 +512,9 @@ if ! fetch_public_catalog; then
   log "public catalog fetch through $GITHUB_HOST failed; skip repairs this hour"
   exit 75
 fi
-submit_missing_render ningxia /data1/elpt_2022_00083/zhoubj/WORK "$SCRIPT_DIR/worknx_ningxia_overview" "$SCRIPT_DIR/publish_worknx_ningxia_to_github.sh"
-submit_missing_render xinjiang /data1/elpt_2022_00083/zhoubj/WORK_xj "$SCRIPT_DIR/workxj_xinjiang_overview" "$SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh"
-submit_missing_render yunnan /data1/elpt_2022_00083/zhoubj/WORK_yn "$SCRIPT_DIR/worknx_yunnan_airports_overview" "$SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh"
+submit_missing_render ningxia /data1/elpt_2022_00083/zhoubj/WORK "$SCRIPT_DIR/worknx_ningxia_overview" "$IAPLACS_SCRIPT_DIR/publish_worknx_ningxia_to_github.sh"
+submit_missing_render xinjiang /data1/elpt_2022_00083/zhoubj/WORK_xj "$SCRIPT_DIR/workxj_xinjiang_overview" "$IAPLACS_SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh"
+submit_missing_render yunnan /data1/elpt_2022_00083/zhoubj/WORK_yn "$SCRIPT_DIR/worknx_yunnan_airports_overview" "$IAPLACS_SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh"
 
 # The catalog was fetched before any repair above. GitHub Pages may need time
 # to publish the new commit, so comparing repaired runs against that stale

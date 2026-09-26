@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 
+source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
+
 # Xinjiang service adapter for the shared regional render and publication path.
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 
 export WORK_NX_ROOT="${WORK_XJ_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK_xj}"
 export OUTPUT_ROOT="${OUTPUT_ROOT:-$SCRIPT_DIR/workxj_xinjiang_overview}"
@@ -21,6 +25,6 @@ export AVIATION_PROFILE=xinjiang
 export AVIATION_PYTHON_BIN="${AVIATION_PYTHON_BIN:-/public/home/elzd_2023_00026/.conda/envs/pyzhj/bin/python}"
 export AVIATION_PROVINCE_SHP_FILE="$NINGXIA_PROVINCE_SHP_FILE"
 export AVIATION_CITY_SHP_FILE="$NINGXIA_COUNTY_SHP_FILE"
-export AVIATION_PUBLISHER="${AVIATION_PUBLISHER:-$SCRIPT_DIR/publish_airport_aviation_to_oss.sh}"
+export AVIATION_PUBLISHER="${AVIATION_PUBLISHER:-$IAPLACS_SCRIPT_DIR/publish_airport_aviation_to_oss.sh}"
 
-exec "$SCRIPT_DIR/publish_worknx_ningxia_to_github.sh" "$@"
+exec "$IAPLACS_SCRIPT_DIR/publish_worknx_ningxia_to_github.sh" "$@"

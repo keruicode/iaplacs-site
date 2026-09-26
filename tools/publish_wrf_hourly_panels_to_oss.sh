@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 
+source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
+
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 RUN_PREFIX="${1:-}"
 [[ "$RUN_PREFIX" =~ ^[0-9]{8}_[0-9]{2}$ ]] || {
   echo "Usage: publish_wrf_hourly_panels_to_oss.sh YYYYMMDD_HH" >&2
@@ -26,4 +30,4 @@ if [[ -d "$hail_dir" ]] && {
   args+=(--extra-id shangrao_hail_warning --extra-dir "$hail_dir")
 fi
 
-"$SCRIPT_DIR/publish_hourly_panels_to_oss.sh" "${args[@]}"
+"$IAPLACS_SCRIPT_DIR/publish_hourly_panels_to_oss.sh" "${args[@]}"

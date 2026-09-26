@@ -1036,8 +1036,8 @@ function renderMetrics(product, run) {
   if (!els.metricGrid) return;
   els.metricGrid.innerHTML = "";
   const metrics = product.metrics?.length
-    ? product.metrics.filter((metric) => metric.label !== "发布时间")
-    : [{ label: "图像数量", value: String(product.frames?.length || 0) }];
+    ? product.metrics.filter((metric) => !["发布时间", "图像数量"].includes(metric.label))
+    : [];
   const generatedIndex = metrics.findIndex((metric) => metric.label === "生成时间");
   if (generatedIndex >= 0) {
     metrics.splice(generatedIndex + 1, 0, {

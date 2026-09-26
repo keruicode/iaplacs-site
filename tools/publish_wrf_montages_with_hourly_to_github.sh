@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+
+source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
 echo "Shangrao website publication is retired."
 exit 0
 
@@ -7,8 +9,10 @@ exit 0
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MONTAGE_PUBLISHER="${MONTAGE_PUBLISHER:-$SCRIPT_DIR/publish_wrf_montage_to_github.sh}"
-HOURLY_PUBLISHER="${HOURLY_PUBLISHER:-$SCRIPT_DIR/publish_wrf_hourly_panels_to_oss.sh}"
+
+SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
+MONTAGE_PUBLISHER="${MONTAGE_PUBLISHER:-$IAPLACS_SCRIPT_DIR/publish_wrf_montage_to_github.sh}"
+HOURLY_PUBLISHER="${HOURLY_PUBLISHER:-$IAPLACS_SCRIPT_DIR/publish_wrf_hourly_panels_to_oss.sh}"
 PREFIX_FILE="${PREFIX_FILE:-$SCRIPT_DIR/latest_wrf_prefixes.txt}"
 
 [[ -x "$MONTAGE_PUBLISHER" ]] || {

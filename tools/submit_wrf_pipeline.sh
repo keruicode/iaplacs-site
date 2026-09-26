@@ -6,7 +6,11 @@ set -Eeuo pipefail
 echo "Shangrao website rendering is retired; WORK is published by the Ningxia service."
 exit 0
 
+source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 cd "$SCRIPT_DIR"
 
 LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/logs}"
@@ -56,7 +60,7 @@ job_id="$(
     --chdir="$SCRIPT_DIR" \
     --output="$LOG_DIR/slurm-%x-%j.out" \
     --error="$LOG_DIR/slurm-%x-%j.err" \
-    "$SCRIPT_DIR/auto_pipeline_server.sh"
+    "$IAPLACS_SCRIPT_DIR/auto_pipeline_server.sh"
 )"
 
 echo "$(date '+%F %T') submitted $JOB_NAME as job $job_id"

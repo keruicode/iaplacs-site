@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
+
 # Install only the managed BJT 06 early-publication block and preserve every
 # unrelated user crontab entry.
 set -Eeuo pipefail
@@ -7,12 +9,14 @@ set -Eeuo pipefail
 SCRIPT_PATH_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [[ -f "$SCRIPT_PATH_DIR/build_forecast_catalog.py" ]]; then
   SCRIPT_DIR="$SCRIPT_PATH_DIR"
+  SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 else
   SCRIPT_DIR="$(cd "$SCRIPT_PATH_DIR/.." && pwd)"
+  SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 fi
 CRON_ARCHIVE_DIR="${CRON_ARCHIVE_DIR:-$SCRIPT_DIR/crontab_archive}"
 LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/logs}"
-PUBLISH_SCRIPT="${PUBLISH_SCRIPT:-$SCRIPT_DIR/publish_bjt06_partial_forecasts.sh}"
+PUBLISH_SCRIPT="${PUBLISH_SCRIPT:-$IAPLACS_SCRIPT_DIR/publish_bjt06_partial_forecasts.sh}"
 
 [[ -x "$PUBLISH_SCRIPT" ]] || {
   echo "ERROR: early publication script is not executable: $PUBLISH_SCRIPT" >&2

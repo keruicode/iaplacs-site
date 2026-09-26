@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 
+source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
+
 # Install only the managed daily OSS retention entry in the IAP user crontab.
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 RUNTIME_DIR="${IAPLACS_RUNTIME_DIR:-$SCRIPT_DIR}"
-RUNNER="$RUNTIME_DIR/run_iap_oss_retention.sh"
+RUNNER="$(iaplacs_script_root "$RUNTIME_DIR")/run_iap_oss_retention.sh"
 LOG_DIR="$RUNTIME_DIR/logs"
 ARCHIVE_DIR="$RUNTIME_DIR/crontab_archive"
 START="# IAPLACS OSS retention begin"

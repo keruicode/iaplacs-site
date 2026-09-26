@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 
+source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
+
 # Cron-safe wrapper for the Yunnan airport WORK_yn product. It publishes only
 # completed WRF runs and records their source signatures for cheap frequent checks.
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 WORK_YN_ROOT="${WORK_YN_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK_yn}"
-PUBLISHER="${PUBLISHER:-$SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh}"
+PUBLISHER="${PUBLISHER:-$IAPLACS_SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh}"
 STATE_DIR="${STATE_DIR:-$SCRIPT_DIR/state}"
 LAST_PREFIX_FILE="${LAST_PREFIX_FILE:-$STATE_DIR/yunnan_airport_last_published.txt}"
 MIN_WRFOUT_BYTES="${MIN_WRFOUT_BYTES:-20000000000}"

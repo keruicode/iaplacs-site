@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 
+source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
+
 # Upload one run's airport aviation diagnostics to OSS and rebuild the catalog.
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 GITHUB_HOST="${GITHUB_HOST:-server02}"
 GIT_URL="${GIT_URL:-git@github.com:keruicode/iaplacs-site.git}"
 REMOTE_SITE_REPO="${REMOTE_SITE_REPO:-}"

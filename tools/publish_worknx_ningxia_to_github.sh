@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 
+source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
+
 # Render WORK_nx to a Ningxia product through the latest available lead, then pass each
 # generated overview to the existing OSS/GitHub publisher.
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-RENDERER="${RENDERER:-$SCRIPT_DIR/render_worknx_ningxia_overview.sh}"
-PUBLISHER="${PUBLISHER:-$SCRIPT_DIR/publish_worknx_summary_to_github.sh}"
-HOURLY_PUBLISHER="${HOURLY_PUBLISHER:-$SCRIPT_DIR/publish_hourly_panels_to_oss.sh}"
+
+SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
+RENDERER="${RENDERER:-$IAPLACS_SCRIPT_DIR/render_worknx_ningxia_overview.sh}"
+PUBLISHER="${PUBLISHER:-$IAPLACS_SCRIPT_DIR/publish_worknx_summary_to_github.sh}"
+HOURLY_PUBLISHER="${HOURLY_PUBLISHER:-$IAPLACS_SCRIPT_DIR/publish_hourly_panels_to_oss.sh}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-$SCRIPT_DIR/worknx_ningxia_overview}"
 WORK_NX_ROOT="${WORK_NX_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK}"
 export WORK_NX_ROOT
@@ -19,7 +23,7 @@ if [[ "$PUBLISH_FAMILY" == "worknx_summary" ]] && [[ "$(TZ=Asia/Shanghai date +%
   exit 0
 fi
 AVIATION_ENABLED="${AVIATION_ENABLED:-0}"
-AVIATION_PUBLISHER="${AVIATION_PUBLISHER:-$SCRIPT_DIR/publish_airport_aviation_to_oss.sh}"
+AVIATION_PUBLISHER="${AVIATION_PUBLISHER:-$IAPLACS_SCRIPT_DIR/publish_airport_aviation_to_oss.sh}"
 
 case "$PUBLISH_FAMILY" in
   worknx_summary) HAIL_FRAME_ID="ningxia_hail_warning" ;;

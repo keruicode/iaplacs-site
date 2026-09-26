@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 
+source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
+
 # Installs only the IAP-LACS SSH recovery entry in the current user's crontab.
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 RUNTIME_DIR="${IAPLACS_RUNTIME_DIR:-$SCRIPT_DIR}"
-RECOVERY_SCRIPT="$RUNTIME_DIR/ensure_iaplacs_ssh_state.sh"
+RECOVERY_SCRIPT="$(iaplacs_script_root "$RUNTIME_DIR")/ensure_iaplacs_ssh_state.sh"
 LOG_FILE="$RUNTIME_DIR/logs/ssh-state-recovery.log"
 START="# IAPLACS SSH state recovery begin"
 END="# IAPLACS SSH state recovery end"

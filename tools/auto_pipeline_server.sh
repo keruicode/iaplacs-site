@@ -1,15 +1,21 @@
 #!/usr/bin/env bash
+
 echo "Shangrao website rendering is retired; WORK is published by the Ningxia service."
 exit 0
+
+source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
 
 set -Eeuo pipefail
 
 if [ -n "${WEBSITE_DIR:-}" ]; then
 	SCRIPT_DIR="$WEBSITE_DIR"
+	SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 elif [ -n "${SLURM_SUBMIT_DIR:-}" ] && [ -f "$SLURM_SUBMIT_DIR/rain_wrf_hour_bjt.ncl" ]; then
 	SCRIPT_DIR="$SLURM_SUBMIT_DIR"
+	SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 else
 	SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+	SCRIPT_DIR="$(iaplacs_runtime_root "$SCRIPT_DIR")"
 fi
 cd "$SCRIPT_DIR"
 
@@ -60,16 +66,16 @@ for cmd in ncks ncl montage convert python; do
 	fi
 done
 
-if [ ! -f "$SCRIPT_DIR/rain_wrf_hour_bjt.ncl" ]; then
+if [ ! -f "$IAPLACS_SCRIPT_DIR/rain_wrf_hour_bjt.ncl" ]; then
 	echo "ERROR: missing rain_wrf_hour_bjt.ncl in $SCRIPT_DIR" >&2
 	exit 1
 fi
-if [ ! -f "$SCRIPT_DIR/rain_worknx_national_hour_bjt.ncl" ]; then
+if [ ! -f "$IAPLACS_SCRIPT_DIR/rain_worknx_national_hour_bjt.ncl" ]; then
 	echo "ERROR: missing rain_worknx_national_hour_bjt.ncl in $SCRIPT_DIR" >&2
 	exit 1
 fi
 
-if [ ! -x "$SCRIPT_DIR/make_wrf_montages.sh" ]; then
+if [ ! -x "$IAPLACS_SCRIPT_DIR/make_wrf_montages.sh" ]; then
 	echo "ERROR: missing executable make_wrf_montages.sh in $SCRIPT_DIR" >&2
 	exit 1
 fi
@@ -196,7 +202,7 @@ rm -f "$SCRIPT_DIR"/wrf_hourly_png/"${BJT_PREFIX}"_combined_overview_*_grid.png 
 		"$SCRIPT_DIR"/wrf_hourly_png/"${BJT_PREFIX}"_combined_accum_*
 
 echo "Running NCL hourly rainfall plotting for $BJT_PREFIX..."
-RAIN_COMPONENT_MODE=total ncl "$SCRIPT_DIR/rain_wrf_hour_bjt.ncl"
+RAIN_COMPONENT_MODE=total ncl "$IAPLACS_SCRIPT_DIR/rain_wrf_hour_bjt.ncl"
 echo "Running NCL Shangrao hail-warning plotting for $BJT_PREFIX..."
 HAIL_PNG_DIR="$SCRIPT_DIR/shangrao_hail_hourly_png"
 rm -f "$HAIL_PNG_DIR/${BJT_PREFIX}_rain_hour_"*_BJT.png \
@@ -208,8 +214,8 @@ WORK_NX_WRF_DIR="$SCRIPT_DIR" \
   WORK_NX_NATIONAL_PROVINCE_SHP_FILE="$SCRIPT_DIR/SHP/省界_region.shp" \
   RAIN_COMPONENT_MODE=frozen \
   RAIN_OUTPUT_AREA=shangrao_hail_warning \
-  ncl "$SCRIPT_DIR/rain_worknx_national_hour_bjt.ncl"
-bash "$SCRIPT_DIR/make_wrf_montages.sh" "$HAIL_PNG_DIR" "${BJT_PREFIX}_shangrao_hail_warning"
+  ncl "$IAPLACS_SCRIPT_DIR/rain_worknx_national_hour_bjt.ncl"
+bash "$IAPLACS_SCRIPT_DIR/make_wrf_montages.sh" "$HAIL_PNG_DIR" "${BJT_PREFIX}_shangrao_hail_warning"
 HAIL_OVERVIEW="$(ls -t "$HAIL_PNG_DIR/${BJT_PREFIX}_shangrao_hail_warning_combined_overview_"*_grid.png 2>/dev/null | head -n 1 || true)"
 if [ -z "$HAIL_OVERVIEW" ]; then
 	echo "ERROR: Shangrao hail-warning overview was not generated for $BJT_PREFIX" >&2
@@ -226,8 +232,8 @@ rm -f "$NATIONAL_PNG_DIR/${BJT_PREFIX}_national_rain_hour_"*_BJT.png \
 WORK_NX_WRF_DIR="$SCRIPT_DIR" \
 	WORK_NX_NATIONAL_PNG_DIR="$NATIONAL_PNG_DIR" \
 	WORK_NX_NATIONAL_PROVINCE_SHP_FILE="$SCRIPT_DIR/SHP/省界_region.shp" \
-	ncl "$SCRIPT_DIR/rain_worknx_national_hour_bjt.ncl"
-bash "$SCRIPT_DIR/make_wrf_montages.sh" "$NATIONAL_PNG_DIR" "${BJT_PREFIX}_national"
+	ncl "$IAPLACS_SCRIPT_DIR/rain_worknx_national_hour_bjt.ncl"
+bash "$IAPLACS_SCRIPT_DIR/make_wrf_montages.sh" "$NATIONAL_PNG_DIR" "${BJT_PREFIX}_national"
 NATIONAL_OVERVIEW="$(ls -t "$NATIONAL_PNG_DIR/${BJT_PREFIX}_national_combined_overview_"*_grid.png 2>/dev/null | head -n 1 || true)"
 if [ -n "$NATIONAL_OVERVIEW" ]; then
 	national_name="$(basename "$NATIONAL_OVERVIEW")"
@@ -240,7 +246,7 @@ for accum_hours in 12 24; do
 		WORK_NX_WRF_DIR="$SCRIPT_DIR" \
 		WORK_NX_NATIONAL_PNG_DIR="$SCRIPT_DIR/wrf_hourly_png" \
 		WORK_NX_NATIONAL_PROVINCE_SHP_FILE="$SCRIPT_DIR/SHP/省界_region.shp" \
-		ncl "$SCRIPT_DIR/rain_worknx_national_hour_bjt.ncl"
+		ncl "$IAPLACS_SCRIPT_DIR/rain_worknx_national_hour_bjt.ncl"
 	for image in "$SCRIPT_DIR"/wrf_hourly_png/"${BJT_PREFIX}"_national_accum_"${accum_hours}"h_*_BJT.png; do
 		[ -e "$image" ] || continue
 		name="$(basename "$image")"
@@ -255,7 +261,7 @@ for accum_hours in 12 24; do
 done
 
 echo "Building T13-T${LAST_LEAD} montage for $BJT_PREFIX"
-bash "$SCRIPT_DIR/make_wrf_montages.sh" "$SCRIPT_DIR/wrf_hourly_png" "$BJT_PREFIX"
+bash "$IAPLACS_SCRIPT_DIR/make_wrf_montages.sh" "$SCRIPT_DIR/wrf_hourly_png" "$BJT_PREFIX"
 printf '%s\n' "$BJT_PREFIX" > "$SCRIPT_DIR/latest_wrf_prefixes.txt"
 
 LATEST_OVERVIEW="$(ls -t "$SCRIPT_DIR"/wrf_hourly_png/"${BJT_PREFIX}"_combined_overview_*_grid.png 2>/dev/null | head -n 1 || true)"
