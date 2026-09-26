@@ -13,7 +13,8 @@ WORK_YN_ROOT="${WORK_YN_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK_yn}"
 PUBLISHER="${PUBLISHER:-$IAPLACS_SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh}"
 STATE_DIR="${STATE_DIR:-$SCRIPT_DIR/state}"
 LAST_PREFIX_FILE="${LAST_PREFIX_FILE:-$STATE_DIR/yunnan_airport_last_published.txt}"
-MIN_WRFOUT_BYTES="${MIN_WRFOUT_BYTES:-20000000000}"
+# Grid sizes vary; completeness comes from WRF success and readable Time records.
+MIN_WRFOUT_BYTES="${MIN_WRFOUT_BYTES:-1}"
 MIN_TIME_COUNT="${MIN_TIME_COUNT:-14}"
 NCDUMP_BIN="${NCDUMP_BIN:-/public/software/apps/conda/latest/bin/ncdump}"
 
@@ -47,6 +48,10 @@ if [[ -z "$NCDUMP_BIN" || ! -x "$NCDUMP_BIN" ]]; then
 fi
 if [[ ! "$MIN_TIME_COUNT" =~ ^[1-9][0-9]*$ ]]; then
   echo "ERROR: MIN_TIME_COUNT must be a positive integer" >&2
+  exit 64
+fi
+if [[ ! "$MIN_WRFOUT_BYTES" =~ ^[1-9][0-9]*$ ]]; then
+  echo "ERROR: MIN_WRFOUT_BYTES must be a positive integer" >&2
   exit 64
 fi
 
