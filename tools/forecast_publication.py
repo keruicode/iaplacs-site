@@ -14,14 +14,45 @@ from pathlib import Path
 LOG = logging.getLogger(__name__)
 
 
+def frame_assets(frame: dict) -> dict:
+    """Identify published assets, ignoring volatile catalog display metadata."""
+    asset = {
+        key: frame[key]
+        for key in (
+            "id",
+            "file",
+            "bytes",
+            "full_file",
+            "full_bytes",
+            "preview_file",
+            "preview_bytes",
+        )
+        if key in frame
+    }
+    individual = frame.get("individual_frames", [])
+    if individual:
+        asset["individual_frames"] = sorted(
+            (frame_assets(item) for item in individual),
+            key=lambda item: (item.get("id", ""), item.get("file", "")),
+        )
+    return asset
+
+
 def forecast_fingerprint(run: dict) -> str:
-    """Hash forecast assets, excluding observations and presentation-only metrics."""
+    """Hash assets, not changing summary valid_time/labels or observation data."""
     products = [
-        {"id": item.get("id"), "frames": item.get("frames", [])}
+        {
+            "id": item.get("id"),
+            "frames": sorted(
+                (frame_assets(frame) for frame in item.get("frames", [])),
+                key=lambda frame: (frame.get("id", ""), frame.get("file", "")),
+            ),
+        }
         for item in run.get("products", [])
         if item.get("id") != "cma_observed_precip_24h"
     ]
     payload = {
+        "fingerprint_version": 2,
         "generated_at": run.get("published_at"),
         "products": sorted(products, key=lambda item: item["id"] or ""),
     }
@@ -105,7 +136,10 @@ def stamp_publications(
         old = old_runs.get(key)
         run["publication_fingerprint"] = fingerprint
         if old and forecast_fingerprint(old) == fingerprint:
-            if old.get("publication_time"):
+            if (
+                old.get("publication_time")
+                and old.get("publication_fingerprint") == fingerprint
+            ):
                 run["publication_time"] = old["publication_time"]
             else:
                 run.pop("publication_time", None)
