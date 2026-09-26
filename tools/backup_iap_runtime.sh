@@ -35,14 +35,14 @@ copy_if_exists() {
   local destination="$2"
   if [[ -e "$source" ]]; then
     mkdir -p "$(dirname "$destination")"
-    cp -a "$source" "$destination"
+    cp -aL "$source" "$destination"
   fi
 }
 
 while IFS= read -r -d '' source; do
   copy_if_exists "$source" "$RUNTIME_DIR/$(basename "$source")"
 done < <(
-  find "$SCRIPT_DIR" -maxdepth 1 -type f \
+  find -L "$SCRIPT_DIR" -maxdepth 1 -type f \
     \( -name '*.sh' -o -name '*.py' -o -name '*.ncl' -o -name 'AGENTS.md' \) \
     -print0
 )

@@ -321,7 +321,7 @@ render_source() {
     YUNNAN_CITY_SHP_FILE="$YUNNAN_CITY_SHP_FILE" \
     RAIN_COMPONENT_MODE=total \
     RAIN_OUTPUT_AREA=yunnan_airport \
-    "$NCL_BIN" "$NCL_SCRIPT"
+    "$NCL_BIN" "$NCL_SCRIPT" </dev/null
 
   local panels=()
   mapfile -t panels < <(find "$panel_dir" -maxdepth 1 -type f -name '*_rain_hour_*_BJT.png' -print | sort)
@@ -356,7 +356,7 @@ render_source() {
     WORK_NX_NATIONAL_REGION_MODE=yunnan_national \
     RAIN_COMPONENT_MODE=frozen \
     RAIN_OUTPUT_AREA=yunnan_hail_warning \
-    "$NCL_BIN" "$NATIONAL_NCL_SCRIPT"
+    "$NCL_BIN" "$NATIONAL_NCL_SCRIPT" </dev/null
   local frozen_panels=() frozen_captioned_panels=()
   mapfile -t frozen_panels < <(find "$frozen_panel_dir" -maxdepth 1 -type f -name '*_yunnan_hail_warning_rain_hour_*_BJT.png' -print | sort)
   if (( ${#frozen_panels[@]} != panel_count )); then
@@ -376,7 +376,7 @@ render_source() {
     WORK_NX_NATIONAL_PNG_DIR="$national_panel_dir" \
     WORK_NX_NATIONAL_PROVINCE_SHP_FILE="$YUNNAN_PROVINCE_SHP_FILE" \
     WORK_NX_NATIONAL_REGION_MODE=yunnan_national \
-    "$NCL_BIN" "$NATIONAL_NCL_SCRIPT"
+    "$NCL_BIN" "$NATIONAL_NCL_SCRIPT" </dev/null
   local national_panels=() national_captioned_panels=()
   mapfile -t national_panels < <(find "$national_panel_dir" -maxdepth 1 -type f -name '*_national_rain_hour_*_BJT.png' -print | sort)
   if (( ${#national_panels[@]} != panel_count )); then
@@ -400,7 +400,7 @@ render_source() {
       WORK_NX_NATIONAL_PROVINCE_SHP_FILE="$YUNNAN_PROVINCE_SHP_FILE" \
       WORK_NX_NATIONAL_REGION_MODE=yunnan_national \
       RAIN_ACCUM_HOURS="$accum_hours" \
-      "$NCL_BIN" "$NATIONAL_NCL_SCRIPT"
+      "$NCL_BIN" "$NATIONAL_NCL_SCRIPT" </dev/null
     while IFS= read -r accum_source; do
       [[ -n "$accum_source" ]] || continue
       accum_name="$(basename "$accum_source")"

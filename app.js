@@ -857,7 +857,7 @@ function render() {
   renderLeads();
   renderForecastViewMode(product, selectedFrame);
   renderForecastHourTimeline(product, selectedFrame);
-  renderMetrics(product);
+  renderMetrics(product, run);
   renderProductNote(run, product, frame);
   renderAirportFeedback();
   updateControls(product);
@@ -1032,12 +1032,19 @@ function renderLeads() {
   });
 }
 
-function renderMetrics(product) {
+function renderMetrics(product, run) {
   if (!els.metricGrid) return;
   els.metricGrid.innerHTML = "";
   const metrics = product.metrics?.length
-    ? product.metrics
+    ? product.metrics.filter((metric) => metric.label !== "发布时间")
     : [{ label: "图像数量", value: String(product.frames?.length || 0) }];
+  const generatedIndex = metrics.findIndex((metric) => metric.label === "生成时间");
+  if (generatedIndex >= 0) {
+    metrics.splice(generatedIndex + 1, 0, {
+      label: "发布时间",
+      value: formatPublicationTime(run?.publication_time),
+    });
+  }
 
   metrics.forEach((metric) => {
     const block = document.createElement("div");
@@ -2248,6 +2255,20 @@ function formatTime(value) {
     minute: "2-digit",
     hour12: false,
   }).format(date);
+}
+
+function formatPublicationTime(value) {
+  if (!value) return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "--";
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Shanghai",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+    }).formatToParts(date).map(({ type, value }) => [type, value]),
+  );
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute} BJT`;
 }
 
 els.prevLead?.addEventListener("click", () => stepLead(-1));

@@ -4,12 +4,14 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import os
 import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from forecast_publication import stamp_publications, write_catalog
 
 BJT = timezone(timedelta(hours=8))
 DEFAULT_ASSET_BASE_URL = (
@@ -68,6 +70,7 @@ def main() -> None:
     validate_panel_sequences(args.family, args.run_prefix, available_panels)
 
     catalog = json.loads(args.catalog.read_text(encoding="utf-8"))
+    previous_catalog = copy.deepcopy(catalog)
     service = catalog.get("services", {}).get(config["service"], {})
     run = next((item for item in service.get("runs", []) if item.get("id") == args.run_prefix), None)
     if run is None:
@@ -90,10 +93,8 @@ def main() -> None:
     if updated != expected_frames:
         parser.error(f"catalog frames missing: {', '.join(sorted(expected_frames - updated))}")
 
-    args.catalog.write_text(
-        json.dumps(catalog, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    stamp_publications(catalog, previous_catalog, args.catalog.resolve().parents[2])
+    write_catalog(args.catalog, catalog)
     counts = ", ".join(f"{frame_id}={len(panels[frame_id])}" for frame_id in sorted(updated))
     print(f"attached hourly panels to {config['service']} {args.run_prefix}: {counts}")
 

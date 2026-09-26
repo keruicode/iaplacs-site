@@ -10,6 +10,7 @@ import subprocess
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+from forecast_publication import stamp_publications, write_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 MAPS_DIR = ROOT / "data" / "current" / "maps"
@@ -133,9 +134,8 @@ def main() -> None:
             },
         },
     }
-    CATALOG_PATH.write_text(
-        json.dumps(catalog, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
+    stamp_publications(catalog, existing_catalog, ROOT)
+    write_catalog(CATALOG_PATH, catalog)
     print(
         f"wrote {CATALOG_PATH.relative_to(ROOT)} "
         f"with {len(airport_runs)} airport run(s), "
