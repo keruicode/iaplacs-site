@@ -81,7 +81,8 @@ run_action() {
     return 0
   fi
   log "RUN: $*"
-  if "$@"; then
+  # SSH/renderers must not consume the parent loop's remaining run IDs.
+  if "$@" </dev/null; then
     return 0
   else
     status=$?

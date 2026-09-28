@@ -26,3 +26,21 @@ def test_action_failure_does_not_abort_audit(status: int, failures: int) -> None
     )
     assert "NEXT_SERVICE" in result.stdout
     assert f"FAILURES={failures}" in result.stdout
+
+
+def test_publisher_cannot_consume_remaining_historical_runs() -> None:
+    source = AUDITOR.read_text(encoding="utf-8")
+    function = source.split("run_action() {", 1)[1].split("\npanel_windows()", 1)[0]
+    script = (
+        "set -euo pipefail\nDRY_RUN=0\nACTION_FAILURES=0\n"
+        "log() { :; }\nrun_action() {"
+        + function
+        + "\nwhile read -r run; do\n"
+        + "printf 'CHECK:%s\\n' \"$run\"\n"
+        + "run_action bash -c 'cat >/dev/null'\n"
+        + "done < <(printf 'latest\\nhistory\\n')\n"
+    )
+    result = subprocess.run(
+        ["bash", "-c", script], check=True, capture_output=True, text=True
+    )
+    assert result.stdout.splitlines() == ["CHECK:latest", "CHECK:history"]

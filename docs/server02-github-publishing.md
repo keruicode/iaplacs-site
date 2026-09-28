@@ -91,6 +91,12 @@ commit or discard an unknown dirty checkout. Confirm the public catalog and OSS
 assets, not just the presence of local PNGs. Runs without `SUCCESS COMPLETE WRF`
 must not be treated as complete.
 
+Publisher subprocesses also receive `/dev/null` as stdin. Without this boundary,
+an SSH setup command can consume the remaining run IDs from an audit's
+`while read` loop, silently skipping historical runs. Heredocs inside the
+publishers remain functional. A regression test explicitly checks that both the
+latest and the following historical run are visited even if a child reads stdin.
+
 ### Connectivity Checks
 
 ```bash
