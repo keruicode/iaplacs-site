@@ -97,6 +97,46 @@ an SSH setup command can consume the remaining run IDs from an audit's
 publishers remain functional. A regression test explicitly checks that both the
 latest and the following historical run are visited even if a child reads stdin.
 
+### Automatic Retry and Owned Transactions
+
+The active summary, Yunnan, hourly, aviation and CMA publishers call
+`tools/publication_checkout.py prepare/finish` on server02 while holding the
+existing shared lock (inherited descriptor 8). Python 3.11 is available there.
+The helper refuses to run without the correct lock; it does not submit WRF jobs.
+
+- Git pull/push uses up to three attempts, with 10-second then 20-second delays
+  and a 90-second timeout per Git command. Before a new publication, it also
+  pushes any previously committed but unpushed output.
+- Before generated metadata changes, a clean-start transaction records HEAD and
+  the exact two catalog paths in `.git/iaplacs-publication/active.json`.
+- If interrupted before commit, the next publisher preserves the partial JSON,
+  both Git patches and the transaction record in an `interrupted-*` directory
+  alongside that marker. It restores only the two generated catalog files to
+  the recorded, unchanged HEAD, then regenerates them through normal publishing.
+- Recovery refuses changes to other tracked files, a changed HEAD with dirty
+  files, symlinked catalogs, or dirty files without an ownership marker. These
+  require manual review. Never edit catalogs manually while a publication
+  transaction is open. Recovery backups are private and are not pushed to GitHub.
+- Once the commit is pushed, `finish` removes the marker. Even a no-change
+  publication executes `finish`, so interrupted pushes can still complete.
+- The audit retries `--output-run` transmission up to three times, waiting
+  15 then 30 seconds. Configure via `PUBLISH_RETRY_ATTEMPTS` (1-5) and
+  `PUBLISH_RETRY_DELAY_SECONDS`. It does not immediately repeat full rendering.
+  If attempts fail, it records failure and continues other services; subsequent
+  two-minute checks revisit missing retained runs, without a lifetime retry cap.
+- Lock contention (exit 75) is deferred without retries. A busy or failed render
+  no longer counts as a successful repair that would postpone all public checks.
+
+These retries apply to forecast publication, not to failed model jobs. CMA
+observation fetching retains its existing schedule; its Git transaction gets
+the same network retries and interrupted-catalog protection. A persistent
+permission, disk, conflict or unknown-change error still needs intervention.
+
+Tests exercise partial staged JSON recovery, manual-change protection,
+uncommitted/committed interruptions, retry exhaustion, network backoff, busy
+locks and history-loop stdin isolation in temporary local repositories. Do not
+simulate a failure by corrupting the production catalog or killing live WRF jobs.
+
 ### Connectivity Checks
 
 ```bash

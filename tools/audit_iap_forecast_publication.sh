@@ -23,6 +23,13 @@ export PUBLISH_LOCK_WAIT_SECONDS="${PUBLISH_LOCK_WAIT_SECONDS:-0}"
 DRY_RUN=0
 MISSING_RENDER_REPAIRS=0
 ACTION_FAILURES=0
+ACTION_SUCCEEDED=0
+PUBLISH_RETRY_ATTEMPTS="${PUBLISH_RETRY_ATTEMPTS:-3}"
+PUBLISH_RETRY_DELAY_SECONDS="${PUBLISH_RETRY_DELAY_SECONDS:-15}"
+[[ "$PUBLISH_RETRY_ATTEMPTS" =~ ^[1-5]$ && "$PUBLISH_RETRY_DELAY_SECONDS" =~ ^[0-9]{1,3}$ ]] || {
+  echo "ERROR: invalid publication retry configuration" >&2
+  exit 64
+}
 
 usage() {
   cat <<'EOF'
@@ -75,22 +82,35 @@ log() {
 }
 
 run_action() {
-  local status
+  local status attempt attempts=1 argument
+  ACTION_SUCCEEDED=0
   if (( DRY_RUN )); then
     log "DRY-RUN: $*"
     return 0
   fi
-  log "RUN: $*"
-  # SSH/renderers must not consume the parent loop's remaining run IDs.
-  if "$@" </dev/null; then
-    return 0
-  else
-    status=$?
-  fi
-  if (( status == 75 )); then
-    log "BUSY: service publisher is already running; defer this action"
-    return 0
-  fi
+  # Retry transmission of existing output, never repeat an expensive renderer
+  # immediately. A failed render is revisited by a subsequent scheduled audit.
+  for argument in "$@"; do
+    [[ "$argument" == "--output-run" ]] && attempts="${PUBLISH_RETRY_ATTEMPTS:-3}"
+  done
+  for ((attempt=1; attempt<=attempts; attempt++)); do
+    log "RUN ($attempt/$attempts): $*"
+    # SSH/renderers must not consume the parent loop's remaining run IDs.
+    if "$@" </dev/null; then
+      ACTION_SUCCEEDED=1
+      return 0
+    else
+      status=$?
+    fi
+    if (( status == 75 )); then
+      log "BUSY: service publisher is already running; defer this action"
+      return 0
+    fi
+    if (( attempt < attempts )); then
+      log "RETRY: exit=$status; retry existing output after $((PUBLISH_RETRY_DELAY_SECONDS * attempt)) seconds"
+      sleep "$((PUBLISH_RETRY_DELAY_SECONDS * attempt))"
+    fi
+  done
   # Keep a failed service from starving all later services in this audit.
   # Preserve a failing overall exit status after the remaining checks finish.
   ((ACTION_FAILURES += 1))
@@ -502,14 +522,16 @@ submit_missing_render() {
     fi
 
     log "${family^^} completed model output $prefix needs full render: Time=$time_count expected=$expected_count rendered=${rendered_count:-0}"
-    ((MISSING_RENDER_REPAIRS += 1))
     if [[ "$family" == "shangrao" ]]; then
       run_action env IAPLACS_SOURCE_WRF="$source" IAPLACS_FORCE_RENDER=1 "$IAPLACS_SCRIPT_DIR/submit_wrf_pipeline.sh"
     else
       run_action "$renderer" --run "$expected"
     fi
+    if (( ACTION_SUCCEEDED )); then
+      ((MISSING_RENDER_REPAIRS += 1))
+    fi
     # Repair at most one historical gap per family in each hourly audit.
-    return
+    return 0
   done < <(list_completed_wrf "$model_root")
 }
 

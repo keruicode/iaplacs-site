@@ -153,7 +153,7 @@ if [[ ! -d "$SITE_REPO/.git" ]]; then
   git clone "$GIT_URL" "$SITE_REPO"
 fi
 cd "$SITE_REPO"
-git pull --rebase
+python3 tools/publication_checkout.py prepare
 mkdir -p "$DEST"
 rsync -av --delete "$INCOMING/" "$AVIATION_DEST/"
 
@@ -184,11 +184,12 @@ PYTHON_BIN="$(command -v python3 || command -v python)"
 git add data/current/forecast-runs.json
 if git diff --cached --quiet; then
   echo "No aviation catalog changes for $FAMILY $RUN_PREFIX"
+  python3 tools/publication_checkout.py finish
   exit 0
 fi
 git -c user.name="$GIT_USER_NAME" -c user.email="$GIT_USER_EMAIL" \
   commit -m "Add Xinjiang airport aviation ${RUN_PREFIX}"
-git push origin HEAD:main
+python3 tools/publication_checkout.py finish
 REMOTE
 
 echo "Published airport aviation products for $family $run_prefix"

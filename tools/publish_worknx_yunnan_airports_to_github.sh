@@ -416,7 +416,7 @@ if [ ! -d "$SITE_REPO/.git" ]; then
 fi
 
 cd "$SITE_REPO"
-git pull --rebase
+python3 tools/publication_checkout.py prepare
 
 mkdir -p "$DEST"
 rsync -av --delete "$INCOMING/" "$DEST/"
@@ -437,11 +437,12 @@ fi
 git add data/current/manifest.json data/current/forecast-runs.json
 if git diff --cached --quiet; then
   echo "No Yunnan airport catalog changes to commit for $RUN_PREFIX"
+  python3 tools/publication_checkout.py finish
   exit 0
 fi
 
 git -c user.name="$GIT_USER_NAME" -c user.email="$GIT_USER_EMAIL" commit -m "Update Yunnan airport forecast ${RUN_PREFIX}"
-git push origin HEAD:main
+python3 tools/publication_checkout.py finish
 REMOTE
 
   echo "Published Yunnan airport prefix: $run_prefix"

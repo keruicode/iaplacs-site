@@ -65,7 +65,7 @@ if [[ ! -d "$SITE_REPO/.git" ]]; then
   git clone "$GIT_URL" "$SITE_REPO"
 fi
 cd "$SITE_REPO"
-git pull --ff-only
+python3 tools/publication_checkout.py prepare
 
 OBSERVATION_DIR="data/current/maps/cma_24h_observation"
 python3 tools/fetch_cma_24h_precipitation.py \
@@ -107,8 +107,8 @@ git add data/current/forecast-runs.json
 if ! git diff --cached --quiet; then
   git -c user.name="$GIT_USER_NAME" -c user.email="$GIT_USER_EMAIL" \
     commit -m 'Update CMA 24-hour precipitation observations'
-  git push origin HEAD:main
 fi
+python3 tools/publication_checkout.py finish
 REMOTE
 
 echo "Published CMA 24-hour precipitation observations."

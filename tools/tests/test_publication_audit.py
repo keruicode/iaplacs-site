@@ -44,3 +44,23 @@ def test_publisher_cannot_consume_remaining_historical_runs() -> None:
         ["bash", "-c", script], check=True, capture_output=True, text=True
     )
     assert result.stdout.splitlines() == ["CHECK:latest", "CHECK:history"]
+
+
+@pytest.mark.parametrize("exit_code, expected_calls", [(1, 3), (75, 1)])
+def test_existing_output_retry_budget(
+    tmp_path: Path, exit_code: int, expected_calls: int
+) -> None:
+    source = AUDITOR.read_text(encoding="utf-8")
+    function = source.split("run_action() {", 1)[1].split("\npanel_windows()", 1)[0]
+    counter = tmp_path / "calls"
+    script = (
+        "set -euo pipefail\nDRY_RUN=0\nACTION_FAILURES=0\n"
+        "PUBLISH_RETRY_ATTEMPTS=3\nPUBLISH_RETRY_DELAY_SECONDS=0\n"
+        "log() { :; }\n"
+        f"publisher() {{ echo called >> '{counter}'; return {exit_code}; }}\n"
+        "run_action() {"
+        + function
+        + "\nrun_action publisher --output-run 20260927_18\n"
+    )
+    subprocess.run(["bash", "-c", script], check=True, capture_output=True, text=True)
+    assert len(counter.read_text().splitlines()) == expected_calls
