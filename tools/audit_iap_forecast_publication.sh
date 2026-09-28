@@ -22,6 +22,7 @@ NCDUMP_BIN="${NCDUMP_BIN:-/public/software/apps/conda/latest/bin/ncdump}"
 export PUBLISH_LOCK_WAIT_SECONDS="${PUBLISH_LOCK_WAIT_SECONDS:-0}"
 DRY_RUN=0
 MISSING_RENDER_REPAIRS=0
+ACTION_FAILURES=0
 
 usage() {
   cat <<'EOF'
@@ -89,7 +90,11 @@ run_action() {
     log "BUSY: service publisher is already running; defer this action"
     return 0
   fi
-  return "$status"
+  # Keep a failed service from starving all later services in this audit.
+  # Preserve a failing overall exit status after the remaining checks finish.
+  ((ACTION_FAILURES += 1))
+  log "ERROR: publication action exited $status; continue other services: $*"
+  return 0
 }
 
 panel_windows() {
@@ -521,8 +526,9 @@ submit_missing_render yunnan /data1/elpt_2022_00083/zhoubj/WORK_yn "$SCRIPT_DIR/
 # snapshot would immediately trigger a redundant republish. The next hourly
 # audit performs the public verification with a fresh catalog.
 if (( ! DRY_RUN && MISSING_RENDER_REPAIRS > 0 )); then
-  log "completed $MISSING_RENDER_REPAIRS missing-render repair(s); defer public comparison to the next audit"
-  exit 0
+  log "attempted $MISSING_RENDER_REPAIRS missing-render repair(s); failures=$ACTION_FAILURES; defer public comparison to the next audit"
+  (( ACTION_FAILURES == 0 )) && exit 0
+  exit 1
 fi
 
 while IFS= read -r run; do
@@ -534,4 +540,5 @@ done < <(list_output_runs "$SCRIPT_DIR/workxj_xinjiang_overview")
 while IFS= read -r run; do
   [[ -n "$run" ]] && audit_yunnan_output "$run"
 done < <(list_output_runs "$SCRIPT_DIR/worknx_yunnan_airports_overview")
-log "publication audit finished"
+log "publication audit finished; action failures=$ACTION_FAILURES"
+(( ACTION_FAILURES == 0 ))

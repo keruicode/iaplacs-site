@@ -55,6 +55,44 @@ The old Git version uses `GIT_SSH`; it does not support `GIT_SSH_COMMAND`.
 
 ## Verification
 
+### Interrupted Catalog Publication
+
+An interrupted SSH session can leave `data/current/manifest.json` and
+`data/current/forecast-runs.json` modified before their commit. Later publishers
+then fail at `git pull --rebase` with `You have unstaged changes`. This is a
+shared checkout failure, not evidence that the model is incomplete or that the
+GitHub key has expired. On 2026-09-28 it blocked Yunnan and Xinjiang updates.
+
+Inspect the checkout on **server02**, under the shared publication lock:
+
+```bash
+unset LD_LIBRARY_PATH LIBRARY_PATH LD_PRELOAD
+cd "$HOME/iaplacs-site"
+exec 9>"$HOME/.iaplacs-github-publish.lock"
+flock -w 180 9
+/usr/bin/git status --short -uno
+/usr/bin/git diff --stat
+/usr/bin/git diff -- data/current/manifest.json data/current/forecast-runs.json
+```
+
+Keep that shell open only during maintenance; `exit` releases the lock. Before
+repairing, back up both JSON files, the worktree/index patches and HEAD to a
+private directory outside the checkout. Validate the JSON and verify any new
+image URLs in OSS. If the only changes are confirmed generated catalog updates,
+commit those two explicit paths, pull with rebase and push. Do not use
+`git reset --hard`, blindly stash user changes, or add the entire image tree.
+Unexpected code changes require review before proceeding.
+
+After recovery, the two-minute audit republishes complete, already-rendered
+runs. Its repair actions now log errors and continue to later services, while
+returning a failing overall exit status if any action failed. This avoids
+starving Xinjiang/Yunnan after a Ningxia error; it does **not** automatically
+commit or discard an unknown dirty checkout. Confirm the public catalog and OSS
+assets, not just the presence of local PNGs. Runs without `SUCCESS COMPLETE WRF`
+must not be treated as complete.
+
+### Connectivity Checks
+
 ```bash
 ssh -i ~/.ssh/id_ed25519_iaplacs_github -o IdentitiesOnly=yes -T git@github.com
 cd ~/iaplacs-site
