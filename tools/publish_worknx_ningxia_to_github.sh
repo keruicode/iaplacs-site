@@ -97,6 +97,9 @@ if ! flock -w "$PUBLISH_LOCK_WAIT_SECONDS" 7; then
   exit 75
 fi
 
+render_started=$SECONDS
+printf '%s stage=render service=%s mode=%s run=%s started\n' \
+  "$(date '+%F %T')" "$SERVICE_LABEL" "$mode" "${output_run:-latest}"
 if [[ "$mode" == "--recent" ]]; then
   "$RENDERER" --recent "$count"
 elif [[ "$mode" == "--latest" ]]; then
@@ -110,6 +113,10 @@ elif [[ "$mode" == "--run" ]]; then
   "$RENDERER" --latest
   mode="--output-run"
 fi
+printf '%s stage=render service=%s elapsed_seconds=%s finished\n' \
+  "$(date '+%F %T')" "$SERVICE_LABEL" "$((SECONDS - render_started))"
+publish_started=$SECONDS
+printf '%s stage=publish service=%s started\n' "$(date '+%F %T')" "$SERVICE_LABEL"
 
 if [[ "$mode" == "--output-run" ]]; then
   mapfile -t sources < <(
@@ -219,3 +226,5 @@ for source in "${sources[@]}"; do
       --aviation-dir "$source_dir/aviation"
   fi
 done
+printf '%s stage=publish service=%s elapsed_seconds=%s finished\n' \
+  "$(date '+%F %T')" "$SERVICE_LABEL" "$((SECONDS - publish_started))"

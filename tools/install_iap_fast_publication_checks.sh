@@ -20,7 +20,8 @@ YUNNAN_CHECK="$ENTRY_ROOT/publish_workyn_yunnan_airports_if_new.sh"
 LOG_DIR="$RUNTIME_ROOT/logs"
 ARCHIVE_DIR="$RUNTIME_ROOT/crontab_archive"
 STAMP="$(date +%Y%m%d_%H%M%S)"
-BACKUP="$ARCHIVE_DIR/crontab-before-fast-checks-$STAMP.txt"
+mkdir -p "$LOG_DIR" "$ARCHIVE_DIR"
+BACKUP="$(mktemp "$ARCHIVE_DIR/crontab-before-fast-checks-$STAMP.XXXXXXXX")"
 CRON_TMP="$(mktemp "$ARCHIVE_DIR/.crontab.XXXXXXXX")"
 
 cleanup() {
@@ -40,18 +41,21 @@ trap cleanup EXIT
 mkdir -p "$LOG_DIR" "$ARCHIVE_DIR"
 crontab -l > "$BACKUP" 2>/dev/null || : > "$BACKUP"
 
-awk '
+awk -v legacy_publisher="$ENTRY_ROOT/publish_worknx_ningxia_to_github.sh" '
   /^# IAPLACS fast publication checks begin$/ { managed=1; next }
   /^# IAPLACS fast publication checks end$/ { managed=0; next }
   managed { next }
   /audit_iap_forecast_publication\.sh/ { next }
   /publish_workyn_yunnan_airports_if_new\.sh/ { next }
+  $1 == "55" && $2 == "*" && $3 == "*" && $4 == "*" && $5 == "*" && $6 == legacy_publisher { next }
   { print }
 ' "$BACKUP" > "$CRON_TMP"
 
 cat >> "$CRON_TMP" <<EOF
 # IAPLACS fast publication checks begin
-*/2 * * * * $AUDITOR >> $LOG_DIR/publication-audit.log 2>&1
+*/2 * * * * $AUDITOR --service ningxia >> $LOG_DIR/publication-audit-ningxia.log 2>&1
+*/2 * * * * $AUDITOR --service xinjiang >> $LOG_DIR/publication-audit-xinjiang.log 2>&1
+*/2 * * * * $AUDITOR --service yunnan >> $LOG_DIR/publication-audit-yunnan.log 2>&1
 1-59/2 * * * * $YUNNAN_CHECK >> $LOG_DIR/yunnan-airport-publish.log 2>&1
 # IAPLACS fast publication checks end
 EOF

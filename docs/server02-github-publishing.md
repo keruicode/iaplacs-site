@@ -151,6 +151,58 @@ outputs and services can still be checked. An unreadable header contributes
 to the audit failure count, permitting later scheduled retries. Model files
 and the WRF completion requirement are unchanged.
 
+### Independent Service Checks (2026-10-01)
+
+The audit now accepts `--service ningxia`, `--service xinjiang`, or
+`--service yunnan`. The installer schedules each independently every two minutes,
+with separate `logs/publication-audit-SERVICE.log` and `.lock` files. The default
+manual command starts three separate worker processes, then waits for all and
+returns failure if any failed. An unexpected shell error or a long render in one
+worker cannot stop another worker from starting. An active service skips its
+own overlapping checks; it does not hold a global audit lock. Existing render
+locks and the server02 shared Git lock are retained.
+
+New completed-run discovery takes place before fetching the public catalog, so
+a catalog HTTP failure cannot prevent discovery/rendering of new data. An EXIT
+record includes service, exit status and total elapsed seconds. Each repair
+records its duration, and the shared Ningxia/Xinjiang publisher separately logs
+`stage=render` and `stage=publish`. Failed actions remain eligible on the next
+scheduled check. There is no automatic WRF restart or deletion of model files.
+
+`tools/install_iap_fast_publication_checks.sh` backs up the current user's cron
+before installation. It replaces only managed audit/Yunnan checks and removes
+the exact old `55 * * * * .../publish_worknx_ningxia_to_github.sh` entry. That
+entry unconditionally redrew and force-uploaded the latest run every hour,
+including unchanged products (the Oct 1 14:55 cycle ended at 15:12:07). The
+two-minute completeness audit replaces it. The independent Yunnan source-change
+checker, BJT06 snapshot job, backups, observations, SSH recovery and retention
+remain unchanged. Never modify server02 model-launch cron for this change.
+
+Historical evidence distinguishes several problems, rather than attributing
+all latency to one file:
+
+- Sep 28 had an interrupted shared Git transaction; owned recovery and retry
+  were added then. The cause of the original interruption is still unknown.
+- Sep 29 05:10:06-05:25:15: a Ningxia repair held the global audit lock; every
+  intervening two-minute check logged `already running; skip`. Similar blocking
+  appears at 12:10-12:24 and during Xinjiang repairs. Scoped locks remove this
+  cross-service wait, including waits caused by historical repairs.
+- Sep 30/Oct 1: backup selection aborted discovery before Xinjiang. The hourly
+  Ningxia redraw briefly changed control flow, explaining the observed xx:56
+  Xinjiang starts. Exact-name discovery fixes that failure independently.
+- Xinjiang run 20260930_00: WRF ended Sep 30 19:15:53 BJT; render action started
+  19:56:06; catalog publication was 20:15:14. Run 20260930_12: Oct 1 06:54:59,
+  07:56:07, 08:14:24 respectively. Thus waiting before rendering was 40/61
+  minutes, while rendering plus publication added about 19/18 minutes.
+
+Two-minute detection does not promise two-minute delivery. Rendering, WebP
+encoding, OSS transfer, serialized Git updates and Pages deployment still take
+time. Shared storage/network/Git failures can affect multiple services; separate
+workers do not eliminate common infrastructure failures. A indefinitely stuck
+worker still blocks its own service and must be investigated; do not blindly
+kill publishers while they update shared catalogs. Existing-output retries are
+bounded per invocation and continue in future scheduled invocations.
+
 ### Connectivity Checks
 
 ```bash

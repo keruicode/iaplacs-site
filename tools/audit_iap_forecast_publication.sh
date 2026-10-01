@@ -21,6 +21,7 @@ NCDUMP_BIN="${NCDUMP_BIN:-/public/software/apps/conda/latest/bin/ncdump}"
 # and let the next scheduled audit retry it instead.
 export PUBLISH_LOCK_WAIT_SECONDS="${PUBLISH_LOCK_WAIT_SECONDS:-0}"
 DRY_RUN=0
+SERVICE=all
 MISSING_RENDER_REPAIRS=0
 ACTION_FAILURES=0
 ACTION_SUCCEEDED=0
@@ -33,7 +34,7 @@ PUBLISH_RETRY_DELAY_SECONDS="${PUBLISH_RETRY_DELAY_SECONDS:-15}"
 
 usage() {
   cat <<'EOF'
-Usage: audit_iap_forecast_publication.sh [--dry-run]
+Usage: audit_iap_forecast_publication.sh [--dry-run] [--service ningxia|xinjiang|yunnan]
 
 Checks the latest rendered IAP products against the public catalog. A missing
 regional or nationwide hourly sequence is republished from its existing output
@@ -42,11 +43,38 @@ to the normal Slurm pipeline.
 EOF
 }
 
-if [[ "${1:-}" == "--dry-run" ]]; then
-  DRY_RUN=1
-elif [[ -n "${1:-}" ]]; then
-  usage >&2
-  exit 64
+while (( $# )); do
+  case "$1" in
+    --dry-run) DRY_RUN=1; shift ;;
+    --service)
+      SERVICE="${2:-}"
+      case "$SERVICE" in ningxia|xinjiang|yunnan) ;; *) usage >&2; exit 64 ;; esac
+      shift 2 ;;
+    *) usage >&2; exit 64 ;;
+  esac
+done
+
+# Independent processes preserve errexit without letting one failed or slow
+# service prevent another from starting. Cron uses the scoped entry directly.
+dispatch_services() {
+  local service pid failed=0
+  local -a pids=() arguments=()
+  for service in ningxia xinjiang yunnan; do
+    arguments=(--service "$service")
+    (( DRY_RUN )) && arguments+=(--dry-run)
+    bash "$IAPLACS_SCRIPT_DIR/audit_iap_forecast_publication.sh" \
+      "${arguments[@]}" </dev/null &
+    pids+=("$!")
+  done
+  for pid in "${pids[@]}"; do
+    if wait "$pid"; then :; else failed=1; fi
+  done
+  return "$failed"
+}
+
+if [[ "$SERVICE" == all ]]; then
+  dispatch_services
+  exit $?
 fi
 
 [[ "$OUTPUT_AUDIT_RUNS" =~ ^[1-9][0-9]*$ ]] || {
@@ -65,24 +93,28 @@ if [[ -z "$NCDUMP_BIN" || ! -x "$NCDUMP_BIN" ]]; then
   echo "ERROR: ncdump is required for completed-run Time checks" >&2
   exit 127
 fi
-exec 9>"$LOG_DIR/publication-audit.lock"
+exec 9>"$LOG_DIR/publication-audit-$SERVICE.lock"
 if ! flock -n 9; then
-  echo "$(date '+%F %T') publication audit already running; skip"
+  echo "$(date '+%F %T') service=$SERVICE publication audit already running; skip"
   exit 0
 fi
 
 AUDIT_CATALOG="$(mktemp "${TMPDIR:-/tmp}/iaplacs-public-catalog.XXXXXX")"
+AUDIT_STARTED=$SECONDS
 cleanup() {
+  local status=$?
   rm -f -- "$AUDIT_CATALOG"
+  printf '%s service=%s audit exit=%s elapsed_seconds=%s\n' \
+    "$(date '+%F %T')" "$SERVICE" "$status" "$((SECONDS - AUDIT_STARTED))"
 }
 trap cleanup EXIT
 
 log() {
-  printf '%s %s\n' "$(date '+%F %T')" "$*"
+  printf '%s service=%s %s\n' "$(date '+%F %T')" "$SERVICE" "$*"
 }
 
 run_action() {
-  local status attempt attempts=1 argument
+  local status attempt attempts=1 argument started
   ACTION_SUCCEEDED=0
   if (( DRY_RUN )); then
     log "DRY-RUN: $*"
@@ -95,13 +127,16 @@ run_action() {
   done
   for ((attempt=1; attempt<=attempts; attempt++)); do
     log "RUN ($attempt/$attempts): $*"
+    started=$SECONDS
     # SSH/renderers must not consume the parent loop's remaining run IDs.
     if "$@" </dev/null; then
+      log "ACTION finished exit=0 elapsed_seconds=$((SECONDS - started)): $*"
       ACTION_SUCCEEDED=1
       return 0
     else
       status=$?
     fi
+    log "ACTION finished exit=$status elapsed_seconds=$((SECONDS - started)): $*"
     if (( status == 75 )); then
       log "BUSY: service publisher is already running; defer this action"
       return 0
@@ -540,38 +575,36 @@ submit_missing_render() {
     if (( ACTION_SUCCEEDED )); then
       ((MISSING_RENDER_REPAIRS += 1))
     fi
-    # Repair at most one historical gap per family in each hourly audit.
+    # Repair at most one historical gap per service in each scheduled audit.
     return 0
   done < <(list_completed_wrf "$model_root")
 }
 
 log "publication audit started (dry_run=$DRY_RUN)"
-if ! fetch_public_catalog; then
-  log "public catalog fetch through $GITHUB_HOST failed; skip repairs this hour"
-  exit 75
-fi
-submit_missing_render ningxia /data1/elpt_2022_00083/zhoubj/WORK "$SCRIPT_DIR/worknx_ningxia_overview" "$IAPLACS_SCRIPT_DIR/publish_worknx_ningxia_to_github.sh"
-submit_missing_render xinjiang /data1/elpt_2022_00083/zhoubj/WORK_xj "$SCRIPT_DIR/workxj_xinjiang_overview" "$IAPLACS_SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh"
-submit_missing_render yunnan /data1/elpt_2022_00083/zhoubj/WORK_yn "$SCRIPT_DIR/worknx_yunnan_airports_overview" "$IAPLACS_SCRIPT_DIR/publish_worknx_yunnan_airports_to_github.sh"
+case "$SERVICE" in
+  ningxia) MODEL_FAMILY=WORK; OUTPUT_FAMILY=worknx_ningxia_overview; PUBLISHER=publish_worknx_ningxia_to_github.sh ;;
+  xinjiang) MODEL_FAMILY=WORK_xj; OUTPUT_FAMILY=workxj_xinjiang_overview; PUBLISHER=publish_workxj_xinjiang_to_github.sh ;;
+  yunnan) MODEL_FAMILY=WORK_yn; OUTPUT_FAMILY=worknx_yunnan_airports_overview; PUBLISHER=publish_worknx_yunnan_airports_to_github.sh ;;
+esac
 
-# The catalog was fetched before any repair above. GitHub Pages may need time
-# to publish the new commit, so comparing repaired runs against that stale
-# snapshot would immediately trigger a redundant republish. The next hourly
-# audit performs the public verification with a fresh catalog.
+# New completed data must not wait for the public catalog endpoint. Publishing
+# still uses the normal service lock and shared Git transaction lock.
+submit_missing_render "$SERVICE" "/data1/elpt_2022_00083/zhoubj/$MODEL_FAMILY" \
+  "$SCRIPT_DIR/$OUTPUT_FAMILY" "$IAPLACS_SCRIPT_DIR/$PUBLISHER"
+
+# Allow Pages to deploy a just-repaired run before comparing its catalog.
 if (( ! DRY_RUN && MISSING_RENDER_REPAIRS > 0 )); then
   log "attempted $MISSING_RENDER_REPAIRS missing-render repair(s); failures=$ACTION_FAILURES; defer public comparison to the next audit"
   (( ACTION_FAILURES == 0 )) && exit 0
   exit 1
 fi
 
+if ! fetch_public_catalog; then
+  log "public catalog fetch through $GITHUB_HOST failed; retry on next scheduled check"
+  exit 75
+fi
 while IFS= read -r run; do
-  [[ -n "$run" ]] && audit_ningxia_output "$run"
-done < <(list_output_runs "$SCRIPT_DIR/worknx_ningxia_overview")
-while IFS= read -r run; do
-  [[ -n "$run" ]] && audit_xinjiang_output "$run"
-done < <(list_output_runs "$SCRIPT_DIR/workxj_xinjiang_overview")
-while IFS= read -r run; do
-  [[ -n "$run" ]] && audit_yunnan_output "$run"
-done < <(list_output_runs "$SCRIPT_DIR/worknx_yunnan_airports_overview")
+  [[ -n "$run" ]] && "audit_${SERVICE}_output" "$run"
+done < <(list_output_runs "$SCRIPT_DIR/$OUTPUT_FAMILY")
 log "publication audit finished; action failures=$ACTION_FAILURES"
 (( ACTION_FAILURES == 0 ))
