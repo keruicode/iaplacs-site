@@ -454,13 +454,16 @@ audit_shangrao_output() {
 }
 
 list_completed_wrf() {
-  local root="$1" run_dir candidate rsl emitted=0
+  local root="$1" run_dir run_id candidate rsl emitted=0
   while IFS= read -r run_dir; do
     if [[ "$root" == "/data1/elpt_2022_00083/zhoubj/WORK" && "$(basename "$run_dir")" < "2026091218" ]]; then
       continue
     fi
-    candidate="$(find "$run_dir/gfs/wrf" -maxdepth 1 -type f -name 'wrfout_d01_*' -print 2>/dev/null | sort -r | head -n 1)"
-    [[ -n "$candidate" ]] || continue
+    run_id="$(basename "$run_dir")"
+    [[ "$run_id" =~ ^[0-9]{10}$ ]] || continue
+    # Select the initial output exactly; backups must never shadow live data.
+    candidate="$run_dir/gfs/wrf/wrfout_d01_${run_id:0:4}-${run_id:4:2}-${run_id:6:2}_${run_id:8:2}:00:00"
+    [[ -f "$candidate" ]] || continue
     rsl="$(dirname "$candidate")/rsl.error.0000"
     if [[ -f "$rsl" ]] && tail -n 200 "$rsl" | grep -q 'SUCCESS COMPLETE WRF'; then
       printf '%s\n' "$candidate"
@@ -498,12 +501,19 @@ submit_missing_render() {
   local prefix source expected time_count expected_count rendered_windows rendered_count
   while IFS= read -r source; do
     [[ -n "$source" ]] || continue
-    prefix="$(utc_wrf_prefix "$source")"
+    if ! prefix="$(utc_wrf_prefix "$source")"; then
+      log "WARNING: skip unrecognized model output: $source"
+      continue
+    fi
     [[ -n "$prefix" ]] || continue
     if [[ "$family" == "ningxia" && "$prefix" < "20260912_18" ]]; then
       continue
     fi
-    time_count="$(wrf_time_count "$source")"
+    if ! time_count="$(wrf_time_count "$source")"; then
+      log "WARNING: cannot read model Time count; defer output: $source"
+      ((ACTION_FAILURES += 1))
+      continue
+    fi
     expected_count="$(expected_hourly_count "$time_count")"
     if (( expected_count < 1 )); then
       log "${family^^} completed model output $prefix has unusable Time count: ${time_count:-unknown}"

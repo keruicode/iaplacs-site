@@ -137,6 +137,20 @@ uncommitted/committed interruptions, retry exhaustion, network backoff, busy
 locks and history-loop stdin isolation in temporary local repositories. Do not
 simulate a failure by corrupting the production catalog or killing live WRF jobs.
 
+### Completed-Run Discovery and Backup Files
+
+On 2026-10-01, the two-minute audit exited before reaching Xinjiang because
+the preceding WORK scan selected a `wrfout_d01_*_bak` file. The permissive glob
+and reverse sort preferred the backup; UTC run parsing rejected its suffix,
+and `set -e` terminated the audit. The cron schedule itself was active.
+
+Discovery now constructs the exact initial WRF filename from the ten-digit
+run directory. Backup suffixes cannot shadow the live output. Invalid run
+names and unreadable NetCDF headers are logged and skipped so later model
+outputs and services can still be checked. An unreadable header contributes
+to the audit failure count, permitting later scheduled retries. Model files
+and the WRF completion requirement are unchanged.
+
 ### Connectivity Checks
 
 ```bash

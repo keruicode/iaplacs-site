@@ -1,5 +1,6 @@
 """A failing publisher must not prevent checks of the other services."""
 
+import shlex
 import subprocess
 from pathlib import Path
 
@@ -64,3 +65,65 @@ def test_existing_output_retry_budget(
     )
     subprocess.run(["bash", "-c", script], check=True, capture_output=True, text=True)
     assert len(counter.read_text().splitlines()) == expected_calls
+
+
+def test_completed_scan_ignores_backups(tmp_path: Path) -> None:
+    wrf = tmp_path / "2026093018" / "gfs" / "wrf"
+    wrf.mkdir(parents=True)
+    live = wrf / "wrfout_d01_2026-09-30_18:00:00"
+    live.touch()
+    live.with_name(live.name + "_bak").touch()
+    (wrf / "rsl.error.0000").write_text("SUCCESS COMPLETE WRF\n")
+    source = AUDITOR.read_text(encoding="utf-8")
+    function = source.split("list_completed_wrf() {", 1)[1].split(
+        "\nutc_wrf_prefix()", 1
+    )[0]
+    script = (
+        "set -euo pipefail\nMODEL_AUDIT_RUNS=1\n"
+        f"find() {{ printf '%s\\n' {shlex.quote(str(wrf.parents[1]))}; }}\n"
+        "list_completed_wrf() {"
+        + function
+        + f"\nlist_completed_wrf {shlex.quote(str(tmp_path))}\n"
+    )
+    result = subprocess.run(
+        ["bash", "-c", script], check=True, capture_output=True, text=True
+    )
+    assert result.stdout.strip() == str(live)
+    live.unlink()
+    result = subprocess.run(
+        ["bash", "-c", script], check=False, capture_output=True, text=True
+    )
+    assert not result.stdout.strip()
+
+
+@pytest.mark.parametrize("failure", ["prefix", "time_count"])
+def test_bad_model_record_does_not_abort_later_services(failure: str) -> None:
+    source = AUDITOR.read_text(encoding="utf-8")
+    function = source.split("submit_missing_render() {", 1)[1].split(
+        '\nlog "publication audit started', 1
+    )[0]
+    # macOS Bash 3 lacks uppercase expansion; only normalize log formatting.
+    function = function.replace("${family^^}", "${family}")
+    script = (
+        "set -euo pipefail\nACTION_FAILURES=0\nMISSING_RENDER_REPAIRS=0\n"
+        "log() { printf '%s\\n' \"$*\"; }\n"
+        "list_completed_wrf() { printf 'broken\\ngood\\n'; }\n"
+        "utc_wrf_prefix() { "
+        + ('[[ "$1" != broken ]] || return 1; ' if failure == "prefix" else "")
+        + "printf 20260930_18; }\n"
+        "wrf_time_count() { "
+        + ('[[ "$1" != broken ]] || return 1; ' if failure == "time_count" else "")
+        + "printf 25; }\n"
+        "expected_hourly_count() { printf 12; }\n"
+        "panel_windows() { :; }\nwindow_count() { printf 0; }\n"
+        "run_action() { ACTION_SUCCEEDED=1; printf 'REPAIRED\\n'; }\n"
+        "submit_missing_render() {"
+        + function
+        + "\nsubmit_missing_render xinjiang /model /output /publisher\n"
+        "printf 'NEXT_SERVICE\\n'\n"
+    )
+    result = subprocess.run(
+        ["bash", "-c", script], check=True, capture_output=True, text=True
+    )
+    assert "REPAIRED" in result.stdout
+    assert "NEXT_SERVICE" in result.stdout
