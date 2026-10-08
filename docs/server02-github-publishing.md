@@ -203,6 +203,39 @@ worker still blocks its own service and must be investigated; do not blindly
 kill publishers while they update shared catalogs. Existing-output retries are
 bounded per invocation and continue in future scheduled invocations.
 
+### Archived Airport Case: 2026-10-05
+
+The independent `/airpots/1005/` page uses its own `catalog.json`, not the rolling
+forecast catalog. Its six initializations are listed below in Beijing time:
+
+| Initial time (BJT) | UTC run | Available precipitation window (BJT) |
+| --- | --- | --- |
+| Oct 4 02:00 | 20261003_18 | Oct 4 14:00 to Oct 5 02:00 |
+| Oct 4 08:00 | 20261004_00 | Oct 4 20:00 to Oct 5 07:00 (11 hours) |
+| Oct 4 14:00 | 20261004_06 | Oct 5 02:00 to Oct 5 14:00 |
+| Oct 4 20:00 | 20261004_12 | Oct 5 08:00 to Oct 5 20:00 |
+| Oct 5 02:00 | 20261004_18 | Oct 5 14:00 to Oct 6 02:00 |
+| Oct 5 08:00 | 20261005_00 | Oct 5 20:00 to Oct 6 08:00 |
+
+The user-provided airport warning was issued at **Oct 5 06:40 BJT** and reported
+52 mm in one hour without an exact accumulation interval. Do not present that
+value as a verified 05:00-06:00 or 06:00-07:00 observation. Only the Oct 4 08:00
+and 14:00 initializations cover the warning time after spin-up. The page opens
+the latter run at 06:00-07:00; other runs provide context, not necessarily a
+forecast of the warning hour. Full run sequences and montages are retained.
+
+The catalog records the original Git revisions. Its 178 existing image assets
+are archived in OSS under `iaplacs/cases/20261005/`, uploaded from server02's
+existing `~/incoming/airport_yunnan_<run>/` files. Each image must use object ACL
+`public-read`, just like the production publishers; the bucket itself remains
+unchanged. Verify public HTTP access after upload, not only ossutil success.
+
+The daily cleanup only handles `iaplacs/data/current/maps/`, so it does not
+remove these case assets. There is no scheduled regeneration of the case. The
+main airport page, normal five-run retention and completion-only publication
+policy remain unchanged. Run `node tools/tests/test_airport_case.cjs` to check
+the archived windows, default selection and URL isolation.
+
 ### Connectivity Checks
 
 ```bash

@@ -1,5 +1,8 @@
 const DEFAULT_REFRESH_MS = 2 * 60 * 1000;
-const MAX_DISPLAY_RUNS = 5;
+const MAX_DISPLAY_RUNS = Math.max(
+  1,
+  Math.min(50, Math.floor(Number(document.body.dataset.maxDisplayRuns) || 5)),
+);
 const MAX_VIEWER_SCALE = 6;
 const VIEWER_ZOOM_STEP = 1.25;
 const IMAGE_PREFETCH_CONCURRENCY = 1;
@@ -289,6 +292,15 @@ async function loadForecast({ preserveSelection }) {
     state.runIndex = chooseRunIndex(service, hasNewLatestRun ? undefined : previous.runId);
     state.productIndex = chooseProductIndex(currentRun(), previous.productId);
     state.leadIndex = chooseLeadIndex(currentProduct(), previous.frameId);
+    if (!previous.runId && document.body.dataset.initialValidTime) {
+      const target = Date.parse(document.body.dataset.initialValidTime);
+      state.hourlyPanelIndex = Math.max(
+        0,
+        hourlyFrames(currentFrame()).findIndex(
+          (frame) => Date.parse(frame.valid_time) === target,
+        ),
+      );
+    }
     render();
   } catch (error) {
     if (state.catalog) {
@@ -786,7 +798,7 @@ function chooseRunIndex(service, previousRunId) {
   const runs = service?.runs || [];
   if (!runs.length) return 0;
 
-  const targetId = previousRunId || service.latest_run;
+  const targetId = previousRunId || document.body.dataset.initialRun || service.latest_run;
   const found = runs.findIndex((run) => run.id === targetId);
   return found >= 0 ? found : 0;
 }

@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="2026年10月5日西双版纳嘎洒机场降水个例，汇集覆盖当日的云南降水预报批次。"
+    />
+    <title>10月5日版纳机场降水个例 | IAP-LACS Forecast</title>
+    <link rel="dns-prefetch" href="//iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com" />
+    <link rel="preconnect" href="https://iaplacs-forecast-images-hk.oss-cn-hongkong.aliyuncs.com" crossorigin />
+    <link rel="icon" type="image/png" sizes="512x512" href="../../assets/brand/iaplacs-tab-icon-20260725.png?v=20260725-04" />
+    <link rel="apple-touch-icon" href="../../assets/brand/iaplacs-tab-icon-20260725.png?v=20260725-04" />
+    <link rel="stylesheet" href="../../styles.css?v=20260802-01" />
+  </head>
+  <body
+    class="auth-lock"
+    data-service="airport"
+    data-manifest-url="./catalog.json"
+    data-fallback-manifest-url="./catalog.json"
+    data-huan-manifest-url="./catalog.json"
+    data-huan-fallback-manifest-url="./catalog.json"
+    data-tianhe-manifest-url="./catalog.json"
+    data-tianhe-fallback-manifest-url="./catalog.json"
+    data-default-source="huan"
+    data-force-default-source="true"
+    data-max-display-runs="6"
+    data-initial-run="airport_yunnan_20261004_06"
+    data-initial-valid-time="2026-10-05T07:00:00+08:00"
+    data-auto-select-latest-source="false"
+    data-asset-base="../../"
+    data-refresh-ms="0"
+  >
+    <header class="topbar">
+      <div class="brand">
+        <img
+          class="brand-icon"
+          src="../../assets/brand/logo-lacs-blue-icon.png"
+          alt=""
+          aria-hidden="true"
+        />
+        <div class="brand-copy">
+          <p class="brand-title">中国科学院大气物理研究所云降水物理与强风暴实验室</p>
+          <p class="brand-subtitle">LABORATORY OF CLOUD-PRECIPITATION PHYSICS AND SEVERE STORMS(LACS), IAP, CAS</p>
+          <h1 class="sr-only">2026年10月5日西双版纳嘎洒机场降水个例</h1>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <nav class="home-service-links" aria-label="服务入口">
+          <a class="home-service-link" href="../../">中国中东部</a>
+          <a class="home-service-link primary" href="../../airpots/" aria-current="page">中国西南部</a>
+          <a class="home-service-link" href="../../xinjiang/">中国西北部</a>
+        </nav>
+        <div class="run-state" aria-live="polite">
+          <span class="status-dot"></span>
+          <span id="updateLabel">正在读取数据</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="run-switchbar" aria-label="机场服务起报时间">
+      <div class="run-switch-heading-row">
+        <div class="run-switch-heading">
+          <p class="eyebrow">Initial Time</p>
+          <h2>起报时间</h2>
+          <p id="runSummary" aria-live="polite">正在读取时次清单</p>
+        </div>
+        <button id="refreshCatalog" class="refresh-button" type="button" title="刷新数据" aria-label="刷新数据">
+          &#8635;
+        </button>
+      </div>
+      <div id="runList" class="run-list run-list-horizontal" aria-label="机场起报时间"></div>
+    </section>
+
+    <main class="workspace">
+      <section class="control-panel" aria-label="产品控制">
+        <div class="panel-heading">
+          <p class="eyebrow">FORECAST</p>
+          <h2>10月5日降水个例</h2>
+          <p class="meta-label">西双版纳嘎洒机场 · 2026-10-05（北京时）</p>
+          <p class="meta-value">警报发布时间：10月5日06:40。重点对照05–06时、06–07时。</p>
+        </div>
+        <div id="productList" class="product-list"></div>
+
+        <div class="meta-block">
+          <p class="meta-label">当前起报</p>
+          <p id="runTime" class="meta-value">--</p>
+        </div>
+        <div class="meta-block">
+          <p class="meta-label">发布时间</p>
+          <p id="publishedAt" class="meta-value">--</p>
+        </div>
+        <div class="meta-block"><p class="meta-label">资料说明</p><p class="meta-value">重点批次为10月4日08时、14时起报。其余批次供当日其他时段参考。4日08时起报缺少最后一小时。</p><p class="meta-label">用户提供的机场警报记载1小时降水52 mm，未注明精确统计起止时间。</p></div>
+      </section>
+
+      <section class="map-panel" aria-label="机场预报图">
+        <div class="map-toolbar">
+          <div>
+            <p id="productUnit" class="eyebrow">--</p>
+            <h2 id="productTitle">读取中</h2>
+          </div>
+          <div class="toolbar-actions">
+            <a id="imageLink" class="text-button link-button" href="#" target="_blank" rel="noreferrer">放大查看</a>
+            <div id="forecastViewMode" class="view-mode-switch" role="group" aria-label="图件显示方式" hidden>
+              <button class="view-mode-button is-active" type="button" data-forecast-view-mode="hourly" aria-pressed="true">逐时</button>
+              <button class="view-mode-button" type="button" data-forecast-view-mode="montage" aria-pressed="false">拼图</button>
+            </div>
+            <a id="imageDownload" class="text-button link-button" href="#" download>下载原图</a>
+            <button id="prevLead" class="icon-button" type="button" title="上一时效" aria-label="上一时效">
+              &#8249;
+            </button>
+            <button id="nextLead" class="icon-button" type="button" title="下一时效" aria-label="下一时效">
+              &#8250;
+            </button>
+          </div>
+        </div>
+
+        <div id="leadTabs" class="lead-tabs" aria-label="预报时效"></div>
+        <div id="forecastHourTimeline" class="forecast-hour-timeline" aria-label="逐时预报时间" hidden></div>
+
+        <div class="map-stage">
+          <img id="forecastImage" alt="机场预报产品图" role="button" tabindex="0" draggable="false" decoding="async" fetchpriority="high" aria-label="放大查看当前预报图" />
+          <div class="map-badge">
+            <span id="leadLabel">--</span>
+            <span id="validTime">--</span>
+          </div>
+        </div>
+
+      </section>
+
+      <aside class="insight-panel" aria-label="产品摘要">
+        <div class="panel-heading">
+          <p class="eyebrow">OPERATIONS</p>
+          <h2>运行状态</h2>
+        </div>
+
+        <div id="metricGrid" class="metric-grid"></div>
+
+      </aside>
+    </main>
+
+    <footer class="site-footer">
+      <span>IAP-LACS Forecast</span>
+      <span>2026-10-05 降水个例</span>
+      <span>iaplacs.xyz</span>
+    </footer>
+
+    <script src="../../app.js?v=20261008-airport-case"></script>
+  </body>
+</html>
