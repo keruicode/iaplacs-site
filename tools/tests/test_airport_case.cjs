@@ -9,8 +9,14 @@ const runs = catalog.services.airport.runs;
 assert.equal(runs.length, 6);
 assert.equal(new Set(runs.map(run => run.id)).size, 6);
 for (const run of runs) {
-  assert.equal(run.products.length, 1);
-  assert.equal(run.products[0].description, '');
+  const hasAccumulation = ['airport_yunnan_20261004_12', 'airport_yunnan_20261005_00'].includes(run.id);
+  assert.equal(run.products.length, hasAccumulation ? 2 : 1);
+  if (hasAccumulation) {
+    assert.equal(run.products[1].id, 'airport_yunnan_accum_12h');
+    assert.equal(run.products[1].frames.length, 1);
+    assert(/T(08|20):00:00\+08:00$/.test(run.products[1].frames[0].valid_time));
+  }
+  assert.equal(run.products[0].description, 'WORK_yn 云南逐小时降水预报图。');
   assert.deepEqual(run.products[0].frames.map(frame => frame.id), ['airport_region', 'airport_national']);
   for (const frame of run.products[0].frames) {
     const expected = run.id.endsWith('20261004_00') ? 11 : 12;
@@ -35,6 +41,7 @@ assert(html.includes('data-max-display-runs="6"'));
 assert(html.includes('data-force-default-source="true"'));
 assert(!html.includes('data/current/forecast-runs.json'));
 assert(html.includes('<h2>中国西南部</h2>'));
+for (const requiredCopy of ['当前起报', 'id="publishedAt"', '服务评价']) assert(html.includes(requiredCopy));
 for (const removedCopy of ['降水个例', '警报发布时间', '重点批次', '资料说明', '52 mm']) {
   assert(!html.includes(removedCopy), removedCopy);
 }

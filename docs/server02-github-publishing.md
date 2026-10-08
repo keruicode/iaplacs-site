@@ -224,7 +224,13 @@ and 14:00 initializations cover the warning time after spin-up. The page opens
 the latter run at 06:00-07:00; other runs provide context, not necessarily a
 forecast of the warning hour. Full run sequences and montages are retained.
 
-The catalog records the original Git revisions. Its 178 existing image assets
+The page follows the ordinary airport layout without warning or case prose.
+It retains hourly precipitation and available 12-hour accumulation only, not
+temperature, wind, hail or observation products. Complete aligned accumulation
+exists for the Oct 4 20:00 BJT run (Oct 5 08:00-20:00) and Oct 5 08:00 BJT run
+(Oct 5 20:00-Oct 6 08:00); other runs are not given invented accumulation frames.
+
+The catalog records the original Git revisions. Its 184 existing image assets
 are archived in OSS under `iaplacs/cases/20261005/`, uploaded from server02's
 existing `~/incoming/airport_yunnan_<run>/` files. Each image must use object ACL
 `public-read`, just like the production publishers; the bucket itself remains
