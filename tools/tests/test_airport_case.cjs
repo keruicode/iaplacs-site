@@ -10,6 +10,7 @@ assert.equal(runs.length, 6);
 assert.equal(new Set(runs.map(run => run.id)).size, 6);
 for (const run of runs) {
   assert.equal(run.products.length, 1);
+  assert.equal(run.products[0].description, '');
   assert.deepEqual(run.products[0].frames.map(frame => frame.id), ['airport_region', 'airport_national']);
   for (const frame of run.products[0].frames) {
     const expected = run.id.endsWith('20261004_00') ? 11 : 12;
@@ -33,6 +34,10 @@ checkUrls(catalog);
 assert(html.includes('data-max-display-runs="6"'));
 assert(html.includes('data-force-default-source="true"'));
 assert(!html.includes('data/current/forecast-runs.json'));
+assert(html.includes('<h2>中国西南部</h2>'));
+for (const removedCopy of ['降水个例', '警报发布时间', '重点批次', '资料说明', '52 mm']) {
+  assert(!html.includes(removedCopy), removedCopy);
+}
 const initialId = html.match(/data-initial-run="([^"]+)"/)[1];
 const initialTime = html.match(/data-initial-valid-time="([^"]+)"/)[1];
 const initialRun = runs.find(run => run.id === initialId);
