@@ -31,6 +31,14 @@ missing. It never removes, replaces, or otherwise changes the remaining
 
 The user crontab runs this recovery once per hour:
 
+This is a scheduled check, not an immediate filesystem-change trigger. A reset
+at 09:30 waits until 10:00 unless the recovery command is run manually. The
+inbound file is `~/.ssh/authorized_keys` (no `.key` extension). From 2026-10-15,
+every successful check logs `check complete`, even when the managed public key
+was already restored manually. Older logs only recorded actual public-key
+repairs, so an old log timestamp did not prove cron had stopped. The script does
+not overwrite a newly rotated platform `id_rsa` that already exists.
+
 ```cron
 0 * * * * /data1/elpt_2022_00083/kerui/Website/scripts/ensure_iaplacs_ssh_state.sh >> /data1/elpt_2022_00083/kerui/Website/logs/ssh-state-recovery.log 2>&1
 ```

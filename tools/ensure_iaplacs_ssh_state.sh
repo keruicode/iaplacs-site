@@ -125,3 +125,4 @@ if ! grep -Fqx "$AUTHORIZED_KEY_LINE" "$AUTHORIZED_KEYS_FILE"; then
   printf '%s\n' "$AUTHORIZED_KEY_LINE" >> "$AUTHORIZED_KEYS_FILE"
   log "restored missing authorized key $AUTHORIZED_KEY_COMMENT"
 fi
+log "check complete: managed authorized key present; publishing key and wrapper ready"
