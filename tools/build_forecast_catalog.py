@@ -345,14 +345,17 @@ def build_yunnan_airport_product(
 
 
 def build_airport_aviation_products(
-    run_dir: Path, run_id: str, generated_at: str, *, category: str
+    run_dir: Path, run_id: str, generated_at: str, *, category: str,
+    asset_subdir: str = "aviation",
 ) -> list[dict]:
     """Build production aviation products emitted beside a regional run."""
-    aviation_dir = run_dir / "aviation"
+    aviation_dir = run_dir / asset_subdir
     manifest_path = aviation_dir / "production_manifest.json"
     if not manifest_path.exists():
         return []
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if asset_subdir == "visibility":
+        generated_at = manifest.get("generated_at") or generated_at
     products = []
 
     def resolve_asset(relative_name: str) -> Path:
@@ -397,8 +400,8 @@ def build_airport_aviation_products(
                 "title": title,
                 "category": category,
                 "unit": source_product.get("unit", ""),
-                "color": "#166ab6" if (source_product.get("id") or "").endswith("temperature") else "#168f7a",
-                "description": "",
+                "color": source_product.get("color") or ("#166ab6" if (source_product.get("id") or "").endswith("temperature") else "#168f7a"),
+                "description": source_product.get("description", ""),
                 "metrics": [
                     {"label": "起报时次", "value": run_id.replace("_", " ") + " UTC"},
                     {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},
@@ -818,6 +821,10 @@ def build_ningxia_runs() -> list[dict]:
                         for hours in (12, 24)
                         if (frames := build_ningxia_frames(run_dir, fragment, accumulation_hours=hours))
                     ],
+                    *build_airport_aviation_products(
+                        run_dir, run_id, generated_at, category="中国中东部预报",
+                        asset_subdir="visibility",
+                    ),
                 ],
             }
         )
@@ -1572,6 +1579,10 @@ def merge_existing_runs(
                         run,
                         merged[run_id],
                         prefix="xinjiang_airport_aviation_",
+                    )
+                if service_key == "ningxia":
+                    preserve_missing_products(
+                        run, merged[run_id], prefix="ningxia_visibility",
                     )
             merged[run_id] = run
 

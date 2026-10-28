@@ -19,17 +19,19 @@ PYTHON_BIN="${PYTHON_BIN:-/public/software/apps/conda/latest/bin/python3}"
 family=""
 run_prefix=""
 aviation_dir=""
+asset_subdir="aviation"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --family) family="${2:-}"; shift 2 ;;
     --run-prefix) run_prefix="${2:-}"; shift 2 ;;
     --aviation-dir) aviation_dir="${2:-}"; shift 2 ;;
+    --visibility-dir) aviation_dir="${2:-}"; asset_subdir="visibility"; shift 2 ;;
     *) echo "ERROR: unsupported argument: $1" >&2; exit 64 ;;
   esac
 done
 
-[[ "$family" == "workxj_summary" ]] || {
-  echo "ERROR: airport aviation publication currently supports workxj_summary" >&2
+[[ "$family:$asset_subdir" == "workxj_summary:aviation" || "$family:$asset_subdir" == "worknx_summary:visibility" ]] || {
+  echo "ERROR: unsupported diagnostic family/subdirectory: $family/$asset_subdir" >&2
   exit 64
 }
 [[ "$run_prefix" =~ ^[0-9]{8}_[0-9]{2}$ ]] || {
@@ -77,14 +79,14 @@ webp_count="$(find "$aviation_dir" -type f -name '*.webp' | wc -l | tr -d ' ')"
   exit 1
 }
 
-incoming="airport_aviation_${family}_${run_prefix}"
+incoming="${asset_subdir}_${family}_${run_prefix}"
 ssh "$GITHUB_HOST" "rm -rf ~/incoming/$incoming && mkdir -p ~/incoming/$incoming"
 rsync -av --delete "$aviation_dir/" "$GITHUB_HOST:~/incoming/$incoming/"
 
 remote_env_cmd=$(
-  printf 'FAMILY=%q RUN_PREFIX=%q INCOMING_NAME=%q GIT_URL=%q REMOTE_SITE_REPO=%q GITHUB_KEY=%q GIT_USER_NAME=%q GIT_USER_EMAIL=%q bash -s' \
+  printf 'FAMILY=%q RUN_PREFIX=%q INCOMING_NAME=%q GIT_URL=%q REMOTE_SITE_REPO=%q GITHUB_KEY=%q GIT_USER_NAME=%q GIT_USER_EMAIL=%q ASSET_SUBDIR=%q bash -s' \
     "$family" "$run_prefix" "$incoming" "$GIT_URL" "$REMOTE_SITE_REPO" \
-    "$GITHUB_KEY" "$GIT_USER_NAME" "$GIT_USER_EMAIL"
+    "$GITHUB_KEY" "$GIT_USER_NAME" "$GIT_USER_EMAIL" "$asset_subdir"
 )
 
 ssh "$GITHUB_HOST" "$remote_env_cmd" <<'REMOTE'
@@ -114,7 +116,8 @@ fi
 SITE_REPO="${REMOTE_SITE_REPO:-$HOME/iaplacs-site}"
 INCOMING="$HOME/incoming/$INCOMING_NAME"
 DEST="$SITE_REPO/data/current/maps/${FAMILY}_${RUN_PREFIX}"
-AVIATION_DEST="$DEST/aviation"
+[[ "$ASSET_SUBDIR" == "aviation" || "$ASSET_SUBDIR" == "visibility" ]] || exit 64
+AVIATION_DEST="$DEST/$ASSET_SUBDIR"
 OSSUTIL_BIN="${IAPLACS_OSSUTIL_BIN:-$HOME/bin/ossutil}"
 PREFIX="${IAPLACS_OSS_PREFIX:-}"
 PREFIX="${PREFIX#/}"
@@ -188,7 +191,7 @@ if git diff --cached --quiet; then
   exit 0
 fi
 git -c user.name="$GIT_USER_NAME" -c user.email="$GIT_USER_EMAIL" \
-  commit -m "Add Xinjiang airport aviation ${RUN_PREFIX}"
+  commit -m "Update ${FAMILY} ${ASSET_SUBDIR} ${RUN_PREFIX}"
 python3 tools/publication_checkout.py finish
 REMOTE
 

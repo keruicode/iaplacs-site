@@ -31,6 +31,7 @@ const HOURLY_PRECIP_PRODUCT_IDS = {
   ningxia: new Set([
     "ningxia_precip_series",
     "tianhe_ningxia_precip_series",
+    "ningxia_visibility",
   ]),
   shangrao: new Set([
     "wrf_rain_montage",
@@ -1212,19 +1213,24 @@ function hourLabel(frame, isRealtime) {
   if (isRealtime) return "实时";
   const end = Date.parse(frame?.valid_time || "");
   if (Number.isNaN(end)) return frame?.lead_label || "--";
-  const startParts = bjtParts(new Date(end - 60 * 60 * 1000));
+  const startParts = bjtParts(new Date(end - (frame?.time_kind === "instant" ? 0 : 60 * 60 * 1000)));
   return `${twoDigits(startParts.month)}-${twoDigits(startParts.day)} ${twoDigits(startParts.hour)}时`;
 }
 
 function hourRange(frame) {
   const end = Date.parse(frame?.valid_time || "");
   if (Number.isNaN(end)) return frame?.valid_label || frame?.lead_label || "--";
+  if (frame?.time_kind === "instant") {
+    const parts = bjtParts(new Date(end));
+    return `${parts.year}-${twoDigits(parts.month)}-${twoDigits(parts.day)} ${twoDigits(parts.hour)}:00 BJT`;
+  }
   const startParts = bjtParts(new Date(end - 60 * 60 * 1000));
   const endParts = bjtParts(new Date(end));
   return `${startParts.year}-${twoDigits(startParts.month)}-${twoDigits(startParts.day)} ${twoDigits(startParts.hour)}:00-${twoDigits(endParts.hour)}:00 BJT`;
 }
 
 function isRealtimePanel(frame) {
+  if (frame?.time_kind === "instant") return false;
   const end = Date.parse(frame?.valid_time || "");
   if (Number.isNaN(end)) return false;
   const now = Date.now();

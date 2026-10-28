@@ -1,0 +1,21 @@
+const fs = require("node:fs");
+const vm = require("node:vm");
+const assert = require("node:assert/strict");
+const source = fs.readFileSync("app.js", "utf8");
+const names = ["hourLabel", "hourRange", "isRealtimePanel", "twoDigits", "bjtParts"];
+const snippets = names.map((name) => {
+  const start = source.indexOf(`function ${name}(`);
+  assert.ok(start >= 0, name);
+  const end = source.indexOf("\nfunction ", start + 1);
+  return source.slice(start, end < 0 ? source.length : end);
+});
+const context = vm.createContext({ Date, Intl });
+vm.runInContext(snippets.join("\n"), context);
+const frame = { valid_time: "2026-10-28T00:00:00+08:00", time_kind: "instant" };
+context.frame = frame;
+assert.equal(vm.runInContext("hourLabel(frame, false)", context), "10-28 00时");
+assert.equal(vm.runInContext("hourRange(frame)", context), "2026-10-28 00:00 BJT");
+assert.equal(vm.runInContext("isRealtimePanel(frame)", context), false);
+delete frame.time_kind;
+assert.equal(vm.runInContext("hourLabel(frame, false)", context), "10-27 23时");
+console.log("Visibility instant times and existing rainfall time semantics: passed");
