@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Independent, retryable VIS postprocessing. WRF inputs remain read-only.
 set -Eeuo pipefail
+if [[ "${IAPLACS_PUBLISH_VISIBILITY:-0}" != "1" ]]; then
+  echo "Visibility publication disabled: standalone preview review pending"
+  exit 0
+fi
 source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
 ROOT="$(iaplacs_runtime_root "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
 MODEL_ROOT="${WORK_VISIBILITY_MODEL_ROOT:-/data1/elpt_2022_00083/zhoubj/WORK}"

@@ -1,5 +1,14 @@
 # WORK Visibility Postprocessing
 
+## Current Status: Preview Only
+
+On 2026-10-28 the user requested two independent local preview pages before
+website integration. Automatic VIS hooks have therefore been removed from the
+rain publisher and audit. `publish_work_visibility.sh` exits without publishing
+unless `IAPLACS_PUBLISH_VISIBILITY=1` is explicitly set. Do not enable it until
+the user approves the standalone preview. The integration description below
+documents the prepared implementation, not currently enabled automation.
+
 The homepage visibility product reads `VIS(Time,bottom_top,south_north,west_east)`
 in metres from `WORK` d01. It uses the lowest model level, not a fixed 2 m or
 10 m height. It does not recalculate VIS, alter WRF, or change model inputs.

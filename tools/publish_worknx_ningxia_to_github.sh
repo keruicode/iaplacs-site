@@ -225,9 +225,6 @@ for source in "${sources[@]}"; do
       --run-prefix "$run_prefix" \
       --aviation-dir "$source_dir/aviation"
   fi
-  if [[ "$PUBLISH_FAMILY" == "worknx_summary" ]]; then
-    "$IAPLACS_SCRIPT_DIR/publish_work_visibility.sh" --run "$run_prefix"
-  fi
 done
 printf '%s stage=publish service=%s elapsed_seconds=%s finished\n' \
   "$(date '+%F %T')" "$SERVICE_LABEL" "$((SECONDS - publish_started))"

@@ -103,6 +103,7 @@ def test_publisher_does_not_render_or_upload_incomplete_run(tmp_path):
             "WORK_VISIBILITY_MODEL_ROOT": str(tmp_path / "model"),
             "WORK_VISIBILITY_OUTPUT_ROOT": str(output),
             "PYTHON_BIN": "/usr/bin/false",
+            "IAPLACS_PUBLISH_VISIBILITY": "1",
         },
         check=True,
         capture_output=True,
@@ -110,6 +111,23 @@ def test_publisher_does_not_render_or_upload_incomplete_run(tmp_path):
     )
     assert "waiting for completed WRF" in result.stdout
     assert not output.exists()
+
+
+def test_visibility_publication_disabled_by_default():
+    script = Path(__file__).resolve().parents[1] / "publish_work_visibility.sh"
+    env = {
+        key: value
+        for key, value in os.environ.items()
+        if key != "IAPLACS_PUBLISH_VISIBILITY"
+    }
+    result = subprocess.run(
+        ["bash", str(script), "--run", "20261027_06"],
+        env=env,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "publication disabled" in result.stdout
 
 
 def test_catalog_keeps_visibility_after_upload_staging_cleanup(tmp_path, monkeypatch):

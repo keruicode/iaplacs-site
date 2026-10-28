@@ -370,14 +370,6 @@ audit_ningxia_output() {
   if [[ -n "$frozen" ]]; then
     public_frozen="$(public_windows ningxia "$run" ningxia_hail_warning 2>/dev/null || true)"
   fi
-  # VIS is independent: missing/failed output retries without redrawing rainfall.
-  if [[ ! "$run" < "20261027_06" ]]; then
-    if public_product_exists ningxia "$run" ningxia_visibility; then
-      run_action "$IAPLACS_SCRIPT_DIR/publish_work_visibility.sh" --run "$run"
-    else
-      run_action "$IAPLACS_SCRIPT_DIR/publish_work_visibility.sh" --run "$run" --ensure-public
-    fi
-  fi
   if [[ "$public_region" == "$region" && "$public_national" == "$national" && "$public_frozen" == "$frozen" ]]; then
     log "NINGXIA $run verified: region=$region_count national=$national_count hail=$frozen_count first=${region%%,*}"
     return
