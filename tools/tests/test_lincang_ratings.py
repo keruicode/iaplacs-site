@@ -11,6 +11,20 @@ from unittest.mock import patch
 
 
 class LincangRatingsTest(unittest.TestCase):
+    def test_catalog_describes_only_present_airports(self):
+        from tools.build_forecast_catalog import build_yunnan_airport_product
+
+        fragment = {"airport_precip_totals": [{"id": "dehong_mangshi"}]}
+        product = build_yunnan_airport_product(
+            "20261027_06", [], "2026-10-28T04:00:00Z", fragment
+        )
+        self.assertNotIn("临沧", product["description"])
+        fragment["airport_precip_totals"].append({"id": "lincang_boshang"})
+        product = build_yunnan_airport_product(
+            "20261027_06", [], "2026-10-28T04:00:00Z", fragment
+        )
+        self.assertIn("临沧机场", product["description"])
+
     def test_rating_change_cancel_and_legacy_vote(self):
         records = {}
         bucket = types.SimpleNamespace(
@@ -26,10 +40,7 @@ class LincangRatingsTest(unittest.TestCase):
                 if key.startswith(prefix)
             ]
         )
-        path = (
-            Path(__file__).resolve().parents[2]
-            / "cloud/airport-ratings-fc/index.py"
-        )
+        path = Path(__file__).resolve().parents[2] / "cloud/airport-ratings-fc/index.py"
         spec = importlib.util.spec_from_file_location("rating_test_module", path)
         module = importlib.util.module_from_spec(spec)
         with patch.dict(sys.modules, {"oss2": oss}):

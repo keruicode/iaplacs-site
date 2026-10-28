@@ -175,7 +175,7 @@ def build_yunnan_airport_runs() -> list[dict]:
                 "label": f"{format_run_label(run_time)} BJT",
                 "run_time": run_time,
                 "published_at": generated_at,
-                "summary": "云南机场降水预报图集，覆盖德宏芒市、西双版纳嘎洒、普洱澜沧景迈、临沧四个机场点。",
+                "summary": "云南机场降水预报图集，机场信息以本批次实际产品为准。",
                 "products": [
                     build_yunnan_airport_product(run_id, hourly_frames, generated_at, fragment),
                     *[
@@ -319,13 +319,26 @@ def build_yunnan_airport_product(
         {"label": "图像数量", "value": str(len(frames))},
     ]
     metrics.extend(yunnan_airport_precip_metrics(fragment))
+    included_airports = {
+        point.get("id")
+        for point in fragment.get("airport_precip_totals", [])
+        if isinstance(point, dict)
+    }
+    airport_names = "、".join(
+        airport["label"]
+        for airport in YUNNAN_AIRPORTS
+        if airport["id"] in included_airports
+    )
+    description = "WORK_yn 云南逐小时降水与冰雹预警图。"
+    if airport_names:
+        description += f"标注{airport_names}位置。"
     return {
         "id": "airport_yunnan_precip_series",
         "title": "云南机场降水预报图集",
         "category": "机场服务",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": "WORK_yn 云南逐小时降水与冰雹预警图，标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈、临沧四个机场位置。",
+        "description": description,
         "metrics": metrics,
         "frames": frames,
     }
