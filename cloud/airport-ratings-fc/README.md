@@ -1,6 +1,6 @@
 # 机场预报评分共享存档：阿里云部署与维护手册
 
-本目录是 `https://iaplacs.xyz/airpots/` 中三家云南机场预报评分的后端源码和部署记录。
+本目录是 `https://iaplacs.xyz/airpots/` 中四家云南机场预报评分的后端源码和部署记录。
 
 它解决的是静态 GitHub Pages 网站无法安全写入共享数据的问题：访客点击“准 / 不准 / 一般”后，
 评分立即写入阿里云 OSS；其他地区、其他网络中的访客随后打开同一预报时次时，会读取并看到相同的汇总结果。
@@ -149,7 +149,7 @@ RATING_PREFIX=iaplacs/ratings/v1
 
 ```text
 数据源：huan、tianhe
-机场：dehong_mangshi、xishuangbanna_gasa、puer_lancang_jingmai
+机场：dehong_mangshi、xishuangbanna_gasa、puer_lancang_jingmai、lincang_boshang
 评分：accurate、inaccurate、fair
 ```
 

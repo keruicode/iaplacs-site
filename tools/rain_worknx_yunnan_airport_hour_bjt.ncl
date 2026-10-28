@@ -100,8 +100,8 @@ begin
     exit
   end if
 
-  airport_lons = (/98.533300, 100.762222, 99.783889/)
-  airport_lats = (/24.400000, 21.973611, 22.417778/)
+  airport_lons = (/98.533300, 100.762222, 99.783889, 100.022500/)
+  airport_lats = (/24.400000, 21.973611, 22.417778, 23.738333/)
   plane_scale_outer = 0.245
   plane_scale_inner = 0.195
 
@@ -293,8 +293,8 @@ begin
         province_shp_line = gsn_add_shapefile_polylines(wks, plot, province_shp_file, province_shp_res)
       end if
 
-      plane_back = new(3, graphic)
-      plane_face = new(3, graphic)
+      plane_back = new(dimsizes(airport_lons), graphic)
+      plane_face = new(dimsizes(airport_lons), graphic)
       plane_x_template = (/1.8, -1.1, -0.35, -1.35, 0.1, -1.1, 1.8/)
       plane_y_template = (/0.0, 0.34, 0.08, 0.86, 0.0, -0.34, 0.0/)
 
@@ -305,7 +305,7 @@ begin
       plane_face_res@gsFillColor = "black"
       plane_face_res@gsEdgesOn = False
 
-      do ia = 0, 2
+      do ia = 0, dimsizes(airport_lons)-1
         plane_x_outer = airport_lons(ia) + plane_scale_outer * plane_x_template
         plane_y_outer = airport_lats(ia) + plane_scale_outer * plane_y_template
         plane_x_inner = airport_lons(ia) + plane_scale_inner * plane_x_template

@@ -59,6 +59,7 @@ YUNNAN_AIRPORTS = [
     {"id": "dehong_mangshi", "label": "德宏芒市机场"},
     {"id": "xishuangbanna_gasa", "label": "西双版纳嘎洒机场"},
     {"id": "puer_lancang_jingmai", "label": "普洱澜沧景迈机场"},
+    {"id": "lincang_boshang", "label": "临沧机场"},
 ]
 
 
@@ -88,7 +89,7 @@ def main() -> None:
         airport_runs + ningxia_runs + shangrao_runs + xinjiang_runs
     )
     airport_note = (
-        "机场服务页展示 WORK_yn 云南区域降水、气温和风场预报，并单独列出德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点的降水信息。"
+        "机场服务页展示 WORK_yn 云南区域降水、气温和风场预报，并单独列出德宏芒市、西双版纳嘎洒、普洱澜沧景迈、临沧四个机场点的降水信息。"
         if airport_yunnan_runs
         else "主页作为机场服务入口，当前展示机场降水、气温和风场产品。"
     )
@@ -174,7 +175,7 @@ def build_yunnan_airport_runs() -> list[dict]:
                 "label": f"{format_run_label(run_time)} BJT",
                 "run_time": run_time,
                 "published_at": generated_at,
-                "summary": "云南机场降水预报图集，覆盖德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场点。",
+                "summary": "云南机场降水预报图集，覆盖德宏芒市、西双版纳嘎洒、普洱澜沧景迈、临沧四个机场点。",
                 "products": [
                     build_yunnan_airport_product(run_id, hourly_frames, generated_at, fragment),
                     *[
@@ -324,7 +325,7 @@ def build_yunnan_airport_product(
         "category": "机场服务",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": "WORK_yn 云南逐小时降水与冰雹预警图，标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈三个机场位置。",
+        "description": "WORK_yn 云南逐小时降水与冰雹预警图，标注德宏芒市、西双版纳嘎洒、普洱澜沧景迈、临沧四个机场位置。",
         "metrics": metrics,
         "frames": frames,
     }

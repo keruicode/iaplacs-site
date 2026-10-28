@@ -25,6 +25,7 @@ AIRPORTS = {
     "dehong_mangshi",
     "xishuangbanna_gasa",
     "puer_lancang_jingmai",
+    "lincang_boshang",
 }
 RATINGS = {"accurate", "inaccurate", "fair"}
 SAFE_ID = re.compile(r"^[A-Za-z0-9_-]{6,128}$")

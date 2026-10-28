@@ -46,6 +46,7 @@ const AIRPORT_RATING_TARGETS = [
   { id: "dehong_mangshi", label: "德宏芒市机场" },
   { id: "xishuangbanna_gasa", label: "西双版纳嘎洒机场" },
   { id: "puer_lancang_jingmai", label: "普洱澜沧景迈机场" },
+  { id: "lincang_boshang", label: "临沧机场" },
 ];
 const AIRPORT_RATING_OPTIONS = [
   { id: "accurate", label: "准" },
@@ -1269,7 +1270,10 @@ function renderAirportFeedback() {
       button.className = `airport-rating-button${isSelected ? " is-active" : ""}`;
       button.textContent = option.label;
       button.setAttribute("aria-pressed", String(isSelected));
-      button.disabled = controlsDisabled;
+      button.disabled = controlsDisabled || !aggregateRatings[airport.id];
+      if (snapshot && !aggregateRatings[airport.id]) {
+        button.title = "该机场评分接口尚未启用";
+      }
       button.addEventListener("click", () => toggleAirportRating(context, airport.id, option.id));
       choices.appendChild(button);
     });

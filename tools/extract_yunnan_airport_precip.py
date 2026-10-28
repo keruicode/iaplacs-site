@@ -19,6 +19,7 @@ ICE_PHASE_VARIABLES = ("GRAUPELNC", "HAILNC")
 
 
 AIRPORTS = [
+    # Yunnan Airport Group 2023 offering circular, table 5-31 (page 102).
     {
         "id": "dehong_mangshi",
         "name": "德宏芒市国际机场",
@@ -36,6 +37,12 @@ AIRPORTS = [
         "name": "普洱澜沧景迈机场",
         "lat": 22.417778,
         "lon": 99.783889,
+    },
+    {
+        "id": "lincang_boshang",
+        "name": "临沧机场",
+        "lat": 23.738333,
+        "lon": 100.022500,
     },
 ]
 

@@ -35,6 +35,7 @@ REGION_PROFILES = {
             ("德宏芒市国际机场", 24.400000, 98.533300),
             ("西双版纳嘎洒国际机场", 21.973611, 100.762222),
             ("普洱澜沧景迈机场", 22.417778, 99.783889),
+            ("临沧机场", 23.738333, 100.022500),
         ),
         "default_region": (97.0, 107.0, 21.0, 30.0),
         "product_prefix": "airport_aviation",
@@ -583,7 +584,7 @@ def station_meteogram(output, times, station_data, selected_keys, airports):
         len(series), 1, figsize=(18.2, figure_height), sharex=True, squeeze=False,
     )
     axes = axes[:, 0]
-    palette = ("#cb3e38", "#1b64a5", "#129b78")
+    palette = ("#cb3e38", "#1b64a5", "#129b78", "#9056a0")
     legend_handles = []
     for axis, (key, title, ylabel) in zip(axes.flat, series):
         axis.set_facecolor("white")
@@ -605,13 +606,19 @@ def station_meteogram(output, times, station_data, selected_keys, airports):
         axis.tick_params(labelsize=22, top=True, right=True, pad=7, width=3.0, length=9)
         style_meteogram_y_axis(axis, key, station_data)
         style_meteogram_time_axis(axis, times, axis is axes[-1])
-    figure.legend(
+    legend = figure.legend(
         legend_handles, [airport[0] for airport in airports],
-        loc="upper center", bbox_to_anchor=(0.5, 0.985), ncol=min(3, len(airports)),
+        loc="upper center", bbox_to_anchor=(0.5, 0.985),
+        ncol=2 if len(airports) == 4 else min(3, len(airports)),
         frameon=False, fontsize=32, prop=cn_sized_props(32).get("fontproperties"),
         handlelength=3.6, columnspacing=3.4, handletextpad=0.9,
     )
-    figure.tight_layout(rect=(0.035, 0.075, 0.995, 0.855), h_pad=2.8)
+    figure.canvas.draw()
+    legend_bottom = legend.get_window_extent().transformed(
+        figure.transFigure.inverted()
+    ).y0
+    plot_top = min(0.855, legend_bottom - 0.035)
+    figure.tight_layout(rect=(0.035, 0.075, 0.995, plot_top), h_pad=2.8)
     figure.savefig(str(output), dpi=420, bbox_inches="tight", pad_inches=0.04)
     plt.close(figure)
 
