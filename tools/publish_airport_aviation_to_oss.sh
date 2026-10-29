@@ -26,11 +26,12 @@ while [[ $# -gt 0 ]]; do
     --run-prefix) run_prefix="${2:-}"; shift 2 ;;
     --aviation-dir) aviation_dir="${2:-}"; shift 2 ;;
     --visibility-dir) aviation_dir="${2:-}"; asset_subdir="visibility"; shift 2 ;;
+    --radar-dir) aviation_dir="${2:-}"; asset_subdir="radar"; shift 2 ;;
     *) echo "ERROR: unsupported argument: $1" >&2; exit 64 ;;
   esac
 done
 
-[[ "$family:$asset_subdir" == "workxj_summary:aviation" || "$family:$asset_subdir" == "worknx_summary:visibility" ]] || {
+[[ "$family:$asset_subdir" == "workxj_summary:aviation" || "$family:$asset_subdir" == "worknx_summary:visibility" || "$family:$asset_subdir" == "airport_yunnan:radar" ]] || {
   echo "ERROR: unsupported diagnostic family/subdirectory: $family/$asset_subdir" >&2
   exit 64
 }
@@ -116,7 +117,7 @@ fi
 SITE_REPO="${REMOTE_SITE_REPO:-$HOME/iaplacs-site}"
 INCOMING="$HOME/incoming/$INCOMING_NAME"
 DEST="$SITE_REPO/data/current/maps/${FAMILY}_${RUN_PREFIX}"
-[[ "$ASSET_SUBDIR" == "aviation" || "$ASSET_SUBDIR" == "visibility" ]] || exit 64
+[[ "$ASSET_SUBDIR" == "aviation" || "$ASSET_SUBDIR" == "visibility" || "$ASSET_SUBDIR" == "radar" ]] || exit 64
 AVIATION_DEST="$DEST/$ASSET_SUBDIR"
 OSSUTIL_BIN="${IAPLACS_OSSUTIL_BIN:-$HOME/bin/ossutil}"
 PREFIX="${IAPLACS_OSS_PREFIX:-}"

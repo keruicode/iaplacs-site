@@ -1,13 +1,13 @@
 # WORK Visibility Postprocessing
 
-## Current Status: Preview Only
+## Current Status: Production Approved
 
-On 2026-10-28 the user requested two independent local preview pages before
-website integration. Automatic VIS hooks have therefore been removed from the
-rain publisher and audit. `publish_work_visibility.sh` exits without publishing
-unless `IAPLACS_PUBLISH_VISIBILITY=1` is explicitly set. Do not enable it until
-the user approves the standalone preview. The integration description below
-documents the prepared implementation, not currently enabled automation.
+On 2026-10-29 the user approved production integration for the latest published
+run and future runs only. The VIS lower bound is WORK2026102718 (Oct28 02BJT).
+Rain publication and the existing two-minute audit invoke the independent VIS
+wrapper; completion, source cache, lock, receipt and retry checks remain active.
+Set IAPLACS_PUBLISH_VISIBILITY=0 for an emergency operator disable. Earlier
+historical runs are not backfilled. Missing VIS skips without inventing data.
 
 The homepage visibility product reads `VIS(Time,bottom_top,south_north,west_east)`
 in metres from `WORK` d01. It uses the lowest model level, not a fixed 2 m or
@@ -23,8 +23,9 @@ in metres from `WORK` d01. It uses the lowest model level, not a fixed 2 m or
   The 100 km threshold is a provisional QC rule, not a meteorological standard.
 - Preserve valid numeric values, including exactly 10000 m. The audited model
   initializes VIS to 10000 m; this is not evidence of a precise 10 km prediction.
-- Invalid cells are gray, separate from white high-visibility cells and white
-  space outside model coverage. No interpolation or silent clipping is performed.
+- Invalid cells display white at the user's request, without an invalid-cell
+  legend. Their internal mask and QC records remain intact; white does not prove
+  valid high visibility. No interpolation or silent clipping is performed.
 - If an entire selected hour has no valid interior data, fail without publishing
   the new manifest. Rainfall products remain independent.
 - Use the FOG reference palette: brown/red/orange/yellow/light yellow/white at

@@ -37,7 +37,7 @@ BJT = timezone(timedelta(hours=8))
 QC_VERSION = "raw_vis_qc_v1"
 MAX_VISIBILITY_M = 100000.0  # Provisional QC threshold, not a weather standard.
 FOG_COLORS = ["#8B4513", "#E31A1C", "#FF8C1A", "#FFD32A", "#FFF55C", "#FFFFFF"]
-INVALID_COLOR = "#b9bec5"
+INVALID_COLOR = "#ffffff"
 BIN_EDGES = np.array([50, 100, 200, 500, 1000], dtype=float)
 BIN_LABELS = ["<50", "50-100", "100-200", "200-500", "500-1000", ">=1000"]
 REGION = (104.0, 107.8, 35.0, 39.7)
@@ -155,8 +155,10 @@ def draw_panel(
     tick_size: int = 18,
 ) -> QuadMesh:
     """Draw categorical cells and existing map boundaries on an Axes."""
-    palette = colors.ListedColormap(FOG_COLORS + [INVALID_COLOR])
-    norm = colors.BoundaryNorm(np.arange(8) - 0.5, palette.N)
+    palette = colors.ListedColormap(FOG_COLORS)
+    palette.set_bad(INVALID_COLOR)
+    norm = colors.BoundaryNorm(np.arange(7) - 0.5, palette.N)
+    field = np.ma.masked_equal(field, 6)
     artist = axis.pcolormesh(
         lon, lat, field, cmap=palette, norm=norm, shading="nearest", rasterized=True
     )
@@ -190,9 +192,9 @@ def draw_panel(
 
 def add_colorbar(figure: Figure, artist: QuadMesh, axis: Axes, size: int = 16) -> None:
     colorbar = figure.colorbar(
-        artist, cax=axis, ticks=np.arange(7), orientation="vertical"
+        artist, cax=axis, ticks=np.arange(6), orientation="vertical"
     )
-    colorbar.ax.set_yticklabels(BIN_LABELS + ["无效/未计算"], **cn_sized_props(size))
+    colorbar.ax.set_yticklabels(BIN_LABELS, **cn_sized_props(size))
     colorbar.ax.tick_params(width=2, length=5)
     colorbar.set_label("能见度（米）", **cn_sized_props(size + 2))
 
@@ -394,7 +396,7 @@ def render(args: argparse.Namespace) -> int:
                 "title": "能见度",
                 "unit": "最低模式层 VIS（米）",
                 "color": "#687d98",
-                "description": "模式云滴消光诊断；灰色为无效或未计算格点。",
+                "description": "能见度",
                 "frames": frames,
             }
         ],

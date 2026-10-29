@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Independent, retryable VIS postprocessing. WRF inputs remain read-only.
 set -Eeuo pipefail
-if [[ "${IAPLACS_PUBLISH_VISIBILITY:-0}" != "1" ]]; then
-  echo "Visibility publication disabled: standalone preview review pending"
+if [[ "${IAPLACS_PUBLISH_VISIBILITY:-1}" != "1" ]]; then
+  echo "Visibility publication disabled by operator"
   exit 0
 fi
 source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
@@ -19,7 +19,7 @@ while (( $# )); do
   esac
 done
 [[ "$run" =~ ^[0-9]{8}_[0-9]{2}$ ]] || exit 64
-[[ "$run" < "20261027_06" ]] && exit 0
+[[ "$run" < "20261027_18" ]] && exit 0
 wrf_dir="$MODEL_ROOT/${run/_/}/gfs/wrf"
 source_file="$wrf_dir/wrfout_d01_${run:0:4}-${run:4:2}-${run:6:2}_${run:9:2}:00:00"
 if [[ ! -f "$source_file" || ! -f "$wrf_dir/rsl.error.0000" ]] || \

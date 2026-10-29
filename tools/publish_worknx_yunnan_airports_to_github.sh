@@ -446,4 +446,5 @@ python3 tools/publication_checkout.py finish
 REMOTE
 
   echo "Published Yunnan airport prefix: $run_prefix"
+  "$IAPLACS_SCRIPT_DIR/publish_yunnan_radar.sh" --run "$run_prefix"
 done

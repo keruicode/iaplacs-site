@@ -191,6 +191,9 @@ def build_yunnan_airport_runs() -> list[dict]:
                     *build_airport_aviation_products(
                         run_dir, run_id, generated_at, category="机场服务"
                     ),
+                    *build_airport_aviation_products(
+                        run_dir, run_id, generated_at, category="机场服务", asset_subdir="radar"
+                    ),
                 ],
             }
         )
@@ -354,7 +357,7 @@ def build_airport_aviation_products(
     if not manifest_path.exists():
         return []
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if asset_subdir == "visibility":
+    if asset_subdir in {"visibility", "radar"}:
         generated_at = manifest.get("generated_at") or generated_at
     products = []
 
@@ -1584,7 +1587,26 @@ def merge_existing_runs(
                     preserve_missing_products(
                         run, merged[run_id], prefix="ningxia_visibility",
                     )
+                if service_key == "airport":
+                    preserve_missing_products(run, merged[run_id], prefix="airport_radar")
             merged[run_id] = run
+
+    # Diagnostic uploads may have no local rain assets after OSS staging cleanup.
+    diagnostic = {
+        "airport": ("airport_yunnan_", "radar", "机场服务"),
+        "ningxia": ("worknx_summary_", "visibility", "中国中东部预报"),
+    }.get(service_key)
+    if diagnostic:
+        family, subdir, category = diagnostic
+        for run_id, run in merged.items():
+            prefix = run_id.removeprefix("airport_yunnan_")
+            additions = build_airport_aviation_products(
+                ROOT / "data/current/maps" / f"{family}{prefix}",
+                prefix, run.get("published_at", ""), category=category, asset_subdir=subdir,
+            )
+            if additions:
+                ids = {product["id"] for product in additions}
+                run["products"] = [p for p in run.get("products", []) if p.get("id") not in ids] + additions
 
     runs = list(merged.values())
     runs.sort(key=lambda item: item.get("run_time", ""), reverse=True)

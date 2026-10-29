@@ -90,14 +90,14 @@ def test_cache_requires_matching_source_and_every_image(tmp_path):
 
 
 def test_publisher_does_not_render_or_upload_incomplete_run(tmp_path):
-    wrf_dir = tmp_path / "model/2026102706/gfs/wrf"
+    wrf_dir = tmp_path / "model/2026102718/gfs/wrf"
     wrf_dir.mkdir(parents=True)
-    (wrf_dir / "wrfout_d01_2026-10-27_06:00:00").touch()
+    (wrf_dir / "wrfout_d01_2026-10-27_18:00:00").touch()
     (wrf_dir / "rsl.error.0000").write_text("Timing for main\n", encoding="utf-8")
     output = tmp_path / "products"
     script = Path(__file__).resolve().parents[1] / "publish_work_visibility.sh"
     result = subprocess.run(
-        ["bash", str(script), "--run", "20261027_06"],
+        ["bash", str(script), "--run", "20261027_18"],
         env={
             **os.environ,
             "WORK_VISIBILITY_MODEL_ROOT": str(tmp_path / "model"),
@@ -113,13 +113,14 @@ def test_publisher_does_not_render_or_upload_incomplete_run(tmp_path):
     assert not output.exists()
 
 
-def test_visibility_publication_disabled_by_default():
+def test_visibility_publication_can_be_disabled_by_operator():
     script = Path(__file__).resolve().parents[1] / "publish_work_visibility.sh"
     env = {
         key: value
         for key, value in os.environ.items()
         if key != "IAPLACS_PUBLISH_VISIBILITY"
     }
+    env["IAPLACS_PUBLISH_VISIBILITY"] = "0"
     result = subprocess.run(
         ["bash", str(script), "--run", "20261027_06"],
         env=env,

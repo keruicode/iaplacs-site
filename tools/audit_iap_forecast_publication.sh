@@ -347,6 +347,11 @@ audit_ningxia_output() {
   local run="$1" output="$SCRIPT_DIR/worknx_ningxia_overview/$run"
   # Older Ningxia products remain archived; never reinterpret their source as WORK.
   [[ "$run" < "20260912_18" ]] && return 0
+  if [[ "$run" > "20261027_17" ]]; then
+    local visibility_args=(--run "$run")
+    public_product_exists ningxia "$run" ningxia_visibility || visibility_args+=(--ensure-public)
+    run_action "$IAPLACS_SCRIPT_DIR/publish_work_visibility.sh" "${visibility_args[@]}"
+  fi
   local region national frozen public_region public_national public_frozen region_count national_count frozen_count
   region="$(panel_windows "$output/captioned_t13_t48" '')"
   national="$(panel_windows "$output/national_captioned_t13_t48" '')"
@@ -425,6 +430,11 @@ audit_xinjiang_output() {
 
 audit_yunnan_output() {
   local run="$1" output="$SCRIPT_DIR/worknx_yunnan_airports_overview/$run"
+  if [[ "$run" > "20261028_11" ]]; then
+    local radar_args=(--run "$run")
+    public_product_exists airport "airport_yunnan_$run" airport_radar || radar_args+=(--ensure-public)
+    run_action "$IAPLACS_SCRIPT_DIR/publish_yunnan_radar.sh" "${radar_args[@]}"
+  fi
   local region national frozen public_region public_national public_frozen region_count national_count frozen_count
   region="$(panel_windows "$output/captioned_t13_t48" '')"
   national="$(panel_windows "$output/national_captioned_t13_t48" '')"
