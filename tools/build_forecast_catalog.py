@@ -1609,6 +1609,12 @@ def merge_existing_runs(
                 run["products"] = [p for p in run.get("products", []) if p.get("id") not in ids] + additions
 
     runs = list(merged.values())
+    for run in runs:
+        for product in run.get("products", []):
+            if product.get("id") == "airport_radar":
+                product["title"] = "雷达回波"
+            elif product.get("id") == "ningxia_visibility":
+                product["color"] = "#0f68c8"
     runs.sort(key=lambda item: item.get("run_time", ""), reverse=True)
     return runs[:MAX_RUNS]
 

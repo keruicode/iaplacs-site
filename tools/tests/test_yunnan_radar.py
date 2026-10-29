@@ -104,3 +104,17 @@ def test_radar_manifest_has_instant_times(tmp_path, monkeypatch):
         id_prefix="airport_yunnan_",
     )
     assert "airport_radar" in [p["id"] for p in retained[0]["products"]]
+    assert retained[0]["products"][-1]["title"] == "雷达回波"
+
+
+def test_visibility_retained_product_uses_blue(tmp_path, monkeypatch):
+    import build_forecast_catalog as catalog
+
+    monkeypatch.setattr(catalog, "ROOT", tmp_path)
+    run = {
+        "id": "20261027_18",
+        "run_time": "2026-10-27T18:00:00Z",
+        "products": [{"id": "ningxia_visibility", "color": "#687d98"}],
+    }
+    merged = catalog.merge_existing_runs([run], {"services": {}}, "ningxia")
+    assert merged[0]["products"][0]["color"] == "#0f68c8"
