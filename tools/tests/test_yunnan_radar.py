@@ -118,3 +118,21 @@ def test_visibility_retained_product_uses_blue(tmp_path, monkeypatch):
     }
     merged = catalog.merge_existing_runs([run], {"services": {}}, "ningxia")
     assert merged[0]["products"][0]["color"] == "#0f68c8"
+
+
+def test_solid_precipitation_labels_preserve_assets():
+    from build_forecast_catalog import normalize_solid_precipitation_labels
+
+    product = {
+        "description": "可切换冰雹预警图。",
+        "frames": [
+            {"id": "hail_warning", "lead_label": "冰雹预警", "file": "hail_warning.png"}
+        ],
+    }
+    normalize_solid_precipitation_labels(product)
+    assert product["description"] == "可切换固态降水图。"
+    assert product["frames"][0] == {
+        "id": "hail_warning",
+        "lead_label": "固态降水",
+        "file": "hail_warning.png",
+    }

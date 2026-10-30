@@ -245,7 +245,7 @@ def build_yunnan_airport_frames(
         is_national = accumulation_hours is None and "_WRF_AllRain_" in path.name
         lead_label = lead_label_from_name(path.name)
         if is_hail_warning:
-            frame_id, lead, lead_label = "airport_hail_warning", 2, "冰雹预警"
+            frame_id, lead, lead_label = "airport_hail_warning", 2, "固态降水"
         elif is_national:
             frame_id, lead, lead_label = "airport_national", 1, "中国西南部"
         elif accumulation_hours is None:
@@ -332,7 +332,7 @@ def build_yunnan_airport_product(
         for airport in YUNNAN_AIRPORTS
         if airport["id"] in included_airports
     )
-    description = "WORK_yn 云南逐小时降水与冰雹预警图。"
+    description = "WORK_yn 云南逐小时降水与固态降水图。"
     if airport_names:
         description += f"标注{airport_names}位置。"
     return {
@@ -582,6 +582,7 @@ def yunnan_airport_precip_metrics(fragment: dict) -> list[dict]:
 def normalize_yunnan_airport_run_metrics(runs: list[dict]) -> list[dict]:
     airport_labels = {airport["label"] for airport in YUNNAN_AIRPORTS}
     for run in runs:
+        normalize_solid_precipitation_labels(run)
         for product in run.get("products", []):
             if product.get("id") != "airport_yunnan_precip_series":
                 continue
@@ -1056,8 +1057,8 @@ def regional_frame_meta(
         return (
             f"{accumulation_prefix}_hail_warning",
             2,
-            "冰雹预警",
-            "当前显示：冰雹预警",
+            "固态降水",
+            "当前显示：固态降水",
         )
     if "_WRF_AllRain_" in key:
         return (national_id, 1, national_label, f"当前显示：{national_label}")
@@ -1079,7 +1080,7 @@ def build_ningxia_product(run_id: str, frames: list[dict], generated_at: str) ->
         "category": "宁夏预报",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": "默认显示宁夏区域图，可切换中国中东部和冰雹预警图。",
+        "description": "默认显示宁夏区域图，可切换中国中东部和固态降水图。",
         "metrics": [
             {"label": "起报时次", "value": run_id.replace("_", " ") + " UTC"},
             {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},
@@ -1115,7 +1116,7 @@ def build_xinjiang_product(run_id: str, frames: list[dict], generated_at: str) -
         "category": "新疆预报",
         "unit": "mm",
         "color": "#0f68c8",
-        "description": "默认显示新疆区域图，可切换中国西部和冰雹预警图。",
+        "description": "默认显示新疆区域图，可切换中国西部和固态降水图。",
         "metrics": [
             {"label": "起报时次", "value": run_id.replace("_", " ") + " UTC"},
             {"label": "生成时间", "value": format_run_label(generated_at) + " BJT"},
@@ -1388,8 +1389,8 @@ def frame_meta(run_id: str, key: str) -> dict:
         return {
             "id": "shangrao_hail_warning",
             "lead": 2,
-            "lead_label": "冰雹预警",
-            "valid_label": "当前显示：冰雹预警",
+            "lead_label": "固态降水",
+            "valid_label": "当前显示：固态降水",
         }
     if "_combined_overview" in key:
         return {
@@ -1617,6 +1618,19 @@ def merge_existing_runs(
                 product["color"] = "#0f68c8"
     runs.sort(key=lambda item: item.get("run_time", ""), reverse=True)
     return runs[:MAX_RUNS]
+
+
+def normalize_solid_precipitation_labels(value):
+    """Update retained display labels without changing product IDs or assets."""
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key in {"title", "description", "lead_label", "valid_label", "summary", "note"} and isinstance(item, str):
+                value[key] = item.replace("冰雹预警", "固态降水")
+            elif isinstance(item, (dict, list)):
+                normalize_solid_precipitation_labels(item)
+    elif isinstance(value, list):
+        for item in value:
+            normalize_solid_precipitation_labels(item)
 
 
 def yunnan_airport_run_is_complete(run: dict) -> bool:

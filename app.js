@@ -13,7 +13,7 @@ const ACCESS_TOKEN_VALUE = "iaplacs_access_granted_v1";
 const DATA_SOURCE_TOKEN_KEY = "iaplacs_forecast_source";
 const AIRPORT_RATING_CLIENT_ID_KEY = "iaplacs_airport_rating_client_v1";
 const NINGXIA_PRODUCT_TITLE = "降水预报图集";
-const NINGXIA_PRODUCT_DESCRIPTION = "默认显示宁夏区域图，可切换中国中东部和冰雹预警图。";
+const NINGXIA_PRODUCT_DESCRIPTION = "默认显示宁夏区域图，可切换中国中东部和固态降水图。";
 const NATIONAL_FRAME_LABELS = {
   worknx_national: "中国中东部",
   shangrao_national: "中国东南部",
@@ -537,6 +537,7 @@ async function fetchJson(url) {
 }
 
 function normalizeForecastData(raw) {
+  normalizeSolidPrecipitationLabels(raw);
   if (raw.services) return limitCatalogRuns(raw);
 
   const legacyRun = {
@@ -577,6 +578,17 @@ function normalizeForecastData(raw) {
       },
     },
   });
+}
+
+function normalizeSolidPrecipitationLabels(value) {
+  if (!value || typeof value !== "object") return;
+  for (const [key, item] of Object.entries(value)) {
+    if (["title", "description", "lead_label", "valid_label", "summary", "note"].includes(key) && typeof item === "string") {
+      value[key] = item.replaceAll("冰雹预警", "固态降水");
+    } else if (item && typeof item === "object") {
+      normalizeSolidPrecipitationLabels(item);
+    }
+  }
 }
 
 function limitCatalogRuns(catalog) {
