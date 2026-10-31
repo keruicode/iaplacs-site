@@ -66,9 +66,8 @@ county="${VISIBILITY_COUNTY_SHP:-$ROOT/SHP/$county_name.shp}"
 [[ -f "$county" ]] && arguments+=(--county-shp "$county")
 status=0
 renderer=render_work_visibility.py
-if [[ "$source_kind" == diagnostic ]]; then
-  renderer=render_cloud_visibility_preview.py
-  arguments+=(--production)
+if [[ "$profile" != ningxia ]]; then
+  renderer=render_regional_visibility.py
 fi
 "$PYTHON_BIN" "$IAPLACS_SCRIPT_DIR/$renderer" "${arguments[@]}" || status=$?
 if (( status == 3 )); then

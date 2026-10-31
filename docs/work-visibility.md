@@ -1,5 +1,21 @@
 # WORK Visibility Postprocessing
 
+## Regional and Outer-Domain Views
+
+Yunnan/Xinjiang visibility now publishes two views via
+`render_regional_visibility.py`: the regional view prefers d02; the wide view
+uses the same initialization's d01 and its complete horizontal coordinate bounds
+(rounded outward to whole degrees). No province mask or 150E cap is applied to
+these wide views. Labels are 云南区域 / 中国西南部 and 新疆区域 / 中国西北部.
+Each domain independently selects native VIS_MIN, VIS, or the cloud diagnostic.
+Unavailable inputs are not replaced with another initialization's data.
+Both views retain hourly/montage modes. Child manifests and per-domain sources
+are preserved, while the combined manifest contains both area frames; unchanged
+children do not rerender. Old flat single-view files owned by their manifest are
+retired after the new manifest succeeds. Existing public OSS assets remain until
+normal retention cleanup. The airport visibility sidebar description is empty
+and the frontend suppresses stale duplicate descriptions in older catalogs.
+
 ## Current Status: Production Approved
 
 As of 2026-10-31, WORK2026103006 and later read **VIS_MIN**, first vertical

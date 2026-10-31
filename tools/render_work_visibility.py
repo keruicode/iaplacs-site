@@ -126,6 +126,7 @@ def source_signature(source: Path, args: argparse.Namespace) -> dict:
         "variable": getattr(args, "variable", "VIS_MIN"),
         "profile": getattr(args, "profile", "ningxia"),
         "domain": getattr(args, "domain", "d01"),
+        "area": getattr(args, "area", "regional"),
     }
 
 
@@ -237,7 +238,7 @@ def save_maps(
 ) -> dict:
     """Write hourly and montage rasters with instantaneous BJT timestamps."""
     frames = []
-    airports = REGION_PROFILES.get(area, {}).get("airports", ())
+    airports = REGION_PROFILES.get(area.split("_")[0], {}).get("airports", ())
     ratio = (extent[3] - extent[2]) / (extent[1] - extent[0])
     for field, time in zip(fields, times):
         filename = f"{area}_{time:%Y%m%d%H}_BJT.png"
@@ -315,6 +316,8 @@ def save_maps(
             "central_east": "中国中东部",
             "yunnan": "云南区域",
             "xinjiang": "新疆区域",
+            "yunnan_wide": "中国西南部",
+            "xinjiang_wide": "中国西北部",
         }[area],
         "valid_time": times[0].isoformat(),
         "time_kind": "instant",
@@ -412,6 +415,14 @@ def render(args: argparse.Namespace) -> int:
             lat, lon, args.domain, REGION_PROFILES[args.profile]["default_region"]
         )
         areas = ((args.profile, extent, counties),)
+        if getattr(args, "area", "regional") == "wide":
+            extent = (
+                math.floor(lon.min()),
+                math.ceil(lon.max()),
+                math.floor(lat.min()),
+                math.ceil(lat.max()),
+            )
+            areas = ((args.profile + "_wide", extent, []),)
     frames = []
     for area, extent, lines in areas:
         inside = (
@@ -467,7 +478,7 @@ def render(args: argparse.Namespace) -> int:
                 "title": "能见度",
                 "unit": f"最低模式层 {selected_variable}（米）",
                 "color": "#0f68c8",
-                "description": "能见度",
+                "description": "" if args.profile == "yunnan" else "能见度",
                 "frames": frames,
             }
         ],
@@ -490,6 +501,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--profile", choices=("ningxia", "yunnan", "xinjiang"), default="ningxia"
     )
     parser.add_argument("--domain", choices=("d01", "d02"), default="d01")
+    parser.add_argument("--area", choices=("regional", "wide"), default="regional")
     parser.add_argument("--start", type=int, default=13)
     parser.add_argument("--count", type=int, default=36)
     parser.add_argument("--dpi", type=int, default=400)

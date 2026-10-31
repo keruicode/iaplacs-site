@@ -6,11 +6,13 @@ from cloud_visibility_moments import cloud_groups
 from netCDF4 import Dataset
 
 
-def select_source(d01: Path, profile: str) -> tuple[Path, str] | None:
+def select_source(
+    d01: Path, profile: str, *, prefer_nested: bool = True
+) -> tuple[Path, str] | None:
     """Prefer d02; within that domain prefer VIS_MIN, then VIS, then cloud moments."""
     candidates = (
         (d01,)
-        if profile == "ningxia"
+        if profile == "ningxia" or not prefer_nested
         else (d01.with_name(d01.name.replace("d01", "d02", 1)), d01)
     )
     for path in candidates:

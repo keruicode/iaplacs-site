@@ -1021,11 +1021,12 @@ function renderProducts() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `product-button${index === state.productIndex ? " is-active" : ""}`;
+    const description = product.id === "airport_visibility" ? "" : product.description;
     button.innerHTML = `
       <span class="product-stripe" style="background:${product.color || "#0f68c8"}"></span>
       <span>
         <span class="product-name">${product.title}</span>
-        <span class="product-desc">${product.description || ""}</span>
+        ${description ? `<span class="product-desc">${description}</span>` : ""}
       </span>
     `;
     button.addEventListener("click", () => {
