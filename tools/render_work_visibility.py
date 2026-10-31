@@ -160,6 +160,7 @@ def draw_panel(
     tick_size: int = 18,
     omit_104_label: bool = False,
     airports: tuple = (),
+    xinjiang_ticks: bool = False,
 ) -> QuadMesh:
     """Draw categorical cells and existing map boundaries on an Axes."""
     palette = colors.ListedColormap(FOG_COLORS)
@@ -189,6 +190,13 @@ def draw_panel(
     else:
         xticks = np.arange(math.ceil(extent[0]), extent[1] + 0.01)
         yticks = np.arange(math.ceil(extent[2]), extent[3] + 0.01)
+    if xinjiang_ticks:
+        xticks = np.arange(
+            72 + math.ceil((extent[0] - 72) / 8) * 8, extent[1] + 0.01, 8
+        )
+        yticks = np.arange(
+            34 + math.ceil((extent[2] - 34) / 4) * 4, extent[3] + 0.01, 4
+        )
     labels = axis.set_xticks(
         xticks,
         ["" if omit_104_label and x == 104 else f"{x:g}°E" for x in xticks],
@@ -246,7 +254,15 @@ def save_maps(
         )
         axis = figure.add_subplot(grid[0, 0])
         artist = draw_panel(
-            axis, lon, lat, field, extent, province, counties, airports=airports
+            axis,
+            lon,
+            lat,
+            field,
+            extent,
+            province,
+            counties,
+            airports=airports,
+            xinjiang_ticks=area == "xinjiang",
         )
         axis.set_title(f"{time:%m-%d %H:%M} BJT", fontsize=24, pad=10)
         add_colorbar(figure, artist, figure.add_subplot(grid[0, 1]))
@@ -284,6 +300,7 @@ def save_maps(
             counties,
             omit_104_label=area == "ningxia",
             airports=airports,
+            xinjiang_ticks=area == "xinjiang",
         )
         axis.set_title(f"{times[i]:%m-%d %H:%M} BJT", fontsize=16, pad=7)
     add_colorbar(figure, artist, figure.add_axes((0.9, 0.20, 0.012, 0.60)))

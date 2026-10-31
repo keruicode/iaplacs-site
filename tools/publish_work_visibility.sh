@@ -36,22 +36,14 @@ if [[ ! -f "$wrf_dir/rsl.error.0000" ]] || \
   exit 0
 fi
 status=0
-source_file="$("$PYTHON_BIN" - "$source_file" "$profile" "$variable" <<'PY'
+selection="$(PYTHONPATH="$IAPLACS_SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}" "$PYTHON_BIN" - "$source_file" "$profile" <<'PY'
 import sys
 from pathlib import Path
-from netCDF4 import Dataset
-p = Path(sys.argv[1])
-candidates = (p,) if sys.argv[2] == "ningxia" else (p.with_name(p.name.replace("d01", "d02", 1)), p)
-names = ("VIS_MIN", "VIS") if sys.argv[3] == "auto" else (sys.argv[3],)
-for candidate in candidates:
-    if not candidate.is_file():
-        continue
-    with Dataset(candidate) as ds:
-        if len(ds.dimensions["Time"]) >= 14 and any(name in ds.variables for name in names):
-            print(candidate)
-            break
-else:
+from visibility_source import select_source
+selected = select_source(Path(sys.argv[1]), sys.argv[2])
+if selected is None:
     raise SystemExit(3)
+print(str(selected[0]) + "|" + selected[1])
 PY
 )" || status=$?
 if (( status == 3 )); then
@@ -59,6 +51,7 @@ if (( status == 3 )); then
   exit 0
 fi
 (( status == 0 )) || exit "$status"
+IFS='|' read -r source_file source_kind <<< "$selection"
 domain=d01
 [[ "$source_file" == */wrfout_d02_* ]] && domain=d02
 output="$OUTPUT_ROOT/$run/visibility"
@@ -72,7 +65,12 @@ arguments=(--input "$source_file" --output "$output" --if-needed
 county="${VISIBILITY_COUNTY_SHP:-$ROOT/SHP/$county_name.shp}"
 [[ -f "$county" ]] && arguments+=(--county-shp "$county")
 status=0
-"$PYTHON_BIN" "$IAPLACS_SCRIPT_DIR/render_work_visibility.py" "${arguments[@]}" || status=$?
+renderer=render_work_visibility.py
+if [[ "$source_kind" == diagnostic ]]; then
+  renderer=render_cloud_visibility_preview.py
+  arguments+=(--production)
+fi
+"$PYTHON_BIN" "$IAPLACS_SCRIPT_DIR/$renderer" "${arguments[@]}" || status=$?
 if (( status == 3 )); then
   echo "Visibility $profile $run: source lacks requested field ($variable); existing products unchanged"
   exit 0

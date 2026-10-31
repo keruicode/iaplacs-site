@@ -16,7 +16,15 @@ are connected to automatic publication from run20261030_00 onward. Their wrapper
 uses `--variable auto`: prefer VIS_MIN in the selected domain, otherwise VIS,
 and record/show the actual variable. Prefer a usable d02, otherwise d01, from
 the same initialization. Ningxia remains strictly VIS_MIN on d01.
-Missing both variables skips cleanly, without upload or empty webpage buttons.
+After further approval on 2026-10-31, missing both native variables now invokes
+the FOG cloud-moment diagnostic fallback for Yunnan/Xinjiang only, when complete
+QCLOUD/NW/NW_Z (or numbered spectra) plus P/PB/T/QVAPOR are available. Missing
+these inputs skips cleanly, without upload or empty webpage buttons. The fallback
+is instantaneous cloud-only visibility, not hourly-minimum VIS_MIN; the product
+unit and provenance explicitly identify it as diagnostic. See
+[Cloud Visibility Method](cloud-visibility-preview.md). The original WRF signature
+and diagnostic code hashes control caching. Native fields are selected before
+the diagnostic cache, allowing automatic replacement on later output updates.
 The existing two-minute audits and completed-rain publisher hooks retry and
 publish new products to OSS. No separate cron or laptop scheduler is needed.
 Yunnan/Xinjiang use existing regional bounds for d01 and actual bounds for d02,
@@ -25,7 +33,7 @@ Use `publish_work_visibility.sh --run YYYYMMDD_HH --profile yunnan` (or xinjiang
 for the same manual workflow. Products appear only after valid images exist.
 
 The following describes the original integration; VIS references apply to older
-history. The current production wrapper explicitly selects VIS_MIN.
+history. The current Ningxia production wrapper explicitly selects VIS_MIN.
 
 On 2026-10-29 the user approved production integration for the latest published
 run and future runs only. The VIS lower bound is WORK2026102718 (Oct28 02BJT).
