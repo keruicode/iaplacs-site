@@ -34,6 +34,42 @@ def test_density():
         dry_air_density(np.array([-1.0]), np.array([300.0]), np.array([0.0]))
 
 
+def test_extraction_uses_lowest_layer_only(tmp_path):
+    from datetime import datetime, timedelta
+
+    from render_cloud_visibility_preview import DERIVED, extract
+
+    source = tmp_path / "wrfout.nc"
+    output = tmp_path / "derived.nc"
+    fields = inputs()
+    dims = ("Time", "bottom_top", "south_north", "west_east")
+    with Dataset(source, "w") as ds:
+        for name, size in zip(dims, (14, 2, 3, 4)):
+            ds.createDimension(name, size)
+        ds.createDimension("DateStrLen", 19)
+        times = [
+            (datetime(2026, 10, 31) + timedelta(hours=i)).strftime("%Y-%m-%d_%H:%M:%S")
+            for i in range(14)
+        ]
+        ds.createVariable("Times", "S1", ("Time", "DateStrLen"))[:] = np.array(
+            [list(t) for t in times], dtype="S1"
+        )
+        for name in ("XLAT", "XLONG"):
+            ds.createVariable(name, "f8", ("Time", "south_north", "west_east"))[:] = 30
+        for name, field in fields.items():
+            var = ds.createVariable(name, "f8", dims)
+            var.units = (
+                "Pa" if name in {"P", "PB"} else "K" if name == "T" else "kg kg-1"
+            )
+            var[:, 0, :, :] = field
+            var[:, 1, :, :] = np.nan
+    extract(source, output, start=13, count=1)
+    expected, _ = diagnose(fields, cloud_groups(fields))
+    with Dataset(output) as ds:
+        assert len(ds.dimensions["bottom_top"]) == 1
+        np.testing.assert_allclose(ds[DERIVED][13, 0], expected, rtol=1e-6)
+
+
 def test_cloud_formula_and_nonmutation():
     fields = inputs()
     before = {n: a.copy() for n, a in fields.items()}
