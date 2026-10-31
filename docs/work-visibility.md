@@ -2,6 +2,24 @@
 
 ## Current Status: Production Approved
 
+As of 2026-10-31, WORK2026103006 and later read **VIS_MIN**, first vertical
+level (zero-based index 0), in metres. No automatic fallback to VIS is allowed.
+Earlier published VIS history is retained without replotting. The visible button,
+FOG palette, white invalid cells and regional/national views remain unchanged.
+The variable metadata says "mini visibility"; its exact accumulation/reset window
+has not been verified from model source. Timestamps remain the file's valid Times;
+do not label this as an independently verified hourly average or runway visibility.
+
+The renderer exposes `--variable VIS_MIN --profile ningxia|yunnan|xinjiang
+--domain d01|d02`. Yunnan and Xinjiang are **reserved preview interfaces only**:
+their current files lack VIS_MIN and no cron/catalog/uploader integration is
+enabled. They use their existing regional bounds for d01 and actual input bounds
+for d02, with the same visibility palette and QC. The caller must supply the
+matching wrfout; the renderer does not substitute another region or run.
+
+The following describes the original integration; VIS references apply to older
+history. The current production wrapper explicitly selects VIS_MIN.
+
 On 2026-10-29 the user approved production integration for the latest published
 run and future runs only. The VIS lower bound is WORK2026102718 (Oct28 02BJT).
 Rain publication and the existing two-minute audit invoke the independent VIS

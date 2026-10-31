@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plot raw WRF VIS with display-only QC; never modify model data."""
+"""Plot a selected WRF visibility field with display-only QC; never modify WRF."""
 
 from __future__ import annotations
 
@@ -24,9 +24,11 @@ from matplotlib.collections import QuadMesh
 from matplotlib.figure import Figure
 from netCDF4 import Dataset
 from render_yunnan_airport_aviation_preview import (
+    REGION_PROFILES,
     cn_sized_props,
     configure_matplotlib,
     decorate,
+    display_region,
     line_intersects_region,
     shp_lines,
     wrf_times,
@@ -121,6 +123,9 @@ def source_signature(source: Path, args: argparse.Namespace) -> dict:
         "start": args.start,
         "count": args.count,
         "dpi": args.dpi,
+        "variable": getattr(args, "variable", "VIS_MIN"),
+        "profile": getattr(args, "profile", "ningxia"),
+        "domain": getattr(args, "domain", "d01"),
     }
 
 
@@ -264,13 +269,32 @@ def save_maps(
     plt.close(figure)
     return {
         "id": f"visibility_{area}",
-        "lead": 0 if area == "ningxia" else 1,
-        "lead_label": "宁夏区域" if area == "ningxia" else "中国中东部",
+        "lead": 1 if area == "central_east" else 0,
+        "lead_label": {
+            "ningxia": "宁夏区域",
+            "central_east": "中国中东部",
+            "yunnan": "云南区域",
+            "xinjiang": "新疆区域",
+        }[area],
         "valid_time": times[0].isoformat(),
         "time_kind": "instant",
         "file": name,
         "individual_frames": frames,
     }
+
+
+def visibility_variable(dataset: Dataset, name: str):
+    """Select the explicit metre-valued 3-D field; never fall back to VIS."""
+    if name not in dataset.variables:
+        return None
+    variable = dataset[name]
+    if variable.dimensions != ("Time", "bottom_top", "south_north", "west_east"):
+        raise ValueError(f"Unexpected {name} dimensions: {variable.dimensions}")
+    if getattr(variable, "units", "").strip().lower() not in {"m", "meter", "meters"}:
+        raise ValueError(f"{name} units must be explicitly metres")
+    if variable.shape[1] < 1:
+        raise ValueError(f"{name} has no vertical levels")
+    return variable
 
 
 def render(args: argparse.Namespace) -> int:
@@ -291,18 +315,12 @@ def render(args: argparse.Namespace) -> int:
     counties = shp_lines(args.county_shp)
     digest = hashlib.sha256()
     with Dataset(source) as dataset:
-        if "VIS" not in dataset.variables:
-            LOG.info("No VIS in source; no visibility product: %s", source)
+        variable = visibility_variable(dataset, args.variable)
+        if variable is None:
+            LOG.info(
+                "No %s in source; no visibility product: %s", args.variable, source
+            )
             return 3
-        variable = dataset["VIS"]
-        if variable.dimensions != ("Time", "bottom_top", "south_north", "west_east"):
-            raise ValueError(f"Unexpected VIS dimensions: {variable.dimensions}")
-        if getattr(variable, "units", "").strip().lower() not in {
-            "m",
-            "meter",
-            "meters",
-        }:
-            raise ValueError("VIS units must be explicitly metres")
         times = wrf_times(dataset)
         indices = select_indices(times, args.start, args.count)
         lat = np.asarray(dataset["XLAT"][0], dtype=float)
@@ -342,11 +360,17 @@ def render(args: argparse.Namespace) -> int:
         math.floor(lat.min()),
         math.ceil(lat.max()),
     )
-    frames = []
-    for area, extent, lines in (
+    areas = (
         ("ningxia", REGION, counties),
         ("central_east", national, []),
-    ):
+    )
+    if args.profile != "ningxia":
+        extent = display_region(
+            lat, lon, args.domain, REGION_PROFILES[args.profile]["default_region"]
+        )
+        areas = ((args.profile, extent, counties),)
+    frames = []
+    for area, extent, lines in areas:
         inside = (
             (lon >= extent[0])
             & (lon <= extent[1])
@@ -379,7 +403,7 @@ def render(args: argparse.Namespace) -> int:
     manifest = {
         "source_signature": signature,
         "selected_input_sha256": digest.hexdigest(),
-        "source_variable": "VIS",
+        "source_variable": args.variable,
         "source_vertical_level": 0,
         "units": "m",
         "run_time": init_time,
@@ -392,10 +416,14 @@ def render(args: argparse.Namespace) -> int:
         },
         "products": [
             {
-                "id": "ningxia_visibility",
+                "id": {
+                    "ningxia": "ningxia_visibility",
+                    "yunnan": "airport_visibility",
+                    "xinjiang": "xinjiang_visibility",
+                }[args.profile],
                 "title": "能见度",
-                "unit": "最低模式层 VIS（米）",
-                "color": "#687d98",
+                "unit": f"最低模式层 {args.variable}（米）",
+                "color": "#0f68c8",
                 "description": "能见度",
                 "frames": frames,
             }
@@ -412,6 +440,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--province-shp", required=True, type=Path)
     parser.add_argument("--county-shp", type=Path)
+    parser.add_argument("--variable", choices=("VIS_MIN", "VIS"), default="VIS_MIN")
+    parser.add_argument(
+        "--profile", choices=("ningxia", "yunnan", "xinjiang"), default="ningxia"
+    )
+    parser.add_argument("--domain", choices=("d01", "d02"), default="d01")
     parser.add_argument("--start", type=int, default=13)
     parser.add_argument("--count", type=int, default=36)
     parser.add_argument("--dpi", type=int, default=400)

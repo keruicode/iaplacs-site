@@ -9,11 +9,13 @@ from pathlib import Path
 import numpy as np
 import pytest
 from build_forecast_catalog import build_airport_aviation_products, merge_existing_runs
+from netCDF4 import Dataset
 from render_work_visibility import (
     categories,
     is_current,
     quality_control,
     select_indices,
+    visibility_variable,
 )
 
 
@@ -90,14 +92,14 @@ def test_cache_requires_matching_source_and_every_image(tmp_path):
 
 
 def test_publisher_does_not_render_or_upload_incomplete_run(tmp_path):
-    wrf_dir = tmp_path / "model/2026102718/gfs/wrf"
+    wrf_dir = tmp_path / "model/2026103006/gfs/wrf"
     wrf_dir.mkdir(parents=True)
-    (wrf_dir / "wrfout_d01_2026-10-27_18:00:00").touch()
+    (wrf_dir / "wrfout_d01_2026-10-30_06:00:00").touch()
     (wrf_dir / "rsl.error.0000").write_text("Timing for main\n", encoding="utf-8")
     output = tmp_path / "products"
     script = Path(__file__).resolve().parents[1] / "publish_work_visibility.sh"
     result = subprocess.run(
-        ["bash", str(script), "--run", "20261027_18"],
+        ["bash", str(script), "--run", "20261030_06"],
         env={
             **os.environ,
             "WORK_VISIBILITY_MODEL_ROOT": str(tmp_path / "model"),
@@ -129,6 +131,49 @@ def test_visibility_publication_can_be_disabled_by_operator():
         text=True,
     )
     assert "publication disabled" in result.stdout
+
+
+def test_vis_min_explicit_selection_and_first_layer(tmp_path):
+    with Dataset(tmp_path / "fields.nc", "w") as ds:
+        dims = ("Time", "bottom_top", "south_north", "west_east")
+        for name, size in zip(dims, (1, 2, 4, 4)):
+            ds.createDimension(name, size)
+        old = ds.createVariable("VIS", "f4", dims)
+        old.units = "m"
+        old[:] = 10000
+        assert visibility_variable(ds, "VIS_MIN") is None
+        new = ds.createVariable("VIS_MIN", "f4", dims)
+        new.units = "m"
+        new[:, 0] = 100
+        new[:, 1] = 500
+        selected = visibility_variable(ds, "VIS_MIN")
+        np.testing.assert_equal(selected[0, 0], 100)
+        np.testing.assert_equal(ds["VIS"][0, 0], 10000)
+        new.units = "km"
+        with pytest.raises(ValueError, match="metres"):
+            visibility_variable(ds, "VIS_MIN")
+
+
+def test_reserved_profiles_default_to_vis_min():
+    from render_work_visibility import build_parser
+
+    for profile in ("ningxia", "yunnan", "xinjiang"):
+        args = build_parser().parse_args(
+            [
+                "--input",
+                "input.nc",
+                "--output",
+                "preview",
+                "--province-shp",
+                "p.shp",
+                "--profile",
+                profile,
+                "--domain",
+                "d02",
+            ]
+        )
+        assert args.variable == "VIS_MIN"
+        assert args.domain == "d02"
 
 
 def test_catalog_keeps_visibility_after_upload_staging_cleanup(tmp_path, monkeypatch):

@@ -19,7 +19,8 @@ while (( $# )); do
   esac
 done
 [[ "$run" =~ ^[0-9]{8}_[0-9]{2}$ ]] || exit 64
-[[ "$run" < "20261027_18" ]] && exit 0
+# Preserve previously published VIS history; migrate latest and future runs.
+[[ "$run" < "20261030_06" ]] && exit 0
 wrf_dir="$MODEL_ROOT/${run/_/}/gfs/wrf"
 source_file="$wrf_dir/wrfout_d01_${run:0:4}-${run:4:2}-${run:6:2}_${run:9:2}:00:00"
 if [[ ! -f "$source_file" || ! -f "$wrf_dir/rsl.error.0000" ]] || \
@@ -33,13 +34,14 @@ exec 7>"$OUTPUT_ROOT/.visibility.lock"
 flock -n 7 || { echo "Visibility publisher busy; retry next audit"; exit 75; }
 
 arguments=(--input "$source_file" --output "$output" --if-needed
+  --variable VIS_MIN --profile ningxia --domain d01
   --province-shp "${VISIBILITY_PROVINCE_SHP:-$ROOT/SHP/省界_region.shp}")
 county="${VISIBILITY_COUNTY_SHP:-$ROOT/SHP/ningxia_city_county.shp}"
 [[ -f "$county" ]] && arguments+=(--county-shp "$county")
 status=0
 "$PYTHON_BIN" "$IAPLACS_SCRIPT_DIR/render_work_visibility.py" "${arguments[@]}" || status=$?
 if (( status == 3 )); then
-  echo "Visibility $run: source has no VIS; existing weather products unchanged"
+  echo "Visibility $run: source has no VIS_MIN; existing weather products unchanged"
   exit 0
 fi
 (( status == 0 )) || exit "$status"
@@ -56,4 +58,4 @@ fi
   --family worknx_summary --run-prefix "$run" --visibility-dir "$output"
 printf '%s\n' "$digest" > "$receipt.tmp.$$"
 mv "$receipt.tmp.$$" "$receipt"
-echo "Visibility $run: published with raw-VIS QC"
+echo "Visibility $run: published first-layer VIS_MIN with display-only QC"
