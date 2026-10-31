@@ -28,6 +28,7 @@ const HOURLY_PRECIP_PRODUCT_IDS = {
     "airport_aviation_temperature",
     "airport_aviation_wind",
     "airport_radar",
+    "airport_visibility",
   ]),
   ningxia: new Set([
     "ningxia_precip_series",
@@ -42,6 +43,7 @@ const HOURLY_PRECIP_PRODUCT_IDS = {
     "xinjiang_precip_series",
     "xinjiang_airport_aviation_temperature",
     "xinjiang_airport_aviation_wind",
+    "xinjiang_visibility",
   ]),
 };
 const AIRPORT_RATING_TARGETS = [

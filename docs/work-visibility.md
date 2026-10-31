@@ -10,12 +10,19 @@ The variable metadata says "mini visibility"; its exact accumulation/reset windo
 has not been verified from model source. Timestamps remain the file's valid Times;
 do not label this as an independently verified hourly average or runway visibility.
 
-The renderer exposes `--variable VIS_MIN --profile ningxia|yunnan|xinjiang
---domain d01|d02`. Yunnan and Xinjiang are **reserved preview interfaces only**:
-their current files lack VIS_MIN and no cron/catalog/uploader integration is
-enabled. They use their existing regional bounds for d01 and actual input bounds
-for d02, with the same visibility palette and QC. The caller must supply the
-matching wrfout; the renderer does not substitute another region or run.
+The renderer exposes `--variable VIS_MIN|VIS|auto --profile ningxia|yunnan|xinjiang
+--domain d01|d02`. Following user approval on 2026-10-31, Yunnan and Xinjiang
+are connected to automatic publication from run20261030_00 onward. Their wrapper
+uses `--variable auto`: prefer VIS_MIN in the selected domain, otherwise VIS,
+and record/show the actual variable. Prefer a usable d02, otherwise d01, from
+the same initialization. Ningxia remains strictly VIS_MIN on d01.
+Missing both variables skips cleanly, without upload or empty webpage buttons.
+The existing two-minute audits and completed-rain publisher hooks retry and
+publish new products to OSS. No separate cron or laptop scheduler is needed.
+Yunnan/Xinjiang use existing regional bounds for d01 and actual bounds for d02,
+with airport markers, the same visibility palette and QC. Raw WRF is unchanged.
+Use `publish_work_visibility.sh --run YYYYMMDD_HH --profile yunnan` (or xinjiang)
+for the same manual workflow. Products appear only after valid images exist.
 
 The following describes the original integration; VIS references apply to older
 history. The current production wrapper explicitly selects VIS_MIN.

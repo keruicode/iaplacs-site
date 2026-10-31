@@ -3,6 +3,7 @@
 import json
 import os
 import subprocess
+import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -142,16 +143,101 @@ def test_vis_min_explicit_selection_and_first_layer(tmp_path):
         old.units = "m"
         old[:] = 10000
         assert visibility_variable(ds, "VIS_MIN") is None
+        assert visibility_variable(ds, "auto").name == "VIS"
         new = ds.createVariable("VIS_MIN", "f4", dims)
         new.units = "m"
         new[:, 0] = 100
         new[:, 1] = 500
         selected = visibility_variable(ds, "VIS_MIN")
+        assert visibility_variable(ds, "auto").name == "VIS_MIN"
         np.testing.assert_equal(selected[0, 0], 100)
         np.testing.assert_equal(ds["VIS"][0, 0], 10000)
         new.units = "km"
         with pytest.raises(ValueError, match="metres"):
             visibility_variable(ds, "VIS_MIN")
+
+
+@pytest.mark.parametrize("profile", ["yunnan", "xinjiang"])
+def test_regional_publisher_skips_missing_visibility(tmp_path, profile):
+    wrf = tmp_path / "model/2026103100/gfs/wrf"
+    wrf.mkdir(parents=True)
+    (wrf / "rsl.error.0000").write_text("SUCCESS COMPLETE WRF\n", encoding="utf-8")
+    for domain in ("d01", "d02"):
+        with Dataset(wrf / f"wrfout_{domain}_2026-10-31_00:00:00", "w") as ds:
+            ds.createDimension("Time", 25)
+    script = Path(__file__).resolve().parents[1] / "publish_work_visibility.sh"
+    result = subprocess.run(
+        ["bash", str(script), "--run", "20261031_00", "--profile", profile],
+        env={
+            **os.environ,
+            "PYTHON_BIN": sys.executable,
+            "WORK_VISIBILITY_MODEL_ROOT": str(tmp_path / "model"),
+            "WORK_VISIBILITY_OUTPUT_ROOT": str(tmp_path / "products"),
+            "IAPLACS_PUBLISH_VISIBILITY": "1",
+        },
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert "no supported visibility field" in result.stdout
+    assert not (tmp_path / "products").exists()
+
+
+@pytest.mark.parametrize(
+    "service,family,prefix,product_id",
+    [
+        ("airport", "airport_yunnan", "airport_yunnan_", "airport_visibility"),
+        ("xinjiang", "workxj_summary", "", "xinjiang_visibility"),
+    ],
+)
+def test_regional_visibility_catalog_without_rain_assets(
+    tmp_path, monkeypatch, service, family, prefix, product_id
+):
+    import build_forecast_catalog as catalog
+
+    monkeypatch.setattr(catalog, "ROOT", tmp_path)
+    monkeypatch.setattr(catalog, "yunnan_airport_run_is_complete", lambda run: True)
+    run_id = "20261031_00"
+    directory = tmp_path / "data/current/maps" / f"{family}_{run_id}" / "visibility"
+    directory.mkdir(parents=True)
+    (directory / "one.png").write_bytes(b"fixture")
+    (directory / "production_manifest.json").write_text(
+        json.dumps(
+            {
+                "products": [
+                    {
+                        "id": product_id,
+                        "title": "能见度",
+                        "unit": "VIS_MIN",
+                        "frames": [
+                            {
+                                "id": "visibility_region",
+                                "file": "one.png",
+                                "time_kind": "instant",
+                                "individual_frames": [
+                                    {"file": "one.png", "time_kind": "instant"}
+                                ],
+                            }
+                        ],
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    run = {"id": prefix + run_id, "run_time": "2026-10-31T00:00:00Z", "products": []}
+    existing = {"services": {service: {"runs": [run]}}}
+    merged = merge_existing_runs([], existing, service, id_prefix=prefix)
+    assert merged[0]["products"][0]["id"] == product_id
+    assert merged[0]["products"][0]["color"] == "#0f68c8"
+    (directory / "production_manifest.json").unlink()
+    retained = merge_existing_runs(
+        [{**run, "products": []}],
+        {"services": {service: {"runs": merged}}},
+        service,
+        id_prefix=prefix,
+    )
+    assert retained[0]["products"][0]["id"] == product_id
 
 
 def test_reserved_profiles_default_to_vis_min():

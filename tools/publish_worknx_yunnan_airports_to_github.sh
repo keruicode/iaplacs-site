@@ -447,4 +447,5 @@ REMOTE
 
   echo "Published Yunnan airport prefix: $run_prefix"
   "$IAPLACS_SCRIPT_DIR/publish_yunnan_radar.sh" --run "$run_prefix"
+  "$IAPLACS_SCRIPT_DIR/publish_work_visibility.sh" --run "$run_prefix" --profile yunnan
 done

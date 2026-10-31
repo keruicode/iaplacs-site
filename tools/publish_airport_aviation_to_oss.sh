@@ -31,7 +31,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ "$family:$asset_subdir" == "workxj_summary:aviation" || "$family:$asset_subdir" == "worknx_summary:visibility" || "$family:$asset_subdir" == "airport_yunnan:radar" ]] || {
+[[ "$family:$asset_subdir" == "workxj_summary:aviation" || "$family:$asset_subdir" == "worknx_summary:visibility" || "$family:$asset_subdir" == "airport_yunnan:visibility" || "$family:$asset_subdir" == "workxj_summary:visibility" || "$family:$asset_subdir" == "airport_yunnan:radar" ]] || {
   echo "ERROR: unsupported diagnostic family/subdirectory: $family/$asset_subdir" >&2
   exit 64
 }

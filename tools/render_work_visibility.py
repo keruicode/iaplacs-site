@@ -159,6 +159,7 @@ def draw_panel(
     counties: list,
     tick_size: int = 18,
     omit_104_label: bool = False,
+    airports: tuple = (),
 ) -> QuadMesh:
     """Draw categorical cells and existing map boundaries on an Axes."""
     palette = colors.ListedColormap(FOG_COLORS)
@@ -170,7 +171,12 @@ def draw_panel(
     )
     national = extent[1] - extent[0] > 20
     decorate(
-        axis, [] if national else province, counties, extent, (), tick_size=tick_size
+        axis,
+        [] if national else province,
+        counties,
+        extent,
+        airports,
+        tick_size=tick_size,
     )
     if national:
         for line in province:
@@ -223,6 +229,7 @@ def save_maps(
 ) -> dict:
     """Write hourly and montage rasters with instantaneous BJT timestamps."""
     frames = []
+    airports = REGION_PROFILES.get(area, {}).get("airports", ())
     ratio = (extent[3] - extent[2]) / (extent[1] - extent[0])
     for field, time in zip(fields, times):
         filename = f"{area}_{time:%Y%m%d%H}_BJT.png"
@@ -238,7 +245,9 @@ def save_maps(
             wspace=0.08,
         )
         axis = figure.add_subplot(grid[0, 0])
-        artist = draw_panel(axis, lon, lat, field, extent, province, counties)
+        artist = draw_panel(
+            axis, lon, lat, field, extent, province, counties, airports=airports
+        )
         axis.set_title(f"{time:%m-%d %H:%M} BJT", fontsize=24, pad=10)
         add_colorbar(figure, artist, figure.add_subplot(grid[0, 1]))
         figure.savefig(output / filename, dpi=dpi, bbox_inches="tight", pad_inches=0.05)
@@ -274,6 +283,7 @@ def save_maps(
             province,
             counties,
             omit_104_label=area == "ningxia",
+            airports=airports,
         )
         axis.set_title(f"{times[i]:%m-%d %H:%M} BJT", fontsize=16, pad=7)
     add_colorbar(figure, artist, figure.add_axes((0.9, 0.20, 0.012, 0.60)))
@@ -297,7 +307,9 @@ def save_maps(
 
 
 def visibility_variable(dataset: Dataset, name: str):
-    """Select the explicit metre-valued 3-D field; never fall back to VIS."""
+    """Validate a metre-valued 3-D field; fallback is allowed only in auto mode."""
+    if name == "auto":
+        name = "VIS_MIN" if "VIS_MIN" in dataset.variables else "VIS"
     if name not in dataset.variables:
         return None
     variable = dataset[name]
@@ -334,6 +346,7 @@ def render(args: argparse.Namespace) -> int:
                 "No %s in source; no visibility product: %s", args.variable, source
             )
             return 3
+        selected_variable = variable.name
         times = wrf_times(dataset)
         indices = select_indices(times, args.start, args.count)
         lat = np.asarray(dataset["XLAT"][0], dtype=float)
@@ -416,7 +429,7 @@ def render(args: argparse.Namespace) -> int:
     manifest = {
         "source_signature": signature,
         "selected_input_sha256": digest.hexdigest(),
-        "source_variable": args.variable,
+        "source_variable": selected_variable,
         "source_vertical_level": 0,
         "units": "m",
         "run_time": init_time,
@@ -435,7 +448,7 @@ def render(args: argparse.Namespace) -> int:
                     "xinjiang": "xinjiang_visibility",
                 }[args.profile],
                 "title": "能见度",
-                "unit": f"最低模式层 {args.variable}（米）",
+                "unit": f"最低模式层 {selected_variable}（米）",
                 "color": "#0f68c8",
                 "description": "能见度",
                 "frames": frames,
@@ -453,7 +466,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--province-shp", required=True, type=Path)
     parser.add_argument("--county-shp", type=Path)
-    parser.add_argument("--variable", choices=("VIS_MIN", "VIS"), default="VIS_MIN")
+    parser.add_argument(
+        "--variable", choices=("VIS_MIN", "VIS", "auto"), default="VIS_MIN"
+    )
     parser.add_argument(
         "--profile", choices=("ningxia", "yunnan", "xinjiang"), default="ningxia"
     )

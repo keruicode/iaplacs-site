@@ -385,6 +385,11 @@ audit_ningxia_output() {
 
 audit_xinjiang_output() {
   local run="$1" output="$SCRIPT_DIR/workxj_xinjiang_overview/$run"
+  if [[ "$run" > "20261029_23" ]]; then
+    local visibility_args=(--run "$run" --profile xinjiang)
+    public_product_exists xinjiang "$run" xinjiang_visibility || visibility_args+=(--ensure-public)
+    run_action "$IAPLACS_SCRIPT_DIR/publish_work_visibility.sh" "${visibility_args[@]}"
+  fi
   local region national frozen public_region public_national public_frozen region_count national_count frozen_count latest_run aviation_public=1
   region="$(panel_windows "$output/captioned_t13_t48" '')"
   national="$(panel_windows "$output/national_captioned_t13_t48" '')"
@@ -430,6 +435,11 @@ audit_xinjiang_output() {
 
 audit_yunnan_output() {
   local run="$1" output="$SCRIPT_DIR/worknx_yunnan_airports_overview/$run"
+  if [[ "$run" > "20261029_23" ]]; then
+    local visibility_args=(--run "$run" --profile yunnan)
+    public_product_exists airport "airport_yunnan_$run" airport_visibility || visibility_args+=(--ensure-public)
+    run_action "$IAPLACS_SCRIPT_DIR/publish_work_visibility.sh" "${visibility_args[@]}"
+  fi
   if [[ "$run" > "20261028_11" ]]; then
     local radar_args=(--run "$run")
     public_product_exists airport "airport_yunnan_$run" airport_radar || radar_args+=(--ensure-public)

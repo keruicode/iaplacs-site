@@ -1579,6 +1579,7 @@ def merge_existing_runs(
             if run_id in merged:
                 preserve_individual_frames(run, merged[run_id])
                 if service_key == "xinjiang":
+                    preserve_missing_products(run, merged[run_id], prefix="xinjiang_visibility")
                     preserve_missing_products(
                         run,
                         merged[run_id],
@@ -1590,15 +1591,17 @@ def merge_existing_runs(
                     )
                 if service_key == "airport":
                     preserve_missing_products(run, merged[run_id], prefix="airport_radar")
+                    preserve_missing_products(run, merged[run_id], prefix="airport_visibility")
             merged[run_id] = run
 
     # Diagnostic uploads may have no local rain assets after OSS staging cleanup.
-    diagnostic = {
-        "airport": ("airport_yunnan_", "radar", "机场服务"),
-        "ningxia": ("worknx_summary_", "visibility", "中国中东部预报"),
-    }.get(service_key)
-    if diagnostic:
-        family, subdir, category = diagnostic
+    diagnostics = {
+        "airport": [("airport_yunnan_", "radar", "机场服务"),
+                    ("airport_yunnan_", "visibility", "机场服务")],
+        "ningxia": [("worknx_summary_", "visibility", "中国中东部预报")],
+        "xinjiang": [("workxj_summary_", "visibility", "新疆预报")],
+    }.get(service_key, [])
+    for family, subdir, category in diagnostics:
         for run_id, run in merged.items():
             prefix = run_id.removeprefix("airport_yunnan_")
             additions = build_airport_aviation_products(
@@ -1611,10 +1614,11 @@ def merge_existing_runs(
 
     runs = list(merged.values())
     for run in runs:
+        normalize_solid_precipitation_labels(run)
         for product in run.get("products", []):
             if product.get("id") == "airport_radar":
                 product["title"] = "雷达回波"
-            elif product.get("id") == "ningxia_visibility":
+            elif product.get("id") in {"ningxia_visibility", "airport_visibility", "xinjiang_visibility"}:
                 product["color"] = "#0f68c8"
     runs.sort(key=lambda item: item.get("run_time", ""), reverse=True)
     return runs[:MAX_RUNS]
