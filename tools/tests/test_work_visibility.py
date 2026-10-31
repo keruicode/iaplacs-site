@@ -176,6 +176,31 @@ def test_reserved_profiles_default_to_vis_min():
         assert args.domain == "d02"
 
 
+def test_montage_can_hide_104_label_without_removing_tick():
+    import matplotlib.pyplot as plt
+    from render_work_visibility import draw_panel
+
+    lon, lat = np.meshgrid(np.linspace(104, 107.8, 5), np.linspace(35, 39.7, 5))
+    figure, axes = plt.subplots(1, 2)
+    try:
+        for axis, omit in zip(axes, (False, True)):
+            draw_panel(
+                axis,
+                lon,
+                lat,
+                np.zeros_like(lon),
+                (104, 107.8, 35, 39.7),
+                [],
+                [],
+                omit_104_label=omit,
+            )
+        assert axes[0].get_xticklabels()[0].get_text() == "104°E"
+        assert axes[1].get_xticklabels()[0].get_text() == ""
+        np.testing.assert_equal(axes[1].get_xticks(), [104, 105, 106, 107])
+    finally:
+        plt.close(figure)
+
+
 def test_catalog_keeps_visibility_after_upload_staging_cleanup(tmp_path, monkeypatch):
     import build_forecast_catalog as catalog
 

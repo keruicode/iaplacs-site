@@ -158,6 +158,7 @@ def draw_panel(
     province: list,
     counties: list,
     tick_size: int = 18,
+    omit_104_label: bool = False,
 ) -> QuadMesh:
     """Draw categorical cells and existing map boundaries on an Axes."""
     palette = colors.ListedColormap(FOG_COLORS)
@@ -182,7 +183,10 @@ def draw_panel(
     else:
         xticks = np.arange(math.ceil(extent[0]), extent[1] + 0.01)
         yticks = np.arange(math.ceil(extent[2]), extent[3] + 0.01)
-    labels = axis.set_xticks(xticks, [f"{x:g}°E" for x in xticks])
+    labels = axis.set_xticks(
+        xticks,
+        ["" if omit_104_label and x == 104 else f"{x:g}°E" for x in xticks],
+    )
     axis.set_yticks(yticks, [f"{y:g}°N" for y in yticks])
     if labels:
         for label in axis.get_xticklabels():
@@ -261,7 +265,16 @@ def save_maps(
         if i >= len(fields):
             axis.set_axis_off()
             continue
-        artist = draw_panel(axis, lon, lat, fields[i], extent, province, counties)
+        artist = draw_panel(
+            axis,
+            lon,
+            lat,
+            fields[i],
+            extent,
+            province,
+            counties,
+            omit_104_label=area == "ningxia",
+        )
         axis.set_title(f"{times[i]:%m-%d %H:%M} BJT", fontsize=16, pad=7)
     add_colorbar(figure, artist, figure.add_axes((0.9, 0.20, 0.012, 0.60)))
     name = f"visibility_{area}_montage.png"
