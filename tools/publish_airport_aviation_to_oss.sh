@@ -185,6 +185,12 @@ echo "Verified OSS aviation image: $first_url"
 
 PYTHON_BIN="$(command -v python3 || command -v python)"
 "$PYTHON_BIN" "$SITE_REPO/tools/build_forecast_catalog.py"
+if [[ "$ASSET_SUBDIR" == visibility ]]; then
+  "$PYTHON_BIN" "$SITE_REPO/tools/check_diagnostic_catalog.py" \
+    --catalog "$SITE_REPO/data/current/forecast-runs.json" \
+    --manifest "$AVIATION_DEST/production_manifest.json" \
+    --family "$FAMILY" --run "$RUN_PREFIX"
+fi
 git add data/current/forecast-runs.json
 if git diff --cached --quiet; then
   echo "No aviation catalog changes for $FAMILY $RUN_PREFIX"
