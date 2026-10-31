@@ -8,6 +8,11 @@ uses the same initialization's d01 and its complete horizontal coordinate bounds
 (rounded outward to whole degrees). No province mask or 150E cap is applied to
 these wide views. Labels are 云南区域 / 中国西南部 and 新疆区域 / 中国西北部.
 Each domain independently selects native VIS_MIN, VIS, or the cloud diagnostic.
+All paths use the lowest mass-grid model level (`bottom_top=0`). Diagnostic
+inputs are read as `[time, 0, :, :]` for every thermodynamic and cloud-moment
+field; no vertical averaging or minimum is taken. This is not a fixed 2 m height.
+The regression test gives the upper layer invalid values and verifies that the
+calculated visibility still equals the valid first-layer calculation.
 Unavailable inputs are not replaced with another initialization's data.
 Both views retain hourly/montage modes. Child manifests and per-domain sources
 are preserved, while the combined manifest contains both area frames; unchanged
@@ -43,8 +48,9 @@ and diagnostic code hashes control caching. Native fields are selected before
 the diagnostic cache, allowing automatic replacement on later output updates.
 The existing two-minute audits and completed-rain publisher hooks retry and
 publish new products to OSS. No separate cron or laptop scheduler is needed.
-Yunnan/Xinjiang use existing regional bounds for d01 and actual bounds for d02,
-with airport markers, the same visibility palette and QC. Raw WRF is unchanged.
+Regional views use existing regional bounds when falling back to d01, and actual
+bounds for d02. Wide views always use the complete d01 extent. Both retain airport
+markers, the same visibility palette and QC. Raw WRF is unchanged.
 Use `publish_work_visibility.sh --run YYYYMMDD_HH --profile yunnan` (or xinjiang)
 for the same manual workflow. Products appear only after valid images exist.
 
