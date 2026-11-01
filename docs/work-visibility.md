@@ -1,5 +1,33 @@
 # WORK Visibility Postprocessing
 
+## Latest-Run Publication Priority
+
+Since 2026-11-01, the existing two-minute service auditor checks the newest
+public initialization's visibility before acquiring the historical whole-service
+repair lock. A historical rain render no longer prevents another audit from
+attempting this product. The visibility publisher retains its own nonblocking
+per-region lock, so two processes cannot render/upload the same product together.
+The public catalog is fetched once and reused. If unavailable, model discovery
+continues; the next scheduled audit retries the priority check.
+
+Missing products request `--ensure-public`; unchanged successful products retain
+the manifest receipt/cache and do not rerender. Failed uploads never receive a
+success receipt. The uploader checks catalog inclusion before returning success.
+Each run also has an atomic `.visibility-YYYYMMDD_HH.state` TSV beside its output
+directories, containing UTC update time, stage and exit status. Stages distinguish
+`waiting_model`, `waiting_source`, `rendering`, `rendered`, `uploading_catalog`,
+`published` and `failed_<stage>`. Published means successful catalog Git push;
+GitHub Pages deployment may still take additional time. HUP/INT/TERM exit as
+129/130/143, never successful completion. SIGKILL cannot run traps; the last
+stage remains and the next invocation retries under the automatically released
+OS lock. WRF inputs are never modified.
+
+The website shows a disabled visibility entry marked 待发布 for supported modern
+Huan initializations lacking that product. It becomes selectable on the normal
+catalog refresh after publication. No images from other initializations are used
+as substitutes. The two-minute interval is a detection cadence, not a guarantee
+that rendering, uploads and Pages deployment all finish within two minutes.
+
 ## Regional and Outer-Domain Views
 
 Yunnan/Xinjiang visibility now publishes two views via

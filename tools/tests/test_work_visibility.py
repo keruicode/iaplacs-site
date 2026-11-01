@@ -92,7 +92,21 @@ def test_cache_requires_matching_source_and_every_image(tmp_path):
     assert not is_current(tmp_path, {**signature, "mtime_ns": 2})
 
 
-def test_publisher_does_not_render_or_upload_incomplete_run(tmp_path):
+@pytest.fixture
+def shell_lock(tmp_path, monkeypatch):
+    directory = tmp_path / "bin"
+    directory.mkdir()
+    lock = directory / "flock"
+    lock.write_text(
+        f"#!{sys.executable}\nimport fcntl,sys\n"
+        "try: fcntl.flock(int(sys.argv[-1]),fcntl.LOCK_EX|fcntl.LOCK_NB)\n"
+        "except BlockingIOError: sys.exit(1)\n"
+    )
+    lock.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{directory}:{os.environ['PATH']}")
+
+
+def test_publisher_does_not_render_or_upload_incomplete_run(tmp_path, shell_lock):
     wrf_dir = tmp_path / "model/2026103006/gfs/wrf"
     wrf_dir.mkdir(parents=True)
     (wrf_dir / "wrfout_d01_2026-10-30_06:00:00").touch()
@@ -113,7 +127,8 @@ def test_publisher_does_not_render_or_upload_incomplete_run(tmp_path):
         text=True,
     )
     assert "waiting for completed WRF" in result.stdout
-    assert not output.exists()
+    assert not (output / "20261030_06").exists()
+    assert "waiting_model" in (output / ".visibility-20261030_06.state").read_text()
 
 
 def test_visibility_publication_can_be_disabled_by_operator():
@@ -158,7 +173,7 @@ def test_vis_min_explicit_selection_and_first_layer(tmp_path):
 
 
 @pytest.mark.parametrize("profile", ["yunnan", "xinjiang"])
-def test_regional_publisher_skips_missing_visibility(tmp_path, profile):
+def test_regional_publisher_skips_missing_visibility(tmp_path, profile, shell_lock):
     wrf = tmp_path / "model/2026103100/gfs/wrf"
     wrf.mkdir(parents=True)
     (wrf / "rsl.error.0000").write_text("SUCCESS COMPLETE WRF\n", encoding="utf-8")
@@ -180,7 +195,11 @@ def test_regional_publisher_skips_missing_visibility(tmp_path, profile):
         check=True,
     )
     assert "no supported visibility field" in result.stdout
-    assert not (tmp_path / "products").exists()
+    assert not (tmp_path / "products/20261031_00").exists()
+    assert (
+        "waiting_source"
+        in (tmp_path / "products/.visibility-20261031_00.state").read_text()
+    )
 
 
 @pytest.mark.parametrize(

@@ -1038,6 +1038,21 @@ function renderProducts() {
     });
     els.productList.appendChild(button);
   });
+  const visibilityStart = pageConfig.service === "ningxia"
+    ? "2026-10-30T06:00:00Z" : "2026-10-30T00:00:00Z";
+  const visibilityId = `${pageConfig.service}_visibility`;
+  if (state.sourceId === "huan" && !isAirportAviationPreview &&
+      ["ningxia", "airport", "xinjiang"].includes(pageConfig.service) &&
+      Date.parse(currentRun().run_time) >= Date.parse(visibilityStart) &&
+      !(currentRun().products || []).some((p) => p.id === visibilityId && p.frames?.length)) {
+    const pending = document.createElement("button");
+    pending.type = "button";
+    pending.className = "product-button";
+    pending.disabled = true;
+    pending.dataset.pendingProduct = visibilityId;
+    pending.innerHTML = '<span class="product-stripe" style="background:#0f68c8"></span><span><span class="product-name">能见度</span><span class="product-desc">待发布</span></span>';
+    els.productList.appendChild(pending);
+  }
 }
 
 function renderLeads() {

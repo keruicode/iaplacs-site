@@ -88,6 +88,7 @@ def test_scoped_worker_lock_and_failure_retry(tmp_path: Path) -> None:
         f'touch "{tmp_path}/started"\n'
         f'while [[ ! -e "{tmp_path}/release" ]]; do sleep 0.05; done\n'
         "false\nfi\n}\nfetch_public_catalog() { return 0; }\n"
+        "prioritize_latest_visibility() { echo PRIORITY_CHECK; }\n"
         "list_output_runs() { :; }\n"
     )
     worker = tmp_path / AUDITOR.name
@@ -116,6 +117,7 @@ def test_scoped_worker_lock_and_failure_retry(tmp_path: Path) -> None:
         )
         assert busy.returncode == 0
         assert "already running" in busy.stdout
+        assert "PRIORITY_CHECK" in busy.stdout
         for service in ("xinjiang", "yunnan"):
             other = subprocess.run(
                 command + [service],

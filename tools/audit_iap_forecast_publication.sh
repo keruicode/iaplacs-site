@@ -93,12 +93,6 @@ if [[ -z "$NCDUMP_BIN" || ! -x "$NCDUMP_BIN" ]]; then
   echo "ERROR: ncdump is required for completed-run Time checks" >&2
   exit 127
 fi
-exec 9>"$LOG_DIR/publication-audit-$SERVICE.lock"
-if ! flock -n 9; then
-  echo "$(date '+%F %T') service=$SERVICE publication audit already running; skip"
-  exit 0
-fi
-
 AUDIT_CATALOG="$(mktemp "${TMPDIR:-/tmp}/iaplacs-public-catalog.XXXXXX")"
 AUDIT_STARTED=$SECONDS
 cleanup() {
@@ -108,6 +102,9 @@ cleanup() {
     "$(date '+%F %T')" "$SERVICE" "$status" "$((SECONDS - AUDIT_STARTED))"
 }
 trap cleanup EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 log() {
   printf '%s service=%s %s\n' "$(date '+%F %T')" "$SERVICE" "$*"
@@ -247,6 +244,28 @@ fetch_public_catalog() {
       "curl -fsS --max-time 45 '$url'" > "$AUDIT_CATALOG"
   fi
   "$PYTHON_BIN" -m json.tool "$AUDIT_CATALOG" >/dev/null
+}
+
+prioritize_latest_visibility() {
+  local service="$SERVICE" prefix="" run
+  [[ "$service" == yunnan ]] && { service=airport; prefix=airport_yunnan_; }
+  run="$("$PYTHON_BIN" - "$AUDIT_CATALOG" "$service" <<'PY'
+import json
+import sys
+with open(sys.argv[1]) as handle:
+    service = json.load(handle).get("services", {}).get(sys.argv[2], {})
+runs = service.get("runs", [])
+latest = service.get("latest_run")
+if any(run.get("id") == latest for run in runs):
+    print(latest)
+PY
+)" || return 1
+  run="${run#"$prefix"}"
+  [[ "$run" =~ ^[0-9]{8}_[0-9]{2}$ ]] || return 0
+  local arguments=(--profile "$SERVICE" --run "$run")
+  public_product_exists "$service" "$prefix$run" "${service}_visibility" || arguments+=(--ensure-public)
+  log "PRIORITY visibility $run before historical repair (independent product lock)"
+  run_action "$IAPLACS_SCRIPT_DIR/publish_work_visibility.sh" "${arguments[@]}"
 }
 
 public_windows() {
@@ -607,8 +626,25 @@ case "$SERVICE" in
   yunnan) MODEL_FAMILY=WORK_yn; OUTPUT_FAMILY=worknx_yunnan_airports_overview; PUBLISHER=publish_worknx_yunnan_airports_to_github.sh ;;
 esac
 
-# New completed data must not wait for the public catalog endpoint. Publishing
-# still uses the normal service lock and shared Git transaction lock.
+# This phase must run before the long whole-service repair lock. The visibility
+# publisher has its own nonblocking lock and durable receipt, so another audit
+# can repair the newest published run while historical rain rendering continues.
+CATALOG_READY=0
+if fetch_public_catalog; then
+  CATALOG_READY=1
+  prioritize_latest_visibility || { log "ERROR: latest visibility priority check failed"; ((ACTION_FAILURES += 1)); }
+else
+  log "public catalog unavailable; continue model discovery and retry next audit"
+fi
+exec 9>"$LOG_DIR/publication-audit-$SERVICE.lock"
+if ! flock -n 9; then
+  log "publication audit already running; skip historical work after priority check"
+  (( ACTION_FAILURES == 0 ))
+  exit $?
+fi
+
+# Catalog failure must not prevent discovery of new completed model output.
+# Publishing still uses the normal service and shared Git transaction locks.
 submit_missing_render "$SERVICE" "/data1/elpt_2022_00083/zhoubj/$MODEL_FAMILY" \
   "$SCRIPT_DIR/$OUTPUT_FAMILY" "$IAPLACS_SCRIPT_DIR/$PUBLISHER"
 
@@ -619,7 +655,7 @@ if (( ! DRY_RUN && MISSING_RENDER_REPAIRS > 0 )); then
   exit 1
 fi
 
-if ! fetch_public_catalog; then
+if (( ! CATALOG_READY )) && ! fetch_public_catalog; then
   log "public catalog fetch through $GITHUB_HOST failed; retry on next scheduled check"
   exit 75
 fi
