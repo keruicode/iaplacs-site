@@ -38,10 +38,20 @@ LOG = logging.getLogger(__name__)
 BJT = timezone(timedelta(hours=8))
 QC_VERSION = "raw_vis_qc_v1"
 MAX_VISIBILITY_M = 100000.0  # Provisional QC threshold, not a weather standard.
-FOG_COLORS = ["#8B4513", "#E31A1C", "#FF8C1A", "#FFD32A", "#FFF55C", "#FFFFFF"]
+VISIBILITY_COLORS = [
+    "#762A83",
+    "#A50026",
+    "#E31A1C",
+    "#FF8C1A",
+    "#FFD32A",
+    "#B8E186",
+    "#C6E6F5",
+    "#FFFFFF",
+]
 INVALID_COLOR = "#ffffff"
-BIN_EDGES = np.array([50, 100, 200, 500, 1000], dtype=float)
-BIN_LABELS = ["<50", "50-100", "100-200", "200-500", "500-1000", ">=1000"]
+BIN_EDGES = np.array([200, 500, 800, 1500, 3000, 5000, 10000], dtype=float)
+BIN_LABELS = ["<0.2", "0.2-0.5", "0.5-0.8", "0.8-1.5", "1.5-3", "3-5", "5-10", ">=10"]
+INVALID_CATEGORY = len(VISIBILITY_COLORS)
 REGION = (104.0, 107.8, 35.0, 39.7)
 
 
@@ -75,9 +85,9 @@ def quality_control(raw: np.ndarray) -> tuple[np.ma.MaskedArray, dict]:
 
 
 def categories(values: np.ma.MaskedArray) -> np.ndarray:
-    """Six FOG categories plus a distinct invalid category; no interpolation."""
+    """Categorize metres for a kilometre legend; keep missing cells distinct."""
     codes = np.digitize(values.filled(0), BIN_EDGES).astype(np.uint8)
-    codes[np.ma.getmaskarray(values)] = 6
+    codes[np.ma.getmaskarray(values)] = INVALID_CATEGORY
     return codes
 
 
@@ -150,6 +160,16 @@ def is_current(output: Path, signature: dict) -> bool:
     return bool(assets) and all((output / f["file"]).is_file() for f in assets)
 
 
+def map_ticks(lower: float, upper: float) -> np.ndarray:
+    """Choose at most six readable, regular ticks within the unchanged extent."""
+    span = upper - lower
+    if not np.isfinite([lower, upper]).all() or span <= 0:
+        raise ValueError("Invalid coordinate extent")
+    steps = (0.1, 0.2, 0.5, 1, 2, 4, 5, 8, 10, 20, 30, 60, 90)
+    step = next((value for value in steps if value >= span / 5), 180)
+    return np.arange(math.ceil(lower / step) * step, upper + step * 1e-8, step)
+
+
 def draw_panel(
     axis: Axes,
     lon: np.ndarray,
@@ -164,10 +184,10 @@ def draw_panel(
     xinjiang_ticks: bool = False,
 ) -> QuadMesh:
     """Draw categorical cells and existing map boundaries on an Axes."""
-    palette = colors.ListedColormap(FOG_COLORS)
+    palette = colors.ListedColormap(VISIBILITY_COLORS)
     palette.set_bad(INVALID_COLOR)
-    norm = colors.BoundaryNorm(np.arange(7) - 0.5, palette.N)
-    field = np.ma.masked_equal(field, 6)
+    norm = colors.BoundaryNorm(np.arange(palette.N + 1) - 0.5, palette.N)
+    field = np.ma.masked_equal(field, INVALID_CATEGORY)
     artist = axis.pcolormesh(
         lon, lat, field, cmap=palette, norm=norm, shading="nearest", rasterized=True
     )
@@ -186,15 +206,13 @@ def draw_panel(
                 axis.plot(
                     line[:, 0], line[:, 1], color="black", linewidth=1.1, zorder=6
                 )
-        xticks = np.arange(math.ceil(extent[0] / 20) * 20, extent[1] + 0.01, 20)
-        yticks = np.arange(math.ceil(extent[2] / 10) * 10, extent[3] + 0.01, 10)
-    else:
-        xticks = np.arange(math.ceil(extent[0]), extent[1] + 0.01)
-        yticks = np.arange(math.ceil(extent[2]), extent[3] + 0.01)
-    if xinjiang_ticks:
+    xticks = map_ticks(extent[0], extent[1])
+    yticks = map_ticks(extent[2], extent[3])
+    if xinjiang_ticks and extent[1] - extent[0] >= 16:
         xticks = np.arange(
             72 + math.ceil((extent[0] - 72) / 8) * 8, extent[1] + 0.01, 8
         )
+    if xinjiang_ticks and extent[3] - extent[2] >= 8:
         yticks = np.arange(
             34 + math.ceil((extent[2] - 34) / 4) * 4, extent[3] + 0.01, 4
         )
@@ -210,17 +228,19 @@ def draw_panel(
             axis.get_xticklabels()[0].set_horizontalalignment("left")
         if np.isclose(xticks[-1], extent[1]):
             axis.get_xticklabels()[-1].set_horizontalalignment("right")
-    axis.tick_params(width=3, length=8, top=True, right=True)
+    axis.set_xlim(extent[0], extent[1])
+    axis.set_ylim(extent[2], extent[3])
+    axis.tick_params(width=3, length=8, top=True, right=True, pad=3)
     return artist
 
 
 def add_colorbar(figure: Figure, artist: QuadMesh, axis: Axes, size: int = 16) -> None:
     colorbar = figure.colorbar(
-        artist, cax=axis, ticks=np.arange(6), orientation="vertical"
+        artist, cax=axis, ticks=np.arange(len(BIN_LABELS)), orientation="vertical"
     )
     colorbar.ax.set_yticklabels(BIN_LABELS, **cn_sized_props(size))
     colorbar.ax.tick_params(width=2, length=5)
-    colorbar.set_label("能见度（米）", **cn_sized_props(size + 2))
+    colorbar.set_label("能见度（km）", **cn_sized_props(size + 2))
 
 
 def save_maps(
@@ -284,9 +304,18 @@ def save_maps(
     height = max(4, rows * (4.1 * ratio + 0.85) + 0.7)
     figure, axes = plt.subplots(rows, columns, figsize=(width, height), squeeze=False)
     figure.subplots_adjust(
-        left=0.055, right=0.88, bottom=0.05, top=0.94, wspace=0.30, hspace=0.32
+        left=0.055,
+        right=0.88,
+        bottom=0.05,
+        top=1 - 0.85 / height,
+        wspace=0.30,
+        hspace=0.32,
     )
-    figure.suptitle(f"Forecast Initialization: {initialization}", fontsize=22, y=0.985)
+    figure.suptitle(
+        f"Forecast Initialization: {initialization}",
+        fontsize=min(22, width * 2),
+        y=1 - 0.08 / height,
+    )
     for i, axis in enumerate(axes.flat):
         if i >= len(fields):
             axis.set_axis_off()
@@ -304,7 +333,9 @@ def save_maps(
             xinjiang_ticks=area == "xinjiang",
         )
         axis.set_title(f"{times[i]:%m-%d %H:%M} BJT", fontsize=16, pad=7)
-    add_colorbar(figure, artist, figure.add_axes((0.9, 0.20, 0.012, 0.60)))
+    add_colorbar(
+        figure, artist, figure.add_axes((0.9, 0.20, max(0.012, 0.16 / width), 0.60))
+    )
     name = f"visibility_{area}_montage.png"
     figure.savefig(output / name, dpi=dpi, bbox_inches="tight", pad_inches=0.05)
     plt.close(figure)
@@ -460,6 +491,8 @@ def render(args: argparse.Namespace) -> int:
         "source_variable": selected_variable,
         "source_vertical_level": 0,
         "units": "m",
+        "display_units": "km",
+        "display_bin_edges_m": BIN_EDGES.tolist(),
         "run_time": init_time,
         "generated_at": datetime.now(UTC).isoformat(),
         "qc": {
@@ -476,7 +509,7 @@ def render(args: argparse.Namespace) -> int:
                     "xinjiang": "xinjiang_visibility",
                 }[args.profile],
                 "title": "能见度",
-                "unit": f"最低模式层 {selected_variable}（米）",
+                "unit": f"最低模式层 {selected_variable}（km）",
                 "color": "#0f68c8",
                 "description": "" if args.profile == "yunnan" else "能见度",
                 "frames": frames,

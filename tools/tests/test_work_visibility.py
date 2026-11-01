@@ -33,9 +33,30 @@ def test_qc_preserves_values_and_separates_invalid_cells():
     assert stats["over_100km_interior"] == 1
     assert clean[1, 5] == 100000
     assert clean[3, 3] == 10000
-    assert categories(clean)[1, 4] == 6
-    assert categories(clean)[3, 3] == 5
-    np.testing.assert_equal(categories(clean)[2, 1:6], [0, 1, 2, 4, 5])
+    assert categories(clean)[1, 4] == 8
+    assert categories(clean)[3, 3] == 7
+    np.testing.assert_equal(categories(clean)[2, 1:6], [0, 0, 0, 2, 3])
+
+
+def test_airport_palette_thresholds_and_missing_are_separate():
+    from render_work_visibility import BIN_EDGES, BIN_LABELS, INVALID_CATEGORY
+
+    values = np.ma.array([199, *BIN_EDGES, 100000, 0], mask=[False] * 9 + [True])
+    np.testing.assert_equal(categories(values), [0, 1, 2, 3, 4, 5, 6, 7, 7, 8])
+    assert len(BIN_LABELS) == INVALID_CATEGORY == 8
+
+
+@pytest.mark.parametrize(
+    "extent", [(97, 108), (69, 99), (60, 150), (104, 107.8), (79.3, 81.7)]
+)
+def test_visibility_ticks_fit_current_domain(extent):
+    from render_work_visibility import map_ticks
+
+    ticks = map_ticks(*extent)
+    assert 2 <= len(ticks) <= 6
+    assert ticks[0] >= extent[0]
+    assert ticks[-1] <= extent[1] + 1e-8
+    assert np.all(np.diff(ticks) > 0)
 
 
 def test_masked_input_is_not_filled_with_clear_visibility():

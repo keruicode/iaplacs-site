@@ -103,7 +103,7 @@ def main(argv: list[str] | None = None) -> int:
     product["description"] = ""
     units = {m["products"][0]["unit"] for m in manifests.values()}
     if len(units) > 1:
-        product["unit"] = "最低模式层能见度（米；来源见各区域）"
+        product["unit"] = "最低模式层能见度（km；来源见各区域）"
     product["frames"] = []
     for index, (area, manifest) in enumerate(manifests.items()):
         frame = prefix_frame(manifest["products"][0]["frames"][0], area)

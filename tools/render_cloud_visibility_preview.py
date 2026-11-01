@@ -208,7 +208,7 @@ def main(argv: list[str] | None = None) -> int:
     manifest["source_signature"] = signature
     manifest["diagnostic_provenance"] = provenance
     manifest["preview_only"] = not args.production
-    manifest["products"][0]["unit"] = "最低模式层诊断能见度（米）"
+    manifest["products"][0]["unit"] = "最低模式层诊断能见度（km）"
     atomic_json(path, manifest)
     return 0
 

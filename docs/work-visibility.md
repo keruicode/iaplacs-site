@@ -1,5 +1,24 @@
 # WORK Visibility Postprocessing
 
+## Airport Display Scale (2026-11-01)
+
+All three services use a fixed kilometre legend with metre-valued input breaks
+200, 500, 800, 1500, 3000, 5000 and 10000. The eight bins are dark purple,
+dark red, red, orange, yellow, light green, light blue and white. This is a
+site display design, not a mandatory aviation palette or an operating minimum.
+Native values, diagnostic calculations and QC remain in metres and unchanged;
+manifests record both input units and display units. Invalid cells retain their
+separate internal category and white appearance, so white does not prove valid
+high visibility. Source priority and lowest-model-layer selection are unchanged.
+
+Hourly and montage views share extent-aware regular longitude/latitude ticks
+(at most six per axis). Broad Xinjiang regional views retain the requested
+72/80/88/96E and 34/38/42/46/50N anchor sequences where inside the extent;
+smaller nested domains use finer spacing. Ningxia montage still suppresses only
+the 104E text, not its tick mark. No data bounds are changed to fit tick labels.
+Renderer hashes invalidate old caches, so scheduled publishers rebuild old-style
+products and publish the updated images through the existing OSS workflow.
+
 ## Latest-Run Publication Priority
 
 Since 2026-11-01, the existing two-minute service auditor checks the newest
@@ -54,7 +73,8 @@ and the frontend suppresses stale duplicate descriptions in older catalogs.
 As of 2026-10-31, WORK2026103006 and later read **VIS_MIN**, first vertical
 level (zero-based index 0), in metres. No automatic fallback to VIS is allowed.
 Earlier published VIS history is retained without replotting. The visible button,
-FOG palette, white invalid cells and regional/national views remain unchanged.
+white invalid cells and regional/national views remain unchanged. The original
+FOG palette was replaced by the airport display scale described above.
 The variable metadata says "mini visibility"; its exact accumulation/reset window
 has not been verified from model source. Timestamps remain the file's valid Times;
 do not label this as an independently verified hourly average or runway visibility.
@@ -111,8 +131,8 @@ in metres from `WORK` d01. It uses the lowest model level, not a fixed 2 m or
   valid high visibility. No interpolation or silent clipping is performed.
 - If an entire selected hour has no valid interior data, fail without publishing
   the new manifest. Rainfall products remain independent.
-- Use the FOG reference palette: brown/red/orange/yellow/light yellow/white at
-  50,100,200,500,1000 m boundaries. FOG calculations are not imported.
+- Use the airport display scale above. The earlier 50/100/200/500/1000 m FOG
+  palette is historical and no longer used by this renderer.
 - `production_manifest.json` records per-hour QC counts, input data hash, source
   size/mtime, renderer/helper/SHP hashes and QC version.
 
