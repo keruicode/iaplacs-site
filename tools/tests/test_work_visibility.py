@@ -59,6 +59,35 @@ def test_visibility_ticks_fit_current_domain(extent):
     assert np.all(np.diff(ticks) > 0)
 
 
+def test_visibility_colorbar_labels_are_at_bin_boundaries():
+    from matplotlib import colors
+    from matplotlib.figure import Figure
+    from render_work_visibility import VISIBILITY_COLORS, add_colorbar
+
+    figure = Figure()
+    axis = figure.add_subplot(121)
+    color_axis = figure.add_subplot(122)
+    artist = axis.pcolormesh(
+        np.arange(8).reshape(2, 4),
+        cmap=colors.ListedColormap(VISIBILITY_COLORS),
+        norm=colors.BoundaryNorm(np.arange(9) - 0.5, 8),
+    )
+    add_colorbar(figure, artist, color_axis)
+    np.testing.assert_equal(color_axis.get_yticks(), np.arange(8) - 0.5)
+    assert [label.get_text() for label in color_axis.get_yticklabels()] == [
+        "0",
+        "0.2",
+        "0.5",
+        "0.8",
+        "1.5",
+        "3",
+        "5",
+        "10",
+    ]
+    assert color_axis.get_title() == "≥10"
+    assert color_axis.get_ylim() == (-0.5, 7.5)
+
+
 def test_masked_input_is_not_filled_with_clear_visibility():
     raw = np.ma.array(np.full((4, 4), 10.0), mask=False)
     raw.mask[1, 1] = True

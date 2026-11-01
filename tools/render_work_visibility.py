@@ -238,10 +238,14 @@ def draw_panel(
 
 
 def add_colorbar(figure: Figure, artist: QuadMesh, axis: Axes, size: int = 16) -> None:
+    # The categorical scale is uniform; numeric labels belong at bin edges.
+    tick_positions = np.arange(len(BIN_EDGES) + 1) - 0.5
+    tick_labels = ["0", *(f"{edge / 1000:g}" for edge in BIN_EDGES)]
     colorbar = figure.colorbar(
-        artist, cax=axis, ticks=np.arange(len(BIN_LABELS)), orientation="vertical"
+        artist, cax=axis, ticks=tick_positions, orientation="vertical"
     )
-    colorbar.ax.set_yticklabels(BIN_LABELS, **cn_sized_props(size))
+    colorbar.ax.set_yticklabels(tick_labels, **cn_sized_props(size))
+    colorbar.ax.set_title("≥10", pad=8, **cn_sized_props(size))
     colorbar.ax.tick_params(width=2, length=5)
     colorbar.set_label("能见度（km）", **cn_sized_props(size + 2))
 

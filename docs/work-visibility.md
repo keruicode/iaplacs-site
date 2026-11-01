@@ -11,6 +11,11 @@ manifests record both input units and display units. Invalid cells retain their
 separate internal category and white appearance, so white does not prove valid
 high visibility. Source priority and lowest-model-layer selection are unchanged.
 
+The vertical colorbar labels the boundaries with 0, 0.2, 0.5, 0.8, 1.5, 3, 5
+and 10 km, rather than interval text at bin centers. The final white bin is
+identified by a >=10 label above the bar. All eight bins remain equal height;
+this is a categorical scale, not a linear distance axis.
+
 Hourly and montage views share extent-aware regional longitude/latitude ticks
 (at most six per axis). Wide maps retain 20-degree longitude and 10-degree
 latitude intervals, consistent with the existing national products.
