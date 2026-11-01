@@ -208,6 +208,9 @@ def draw_panel(
                 )
     xticks = map_ticks(extent[0], extent[1])
     yticks = map_ticks(extent[2], extent[3])
+    if national:
+        xticks = np.arange(math.ceil(extent[0] / 20) * 20, extent[1] + 0.01, 20)
+        yticks = np.arange(math.ceil(extent[2] / 10) * 10, extent[3] + 0.01, 10)
     if xinjiang_ticks and extent[1] - extent[0] >= 16:
         xticks = np.arange(
             72 + math.ceil((extent[0] - 72) / 8) * 8, extent[1] + 0.01, 8

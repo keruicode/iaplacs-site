@@ -11,8 +11,10 @@ manifests record both input units and display units. Invalid cells retain their
 separate internal category and white appearance, so white does not prove valid
 high visibility. Source priority and lowest-model-layer selection are unchanged.
 
-Hourly and montage views share extent-aware regular longitude/latitude ticks
-(at most six per axis). Broad Xinjiang regional views retain the requested
+Hourly and montage views share extent-aware regional longitude/latitude ticks
+(at most six per axis). Wide maps retain 20-degree longitude and 10-degree
+latitude intervals, consistent with the existing national products.
+Broad Xinjiang regional views retain the requested
 72/80/88/96E and 34/38/42/46/50N anchor sequences where inside the extent;
 smaller nested domains use finer spacing. Ningxia montage still suppresses only
 the 104E text, not its tick mark. No data bounds are changed to fit tick labels.

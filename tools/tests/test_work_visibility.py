@@ -327,6 +327,22 @@ def test_montage_can_hide_104_label_without_removing_tick():
         plt.close(figure)
 
 
+def test_wide_map_retains_round_ten_degree_latitudes():
+    import matplotlib.pyplot as plt
+    from render_work_visibility import draw_panel
+
+    lon, lat = np.meshgrid(np.linspace(83, 124, 5), np.linspace(7, 40, 5))
+    figure, axis = plt.subplots()
+    try:
+        draw_panel(axis, lon, lat, np.zeros_like(lon), (83, 124, 7, 40), [], [])
+        np.testing.assert_equal(axis.get_xticks(), [100, 120])
+        np.testing.assert_equal(axis.get_yticks(), [10, 20, 30, 40])
+        np.testing.assert_equal(axis.get_xlim(), [83, 124])
+        np.testing.assert_equal(axis.get_ylim(), [7, 40])
+    finally:
+        plt.close(figure)
+
+
 def test_catalog_keeps_visibility_after_upload_staging_cleanup(tmp_path, monkeypatch):
     import build_forecast_catalog as catalog
 
