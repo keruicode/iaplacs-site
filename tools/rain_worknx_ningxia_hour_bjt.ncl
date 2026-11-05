@@ -108,8 +108,9 @@ begin
     lat_max = 39.7
   end if
   if (component_mode.eq."frozen") then
-    rain_levs = (/0.0, 0.01, 0.05, 0.10, 0.25, 0.50, 1.00/)
-    fill_colors = (/2,3,4,5,6,7,8,9/)
+    rain_levs = (/0.1, 0.5, 1.0, 2.5, 5.0, 10.0, 15.0, 20.0/)
+    ; Preserve the palette; values above 20 mm retain the highest color.
+    fill_colors = (/2,3,4,5,6,7,8,9,9/)
   else if (accum_hours.eq.1) then
     ; CMA hourly precipitation classes: no rain, 0-2.5, 2.5-5, 5-10,
     ; 10-25, 25-50, 50-100 and above 100 mm.
@@ -306,7 +307,7 @@ begin
         res@lbAutoManage = False
         res@lbLabelAutoStride = False
         res@lbLabelStride = 1
-        res@lbLabelStrings = (/"0", "0.01", "0.05", "0.1", "0.25", "0.5", "1"/)
+        res@lbLabelStrings = (/"0.1", "0.5", "1", "2.5", "5", "10", "15", "20"/)
       end if
       res@lbLabelBarOn = True
       res@lbOrientation = "Vertical"
