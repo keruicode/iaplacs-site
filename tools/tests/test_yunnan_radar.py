@@ -31,13 +31,23 @@ def test_column_maximum_is_not_sum_or_lowest_level():
 
 
 @pytest.mark.parametrize("invalid", [np.nan, np.inf, 305.24, -151])
-def test_one_bad_level_invalidates_entire_column(invalid):
+def test_one_bad_level_does_not_erase_valid_levels(invalid):
     raw = np.full((3, 5, 5), 20.0)
     raw[0, 2, 2] = invalid
     composite, stats = composite_reflectivity(raw)
-    assert composite.mask[2, 2]
+    assert not composite.mask[2, 2]
+    assert composite[2, 2] == 20
     assert composite[1, 1] == 20
     assert stats["suspect_interior_columns"] == 1
+    assert stats["partially_valid_interior_columns"] == 1
+
+
+def test_all_invalid_column_is_masked():
+    raw = np.full((3, 5, 5), 20.0)
+    raw[:, 2, 2] = [np.nan, 200, -151]
+    composite, stats = composite_reflectivity(raw)
+    assert composite.mask[2, 2]
+    assert stats["all_invalid_interior_columns"] == 1
 
 
 def test_all_missing_fails_and_strong_valid_values_are_not_clipped():

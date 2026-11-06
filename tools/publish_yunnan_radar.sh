@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Completed-run NCL radar diagnostics; independent lock and retryable OSS receipt.
+# Completed-run native DBZ composite; independent lock and retryable OSS receipt.
 set -Eeuo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
 ROOT="$(iaplacs_runtime_root "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
@@ -35,19 +35,18 @@ for f in (p.with_name(p.name.replace('d01', 'd02', 1)), p):
     if not f.exists():
         continue
     with Dataset(f) as d:
-        if len(d.dimensions['Time']) >= 14 and all(n in d.variables for n in ('P','PB','T','QVAPOR','QRAIN','QSNOW','QGRAUP')):
+        if len(d.dimensions['Time']) >= 14 and 'DBZ' in d.variables:
             print(f)
             break
 else:
-    raise SystemExit('No complete radar source with required mass fields')
+    raise SystemExit('No complete radar source with native DBZ')
 PY
 )"
 domain=d01
 [[ "$source_file" == */wrfout_d02_* ]] && domain=d02
 output="$OUTPUT_ROOT/$run/radar"
-"$PYTHON_BIN" "$IAPLACS_SCRIPT_DIR/render_yunnan_radar_ncl.py" \
+"$PYTHON_BIN" "$IAPLACS_SCRIPT_DIR/render_yunnan_radar.py" \
   --input "$source_file" --output "$output" --domain "$domain" --if-needed \
-  --ncl "${NCL_BIN:-/public/software/apps/ncl_ncarg/ncl630/bin/ncl}" \
   --province-shp "$ROOT/SHP/省界_region.shp" --city-shp "$ROOT/SHP/yunnan_city.shp"
 digest="$(sha256sum "$output/production_manifest.json" | awk '{print $1}')"
 receipt="$output/.published-sha256"
@@ -61,4 +60,4 @@ fi
   --family airport_yunnan --run-prefix "$run" --radar-dir "$output"
 printf '%s\n' "$digest" > "$receipt.tmp.$$"
 mv "$receipt.tmp.$$" "$receipt"
-echo "Radar $run: published NCL composite"
+echo "Radar $run: published quality-controlled native DBZ composite"

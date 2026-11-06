@@ -56,7 +56,7 @@ MIN_DBZ = -150.0  # Audited IAP microphysics no-echo floor.
 
 
 def composite_reflectivity(raw: np.ndarray) -> tuple[np.ma.MaskedArray, dict]:
-    """Reduce DBZ(z,y,x) in dBZ to column maxima, invalidating suspect columns."""
+    """Take valid-level DBZ maxima; mask columns only when no level is usable."""
     values = np.ma.asarray(raw, dtype=np.float64)
     if values.ndim != 3 or values.shape[0] < 1 or min(values.shape[1:]) < 3:
         raise ValueError("DBZ must have nonempty (level, y, x) dimensions")
@@ -64,12 +64,13 @@ def composite_reflectivity(raw: np.ndarray) -> tuple[np.ma.MaskedArray, dict]:
     missing = np.ma.getmaskarray(values) | ~np.isfinite(data)
     excessive = np.isfinite(data) & (data > MAX_DBZ)
     below_floor = np.isfinite(data) & (data < MIN_DBZ)
-    suspect = (missing | excessive | below_floor).any(axis=0)
+    invalid = missing | excessive | below_floor
+    suspect = invalid.any(axis=0)
     boundary = np.zeros(suspect.shape, dtype=bool)
     boundary[[0, -1], :] = True
     boundary[:, [0, -1]] = True
-    mask = suspect | boundary
-    result = np.ma.array(np.max(np.where(missing, -np.inf, data), axis=0), mask=mask)
+    mask = invalid.all(axis=0) | boundary
+    result = np.ma.array(np.max(np.where(invalid, -np.inf, data), axis=0), mask=mask)
     if not result.count():
         raise ValueError("No valid DBZ columns; withholding radar product")
     finite = data[np.isfinite(data)]
@@ -77,6 +78,8 @@ def composite_reflectivity(raw: np.ndarray) -> tuple[np.ma.MaskedArray, dict]:
         "total_columns": int(mask.size),
         "boundary_columns": int(boundary.sum()),
         "suspect_interior_columns": int((suspect & ~boundary).sum()),
+        "partially_valid_interior_columns": int((suspect & ~mask).sum()),
+        "all_invalid_interior_columns": int((invalid.all(axis=0) & ~boundary).sum()),
         "over_100dbz_cells": int(excessive.sum()),
         "missing_cells": int(missing.sum()),
         "below_floor_cells": int(below_floor.sum()),
@@ -107,7 +110,7 @@ def source_signature(source: Path, args: argparse.Namespace) -> dict:
         "count": args.count,
         "domain": args.domain,
         "dpi": args.dpi,
-        "qc": "dbz_column_qc_v1",
+        "qc": "dbz_valid_level_max_v2",
     }
 
 

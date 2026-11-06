@@ -130,18 +130,25 @@ begin
     lat2d = f->XLAT(0,:,:)
     lon2d = f->XLONG(0,:,:)
     if (component_mode.eq."frozen") then
-      if (isfilevar(f, "GRAUPELNC") .and. isfilevar(f, "HAILNC")) then
-        rain_all = f->GRAUPELNC + f->HAILNC
+      ; Accumulated snow/ice, graupel and hail, in mm water equivalent.
+      if (isfilevar(f, "SNOWNC")) then
+        rain_all = f->SNOWNC
       else if (isfilevar(f, "GRAUPELNC")) then
-        rain_all = f->GRAUPELNC
+        rain_all = f->GRAUPELNC * 0.0
       else if (isfilevar(f, "HAILNC")) then
-        rain_all = f->HAILNC
+        rain_all = f->HAILNC * 0.0
       else
-        print("ERROR: frozen mode requires GRAUPELNC or HAILNC in " + files(ifile))
+        print("ERROR: frozen mode requires SNOWNC, GRAUPELNC or HAILNC in " + files(ifile))
         delete(f)
         exit
       end if
       end if
+      end if
+      if (isfilevar(f, "GRAUPELNC")) then
+        rain_all = rain_all + f->GRAUPELNC
+      end if
+      if (isfilevar(f, "HAILNC")) then
+        rain_all = rain_all + f->HAILNC
       end if
     else
       rain_all = f->RAINNC + f->RAINC

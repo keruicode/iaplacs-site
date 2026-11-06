@@ -30,3 +30,11 @@ def test_frozen_scale_and_labels(name):
     assert '(/"0.1", "0.5", "1", "2.5", "5", "10", "15", "20"/)' in source
     assert "rain_levs = (/0.0, 2.5, 5.0, 10.0, 25.0, 50.0, 100.0/)" in source
     assert 'res@lbOrientation = "Vertical"' in source
+
+
+@pytest.mark.parametrize("name", SCRIPTS)
+def test_frozen_includes_snow_graupel_and_hail(name):
+    source = (TOOLS / name).read_text(encoding="utf-8")
+    assert "rain_all = f->SNOWNC" in source
+    assert "rain_all = rain_all + f->GRAUPELNC" in source
+    assert "rain_all = rain_all + f->HAILNC" in source
