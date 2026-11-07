@@ -2,6 +2,7 @@
 
 import json
 from datetime import UTC, datetime, timedelta
+from itertools import pairwise
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -135,3 +136,48 @@ def test_frontend_and_auditor_enable_both_profiles():
     for profile in ("ningxia", "xinjiang"):
         assert f'"{profile}_radar"' in app
         assert f"--profile {profile} --run" in audit
+
+
+@pytest.mark.parametrize("profile", ["ningxia", "xinjiang"])
+def test_montage_coordinate_and_title_spacing(tmp_path, monkeypatch, profile):
+    extent = radar.RADAR_PROFILES[profile]["default_region"]
+    lon, lat = np.meshgrid(
+        np.linspace(extent[0], extent[1], 7), np.linspace(extent[2], extent[3], 7)
+    )
+    checked = []
+
+    def inspect_figure(fig, *args, **kwargs):
+        if len(fig.axes) <= 2:
+            return
+        fig.canvas.draw()
+        renderer = fig.canvas.get_renderer()
+        maps = fig.axes[:-1]
+        columns = 3 if profile == "xinjiang" else 4
+        assert len(maps) == 12
+        for index, axis in enumerate(maps):
+            labels = [
+                label.get_window_extent(renderer) for label in axis.get_xticklabels()
+            ]
+            assert all(a.x1 < b.x0 for a, b in pairwise(labels))
+            if index + columns < len(maps):
+                next_title = maps[index + columns].title.get_window_extent(renderer)
+                assert min(label.y0 for label in labels) > next_title.y1
+        checked.append(True)
+
+    monkeypatch.setattr(radar.Figure, "savefig", inspect_figure)
+    radar.configure_matplotlib()
+    times = [datetime(2026, 11, 7, tzinfo=UTC) + timedelta(hours=i) for i in range(12)]
+    radar.save_maps(
+        tmp_path,
+        lon,
+        lat,
+        [np.ma.array(np.full((7, 7), 30.0))] * 12,
+        times,
+        extent,
+        [],
+        [],
+        "2026-11-07 02:00 BJT",
+        400,
+        profile=profile,
+    )
+    assert checked == [True]

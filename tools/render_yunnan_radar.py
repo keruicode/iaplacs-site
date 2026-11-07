@@ -171,11 +171,17 @@ def draw_panel(
         extent,
         RADAR_PROFILES[profile]["airports"],
         tick_size=18,
-        plane_scale=0.12,
+        plane_scale=(
+            0.12 * max(1, (extent[1] - extent[0]) / 9)
+            if profile == "xinjiang"
+            else 0.12
+        ),
     )
     if profile != "yunnan":
         xticks = map_ticks(extent[0], extent[1])
         yticks = map_ticks(extent[2], extent[3])
+        if profile == "ningxia" and compact:
+            xticks = np.arange(math.ceil(extent[0] / 2) * 2, extent[1], 2)
         if profile == "xinjiang" and extent[1] - extent[0] >= 16:
             xticks = np.arange(
                 72 + math.ceil((extent[0] - 72) / 8) * 8, extent[1] + 0.01, 8
@@ -261,16 +267,34 @@ def save_maps(
     width = 4.7 * cols + 1.2
     panel_width = width * 0.84 / (cols + 0.28 * (cols - 1))
     height = max(4, panel_width * ratio * (rows + 0.18 * (rows - 1)) / 0.89)
+    layout = {
+        "left": 0.06,
+        "right": 0.9,
+        "bottom": 0.05,
+        "top": 0.94,
+        "wspace": 0.28,
+        "hspace": 0.18,
+    }
+    title_y = 0.99
+    if profile != "yunnan":
+        # Reserve physical space for both longitude labels and the next row's title.
+        panel_height = panel_width * ratio
+        row_gap, top_margin, bottom_margin = 0.68, 0.8, 0.45
+        height = rows * panel_height + (rows - 1) * row_gap + top_margin + bottom_margin
+        layout.update(
+            bottom=bottom_margin / height,
+            top=1 - top_margin / height,
+            hspace=row_gap / panel_height,
+        )
+        title_y = 1 - 0.08 / height
     fig, axes = plt.subplots(
         rows,
         cols,
         squeeze=False,
         figsize=(width, height),
     )
-    fig.subplots_adjust(
-        left=0.06, right=0.9, bottom=0.05, top=0.94, wspace=0.28, hspace=0.18
-    )
-    fig.suptitle(f"Forecast Initialization: {initialization}", fontsize=24, y=0.99)
+    fig.subplots_adjust(**layout)
+    fig.suptitle(f"Forecast Initialization: {initialization}", fontsize=24, y=title_y)
     for i, axis in enumerate(axes.flat):
         if i >= len(fields):
             axis.set_axis_off()
