@@ -31,7 +31,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ "$family:$asset_subdir" == "workxj_summary:aviation" || "$family:$asset_subdir" == "worknx_summary:visibility" || "$family:$asset_subdir" == "airport_yunnan:visibility" || "$family:$asset_subdir" == "workxj_summary:visibility" || "$family:$asset_subdir" == "airport_yunnan:radar" ]] || {
+[[ "$family:$asset_subdir" == "workxj_summary:aviation" || "$family:$asset_subdir" == "worknx_summary:visibility" || "$family:$asset_subdir" == "airport_yunnan:visibility" || "$family:$asset_subdir" == "workxj_summary:visibility" || "$family:$asset_subdir" == "airport_yunnan:radar" || "$family:$asset_subdir" == "worknx_summary:radar" || "$family:$asset_subdir" == "workxj_summary:radar" ]] || {
   echo "ERROR: unsupported diagnostic family/subdirectory: $family/$asset_subdir" >&2
   exit 64
 }
@@ -185,7 +185,7 @@ echo "Verified OSS aviation image: $first_url"
 
 PYTHON_BIN="$(command -v python3 || command -v python)"
 "$PYTHON_BIN" "$SITE_REPO/tools/build_forecast_catalog.py"
-if [[ "$ASSET_SUBDIR" == visibility ]]; then
+if [[ "$ASSET_SUBDIR" == visibility || "$ASSET_SUBDIR" == radar ]]; then
   "$PYTHON_BIN" "$SITE_REPO/tools/check_diagnostic_catalog.py" \
     --catalog "$SITE_REPO/data/current/forecast-runs.json" \
     --manifest "$AVIATION_DEST/production_manifest.json" \

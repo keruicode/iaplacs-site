@@ -20,7 +20,7 @@ from matplotlib.collections import QuadMesh
 from matplotlib.colors import BoundaryNorm, ListedColormap
 from matplotlib.figure import Figure
 from netCDF4 import Dataset
-from render_work_visibility import atomic_json, is_current, select_indices
+from render_work_visibility import atomic_json, is_current, map_ticks, select_indices
 from render_yunnan_airport_aviation_preview import (
     BJT,
     REGION_PROFILES,
@@ -53,6 +53,20 @@ RADAR_COLORS = [
 INVALID_COLOR = "#ffffff"
 MAX_DBZ = 100.0  # Provisional numerical QC, not a radar warning threshold.
 MIN_DBZ = -150.0  # Audited IAP microphysics no-echo floor.
+RADAR_PROFILES = {
+    "yunnan": {**REGION_PROFILES["yunnan"], "id": "airport_radar", "label": "云南区域"},
+    "xinjiang": {
+        **REGION_PROFILES["xinjiang"],
+        "id": "xinjiang_radar",
+        "label": "新疆区域",
+    },
+    "ningxia": {
+        "airports": (),
+        "default_region": (104.0, 107.8, 35.0, 39.7),
+        "id": "ningxia_radar",
+        "label": "宁夏区域",
+    },
+}
 
 
 def composite_reflectivity(raw: np.ndarray) -> tuple[np.ma.MaskedArray, dict]:
@@ -109,6 +123,7 @@ def source_signature(source: Path, args: argparse.Namespace) -> dict:
         "start": args.start,
         "count": args.count,
         "domain": args.domain,
+        "profile": getattr(args, "profile", "yunnan"),
         "dpi": args.dpi,
         "qc": "dbz_valid_level_max_v2",
     }
@@ -123,6 +138,7 @@ def draw_panel(
     province: list,
     cities: list,
     compact: bool = False,
+    profile: str = "yunnan",
 ) -> QuadMesh:
     palette = ListedColormap(RADAR_COLORS)
     palette.set_under("white")
@@ -153,10 +169,28 @@ def draw_panel(
         province,
         cities,
         extent,
-        REGION_PROFILES["yunnan"]["airports"],
+        RADAR_PROFILES[profile]["airports"],
         tick_size=18,
         plane_scale=0.12,
     )
+    if profile != "yunnan":
+        xticks = map_ticks(extent[0], extent[1])
+        yticks = map_ticks(extent[2], extent[3])
+        if profile == "xinjiang" and extent[1] - extent[0] >= 16:
+            xticks = np.arange(
+                72 + math.ceil((extent[0] - 72) / 8) * 8, extent[1] + 0.01, 8
+            )
+        if profile == "xinjiang" and extent[3] - extent[2] >= 8:
+            yticks = np.arange(
+                34 + math.ceil((extent[2] - 34) / 4) * 4, extent[3] + 0.01, 4
+            )
+        axis.set_xticks(xticks, [f"{value:g}°E" for value in xticks])
+        axis.set_yticks(yticks, [f"{value:g}°N" for value in yticks])
+        labels = axis.get_xticklabels()
+        if labels:
+            labels[0].set_horizontalalignment("left")
+            labels[-1].set_horizontalalignment("right")
+        return artist
     spacing = 4 if compact else 2
     ticks = np.arange(math.ceil(extent[0] / spacing) * spacing, extent[1], spacing)
     axis.set_xticks(ticks, [f"{value:g}°E" for value in ticks])
@@ -187,7 +221,9 @@ def save_maps(
     cities: list,
     initialization: str,
     dpi: int,
+    profile: str = "yunnan",
 ) -> dict:
+    config = RADAR_PROFILES[profile]
     ratio = (extent[3] - extent[2]) / (extent[1] - extent[0])
     frames = []
     for field, moment in zip(fields, times, strict=True):
@@ -204,21 +240,23 @@ def save_maps(
             wspace=0.08,
         )
         axis = fig.add_subplot(grid[0, 0])
-        artist = draw_panel(axis, lon, lat, field, extent, province, cities)
+        artist = draw_panel(
+            axis, lon, lat, field, extent, province, cities, profile=profile
+        )
         axis.set_title(f"{moment:%m-%d %H:%M} BJT", fontsize=24, pad=10)
         colorbar(fig, artist, fig.add_subplot(grid[0, 1]))
         fig.savefig(output / name, dpi=dpi, bbox_inches="tight", pad_inches=0.05)
         plt.close(fig)
         frames.append(
             {
-                "id": f"airport_radar_{moment:%Y%m%d%H%M}",
+                "id": f"{config['id']}_{moment:%Y%m%d%H%M}",
                 "valid_time": moment.isoformat(),
                 "time_kind": "instant",
                 "lead_label": f"{moment:%m-%d %H:%M} BJT",
                 "file": name,
             }
         )
-    cols = min(4, len(fields))
+    cols = 3 if profile == "xinjiang" and len(fields) == 12 else min(4, len(fields))
     rows = math.ceil(len(fields) / cols)
     width = 4.7 * cols + 1.2
     panel_width = width * 0.84 / (cols + 0.28 * (cols - 1))
@@ -238,17 +276,25 @@ def save_maps(
             axis.set_axis_off()
             continue
         artist = draw_panel(
-            axis, lon, lat, fields[i], extent, province, cities, compact=True
+            axis,
+            lon,
+            lat,
+            fields[i],
+            extent,
+            province,
+            cities,
+            compact=True,
+            profile=profile,
         )
         axis.set_title(f"{times[i]:%m-%d %H:%M} BJT", fontsize=18, pad=8)
     colorbar(fig, artist, fig.add_axes((0.92, 0.18, 0.012, 0.62)))
-    name = "yunnan_radar_montage.png"
+    name = f"{profile}_radar_montage.png"
     fig.savefig(output / name, dpi=dpi, bbox_inches="tight", pad_inches=0.05)
     plt.close(fig)
     return {
-        "id": "airport_radar_region",
+        "id": f"{config['id']}_region",
         "lead": 0,
-        "lead_label": "云南区域",
+        "lead_label": config["label"],
         "valid_time": times[0].isoformat(),
         "time_kind": "instant",
         "file": name,
@@ -257,6 +303,8 @@ def save_maps(
 
 
 def render(args: argparse.Namespace) -> int:
+    profile = getattr(args, "profile", "yunnan")
+    config = RADAR_PROFILES[profile]
     source = args.input.resolve()
     signature = source_signature(source, args)
     if args.if_needed and is_current(args.output, signature):
@@ -283,9 +331,7 @@ def render(args: argparse.Namespace) -> int:
             or not np.isfinite(lon).all()
         ):
             raise ValueError("Invalid radar coordinates")
-        extent = display_region(
-            lat, lon, args.domain, REGION_PROFILES["yunnan"]["default_region"]
-        )
+        extent = display_region(lat, lon, args.domain, config["default_region"])
         y0, y1, x0, x1 = crop_indices(lat, lon, extent)
         crop = (slice(y0, y1 + 1), slice(x0, x1 + 1))
         digest.update(lat.tobytes())
@@ -319,6 +365,7 @@ def render(args: argparse.Namespace) -> int:
         shp_lines(args.city_shp),
         init.astimezone(BJT).strftime("%Y-%m-%d %H:%M BJT"),
         args.dpi,
+        profile=profile,
     )
     atomic_json(
         args.output / "production_manifest.json",
@@ -340,11 +387,11 @@ def render(args: argparse.Namespace) -> int:
             },
             "products": [
                 {
-                    "id": "airport_radar",
-                    "title": "模拟雷达回波",
+                    "id": config["id"],
+                    "title": "雷达回波",
                     "unit": "组合反射率（dBZ）",
                     "color": "#168f7a",
-                    "description": "模拟组合反射率",
+                    "description": "",
                     "frames": [frame],
                 }
             ],
@@ -361,6 +408,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--province-shp", required=True, type=Path)
     parser.add_argument("--city-shp", type=Path)
     parser.add_argument("--domain", choices=("d01", "d02"), default="d01")
+    parser.add_argument("--profile", choices=tuple(RADAR_PROFILES), default="yunnan")
     parser.add_argument("--start", type=int, default=13)
     parser.add_argument("--count", type=int, default=1000)
     parser.add_argument("--dpi", type=int, default=400)

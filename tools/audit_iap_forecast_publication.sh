@@ -366,6 +366,11 @@ audit_ningxia_output() {
   local run="$1" output="$SCRIPT_DIR/worknx_ningxia_overview/$run"
   # Older Ningxia products remain archived; never reinterpret their source as WORK.
   [[ "$run" < "20260912_18" ]] && return 0
+  if [[ "$run" > "20261105_23" ]]; then
+    local radar_args=(--profile ningxia --run "$run")
+    public_product_exists ningxia "$run" ningxia_radar || radar_args+=(--ensure-public)
+    run_action "$IAPLACS_SCRIPT_DIR/publish_yunnan_radar.sh" "${radar_args[@]}"
+  fi
   if [[ "$run" > "20261027_17" ]]; then
     local visibility_args=(--run "$run")
     public_product_exists ningxia "$run" ningxia_visibility || visibility_args+=(--ensure-public)
@@ -404,6 +409,11 @@ audit_ningxia_output() {
 
 audit_xinjiang_output() {
   local run="$1" output="$SCRIPT_DIR/workxj_xinjiang_overview/$run"
+  if [[ "$run" > "20261105_23" ]]; then
+    local radar_args=(--profile xinjiang --run "$run")
+    public_product_exists xinjiang "$run" xinjiang_radar || radar_args+=(--ensure-public)
+    run_action "$IAPLACS_SCRIPT_DIR/publish_yunnan_radar.sh" "${radar_args[@]}"
+  fi
   if [[ "$run" > "20261029_23" ]]; then
     local visibility_args=(--run "$run" --profile xinjiang)
     public_product_exists xinjiang "$run" xinjiang_visibility || visibility_args+=(--ensure-public)

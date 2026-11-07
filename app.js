@@ -34,6 +34,7 @@ const HOURLY_PRECIP_PRODUCT_IDS = {
     "ningxia_precip_series",
     "tianhe_ningxia_precip_series",
     "ningxia_visibility",
+    "ningxia_radar",
   ]),
   shangrao: new Set([
     "wrf_rain_montage",
@@ -44,6 +45,7 @@ const HOURLY_PRECIP_PRODUCT_IDS = {
     "xinjiang_airport_aviation_temperature",
     "xinjiang_airport_aviation_wind",
     "xinjiang_visibility",
+    "xinjiang_radar",
   ]),
 };
 const AIRPORT_RATING_TARGETS = [

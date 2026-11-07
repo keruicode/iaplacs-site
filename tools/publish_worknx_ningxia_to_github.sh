@@ -227,8 +227,10 @@ for source in "${sources[@]}"; do
   fi
   if [[ "$PUBLISH_FAMILY" == "worknx_summary" ]]; then
     "$IAPLACS_SCRIPT_DIR/publish_work_visibility.sh" --run "$run_prefix"
+    "$IAPLACS_SCRIPT_DIR/publish_yunnan_radar.sh" --profile ningxia --run "$run_prefix"
   elif [[ "$PUBLISH_FAMILY" == "workxj_summary" ]]; then
     "$IAPLACS_SCRIPT_DIR/publish_work_visibility.sh" --run "$run_prefix" --profile xinjiang
+    "$IAPLACS_SCRIPT_DIR/publish_yunnan_radar.sh" --profile xinjiang --run "$run_prefix"
   fi
 done
 printf '%s stage=publish service=%s elapsed_seconds=%s finished\n' \

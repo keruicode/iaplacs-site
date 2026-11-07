@@ -829,6 +829,10 @@ def build_ningxia_runs() -> list[dict]:
                         run_dir, run_id, generated_at, category="中国中东部预报",
                         asset_subdir="visibility",
                     ),
+                    *build_airport_aviation_products(
+                        run_dir, run_id, generated_at, category="中国中东部预报",
+                        asset_subdir="radar",
+                    ),
                 ],
             }
         )
@@ -878,6 +882,9 @@ def build_xinjiang_runs() -> list[dict]:
                     ],
                     *build_airport_aviation_products(
                         run_dir, run_id, generated_at, category="新疆预报"
+                    ),
+                    *build_airport_aviation_products(
+                        run_dir, run_id, generated_at, category="新疆预报", asset_subdir="radar"
                     ),
                 ],
             }
@@ -1579,6 +1586,7 @@ def merge_existing_runs(
             if run_id in merged:
                 preserve_individual_frames(run, merged[run_id])
                 if service_key == "xinjiang":
+                    preserve_missing_products(run, merged[run_id], prefix="xinjiang_radar")
                     preserve_missing_products(run, merged[run_id], prefix="xinjiang_visibility")
                     preserve_missing_products(
                         run,
@@ -1586,6 +1594,7 @@ def merge_existing_runs(
                         prefix="xinjiang_airport_aviation_",
                     )
                 if service_key == "ningxia":
+                    preserve_missing_products(run, merged[run_id], prefix="ningxia_radar")
                     preserve_missing_products(
                         run, merged[run_id], prefix="ningxia_visibility",
                     )
@@ -1598,8 +1607,10 @@ def merge_existing_runs(
     diagnostics = {
         "airport": [("airport_yunnan_", "radar", "机场服务"),
                     ("airport_yunnan_", "visibility", "机场服务")],
-        "ningxia": [("worknx_summary_", "visibility", "中国中东部预报")],
-        "xinjiang": [("workxj_summary_", "visibility", "新疆预报")],
+        "ningxia": [("worknx_summary_", "visibility", "中国中东部预报"),
+                    ("worknx_summary_", "radar", "中国中东部预报")],
+        "xinjiang": [("workxj_summary_", "visibility", "新疆预报"),
+                     ("workxj_summary_", "radar", "新疆预报")],
     }.get(service_key, [])
     for family, subdir, category in diagnostics:
         for run_id, run in merged.items():
@@ -1616,7 +1627,7 @@ def merge_existing_runs(
     for run in runs:
         normalize_solid_precipitation_labels(run)
         for product in run.get("products", []):
-            if product.get("id") == "airport_radar":
+            if product.get("id") in {"airport_radar", "ningxia_radar", "xinjiang_radar"}:
                 product["title"] = "雷达回波"
             elif product.get("id") in {"ningxia_visibility", "airport_visibility", "xinjiang_visibility"}:
                 product["color"] = "#0f68c8"
