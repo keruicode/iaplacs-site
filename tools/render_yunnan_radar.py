@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
+import json
 import logging
 import math
 from datetime import UTC, datetime
@@ -124,6 +126,7 @@ def source_signature(source: Path, args: argparse.Namespace) -> dict:
         "count": args.count,
         "domain": args.domain,
         "profile": getattr(args, "profile", "yunnan"),
+        "area": getattr(args, "area", "regional"),
         "dpi": args.dpi,
         "qc": "dbz_valid_level_max_v2",
     }
@@ -180,7 +183,7 @@ def draw_panel(
     if profile != "yunnan":
         xticks = map_ticks(extent[0], extent[1])
         yticks = map_ticks(extent[2], extent[3])
-        if profile == "ningxia" and compact:
+        if profile == "ningxia" and compact and extent[1] - extent[0] < 8:
             xticks = np.arange(math.ceil(extent[0] / 2) * 2, extent[1], 2)
         if profile == "xinjiang" and extent[1] - extent[0] >= 16:
             xticks = np.arange(
@@ -197,7 +200,7 @@ def draw_panel(
             labels[0].set_horizontalalignment("left")
             labels[-1].set_horizontalalignment("right")
         return artist
-    spacing = 4 if compact else 2
+    spacing = 10 if extent[1] - extent[0] > 30 else (4 if compact else 2)
     ticks = np.arange(math.ceil(extent[0] / spacing) * spacing, extent[1], spacing)
     axis.set_xticks(ticks, [f"{value:g}°E" for value in ticks])
     for label in axis.get_xticklabels():
@@ -356,6 +359,13 @@ def render(args: argparse.Namespace) -> int:
         ):
             raise ValueError("Invalid radar coordinates")
         extent = display_region(lat, lon, args.domain, config["default_region"])
+        if getattr(args, "area", "regional") == "wide":
+            extent = (
+                math.floor(lon.min()),
+                min(145, math.ceil(lon.max())),
+                math.floor(lat.min()),
+                math.ceil(lat.max()),
+            )
         y0, y1, x0, x1 = crop_indices(lat, lon, extent)
         crop = (slice(y0, y1 + 1), slice(x0, x1 + 1))
         digest.update(lat.tobytes())
@@ -391,6 +401,13 @@ def render(args: argparse.Namespace) -> int:
         args.dpi,
         profile=profile,
     )
+    if getattr(args, "area", "regional") == "wide":
+        frame["id"] = config["id"] + "_wide"
+        frame["lead_label"] = {
+            "ningxia": "中国中东部",
+            "yunnan": "中国西南部",
+            "xinjiang": "中国西北部",
+        }[profile]
     atomic_json(
         args.output / "production_manifest.json",
         {
@@ -415,7 +432,7 @@ def render(args: argparse.Namespace) -> int:
                     "title": "雷达回波",
                     "unit": "组合反射率（dBZ）",
                     "color": "#168f7a",
-                    "description": "",
+                    "description": "组合雷达反射率",
                     "frames": [frame],
                 }
             ],
@@ -437,7 +454,44 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--count", type=int, default=1000)
     parser.add_argument("--dpi", type=int, default=400)
     parser.add_argument("--if-needed", action="store_true")
+    parser.add_argument("--area", choices=("regional", "wide"), default="regional")
+    parser.add_argument("--dual-domain", action="store_true")
     return parser
+
+
+def render_dual_domain(args: argparse.Namespace) -> int:
+    """Keep regional and parent-domain assets in independently cached directories."""
+    manifests = []
+    for area in ("regional", "wide"):
+        child = copy.copy(args)
+        child.area = area
+        child.output = args.output / area
+        if area == "wide":
+            child.input = args.input.with_name(args.input.name.replace("d02", "d01", 1))
+            child.domain = "d01"
+            child.city_shp = None
+        status = render(child)
+        if status:
+            return status
+        manifests.append(
+            json.loads((child.output / "production_manifest.json").read_text())
+        )
+    combined = copy.deepcopy(manifests[0])
+    product = combined["products"][0]
+    product["frames"] = []
+    for index, (area, manifest) in enumerate(zip(("regional", "wide"), manifests)):
+        frame = copy.deepcopy(manifest["products"][0]["frames"][0])
+        frame["lead"] = index
+        for asset in [frame, *frame.get("individual_frames", [])]:
+            asset["file"] = area + "/" + asset["file"]
+        product["frames"].append(frame)
+    combined["source_signature"] = {
+        area: manifest["source_signature"]
+        for area, manifest in zip(("regional", "wide"), manifests)
+    }
+    combined["generated_at"] = max(m["generated_at"] for m in manifests)
+    atomic_json(args.output / "production_manifest.json", combined)
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -445,7 +499,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.dpi < 400:
         raise ValueError("Scientific PNG output requires at least 400 dpi")
-    return render(args)
+    return render_dual_domain(args) if args.dual_domain else render(args)
 
 
 if __name__ == "__main__":

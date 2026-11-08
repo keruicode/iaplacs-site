@@ -55,7 +55,7 @@ output="$OUTPUT_ROOT/$run/radar"
 map_args=(--province-shp "$ROOT/SHP/省界_region.shp")
 [[ -z "$city" ]] || map_args+=(--city-shp "$city")
 "$PYTHON_BIN" "$IAPLACS_SCRIPT_DIR/render_yunnan_radar.py" \
-  --input "$source_file" --output "$output" --domain "$domain" --profile "$profile" --if-needed \
+  --input "$source_file" --output "$output" --domain "$domain" --profile "$profile" --if-needed --dual-domain \
   "${map_args[@]}"
 digest="$(sha256sum "$output/production_manifest.json" | awk '{print $1}')"
 receipt="$output/.published-sha256"

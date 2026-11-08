@@ -1019,11 +1019,15 @@ function renderRuns() {
 function renderProducts() {
   if (!els.productList) return;
   els.productList.innerHTML = "";
-  (currentRun().products || []).forEach((product, index) => {
+  const orderedProducts = (currentRun().products || []).map((product, index) => ({product, index}));
+  const radarIndex = orderedProducts.findIndex(({product}) => /^(airport|ningxia|xinjiang)_radar$/.test(product.id));
+  if (radarIndex > 1) orderedProducts.splice(1, 0, orderedProducts.splice(radarIndex, 1)[0]);
+  orderedProducts.forEach(({product, index}) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `product-button${index === state.productIndex ? " is-active" : ""}`;
-    const description = product.id === "airport_visibility" ? "" : product.description;
+    const description = /^(airport|ningxia|xinjiang)_radar$/.test(product.id)
+      ? "组合雷达反射率" : product.id === "airport_visibility" ? "" : product.description;
     button.innerHTML = `
       <span class="product-stripe" style="background:${product.color || "#0f68c8"}"></span>
       <span>

@@ -138,6 +138,56 @@ def test_frontend_and_auditor_enable_both_profiles():
         assert f"--profile {profile} --run" in audit
 
 
+def test_dual_domain_manifest(tmp_path, monkeypatch):
+    args = radar.build_parser().parse_args(
+        [
+            "--input",
+            str(tmp_path / "wrfout_d02_case"),
+            "--output",
+            str(tmp_path / "radar"),
+            "--province-shp",
+            "unused.shp",
+            "--profile",
+            "xinjiang",
+            "--domain",
+            "d02",
+            "--dual-domain",
+        ]
+    )
+
+    def fake_render(child):
+        child.output.mkdir(parents=True, exist_ok=True)
+        if child.area == "wide":
+            assert child.domain == "d01"
+            assert child.input.name == "wrfout_d01_case"
+        radar.atomic_json(
+            child.output / "production_manifest.json",
+            {
+                "source_signature": {"area": child.area},
+                "generated_at": "2026-11-08",
+                "products": [
+                    {
+                        "id": "xinjiang_radar",
+                        "frames": [
+                            {
+                                "file": "montage.png",
+                                "individual_frames": [{"file": "one.png"}],
+                            }
+                        ],
+                    }
+                ],
+            },
+        )
+        return 0
+
+    monkeypatch.setattr(radar, "render", fake_render)
+    assert radar.render_dual_domain(args) == 0
+    data = json.loads((args.output / "production_manifest.json").read_text())
+    frames = data["products"][0]["frames"]
+    assert [f["file"] for f in frames] == ["regional/montage.png", "wide/montage.png"]
+    assert frames[1]["individual_frames"][0]["file"] == "wide/one.png"
+
+
 @pytest.mark.parametrize("profile", ["ningxia", "xinjiang"])
 def test_montage_coordinate_and_title_spacing(tmp_path, monkeypatch, profile):
     extent = radar.RADAR_PROFILES[profile]["default_region"]
