@@ -180,6 +180,14 @@ def draw_panel(
             else 0.12
         ),
     )
+    if compact and extent[1] - extent[0] > 35:
+        xticks = np.arange(math.ceil(extent[0] / 20) * 20, extent[1], 20)
+        yticks = np.arange(math.ceil(extent[2] / 10) * 10, extent[3], 10)
+        axis.set_xticks(xticks, [f"{value:g}°E" for value in xticks])
+        axis.set_yticks(yticks, [f"{value:g}°N" for value in yticks])
+        for label in axis.get_xticklabels():
+            label.set_horizontalalignment("center")
+        return artist
     if profile != "yunnan":
         xticks = map_ticks(extent[0], extent[1])
         yticks = map_ticks(extent[2], extent[3])
