@@ -231,6 +231,7 @@ def save_maps(
     initialization: str,
     dpi: int,
     profile: str = "yunnan",
+    wide: bool = False,
 ) -> dict:
     config = RADAR_PROFILES[profile]
     ratio = (extent[3] - extent[2]) / (extent[1] - extent[0])
@@ -279,7 +280,7 @@ def save_maps(
         "hspace": 0.18,
     }
     title_y = 0.99
-    if profile != "yunnan":
+    if profile != "yunnan" or wide:
         # Reserve physical space for both longitude labels and the next row's title.
         panel_height = panel_width * ratio
         row_gap, top_margin, bottom_margin = 0.68, 0.8, 0.45
@@ -400,6 +401,7 @@ def render(args: argparse.Namespace) -> int:
         init.astimezone(BJT).strftime("%Y-%m-%d %H:%M BJT"),
         args.dpi,
         profile=profile,
+        wide=getattr(args, "area", "regional") == "wide",
     )
     if getattr(args, "area", "regional") == "wide":
         frame["id"] = config["id"] + "_wide"
