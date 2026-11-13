@@ -2,7 +2,9 @@
 
 ## Release Preparation (2026-11-14)
 
-当前为待上线版本，**未修改 IAP 生产脚本、crontab、线上目录或 OSS**。下文首轮试验记录继续保留。
+2026-11-14 已获准上线，生产脚本和目录构建代码已部署；首批发布正在执行。
+三个网页已配置启用入口；只有图件上传成功并进入目录的产品才显示，不显示空按钮。
+按用户要求，不等待首次后台作业完成再开放网页配置。原有 crontab 不变。下文首轮试验记录继续保留。
 
 | 服务 | 模式目录 | 区域按钮 | 大范围按钮 |
 | --- | --- | --- | --- |
@@ -26,30 +28,30 @@
 - `tools/supercooled_contract.py`：两产品、两区域、相同有效时刻和图件存在性的完整性门禁。
 - `tools/publish_supercooled_water_path.sh`：完成态判断、锁、缓存、上传成功回执及只绘图入口。
 - `tools/supercooled_settings.sh`：默认关闭，指定首次起报后才允许自动发布。
-- 本地已准备目录构建、OSS发布器、审计任务及 `app.js` 的接口；尚未部署到生产。
+- 目录构建、OSS发布器、审计任务及 `app.js` 接口已同步到 IAP、server02 和 GitHub。
 
 完整manifest最后原子替换。图件使用内容签名区分的目录；源文件或脚本变化会重新生成。
 只上传当前一代的图件，不把历史试验目录一起上传。上传失败不写成功回执，下次审计可重试。
 新产品检查排在现有产品检查之后，避免先处理新增诊断而耽误原有业务。
 色标仍为试验分级，不是积冰等级；缺测在数据中保留NaN，在图上显示白色。
 
-### Enable Later, Not Now
+### Deployment Procedure
 
 1. 核对并备份生产 `scripts/` 与 server02 发布仓库。将上述新文件和本轮涉及的
    `runtime_paths.sh`、`audit_iap_forecast_publication.sh`、`publish_airport_aviation_to_oss.sh`
    部署到 IAP `scripts/`。保持 `.runtime-root`、字体和SHP引用正确，不覆盖其他人的修改。
 2. 先把目录构建所需的 `build_forecast_catalog.py`、`check_diagnostic_catalog.py`、
    `supercooled_contract.py` 同步到 server02 发布仓库及 GitHub；否则旧目录构建器不能接入新产品。
-   GitHub 尚未同步本轮任何源码，启用时必须完成这一步。
+   此次已同步源码，并验证现有 GitHub 部署密钥可用，未更换密钥。
 3. 先用下面的 `--render-only` 跑完整起报。此入口自动进入 `plot` 作业，**不要在登录节点直接运行Python**。
 4. 正式启用时才建立 `Website/state/supercooled-start-run`，内容为首次上线的UTC起报，例如
    `20261112_18`，末尾换行。没有此文件时发布入口直接返回，不启动Python、Slurm或网络传输。
    只处理指定起报及以后的批次，避免无意补画全部历史。
 5. 在 `index.html`、`airpots/index.html`、`xinjiang/index.html` 的 `<body>` 添加
    `data-supercooled-paths="enabled"`，更新 `app.js` 的版本参数，审核后再提交上线。
-   当前三个正式HTML均没有该属性，新产品默认隐藏。沿用原有2分钟调度，不新增并行cron。
+   没有该属性时新产品隐藏。沿用原有2分钟调度，不新增并行cron。
 6. 核对三个服务目录都包含两个产品、每个产品两个范围，并抽查OSS图片及下载链接。
-   正式上传事务本轮没有执行，不能将试图成功说成已经完成线上发布验证。
+   必须验证真实上传事务，不能将试图成功等同于线上发布成功。
 
 只绘图例子（需完成部署后运行；输出应使用独立目录）：
 
@@ -74,7 +76,18 @@ bash /data1/elpt_2022_00083/kerui/Website/scripts/publish_supercooled_water_path
 随后作业 `40472050` 在 `a3107n13` 正常结束，退出0，耗时9分20秒，21项测试再次通过。
 完整云南只绘图入口成功：两产品、两范围各12时次，拼图3列4行；宁夏、新疆修订坐标后的两时次图也完成。
 完整云南拼图已下载目视检查，未触发上传。
-本地默认关闭、网页产品筛选、调度回归及shell语法检查通过。尚未完成浏览器端完整视觉验收或真实OSS发布验收。
+本地默认关闭、网页产品筛选、调度回归及shell语法检查通过。
+隔离浏览器测试覆盖三个服务、两产品、两范围、逐时/拼图，以及1440/390像素视口，全部通过。
+
+### Initial Publication
+
+生产脚本及定时任务备份：IAP `Website/.tmp/supercooled_launch_20261114/` 下的
+`scripts-before.tgz`、`crontab-before.txt`。图件未搬动。
+首批作业 `40472296`，名称 `plot`，1 CPU、16 GB，计算节点 `a3107n13`。
+顺序发布宁夏 `20261113_00`、云南 `20261113_06`、新疆 `20261112_18`。
+每地失败最多重试三次；三地均成功后才写入自动发布开关，首次起报为 `20261112_18`。
+脚本位于同目录 `bootstrap.slurm`；日志为 `Website/logs/supercooled-launch-40472296.{out,err}`。
+这一首次补发作业不代替原有两分钟轻量检查；后续计算继续通过已有 `plot` 作业执行。
 
 ## Status
 

@@ -27,6 +27,6 @@ for (const enabled of [false, true]) {
   }
 }
 for (const file of ['index.html','airpots/index.html','xinjiang/index.html']) {
-  assert.ok(!fs.readFileSync(file,'utf8').includes('data-supercooled-paths="enabled"'));
+  assert.ok(fs.readFileSync(file,'utf8').includes('data-supercooled-paths="enabled"'));
 }
-console.log('Supercooled UI: disabled by default, both products available on opt-in');
+console.log('Supercooled UI: opt-in filter verified; three production pages enabled');
