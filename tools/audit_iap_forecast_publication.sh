@@ -54,20 +54,15 @@ while (( $# )); do
   esac
 done
 
-# Independent processes preserve errexit without letting one failed or slow
-# service prevent another from starting. Cron uses the scoped entry directly.
+# Services run sequentially inside one allocation; failures still allow the next.
 dispatch_services() {
-  local service pid failed=0
-  local -a pids=() arguments=()
+  local service failed=0
+  local -a arguments=()
   for service in ningxia xinjiang yunnan; do
     arguments=(--service "$service")
     (( DRY_RUN )) && arguments+=(--dry-run)
-    bash "$IAPLACS_SCRIPT_DIR/audit_iap_forecast_publication.sh" \
-      "${arguments[@]}" </dev/null &
-    pids+=("$!")
-  done
-  for pid in "${pids[@]}"; do
-    if wait "$pid"; then :; else failed=1; fi
+    if bash "$IAPLACS_SCRIPT_DIR/audit_iap_forecast_publication.sh" \
+      "${arguments[@]}" </dev/null; then :; else failed=1; fi
   done
   return "$failed"
 }
@@ -359,6 +354,20 @@ local_sequences_are_valid() {
   expected="$(expected_first_start "$basis" "$run")"
   [[ -n "$region" && "$region" == "$national" ]] || return 1
   sequence_is_valid "$region" "$expected"
+}
+
+audit_supercooled_output() {
+  local profile="$1" service="$2" run="$3" public_run="$4"
+  # Disabled without a valid start-run file; no extra Python at cron startup.
+  [[ -r "$IAPLACS_SCRIPT_DIR/supercooled_settings.sh" ]] || return 0
+  source "$IAPLACS_SCRIPT_DIR/supercooled_settings.sh"
+  iaplacs_supercooled_enabled "$SCRIPT_DIR" "$run" || return 0
+  local args=(--profile "$profile" --run "$run")
+  if ! public_product_exists "$service" "$public_run" "${service}_supercooled_cloud" ||
+     ! public_product_exists "$service" "$public_run" "${service}_supercooled_rain"; then
+    args+=(--ensure-public)
+  fi
+  run_action bash "$IAPLACS_SCRIPT_DIR/publish_supercooled_water_path.sh" "${args[@]}"
 }
 
 audit_ningxia_output() {
@@ -671,6 +680,15 @@ if (( ! CATALOG_READY )) && ! fetch_public_catalog; then
 fi
 while IFS= read -r run; do
   [[ -n "$run" ]] && "audit_${SERVICE}_output" "$run"
+done < <(list_output_runs "$SCRIPT_DIR/$OUTPUT_FAMILY")
+# Existing products retain priority; disabled additions never delay their audit.
+while IFS= read -r run; do
+  [[ -n "$run" ]] || continue
+  if [[ "$SERVICE" == yunnan ]]; then
+    audit_supercooled_output yunnan airport "$run" "airport_yunnan_$run"
+  else
+    audit_supercooled_output "$SERVICE" "$SERVICE" "$run" "$run"
+  fi
 done < <(list_output_runs "$SCRIPT_DIR/$OUTPUT_FAMILY")
 log "publication audit finished; action failures=$ACTION_FAILURES"
 (( ACTION_FAILURES == 0 ))

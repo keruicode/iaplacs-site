@@ -7,6 +7,8 @@ const MAX_VIEWER_SCALE = 6;
 const VIEWER_ZOOM_STEP = 1.25;
 const IMAGE_PREFETCH_CONCURRENCY = 1;
 const IMAGE_PREFETCH_IDLE_TIMEOUT_MS = 3000;
+// Prepared, not activated. Isolated preview pages may opt in explicitly.
+const SUPERCOOLED_PATHS_ENABLED = document.body.dataset.supercooledPaths === "enabled";
 const ACCESS_PASSWORD = "123";
 const ACCESS_TOKEN_KEY = "iaplacs_access_token";
 const ACCESS_TOKEN_VALUE = "iaplacs_access_granted_v1";
@@ -29,12 +31,16 @@ const HOURLY_PRECIP_PRODUCT_IDS = {
     "airport_aviation_wind",
     "airport_radar",
     "airport_visibility",
+    "airport_supercooled_cloud",
+    "airport_supercooled_rain",
   ]),
   ningxia: new Set([
     "ningxia_precip_series",
     "tianhe_ningxia_precip_series",
     "ningxia_visibility",
     "ningxia_radar",
+    "ningxia_supercooled_cloud",
+    "ningxia_supercooled_rain",
   ]),
   shangrao: new Set([
     "wrf_rain_montage",
@@ -46,6 +52,8 @@ const HOURLY_PRECIP_PRODUCT_IDS = {
     "xinjiang_airport_aviation_wind",
     "xinjiang_visibility",
     "xinjiang_radar",
+    "xinjiang_supercooled_cloud",
+    "xinjiang_supercooled_rain",
   ]),
 };
 const AIRPORT_RATING_TARGETS = [
@@ -598,7 +606,12 @@ function normalizeSolidPrecipitationLabels(value) {
 function limitCatalogRuns(catalog) {
   const services = Object.fromEntries(
     Object.entries(catalog.services || {}).map(([key, service]) => {
-      const sourceRuns = Array.isArray(service?.runs) ? service.runs : [];
+      const sourceRuns = (Array.isArray(service?.runs) ? service.runs : [])
+        .map((run) => ({
+          ...run,
+          products: (run.products || []).filter((product) =>
+            SUPERCOOLED_PATHS_ENABLED || !product.id?.includes("_supercooled_")),
+        }));
       const runs =
         key === "shangrao"
           ? normalizeShangraoRuns(sourceRuns)

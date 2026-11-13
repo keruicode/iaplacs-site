@@ -357,7 +357,10 @@ def build_airport_aviation_products(
     if not manifest_path.exists():
         return []
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if asset_subdir in {"visibility", "radar"}:
+    if asset_subdir == "supercooled":
+        from supercooled_contract import validate_manifest
+        validate_manifest(manifest, aviation_dir)
+    if asset_subdir in {"visibility", "radar", "supercooled"}:
         generated_at = manifest.get("generated_at") or generated_at
     products = []
 
@@ -1585,6 +1588,10 @@ def merge_existing_runs(
         if run_id:
             if run_id in merged:
                 preserve_individual_frames(run, merged[run_id])
+                if service_key in {"airport", "ningxia", "xinjiang"}:
+                    preserve_missing_products(
+                        run, merged[run_id], prefix=f"{service_key}_supercooled_",
+                    )
                 if service_key == "xinjiang":
                     preserve_missing_products(run, merged[run_id], prefix="xinjiang_radar")
                     preserve_missing_products(run, merged[run_id], prefix="xinjiang_visibility")
@@ -1606,11 +1613,14 @@ def merge_existing_runs(
     # Diagnostic uploads may have no local rain assets after OSS staging cleanup.
     diagnostics = {
         "airport": [("airport_yunnan_", "radar", "机场服务"),
-                    ("airport_yunnan_", "visibility", "机场服务")],
+                    ("airport_yunnan_", "visibility", "机场服务"),
+                    ("airport_yunnan_", "supercooled", "机场服务")],
         "ningxia": [("worknx_summary_", "visibility", "中国中东部预报"),
-                    ("worknx_summary_", "radar", "中国中东部预报")],
+                    ("worknx_summary_", "radar", "中国中东部预报"),
+                    ("worknx_summary_", "supercooled", "中国中东部预报")],
         "xinjiang": [("workxj_summary_", "visibility", "新疆预报"),
-                     ("workxj_summary_", "radar", "新疆预报")],
+                     ("workxj_summary_", "radar", "新疆预报"),
+                     ("workxj_summary_", "supercooled", "新疆预报")],
     }.get(service_key, [])
     for family, subdir, category in diagnostics:
         for run_id, run in merged.items():

@@ -28,6 +28,18 @@ def verify_catalog(catalog: dict, manifest: dict, family: str, run: str) -> None
         if len(frames) != len(expected["frames"]):
             raise ValueError("Diagnostic area count differs")
         for a, e in zip(frames, expected["frames"]):
+            if "_supercooled_" in expected["id"]:
+                if a.get("id") != e.get("id"):
+                    raise ValueError("Supercooled area ordering differs")
+                for actual_image, expected_image in zip(
+                    [a, *a.get("individual_frames", [])],
+                    [e, *e.get("individual_frames", [])],
+                ):
+                    actual_path = actual_image.get("full_file") or actual_image.get("file", "")
+                    if not actual_path.endswith(expected_image["file"]):
+                        raise ValueError("Supercooled image generation differs")
+                    if actual_image.get("valid_time") != expected_image.get("valid_time"):
+                        raise ValueError("Supercooled valid time differs")
             if len(a.get("individual_frames", [])) != len(
                 e.get("individual_frames", [])
             ):
