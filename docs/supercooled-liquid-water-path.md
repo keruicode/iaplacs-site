@@ -1,5 +1,23 @@
 # Supercooled Liquid Water Path Preview
 
+## Serial Performance Update (2026-11-14)
+
+优化代码将区域按实际输入文件分组：同一个 d01 的每个时刻只读取、积分一次，
+然后分别裁切区域/大范围。不同 d01/d02 仍独立计算，不混用网格。只保留裁切后的二维数组。
+WebP 转换改为一个 Python 进程依次处理，400 dpi 原图、6000像素网页上限、质量95和method6不变。
+过冷产品的 OSS 上传改为 PNG/WebP 两个顺序批次，各 `-j 1 --parallel 1`，
+同时设置 `GOMAXPROCS=1`。保留原对象路径、Content-Type、ACL、缓存策略和失败中止。
+其他产品的 OSS 上传方式不变；所有计算仍由单个 plot 作业串行执行。
+
+备份：本地 `.tmp/supercooled_performance_before_20261114.tgz`，
+IAP `.tmp/supercooled_performance_20261114/before.tgz`。
+验证/部署作业 `40487494` 等待既有生产作业 `40487323` 结束，不叠加生产计算。
+先执行数值、同源调用次数、转换一致性和批量上传成功/失败分支测试；
+再对同一真实输入运行旧版、新版两时刻图，比较解码后PNG像素和诊断量。
+全部通过且生产源码哈希未变才原子替换两个脚本，失败保持原版。
+目录内 `validated-and-deployed` 表示验证部署成功。此记录写入时作业尚未完成，
+没有声称实际加速比例或新上传链路已经实测成功；首次发布仍须检查OSS结果。
+
 ## Release Preparation (2026-11-14)
 
 2026-11-14 已获准上线，生产脚本和目录构建代码已部署；首批发布正在执行。

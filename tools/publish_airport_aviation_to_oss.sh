@@ -53,25 +53,29 @@ done
   exit 127
 }
 
-make_webp() {
-  local source="$1" output="${source%.png}.webp"
-  "$PYTHON_BIN" - "$source" "$output" <<'PY'
+if [[ "${AVIATION_SKIP_WEBP_CONVERSION:-0}" != "1" ]]; then
+  conversion_started=$SECONDS
+  "$PYTHON_BIN" - "$aviation_dir" <<'PY'
+import os
 import sys
+from pathlib import Path
 from PIL import Image
 
-source, output = sys.argv[1:]
-with Image.open(source) as image:
-    image = image.convert("RGB")
-    image.thumbnail((6000, 6000), Image.Resampling.LANCZOS)
-    image.save(output, "WEBP", quality=95, method=6)
+for source in sorted(Path(sys.argv[1]).rglob("*.png")):
+    output = source.with_suffix(".webp")
+    temporary = output.with_name(output.name + ".tmp")
+    with Image.open(source) as original:
+        image = original.convert("RGB")
+        try:
+            image.thumbnail((6000, 6000), Image.Resampling.LANCZOS)
+            image.save(temporary, "WEBP", quality=95, method=6)
+        finally:
+            image.close()
+    stat = source.stat()
+    os.utime(temporary, ns=(stat.st_atime_ns, stat.st_mtime_ns))
+    temporary.replace(output)
 PY
-  touch -r "$source" "$output"
-}
-
-if [[ "${AVIATION_SKIP_WEBP_CONVERSION:-0}" != "1" ]]; then
-  while IFS= read -r source; do
-    make_webp "$source"
-  done < <(find "$aviation_dir" -type f -name '*.png' | sort)
+  echo "WebP conversion seconds=$((SECONDS - conversion_started))"
 fi
 
 png_count="$(find "$aviation_dir" -type f -name '*.png' | wc -l | tr -d ' ')"
@@ -162,7 +166,26 @@ python3 tools/publication_checkout.py prepare
 mkdir -p "$DEST"
 rsync -av --delete "$INCOMING/" "$AVIATION_DEST/"
 
+upload_started=$SECONDS
 first_relative=""
+if [[ "$ASSET_SUBDIR" == supercooled ]]; then
+  relative="${AVIATION_DEST#$SITE_REPO/}"
+  key="$relative"
+  [[ -z "$PREFIX" ]] || key="$PREFIX/$relative"
+  # Two sequential batches preserve MIME types and paths, without extra workers.
+  for extension in png webp; do
+    GOMAXPROCS=1 "$OSSUTIL_BIN" cp "$AVIATION_DEST/" \
+      "oss://${IAPLACS_OSS_BUCKET}/$key/" -r -f -j 1 --parallel 1 \
+      --exclude '*' --include "*.$extension" --disable-ignore-error \
+      --disable-dir-object -e "$IAPLACS_OSS_ENDPOINT" \
+      --meta "Cache-Control:no-cache#Content-Type:image/$extension" \
+      --acl "${IAPLACS_OSS_OBJECT_ACL:-public-read}"
+  done
+  while IFS= read -r -d '' image; do
+    first_relative="${image#$SITE_REPO/}"
+    break
+  done < <(find "$AVIATION_DEST" -type f -name '*.png' -print0)
+else
 while IFS= read -r -d '' image; do
   relative="${image#$SITE_REPO/}"
   key="$relative"
@@ -178,6 +201,8 @@ while IFS= read -r -d '' image; do
     --acl "${IAPLACS_OSS_OBJECT_ACL:-public-read}"
   [[ -n "$first_relative" ]] || first_relative="$relative"
 done < <(find "$AVIATION_DEST" -type f \( -name '*.webp' -o -name '*.png' \) -print0)
+fi
+echo "OSS upload seconds=$((SECONDS - upload_started))"
 
 [[ -n "$first_relative" ]] || { echo "ERROR: no aviation rasters to upload" >&2; exit 1; }
 first_url="${IAPLACS_ASSET_BASE_URL%/}/$first_relative"

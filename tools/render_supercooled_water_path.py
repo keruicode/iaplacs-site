@@ -9,6 +9,7 @@ import json
 import logging
 import math
 import shutil
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -252,6 +253,44 @@ def add_colorbar(figure: Figure, artist: QuadMesh, axis: Axes) -> None:
     bar.outline.set_linewidth(2.5)
 
 
+def collect_source_records(
+    source: Path, areas: list[str], indices: list[int], profile: str
+) -> tuple[dict, dict, list]:
+    """Integrate each time once; retain only cropped 2-D arrays for each area."""
+    records = {area: [] for area in areas}
+    extents = {}
+    diagnostics = []
+    domain = "d02" if source.name.startswith("wrfout_d02_") else "d01"
+    for index in indices:
+        lon, lat, fields, info = extract(source, index)
+        for area in areas:
+            extent = geographic_extent(profile, area, domain, lat, lon)
+            extents[area] = extent
+            y0, y1, x0, x1 = crop_indices(lat, lon, extent)
+            region = np.s_[y0 : y1 + 1, x0 : x1 + 1]
+            if any(not np.isfinite(fields[kind][region]).any() for kind in TITLES):
+                raise ValueError(
+                    f"No valid {area} water-path columns at {info['valid_utc']}"
+                )
+            records[area].append(
+                {
+                    "profile": profile,
+                    "area": area,
+                    # Copies avoid keeping full-domain arrays alive via small views.
+                    "lat": lat[region].copy(),
+                    "lon": lon[region].copy(),
+                    "cloud": fields["cloud"][region].copy(),
+                    "rain": fields["rain"][region].copy(),
+                    "valid_time": info["valid_utc"],
+                    "label": datetime.fromisoformat(info["valid_utc"])
+                    .astimezone(BJT)
+                    .strftime("%m-%d %H:%M BJT"),
+                }
+            )
+            diagnostics.append({"area": area, "domain": domain, **info})
+    return records, extents, diagnostics
+
+
 def render(args: argparse.Namespace) -> dict:
     sources = choose_sources(args.input)
     fingerprint = signature(args, sources)
@@ -301,48 +340,35 @@ def render(args: argparse.Namespace) -> dict:
     profile = PROFILES[args.profile]
     frames = {kind: [] for kind in TITLES}
     diagnostics = []
+    grouped_sources = {}
     for area, source in sources.items():
-        domain = "d02" if source.name.startswith("wrfout_d02_") else "d01"
-        records = []
-        for index in selections[area]:
-            lon, lat, fields, info = extract(source, index)
-            extent = geographic_extent(args.profile, area, domain, lat, lon)
-            y0, y1, x0, x1 = crop_indices(lat, lon, extent)
-            region = np.s_[y0 : y1 + 1, x0 : x1 + 1]
-            if any(not np.isfinite(fields[kind][region]).any() for kind in TITLES):
-                raise ValueError(
-                    f"No valid {area} water-path columns at {info['valid_utc']}"
+        grouped_sources.setdefault(source.resolve(), []).append(area)
+    for source, areas in grouped_sources.items():
+        started = time.monotonic()
+        records, extents, info = collect_source_records(
+            source, areas, selections[areas[0]], args.profile
+        )
+        diagnostics.extend(info)
+        LOG.info("Integration areas=%s seconds=%.1f", areas, time.monotonic() - started)
+        started = time.monotonic()
+        for area in areas:
+            for kind in TITLES:
+                frames[kind].append(
+                    save_maps(
+                        stage,
+                        records[area],
+                        kind,
+                        area,
+                        profile["region" if area == "regional" else "wide"],
+                        extents[area],
+                        province,
+                        cities if area == "regional" else [],
+                        airports,
+                        initial,
+                    )
                 )
-            records.append(
-                {
-                    "profile": args.profile,
-                    "area": area,
-                    "lat": lat[region],
-                    "lon": lon[region],
-                    "cloud": fields["cloud"][region],
-                    "rain": fields["rain"][region],
-                    "valid_time": info["valid_utc"],
-                    "label": datetime.fromisoformat(info["valid_utc"])
-                    .astimezone(BJT)
-                    .strftime("%m-%d %H:%M BJT"),
-                }
-            )
-            diagnostics.append({"area": area, "domain": domain, **info})
-        for kind in TITLES:
-            frames[kind].append(
-                save_maps(
-                    stage,
-                    records,
-                    kind,
-                    area,
-                    profile["region" if area == "regional" else "wide"],
-                    extent,
-                    province,
-                    cities if area == "regional" else [],
-                    airports,
-                    initial,
-                )
-            )
+        LOG.info("Drawing areas=%s seconds=%.1f", areas, time.monotonic() - started)
+        del records
     if signature(args, choose_sources(args.input)) != fingerprint:
         raise RuntimeError("Input or rendering dependencies changed; refusing bundle")
     atomic_json(stage / "diagnostics.json", {"records": diagnostics})
