@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 from export_ningxia_download import export
-from netCDF4 import Dataset, stringtochar
+from netCDF4 import Dataset, chartostring, stringtochar
 
 
 def source_file(path: Path) -> None:
@@ -67,16 +67,22 @@ def test_export_values_time_crop_and_cache(tmp_path: Path) -> None:
     target = index.parent / metadata["file"]
     before = target.stat().st_mtime_ns
     with Dataset(target) as ds:
-        assert ds["precipitation_1h"].shape == (24, 3, 3)
-        np.testing.assert_allclose(ds["precipitation_1h"][:].compressed(), 3.75)
-        np.testing.assert_allclose(ds["solid_precipitation_1h"][:].compressed(), 1.5)
-        np.testing.assert_allclose(ds["composite_reflectivity"][:].compressed(), 20)
-        np.testing.assert_allclose(ds["visibility"][:].compressed(), 3000)
-        assert ds["visibility"].source_variable == "VIS_MIN"
-        np.testing.assert_allclose(ds["hour_bounds"][0], [12, 13])
-        np.testing.assert_allclose(ds["bounds_24h"][:], [[12, 36]])
-        np.testing.assert_allclose(ds["precipitation_24h"][:].compressed(), 90)
-        assert ds["precipitation_1h"].filters()["zlib"]
+        assert ds["RAIN_1H"].shape == (24, 3, 3)
+        assert ds["RAIN_1H"].dimensions == ("Time", "south_north", "west_east")
+        assert ds["XLAT"].shape == (24, 3, 3)
+        assert not any("bound" in key for key in ds.variables)
+        np.testing.assert_allclose(ds["RAIN_1H"][:].compressed(), 3.75)
+        np.testing.assert_allclose(ds["SOLID_1H"][:].compressed(), 1.5)
+        np.testing.assert_allclose(ds["MDBZ"][:].compressed(), 20)
+        np.testing.assert_allclose(ds["VIS_MIN"][:].compressed(), 3000)
+        assert ds["VIS_MIN"].source_variable == "VIS_MIN"
+        assert chartostring(ds["Times"][:])[0] == "2026-11-22_13:00:00"
+        assert chartostring(ds["Times_START"][:])[0] == "2026-11-22_12:00:00"
+        assert chartostring(ds["Times_24H"][:])[0] == "2026-11-23_12:00:00"
+        assert chartostring(ds["Times_24H_START"][:])[0] == "2026-11-22_12:00:00"
+        np.testing.assert_allclose(ds["XTIME"][:], np.arange(13, 37) * 60)
+        np.testing.assert_allclose(ds["RAIN_24H"][:].compressed(), 90)
+        assert ds["RAIN_1H"].filters()["zlib"]
     export(source, index.parent)
     assert target.stat().st_mtime_ns == before
 
@@ -90,6 +96,23 @@ def test_invalid_units_do_not_publish(tmp_path: Path) -> None:
         export(source, tmp_path / "download")
     assert not (tmp_path / "download/index.json").exists()
     assert not (tmp_path / "download/.ningxia.partial.nc").exists()
+
+
+def test_vis_fallback_keeps_actual_variable_name(tmp_path: Path) -> None:
+    import json
+
+    source = tmp_path / "wrfout_d02_test"
+    source_file(source)
+    with Dataset(source, "a") as ds:
+        ds.renameVariable("VIS_MIN", "VIS")
+        ds.GRID_ID = 2
+    index = export(source, tmp_path / "download")
+    metadata = json.loads(index.read_text())
+    assert metadata["domain"] == "d02"
+    with Dataset(index.parent / metadata["file"]) as ds:
+        assert "VIS_MIN" not in ds.variables
+        assert ds["VIS"].time_kind == "instantaneous"
+        np.testing.assert_allclose(ds["VIS"][:].compressed(), 3000)
 
 
 def test_recent_counts_completed_runs(tmp_path: Path, monkeypatch) -> None:

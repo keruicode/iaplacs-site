@@ -13,7 +13,7 @@ from pathlib import Path
 
 LOG = logging.getLogger(__name__)
 REGION = (104.0, 107.8, 35.0, 39.7)
-VERSION = 1
+VERSION = 2
 
 
 def sha256(path: Path) -> str:
@@ -27,7 +27,7 @@ def sha256(path: Path) -> str:
 def export(source: Path, output: Path) -> Path:
     """Read one stable run; write float32 products with missing values preserved."""
     import numpy as np
-    from netCDF4 import Dataset, chartostring
+    from netCDF4 import Dataset, chartostring, stringtochar
     from render_work_visibility import quality_control, visibility_variable
     from render_yunnan_radar import composite_reflectivity
     from supercooled_water_path import G, integrate_paths, thermodynamics
@@ -89,11 +89,13 @@ def export(source: Path, output: Path) -> Path:
             ys, xs = slice(yy.min(), yy.max() + 1), slice(xx.min(), xx.max() + 1)
             spatial_mask = ~inside[ys, xs]
             shape = spatial_mask.shape
-            nc.createDimension("time", len(indices))
-            nc.createDimension("y", shape[0])
-            nc.createDimension("x", shape[1])
-            nc.createDimension("bounds", 2)
-            nc.Conventions = "CF-1.8"
+            nc.createDimension("Time", len(indices))
+            nc.createDimension("south_north", shape[0])
+            nc.createDimension("west_east", shape[1])
+            nc.createDimension("DateStrLen", 19)
+            nc.time_zone = "UTC; add 8 hours for Beijing time"
+            nc.START_DATE = times[0].strftime("%Y-%m-%d_%H:%M:%S")
+            nc.description = "WRF-style derived products, not a WRF restart file"
             nc.title = "Ningxia regional forecast numerical products"
             nc.source_file = source.name
             nc.source_domain = f"d{int(getattr(ds, 'GRID_ID', 1)):02d}"
@@ -107,32 +109,57 @@ def export(source: Path, output: Path) -> Path:
                 if key in ds.ncattrs():
                     nc.setncattr(key, ds.getncattr(key))
             for name, data, units in (
-                ("latitude", lat[ys, xs], "degrees_north"),
-                ("longitude", lon[ys, xs], "degrees_east"),
+                ("XLAT", lat[ys, xs], "degrees_north"),
+                ("XLONG", lon[ys, xs], "degrees_east"),
             ):
-                v = nc.createVariable(name, "f4", ("y", "x"), zlib=True, complevel=4)
-                v[:] = data
-                v.units = units
-                v.standard_name = name
-            epoch = times[0]
-            time_units = f"hours since {epoch:%Y-%m-%d %H:%M:%S} +00:00"
-
-            def add_time(name: str, entries: list[int]) -> None:
-                v = nc.createVariable(name, "f8", (name,))
-                v.units, v.calendar, v.standard_name = time_units, "standard", "time"
-                v[:] = [(times[i] - epoch).total_seconds() / 3600 for i in entries]
-
-            add_time("time", indices)
-            bounds = nc.createVariable("hour_bounds", "f8", ("time", "bounds"))
-            bounds.units = time_units
-            bounds[:] = [[i - 1, i] for i in indices]
-            fields = {}
-
-            def variable(name: str, units: str, description: str, dim: str = "time"):
                 v = nc.createVariable(
                     name,
                     "f4",
-                    (dim, "y", "x"),
+                    ("Time", "south_north", "west_east"),
+                    zlib=True,
+                    complevel=4,
+                )
+                v[:] = data
+                v.units = units
+                v.standard_name = "latitude" if name == "XLAT" else "longitude"
+            epoch = times[0]
+            time_units = f"minutes since {epoch:%Y-%m-%d %H:%M:%S} +00:00"
+
+            def add_time(dim: str, entries: list[int], hours: int) -> None:
+                suffix = "" if dim == "Time" else dim.removeprefix("Time")
+                v = nc.createVariable(f"XTIME{suffix}", "f8", (dim,))
+                v.units, v.calendar, v.standard_name = time_units, "standard", "time"
+                v[:] = [(times[i] - epoch).total_seconds() / 60 for i in entries]
+                for label, offset in (
+                    (f"Times{suffix}", 0),
+                    (f"Times{suffix}_START", hours),
+                ):
+                    text = nc.createVariable(label, "S1", (dim, "DateStrLen"))
+                    text[:] = stringtochar(
+                        np.array(
+                            [
+                                (times[i] - timedelta(hours=offset)).strftime(
+                                    "%Y-%m-%d_%H:%M:%S"
+                                )
+                                for i in entries
+                            ],
+                            dtype="S19",
+                        )
+                    )
+                    text.description = (
+                        "UTC interval start"
+                        if offset
+                        else "UTC valid time / interval end"
+                    )
+
+            add_time("Time", indices, 1)
+            fields = {}
+
+            def variable(name: str, units: str, description: str, dim: str = "Time"):
+                v = nc.createVariable(
+                    name,
+                    "f4",
+                    (dim, "south_north", "west_east"),
                     zlib=True,
                     complevel=4,
                     shuffle=True,
@@ -140,7 +167,9 @@ def export(source: Path, output: Path) -> Path:
                     chunksizes=(1, min(shape[0], 128), min(shape[1], 128)),
                 )
                 v.units, v.long_name = units, description
-                v.coordinates = f"{dim} latitude longitude"
+                v.description = description
+                if dim == "Time":
+                    v.coordinates = "XTIME XLAT XLONG"
                 fields[name] = {"units": units, "description": description}
                 return v
 
@@ -183,24 +212,24 @@ def export(source: Path, output: Path) -> Path:
                 # Website clips negative accumulation differences to zero.
                 return np.maximum(delta, 0)
 
-            rain = variable(
-                "precipitation_1h", "mm", "Hourly precipitation; website formula"
-            )
+            rain = variable("RAIN_1H", "mm", "Hourly precipitation; website formula")
             rain.source_variables = "+".join(rain_names)
-            rain.time_bounds = "hour_bounds"
+            rain.interval_start = "Times_START"
+            rain.interval_end = "Times"
             frozen = None
             if frozen_names:
                 frozen = variable(
-                    "solid_precipitation_1h",
+                    "SOLID_1H",
                     "mm",
                     "Hourly snow + graupel + hail water equivalent",
                 )
                 frozen.source_variables = "+".join(frozen_names)
-                frozen.time_bounds = "hour_bounds"
+                frozen.interval_start = "Times_START"
+                frozen.interval_end = "Times"
             vis_source = visibility_variable(ds, "auto")
             vis = None
             if vis_source is not None:
-                vis = variable("visibility", "m", "Lowest model layer visibility")
+                vis = variable(vis_source.name, "m", "Lowest model layer visibility")
                 vis.source_variable = vis_source.name
                 vis.time_kind = (
                     "hourly_minimum"
@@ -222,7 +251,7 @@ def export(source: Path, output: Path) -> Path:
                 if getattr(ds["DBZ"], "units", "").strip().lower() not in ("", "dbz"):
                     raise ValueError("Unsupported DBZ units")
                 radar = variable(
-                    "composite_reflectivity",
+                    "MDBZ",
                     "dBZ",
                     "Maximum valid native DBZ over model levels",
                 )
@@ -237,7 +266,7 @@ def export(source: Path, output: Path) -> Path:
                     raise ValueError("T must be dry perturbation potential temperature")
                 for kind in ("cloud", "rain"):
                     water[kind] = variable(
-                        f"supercooled_{kind}_water_path",
+                        f"SLWP_{kind.upper()}",
                         "g m-2",
                         f"Vertically integrated {kind} liquid water at T < 273.15 K",
                     )
@@ -267,20 +296,18 @@ def export(source: Path, output: Path) -> Path:
                 ]
                 if not ends:
                     continue
-                dim = f"time_{hours}h"
+                dim = f"Time_{hours}H"
                 nc.createDimension(dim, len(ends))
-                add_time(dim, ends)
-                bv = nc.createVariable(f"bounds_{hours}h", "f8", (dim, "bounds"))
-                bv.units = time_units
-                bv[:] = [[i - hours, i] for i in ends]
-                nc[dim].bounds = bv.name
+                add_time(dim, ends, hours)
                 v = variable(
-                    f"precipitation_{hours}h",
+                    f"RAIN_{hours}H",
                     "mm",
                     f"{hours}-hour precipitation after spin-up",
                     dim,
                 )
                 v.source_variables = "+".join(rain_names)
+                v.interval_start = f"Times_{hours}H_START"
+                v.interval_end = f"Times_{hours}H"
                 v.cell_methods = f"{dim}: sum"
                 for row, i in enumerate(ends):
                     store(v, row, accumulation(rain_names, i - hours, i))

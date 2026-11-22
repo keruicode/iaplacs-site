@@ -47,7 +47,28 @@ The package includes available website numerical fields:
 Optional missing source fields are omitted and listed accurately in the index.
 Missing cells remain missing, not zero. Native float32 output uses zlib/shuffle,
 no quantization or reduced grid resolution. Coordinates, UTC times, interval
-bounds, units, source domain, input signature and helper hashes are retained.
+start/end strings, units, source domain, input signature and helper hashes are retained.
+
+### WRF-style Download Layout (Exporter Version 2)
+
+Dimensions use `Time`, `south_north`, `west_east`, and `DateStrLen`.
+`Times` contains UTC `YYYY-MM-DD_HH:MM:SS` strings, as in WRF; `XTIME` is
+minutes since initialization. `XLAT`/`XLONG` use WRF's three-dimensional layout.
+Hourly interval starts are readable in `Times_START`; `Times` is the end.
+Accumulations use `Time_12H`/`Time_24H`, with `Times_12H`/`Times_24H` and
+corresponding `_START` strings. There are no numeric `bounds` variables.
+
+| Variable | Meaning |
+| --- | --- |
+| `RAIN_1H`, `RAIN_12H`, `RAIN_24H` | Interval precipitation in mm, not cumulative RAINNC |
+| `SOLID_1H` | Hourly snow/graupel/hail water equivalent, mm |
+| `VIS_MIN` or `VIS` | Actual selected source name, lowest model layer, m |
+| `MDBZ` | Quality-controlled vertical maximum of native DBZ, dBZ |
+| `SLWP_CLOUD`, `SLWP_RAIN` | Supercooled cloud/rain column water paths, g/m2 |
+
+These are derived website products, not full WRF output/restart files.
+No vertical dimension is invented for a column integral or lowest-layer field.
+Version 2 changes names/layout only; numerical algorithms are unchanged.
 
 Objects are stored under the existing retention-managed run prefix:
 `data/current/maps/worknx_summary_YYYYMMDD_HH/downloads/`.
