@@ -90,3 +90,48 @@ def test_invalid_units_do_not_publish(tmp_path: Path) -> None:
         export(source, tmp_path / "download")
     assert not (tmp_path / "download/index.json").exists()
     assert not (tmp_path / "download/.ningxia.partial.nc").exists()
+
+
+def test_recent_counts_completed_runs(tmp_path: Path, monkeypatch) -> None:
+    import os
+    import shutil
+    import subprocess
+
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    bins = tmp_path / "bin"
+    bins.mkdir()
+    script = Path(__file__).parents[1] / "publish_ningxia_downloads.sh"
+    shutil.copy2(script, scripts / script.name)
+    (scripts / "runtime_paths.sh").write_text(
+        f'IAPLACS_SCRIPT_DIR="{scripts}"\n'
+        f'iaplacs_runtime_root() {{ printf "%s\\n" "{tmp_path}"; }}\n'
+    )
+    (scripts / "plot_scheduler.sh").write_text("iaplacs_plot_entry() { :; }\n")
+    (scripts / "upload_ningxia_download.sh").write_text(
+        f'printf "%s\\n" "$1" >> "{tmp_path}/uploaded"\n'
+    )
+    for name, text in {
+        "flock": "#!/bin/bash\nexit 0\n",
+        "python": "#!/bin/bash\nexit 0\n",
+        "find": "#!/bin/bash\nprintf '%s\\n' 2026112212 2026112206 2026112200 2026112118\n",
+    }.items():
+        target = bins / name
+        target.write_text(text)
+        target.chmod(0o755)
+    for run in ("2026112212", "2026112206", "2026112200", "2026112118"):
+        folder = tmp_path / "model" / run / "gfs/wrf"
+        folder.mkdir(parents=True)
+        (folder / "rsl.error.0000").write_text(
+            "still running\n" if run == "2026112212" else "SUCCESS COMPLETE WRF\n"
+        )
+        stamp = f"{run[:4]}-{run[4:6]}-{run[6:8]}_{run[8:]}:00:00"
+        (folder / f"wrfout_d01_{stamp}").touch()
+    monkeypatch.setenv("PATH", f"{bins}:{os.environ['PATH']}")
+    monkeypatch.setenv("PYTHON_BIN", str(bins / "python"))
+    monkeypatch.setenv("NINGXIA_DOWNLOAD_MODEL_ROOT", str(tmp_path / "model"))
+    subprocess.run(["bash", str(scripts / script.name), "--recent", "2"], check=True)
+    assert (tmp_path / "uploaded").read_text().splitlines() == [
+        "20261122_06",
+        "20261122_00",
+    ]

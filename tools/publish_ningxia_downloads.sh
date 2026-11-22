@@ -13,7 +13,8 @@ case "$mode" in
   --recent)
     count="${2:-5}"
     [[ "$count" =~ ^[1-9]$ ]] || exit 64
-    mapfile -t runs < <(find "$model" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | grep -E '^[0-9]{10}$' | sort -r | head -n "$count") ;;
+    runs=()
+    while IFS= read -r run; do runs+=("$run"); done < <(find "$model" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | grep -E '^[0-9]{10}$' | sort -r) ;;
   --run|--render-only)
     run="${2:-}"
     run="${run/_/}"
@@ -25,6 +26,7 @@ mkdir -p "$output"
 exec 6>"$output/.export.lock"
 flock -n 6 || exit 75
 failed=0
+completed=0
 for run in "${runs[@]}"; do
   wrf="$model/$run/gfs/wrf"
   [[ -f "$wrf/rsl.error.0000" ]] || continue
@@ -33,6 +35,8 @@ for run in "${runs[@]}"; do
   source="$wrf/wrfout_d01_$stamp"
   [[ ! -f "$wrf/wrfout_d02_$stamp" ]] || source="$wrf/wrfout_d02_$stamp"
   [[ -f "$source" ]] || continue
+  completed=$((completed + 1))
+  if [[ "$mode" == --recent ]] && (( completed > count )); then break; fi
   prefix="${run:0:8}_${run:8:2}"
   destination="$output/$prefix"
   if ! "$python" "$IAPLACS_SCRIPT_DIR/export_ningxia_download.py" --input "$source" --output "$destination"; then
