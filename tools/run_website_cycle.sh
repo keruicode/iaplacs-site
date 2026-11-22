@@ -2,6 +2,12 @@
 set -Eeuo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/runtime_paths.sh"
 
+selected_service=""
+if (( $# )); then
+  [[ $# == 2 && "$1" == --service ]] || exit 64
+  case "$2" in ningxia|xinjiang|yunnan) selected_service="$2" ;; *) exit 64 ;; esac
+fi
+
 root="$(iaplacs_runtime_root "$IAPLACS_SCRIPT_DIR")"
 mkdir -p "$root/state/plot-cycle"
 # Also exclude concurrent manual compute allocations, not just cron submissions.
@@ -51,10 +57,14 @@ fi
 services=(ningxia xinjiang yunnan)
 for offset in 0 1 2; do
   service="${services[$(((start + offset) % 3))]}"
+  [[ -z "$selected_service" || "$selected_service" == "$service" ]] || continue
   # Preserve nested-grid/source-signature checks without a separate cron process.
   if [[ "$service" == yunnan ]]; then
     run_stage "$IAPLACS_SCRIPT_DIR/publish_workyn_yunnan_airports_if_new.sh" || true
   fi
   run_stage "$IAPLACS_SCRIPT_DIR/audit_iap_forecast_publication.sh" --service "$service" || true
+  if [[ "$service" == ningxia && -f "$root/config/ningxia-downloads.enabled" ]]; then
+    run_stage "$IAPLACS_SCRIPT_DIR/publish_ningxia_downloads.sh" --recent 5 || true
+  fi
 done
 exit "$failed"

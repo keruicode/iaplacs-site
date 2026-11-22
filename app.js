@@ -902,6 +902,7 @@ function render() {
   renderForecastViewMode(product, selectedFrame);
   renderForecastHourTimeline(product, selectedFrame);
   renderMetrics(product, run);
+  window.updateRegionalDataDownload?.(run, pageConfig.service, activeDataSource().id);
   renderProductNote(run, product, frame);
   renderAirportFeedback();
   updateControls(product);
@@ -945,6 +946,7 @@ function updateControls(product) {
 }
 
 function renderEmpty() {
+  window.updateRegionalDataDownload?.(null, pageConfig.service, activeDataSource().id);
   setText(els.updateLabel, `${activeDataSource().label} | 暂无数据`);
   setText(els.productTitle, "暂无可显示产品");
   setText(els.productUnit, "--");
