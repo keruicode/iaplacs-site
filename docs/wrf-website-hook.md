@@ -20,10 +20,29 @@ publication through the existing publishers. Busy invocations defer to cron.
 The hook does not bypass `afterok`, and failed WRF runs with usable output remain
 the responsibility of the existing audit policy.
 
+The two-minute cycle checks only the latest completed/output run of each service,
+sequentially in the existing allocation. Numerical thread caps and the global
+nonblocking cycle lock remain unchanged. After all current chart checks, it
+checks the latest Ningxia NC download. Every 20 minutes one service receives a
+historical audit (five output runs, up to eight model runs); the service rotates,
+so all three receive a historical audit in approximately one hour. Actual timing
+depends on job duration and queue availability. Maintenance is deferred when a
+current stage fails, and targeted WRF hook calls do not run history maintenance.
+The first cycle initializes the maintenance clock without immediately doing a
+full history scan. A failed maintenance service does not prevent rotation.
+
+Cycle logs include stage start/end and elapsed seconds. Product publishers may
+still combine rendering and upload in one stage; do not interpret that elapsed
+time as pure upload time. The auditor drains listing pipelines instead of using
+early-closing `head`, preventing SIGPIPE/exit 141 under `pipefail`. A successful
+priority visibility check is reused within that audit, but a failed/busy check
+does not suppress the later retry.
+
 ## NetCDF Downloads
 
 `config/ningxia-downloads.enabled` enables the independent download stage after
-the Ningxia audit. `publish_ningxia_downloads.sh --recent 5` checks completed
+the current chart audits. The fast cycle uses `--recent 1`; Ningxia historical
+maintenance uses `publish_ningxia_downloads.sh --recent 5` to check completed
 model runs; `--render-only YYYYMMDD_HH` writes locally without uploading.
 The latter still requires a live compute allocation.
 

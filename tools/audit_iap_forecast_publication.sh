@@ -25,6 +25,7 @@ SERVICE=all
 MISSING_RENDER_REPAIRS=0
 ACTION_FAILURES=0
 ACTION_SUCCEEDED=0
+PRIORITY_VISIBILITY_RUN=""
 PUBLISH_RETRY_ATTEMPTS="${PUBLISH_RETRY_ATTEMPTS:-3}"
 PUBLISH_RETRY_DELAY_SECONDS="${PUBLISH_RETRY_DELAY_SECONDS:-15}"
 [[ "$PUBLISH_RETRY_ATTEMPTS" =~ ^[1-5]$ && "$PUBLISH_RETRY_DELAY_SECONDS" =~ ^[0-9]{1,3}$ ]] || {
@@ -222,7 +223,7 @@ list_output_runs() {
   find "$root" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' \
     | awk '/^[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]_[0-9][0-9]$/ { print }' \
     | sort -nr \
-    | head -n "$OUTPUT_AUDIT_RUNS"
+    | sed -n "1,${OUTPUT_AUDIT_RUNS}p"
 }
 
 # IAP itself has no public DNS. Fetch the browser-facing catalog once through
@@ -261,6 +262,7 @@ PY
   public_product_exists "$service" "$prefix$run" "${service}_visibility" || arguments+=(--ensure-public)
   log "PRIORITY visibility $run before historical repair (independent product lock)"
   run_action "$IAPLACS_SCRIPT_DIR/publish_work_visibility.sh" "${arguments[@]}"
+  if (( ACTION_SUCCEEDED )); then PRIORITY_VISIBILITY_RUN="$run"; fi
 }
 
 public_windows() {
@@ -338,7 +340,7 @@ PY
 
   run_directory="${run/_/}"
   nested="$(find "/data1/elpt_2022_00083/zhoubj/WORK_xj/$run_directory/gfs/wrf" \
-    -maxdepth 1 -type f -name 'wrfout_d02_*' -print 2>/dev/null | head -n 1)"
+    -maxdepth 1 -type f -name 'wrfout_d02_*' -print 2>/dev/null | sed -n '1p')"
   if [[ -n "$nested" ]]; then
     nested_count="$(wrf_time_count "$nested")"
     if [[ "$nested_count" =~ ^[0-9]+$ ]] && (( nested_count >= 14 )); then
@@ -380,7 +382,7 @@ audit_ningxia_output() {
     public_product_exists ningxia "$run" ningxia_radar || radar_args+=(--ensure-public)
     run_action "$IAPLACS_SCRIPT_DIR/publish_yunnan_radar.sh" "${radar_args[@]}"
   fi
-  if [[ "$run" > "20261027_17" ]]; then
+  if [[ "$run" > "20261027_17" && "$run" != "$PRIORITY_VISIBILITY_RUN" ]]; then
     local visibility_args=(--run "$run")
     public_product_exists ningxia "$run" ningxia_visibility || visibility_args+=(--ensure-public)
     run_action "$IAPLACS_SCRIPT_DIR/publish_work_visibility.sh" "${visibility_args[@]}"
@@ -423,7 +425,7 @@ audit_xinjiang_output() {
     public_product_exists xinjiang "$run" xinjiang_radar || radar_args+=(--ensure-public)
     run_action "$IAPLACS_SCRIPT_DIR/publish_yunnan_radar.sh" "${radar_args[@]}"
   fi
-  if [[ "$run" > "20261029_23" ]]; then
+  if [[ "$run" > "20261029_23" && "$run" != "$PRIORITY_VISIBILITY_RUN" ]]; then
     local visibility_args=(--run "$run" --profile xinjiang)
     public_product_exists xinjiang "$run" xinjiang_visibility || visibility_args+=(--ensure-public)
     run_action "$IAPLACS_SCRIPT_DIR/publish_work_visibility.sh" "${visibility_args[@]}"
@@ -445,7 +447,7 @@ audit_xinjiang_output() {
     run_action "$IAPLACS_SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh" --latest
     return
   fi
-  latest_run="$(list_output_runs "$SCRIPT_DIR/workxj_xinjiang_overview" | head -n 1)"
+  latest_run="$(list_output_runs "$SCRIPT_DIR/workxj_xinjiang_overview" | sed -n '1p')"
   if [[ "$run" == "$latest_run" ]] && ! xinjiang_aviation_is_current "$run" "$output"; then
     log "XINJIANG $run aviation output missing or stale; rerender exact run"
     run_action "$IAPLACS_SCRIPT_DIR/publish_workxj_xinjiang_to_github.sh" --run "$run"
@@ -473,7 +475,7 @@ audit_xinjiang_output() {
 
 audit_yunnan_output() {
   local run="$1" output="$SCRIPT_DIR/worknx_yunnan_airports_overview/$run"
-  if [[ "$run" > "20261029_23" ]]; then
+  if [[ "$run" > "20261029_23" && "$run" != "$PRIORITY_VISIBILITY_RUN" ]]; then
     local visibility_args=(--run "$run" --profile yunnan)
     public_product_exists airport "airport_yunnan_$run" airport_visibility || visibility_args+=(--ensure-public)
     run_action "$IAPLACS_SCRIPT_DIR/publish_work_visibility.sh" "${visibility_args[@]}"

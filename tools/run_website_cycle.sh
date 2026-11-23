@@ -29,12 +29,15 @@ start=0
 printf '%s\n' "$(((start + 1) % 3))" > "$rotation.tmp.$$"
 mv "$rotation.tmp.$$" "$rotation"
 run_stage() {
-  local status
+  local status started=$SECONDS
+  printf '%s stage=start command=%s\n' "$(date '+%FT%T%z')" "$*"
   # A subprocess keeps each script's errexit semantics intact.
   set +e
   bash "$@" </dev/null
   status=$?
   set -e
+  printf '%s stage=end exit=%s elapsed_seconds=%s command=%s\n' \
+    "$(date '+%FT%T%z')" "$status" "$((SECONDS - started))" "$*"
   if (( status != 0 )); then
     printf 'WARNING: stage=%s exit=%s; continuing other services\n' "$1" "$status" >&2
     failed=1
@@ -62,9 +65,40 @@ for offset in 0 1 2; do
   if [[ "$service" == yunnan ]]; then
     run_stage "$IAPLACS_SCRIPT_DIR/publish_workyn_yunnan_airports_if_new.sh" || true
   fi
-  run_stage "$IAPLACS_SCRIPT_DIR/audit_iap_forecast_publication.sh" --service "$service" || true
+  OUTPUT_AUDIT_RUNS=1 MODEL_AUDIT_RUNS=1 run_stage \
+    "$IAPLACS_SCRIPT_DIR/audit_iap_forecast_publication.sh" --service "$service" || true
+done
+
+# Current charts in every service take priority over NC and historical repairs.
+if [[ -z "$selected_service" || "$selected_service" == ningxia ]] && \
+   [[ -f "$root/config/ningxia-downloads.enabled" ]]; then
+  run_stage "$IAPLACS_SCRIPT_DIR/publish_ningxia_downloads.sh" --recent 1 || true
+fi
+
+# One service's history every 20 minutes: a full rotation takes about an hour.
+# No background workers; skip maintenance when current publication needs retry.
+history_state="$root/state/plot-cycle/history-slot"
+history_slot=$(( $(date +%s) / 1200 ))
+previous_slot="$history_slot"
+history_service=0
+if [[ -f "$history_state" ]]; then
+  read -r previous_slot history_service < "$history_state" || true
+fi
+[[ "$previous_slot" =~ ^[0-9]+$ ]] || previous_slot="$history_slot"
+[[ "$history_service" =~ ^[012]$ ]] || history_service=0
+if [[ -z "$selected_service" ]] && (( failed == 0 && previous_slot != history_slot )); then
+  service="${services[$history_service]}"
+  OUTPUT_AUDIT_RUNS=5 MODEL_AUDIT_RUNS=8 run_stage \
+    "$IAPLACS_SCRIPT_DIR/audit_iap_forecast_publication.sh" --service "$service" || true
   if [[ "$service" == ningxia && -f "$root/config/ningxia-downloads.enabled" ]]; then
     run_stage "$IAPLACS_SCRIPT_DIR/publish_ningxia_downloads.sh" --recent 5 || true
   fi
-done
+  # Advance even after failure so one broken region cannot starve the others.
+  history_service=$(((history_service + 1) % 3))
+  previous_slot="$history_slot"
+fi
+if [[ -z "$selected_service" ]]; then
+  printf '%s %s\n' "$previous_slot" "$history_service" > "$history_state.tmp.$$"
+  mv "$history_state.tmp.$$" "$history_state"
+fi
 exit "$failed"
