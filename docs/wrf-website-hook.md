@@ -49,9 +49,10 @@ Missing cells remain missing, not zero. Native float32 output uses zlib/shuffle,
 no quantization or reduced grid resolution. Coordinates, UTC times, interval
 start/end strings, units, source domain, input signature and helper hashes are retained.
 
-### Simplified Download Layout (Exporter Version 3)
+### Simplified Download Layout (Exporter Version 4)
 
-Only the necessary array dimensions `Time`, `south_north`, `west_east` remain;
+Only necessary array dimensions remain: `Time`, `south_north`, `west_east`,
+and `Time_12H`/`Time_24H` when those accumulation products are available;
 there are no numeric dimension-coordinate variables. `Times(Time)` is a NetCDF
 string array of UTC `YYYY-MM-DD_HH:MM:SS` values, not a character-code matrix.
 This uses readable WRF-style dates but not WRF's S1/DateStrLen storage encoding.
@@ -59,10 +60,13 @@ This uses readable WRF-style dates but not WRF's S1/DateStrLen storage encoding.
 There are no `XTIME`, `bounds`, extra time variables or Lambert projection
 attributes. Geographic coordinates remain available for mapping.
 
-All products share `Times`. Accumulations record `interval_start` and
-`interval_end` rules on the variable, plus explicit `available_intervals_utc`.
-12/24-hour fields contain data only at eligible complete 08/20 BJT windows;
-other time slices are missing, never filled with zero or duplicated forecasts.
+Hourly products share `Times`. Accumulations have compact independent dimensions
+whose lengths equal the actual eligible complete 08/20 BJT windows. Their
+`interval_start` and `interval_end` attributes contain semicolon-separated UTC
+timestamps in the same order as the records, with `interval_order` documenting
+this mapping. No empty hourly slots, extra time variables, or zero-filled
+forecasts are added. A typical 36-hour run has 24 hourly records, two 12-hour
+accumulations and one 24-hour accumulation; counts are calculated, not hardcoded.
 
 | Variable | Meaning |
 | --- | --- |
@@ -75,7 +79,7 @@ other time slices are missing, never filled with zero or duplicated forecasts.
 These are derived website products, not full WRF output/restart files.
 No vertical dimension is invented for a column integral or lowest-layer field.
 SLWP means Supercooled Liquid Water Path. `SLWP_CLOUD` and `SLWP_RAIN` are the
-cloud and rain contributions. Version 3 changes layout only; numerical algorithms
+cloud and rain contributions. Version 4 changes layout only; numerical algorithms
 and the selected time windows are unchanged.
 
 Objects are stored under the existing retention-managed run prefix:

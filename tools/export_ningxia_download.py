@@ -13,7 +13,7 @@ from pathlib import Path
 
 LOG = logging.getLogger(__name__)
 REGION = (104.0, 107.8, 35.0, 39.7)
-VERSION = 3
+VERSION = 4
 
 
 def sha256(path: Path) -> str:
@@ -129,11 +129,11 @@ def export(source: Path, output: Path) -> Path:
             text.description = "UTC valid time / accumulation interval end"
             fields = {}
 
-            def variable(name: str, units: str, description: str):
+            def variable(name: str, units: str, description: str, dim: str = "Time"):
                 v = nc.createVariable(
                     name,
                     "f4",
-                    ("Time", "south_north", "west_east"),
+                    (dim, "south_north", "west_east"),
                     zlib=True,
                     complevel=4,
                     shuffle=True,
@@ -143,7 +143,8 @@ def export(source: Path, output: Path) -> Path:
                 v.units, v.long_name = units, description
                 v.description = description
                 v.coordinates = "XLAT XLONG"
-                v.time_variable = "Times"
+                if dim == "Time":
+                    v.time_variable = "Times"
                 fields[name] = {"units": units, "description": description}
                 return v
 
@@ -270,25 +271,33 @@ def export(source: Path, output: Path) -> Path:
                 ]
                 if not ends:
                     continue
+                dim = f"Time_{hours}H"
+                nc.createDimension(dim, len(ends))
                 v = variable(
                     f"RAIN_{hours}H",
                     "mm",
                     f"{hours}-hour precipitation after spin-up",
+                    dim,
                 )
                 v.source_variables = "+".join(rain_names)
-                v.interval_start = f"Times minus {hours} hours (UTC)"
-                v.interval_end = "Times (UTC); only complete windows ending 08/20 BJT"
+                v.interval_start = "; ".join(
+                    f"{times[i-hours]:%Y-%m-%d_%H:%M:%S}" for i in ends
+                )
+                v.interval_end = "; ".join(
+                    f"{times[i]:%Y-%m-%d_%H:%M:%S}" for i in ends
+                )
+                v.interval_time_zone = "UTC"
+                v.interval_order = (
+                    f"Semicolon-separated entries follow {dim} index order"
+                )
                 v.available_intervals_utc = "; ".join(
                     f"{times[i-hours]:%Y-%m-%d_%H:%M:%S} to "
                     f"{times[i]:%Y-%m-%d_%H:%M:%S}"
                     for i in ends
                 )
-                v.missing_time_policy = (
-                    "Other Times are not published; missing, not zero"
-                )
-                v.cell_methods = "Time: sum"
-                for i in ends:
-                    store(v, indices.index(i), accumulation(rain_names, i - hours, i))
+                v.cell_methods = f"{dim}: sum"
+                for row, i in enumerate(ends):
+                    store(v, row, accumulation(rain_names, i - hours, i))
             domain = nc.source_domain
             init = nc.forecast_reference_time
         after = source.stat()

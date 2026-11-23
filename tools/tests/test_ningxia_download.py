@@ -8,12 +8,12 @@ from export_ningxia_download import export
 from netCDF4 import Dataset, stringtochar
 
 
-def source_file(path: Path) -> None:
+def source_file(path: Path, hours: int = 37) -> None:
     from datetime import datetime, timedelta
 
     with Dataset(path, "w") as ds:
         for name, size in (
-            ("Time", 37),
+            ("Time", hours),
             ("DateStrLen", 19),
             ("south_north", 5),
             ("west_east", 6),
@@ -25,7 +25,7 @@ def source_file(path: Path) -> None:
                 (datetime(2026, 11, 22) + timedelta(hours=i)).strftime(
                     "%Y-%m-%d_%H:%M:%S"
                 )
-                for i in range(37)
+                for i in range(hours)
             ],
             dtype="S19",
         )
@@ -45,7 +45,7 @@ def source_file(path: Path) -> None:
         ):
             v = ds.createVariable(name, "f4", dims)
             v.units = "mm"
-            v[:] = np.arange(37)[:, None, None] * factor
+            v[:] = np.arange(hours)[:, None, None] * factor
         dims4 = ("Time", "bottom_top", "south_north", "west_east")
         v = ds.createVariable("VIS_MIN", "f4", dims4)
         v.units = "m"
@@ -70,7 +70,13 @@ def test_export_values_time_crop_and_cache(tmp_path: Path) -> None:
         assert ds["RAIN_1H"].shape == (24, 3, 3)
         assert ds["RAIN_1H"].dimensions == ("Time", "south_north", "west_east")
         assert ds["XLAT"].shape == (3, 3)
-        assert set(ds.dimensions) == {"Time", "south_north", "west_east"}
+        assert set(ds.dimensions) == {
+            "Time",
+            "south_north",
+            "west_east",
+            "Time_12H",
+            "Time_24H",
+        }
         assert not any("bound" in key for key in ds.variables)
         assert not any(key.startswith("XTIME") for key in ds.variables)
         assert [key for key in ds.variables if key.startswith("Times")] == ["Times"]
@@ -83,12 +89,18 @@ def test_export_values_time_crop_and_cache(tmp_path: Path) -> None:
         assert ds["VIS_MIN"].source_variable == "VIS_MIN"
         assert ds["Times"][0] == "2026-11-22_13:00:00"
         assert ds["Times"][-1] == "2026-11-23_12:00:00"
-        assert ds["RAIN_24H"].shape == (24, 3, 3)
-        assert ds["RAIN_24H"][:-1].mask.all()
-        assert ds["RAIN_12H"][:11].mask.all()
-        assert not ds["RAIN_12H"][11].mask.all()
-        assert ds["RAIN_12H"][12:23].mask.all()
-        assert ds["RAIN_24H"].interval_start == "Times minus 24 hours (UTC)"
+        assert ds["RAIN_24H"].shape == (1, 3, 3)
+        assert ds["RAIN_12H"].shape == (2, 3, 3)
+        assert ds["RAIN_12H"].dimensions == ("Time_12H", "south_north", "west_east")
+        assert not hasattr(ds["RAIN_12H"], "time_variable")
+        assert ds["RAIN_24H"].interval_start == "2026-11-22_12:00:00"
+        assert ds["RAIN_12H"].interval_start == (
+            "2026-11-22_12:00:00; 2026-11-23_00:00:00"
+        )
+        assert ds["RAIN_12H"].interval_end == (
+            "2026-11-23_00:00:00; 2026-11-23_12:00:00"
+        )
+        np.testing.assert_allclose(ds["RAIN_12H"][:].compressed(), 45)
         assert ds["RAIN_24H"].available_intervals_utc == (
             "2026-11-22_12:00:00 to 2026-11-23_12:00:00"
         )
@@ -96,6 +108,21 @@ def test_export_values_time_crop_and_cache(tmp_path: Path) -> None:
         assert ds["RAIN_1H"].filters()["zlib"]
     export(source, index.parent)
     assert target.stat().st_mtime_ns == before
+
+
+def test_longer_run_counts_actual_intervals(tmp_path: Path) -> None:
+    import json
+
+    source = tmp_path / "wrfout_d01_test"
+    source_file(source, hours=49)
+    index = export(source, tmp_path / "download")
+    metadata = json.loads(index.read_text())
+    with Dataset(index.parent / metadata["file"]) as ds:
+        assert ds["RAIN_1H"].shape[0] == 36
+        assert ds["RAIN_12H"].shape[0] == 3
+        assert ds["RAIN_24H"].shape[0] == 2
+        assert len(ds["RAIN_12H"].interval_end.split("; ")) == 3
+        assert len(ds["RAIN_24H"].interval_start.split("; ")) == 2
 
 
 def test_invalid_units_do_not_publish(tmp_path: Path) -> None:
