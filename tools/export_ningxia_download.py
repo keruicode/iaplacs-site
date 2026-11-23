@@ -13,7 +13,7 @@ from pathlib import Path
 
 LOG = logging.getLogger(__name__)
 REGION = (104.0, 107.8, 35.0, 39.7)
-VERSION = 2
+VERSION = 3
 
 
 def sha256(path: Path) -> str:
@@ -27,7 +27,7 @@ def sha256(path: Path) -> str:
 def export(source: Path, output: Path) -> Path:
     """Read one stable run; write float32 products with missing values preserved."""
     import numpy as np
-    from netCDF4 import Dataset, chartostring, stringtochar
+    from netCDF4 import Dataset, chartostring
     from render_work_visibility import quality_control, visibility_variable
     from render_yunnan_radar import composite_reflectivity
     from supercooled_water_path import G, integrate_paths, thermodynamics
@@ -92,7 +92,6 @@ def export(source: Path, output: Path) -> Path:
             nc.createDimension("Time", len(indices))
             nc.createDimension("south_north", shape[0])
             nc.createDimension("west_east", shape[1])
-            nc.createDimension("DateStrLen", 19)
             nc.time_zone = "UTC; add 8 hours for Beijing time"
             nc.START_DATE = times[0].strftime("%Y-%m-%d_%H:%M:%S")
             nc.description = "WRF-style derived products, not a WRF restart file"
@@ -105,7 +104,7 @@ def export(source: Path, output: Path) -> Path:
                 "Derived website products; float32, zlib shuffle; no quantization"
             )
             nc.input_signature = json.dumps(signature, sort_keys=True)
-            for key in ("DX", "DY", "MAP_PROJ", "TRUELAT1", "TRUELAT2", "STAND_LON"):
+            for key in ("DX", "DY"):
                 if key in ds.ncattrs():
                     nc.setncattr(key, ds.getncattr(key))
             for name, data, units in (
@@ -115,51 +114,26 @@ def export(source: Path, output: Path) -> Path:
                 v = nc.createVariable(
                     name,
                     "f4",
-                    ("Time", "south_north", "west_east"),
+                    ("south_north", "west_east"),
                     zlib=True,
                     complevel=4,
                 )
                 v[:] = data
                 v.units = units
                 v.standard_name = "latitude" if name == "XLAT" else "longitude"
-            epoch = times[0]
-            time_units = f"minutes since {epoch:%Y-%m-%d %H:%M:%S} +00:00"
-
-            def add_time(dim: str, entries: list[int], hours: int) -> None:
-                suffix = "" if dim == "Time" else dim.removeprefix("Time")
-                v = nc.createVariable(f"XTIME{suffix}", "f8", (dim,))
-                v.units, v.calendar, v.standard_name = time_units, "standard", "time"
-                v[:] = [(times[i] - epoch).total_seconds() / 60 for i in entries]
-                for label, offset in (
-                    (f"Times{suffix}", 0),
-                    (f"Times{suffix}_START", hours),
-                ):
-                    text = nc.createVariable(label, "S1", (dim, "DateStrLen"))
-                    text[:] = stringtochar(
-                        np.array(
-                            [
-                                (times[i] - timedelta(hours=offset)).strftime(
-                                    "%Y-%m-%d_%H:%M:%S"
-                                )
-                                for i in entries
-                            ],
-                            dtype="S19",
-                        )
-                    )
-                    text.description = (
-                        "UTC interval start"
-                        if offset
-                        else "UTC valid time / interval end"
-                    )
-
-            add_time("Time", indices, 1)
+            text = nc.createVariable("Times", str, ("Time",))
+            text[:] = np.array(
+                [times[i].strftime("%Y-%m-%d_%H:%M:%S") for i in indices],
+                dtype=object,
+            )
+            text.description = "UTC valid time / accumulation interval end"
             fields = {}
 
-            def variable(name: str, units: str, description: str, dim: str = "Time"):
+            def variable(name: str, units: str, description: str):
                 v = nc.createVariable(
                     name,
                     "f4",
-                    (dim, "south_north", "west_east"),
+                    ("Time", "south_north", "west_east"),
                     zlib=True,
                     complevel=4,
                     shuffle=True,
@@ -168,8 +142,8 @@ def export(source: Path, output: Path) -> Path:
                 )
                 v.units, v.long_name = units, description
                 v.description = description
-                if dim == "Time":
-                    v.coordinates = "XTIME XLAT XLONG"
+                v.coordinates = "XLAT XLONG"
+                v.time_variable = "Times"
                 fields[name] = {"units": units, "description": description}
                 return v
 
@@ -214,8 +188,8 @@ def export(source: Path, output: Path) -> Path:
 
             rain = variable("RAIN_1H", "mm", "Hourly precipitation; website formula")
             rain.source_variables = "+".join(rain_names)
-            rain.interval_start = "Times_START"
-            rain.interval_end = "Times"
+            rain.interval_start = "Times minus 1 hour (UTC)"
+            rain.interval_end = "Times (UTC)"
             frozen = None
             if frozen_names:
                 frozen = variable(
@@ -224,8 +198,8 @@ def export(source: Path, output: Path) -> Path:
                     "Hourly snow + graupel + hail water equivalent",
                 )
                 frozen.source_variables = "+".join(frozen_names)
-                frozen.interval_start = "Times_START"
-                frozen.interval_end = "Times"
+                frozen.interval_start = "Times minus 1 hour (UTC)"
+                frozen.interval_end = "Times (UTC)"
             vis_source = visibility_variable(ds, "auto")
             vis = None
             if vis_source is not None:
@@ -296,21 +270,25 @@ def export(source: Path, output: Path) -> Path:
                 ]
                 if not ends:
                     continue
-                dim = f"Time_{hours}H"
-                nc.createDimension(dim, len(ends))
-                add_time(dim, ends, hours)
                 v = variable(
                     f"RAIN_{hours}H",
                     "mm",
                     f"{hours}-hour precipitation after spin-up",
-                    dim,
                 )
                 v.source_variables = "+".join(rain_names)
-                v.interval_start = f"Times_{hours}H_START"
-                v.interval_end = f"Times_{hours}H"
-                v.cell_methods = f"{dim}: sum"
-                for row, i in enumerate(ends):
-                    store(v, row, accumulation(rain_names, i - hours, i))
+                v.interval_start = f"Times minus {hours} hours (UTC)"
+                v.interval_end = "Times (UTC); only complete windows ending 08/20 BJT"
+                v.available_intervals_utc = "; ".join(
+                    f"{times[i-hours]:%Y-%m-%d_%H:%M:%S} to "
+                    f"{times[i]:%Y-%m-%d_%H:%M:%S}"
+                    for i in ends
+                )
+                v.missing_time_policy = (
+                    "Other Times are not published; missing, not zero"
+                )
+                v.cell_methods = "Time: sum"
+                for i in ends:
+                    store(v, indices.index(i), accumulation(rain_names, i - hours, i))
             domain = nc.source_domain
             init = nc.forecast_reference_time
         after = source.stat()

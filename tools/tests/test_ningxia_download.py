@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 from export_ningxia_download import export
-from netCDF4 import Dataset, chartostring, stringtochar
+from netCDF4 import Dataset, stringtochar
 
 
 def source_file(path: Path) -> None:
@@ -69,18 +69,29 @@ def test_export_values_time_crop_and_cache(tmp_path: Path) -> None:
     with Dataset(target) as ds:
         assert ds["RAIN_1H"].shape == (24, 3, 3)
         assert ds["RAIN_1H"].dimensions == ("Time", "south_north", "west_east")
-        assert ds["XLAT"].shape == (24, 3, 3)
+        assert ds["XLAT"].shape == (3, 3)
+        assert set(ds.dimensions) == {"Time", "south_north", "west_east"}
         assert not any("bound" in key for key in ds.variables)
+        assert not any(key.startswith("XTIME") for key in ds.variables)
+        assert [key for key in ds.variables if key.startswith("Times")] == ["Times"]
+        assert ds["Times"].dtype is str
+        assert "MAP_PROJ" not in ds.ncattrs()
         np.testing.assert_allclose(ds["RAIN_1H"][:].compressed(), 3.75)
         np.testing.assert_allclose(ds["SOLID_1H"][:].compressed(), 1.5)
         np.testing.assert_allclose(ds["MDBZ"][:].compressed(), 20)
         np.testing.assert_allclose(ds["VIS_MIN"][:].compressed(), 3000)
         assert ds["VIS_MIN"].source_variable == "VIS_MIN"
-        assert chartostring(ds["Times"][:])[0] == "2026-11-22_13:00:00"
-        assert chartostring(ds["Times_START"][:])[0] == "2026-11-22_12:00:00"
-        assert chartostring(ds["Times_24H"][:])[0] == "2026-11-23_12:00:00"
-        assert chartostring(ds["Times_24H_START"][:])[0] == "2026-11-22_12:00:00"
-        np.testing.assert_allclose(ds["XTIME"][:], np.arange(13, 37) * 60)
+        assert ds["Times"][0] == "2026-11-22_13:00:00"
+        assert ds["Times"][-1] == "2026-11-23_12:00:00"
+        assert ds["RAIN_24H"].shape == (24, 3, 3)
+        assert ds["RAIN_24H"][:-1].mask.all()
+        assert ds["RAIN_12H"][:11].mask.all()
+        assert not ds["RAIN_12H"][11].mask.all()
+        assert ds["RAIN_12H"][12:23].mask.all()
+        assert ds["RAIN_24H"].interval_start == "Times minus 24 hours (UTC)"
+        assert ds["RAIN_24H"].available_intervals_utc == (
+            "2026-11-22_12:00:00 to 2026-11-23_12:00:00"
+        )
         np.testing.assert_allclose(ds["RAIN_24H"][:].compressed(), 90)
         assert ds["RAIN_1H"].filters()["zlib"]
     export(source, index.parent)

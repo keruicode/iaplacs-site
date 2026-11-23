@@ -49,14 +49,20 @@ Missing cells remain missing, not zero. Native float32 output uses zlib/shuffle,
 no quantization or reduced grid resolution. Coordinates, UTC times, interval
 start/end strings, units, source domain, input signature and helper hashes are retained.
 
-### WRF-style Download Layout (Exporter Version 2)
+### Simplified Download Layout (Exporter Version 3)
 
-Dimensions use `Time`, `south_north`, `west_east`, and `DateStrLen`.
-`Times` contains UTC `YYYY-MM-DD_HH:MM:SS` strings, as in WRF; `XTIME` is
-minutes since initialization. `XLAT`/`XLONG` use WRF's three-dimensional layout.
-Hourly interval starts are readable in `Times_START`; `Times` is the end.
-Accumulations use `Time_12H`/`Time_24H`, with `Times_12H`/`Times_24H` and
-corresponding `_START` strings. There are no numeric `bounds` variables.
+Only the necessary array dimensions `Time`, `south_north`, `west_east` remain;
+there are no numeric dimension-coordinate variables. `Times(Time)` is a NetCDF
+string array of UTC `YYYY-MM-DD_HH:MM:SS` values, not a character-code matrix.
+This uses readable WRF-style dates but not WRF's S1/DateStrLen storage encoding.
+`XLAT`/`XLONG` are two-dimensional native-grid latitude/longitude.
+There are no `XTIME`, `bounds`, extra time variables or Lambert projection
+attributes. Geographic coordinates remain available for mapping.
+
+All products share `Times`. Accumulations record `interval_start` and
+`interval_end` rules on the variable, plus explicit `available_intervals_utc`.
+12/24-hour fields contain data only at eligible complete 08/20 BJT windows;
+other time slices are missing, never filled with zero or duplicated forecasts.
 
 | Variable | Meaning |
 | --- | --- |
@@ -68,7 +74,9 @@ corresponding `_START` strings. There are no numeric `bounds` variables.
 
 These are derived website products, not full WRF output/restart files.
 No vertical dimension is invented for a column integral or lowest-layer field.
-Version 2 changes names/layout only; numerical algorithms are unchanged.
+SLWP means Supercooled Liquid Water Path. `SLWP_CLOUD` and `SLWP_RAIN` are the
+cloud and rain contributions. Version 3 changes layout only; numerical algorithms
+and the selected time windows are unchanged.
 
 Objects are stored under the existing retention-managed run prefix:
 `data/current/maps/worknx_summary_YYYYMMDD_HH/downloads/`.
