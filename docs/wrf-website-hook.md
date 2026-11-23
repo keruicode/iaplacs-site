@@ -92,6 +92,12 @@ No NC binaries enter Git. Existing run-prefix retention covers these objects.
 The Ningxia page reads the selected run's OSS index, exposes a download only
 when its schema/run/file match, and cancels stale requests when users change runs.
 The OSS object sets Content-Disposition for cross-origin browser downloads.
+The saved filename is `ningxia_YYYYMMDDHH_dNN.nc`, without the internal hash.
+The OSS key still contains the content fingerprint for cache isolation and
+integrity checks. The frontend uses `?download=1` to avoid reusing a previously
+cached response with the old filename. Receipt checks validate the download
+filename header as well as object/index availability; old headers are repaired
+by reuploading the same verified object, without recomputing numerical products.
 No extra server or access key is placed in frontend code.
 
 ## Backup and Deployment Policy

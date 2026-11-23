@@ -35,8 +35,8 @@
         cache.set(id, { data, checked: Date.now() });
       }
       if (selection !== id || signal.aborted) return;
-      link.href = directory + data.file;
-      link.download = data.file;
+      link.href = directory + data.file + "?download=1";
+      link.download = data.file.replace(/_[a-f0-9]{16}\.nc$/, ".nc");
       link.title = `宁夏区域 · ${(data.bytes / 1048576).toFixed(1)} MB`;
       block.hidden = false;
     } catch (error) {

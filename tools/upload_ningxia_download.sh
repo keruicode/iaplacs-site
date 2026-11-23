@@ -32,7 +32,8 @@ prefix="${IAPLACS_OSS_PREFIX:-}"; prefix="${prefix#/}"; prefix="${prefix%/}"
 base="${IAPLACS_OSS_PUBLIC_BASE_URL%/}/${prefix:+$prefix/}data/current/maps/worknx_summary_$RUN/downloads"
 actual="$(curl -fsS --max-time 30 "$base/index.json" | sha256sum | cut -d' ' -f1)"
 [[ "$actual" == "$EXPECTED" ]]
-curl -fsSI --max-time 30 "$base/$FILE" >/dev/null
+headers="$(curl -fsSI --max-time 30 "$base/$FILE")"
+grep -Fq "filename=${FILE%_*}.nc" <<<"$headers"
 CHECK
   then exit 0; fi
 fi
@@ -55,15 +56,16 @@ key="${prefix:+$prefix/}$relative"
 base="${IAPLACS_OSS_PUBLIC_BASE_URL%/}/${prefix:+$prefix/}$relative"
 GOMAXPROCS=1 "$oss" cp "$dir/$FILE" "oss://$IAPLACS_OSS_BUCKET/$key/$FILE" -f \
   -e "$IAPLACS_OSS_ENDPOINT" --acl "${IAPLACS_OSS_OBJECT_ACL:-public-read}" \
-  --meta "Content-Type:application/x-netcdf#Content-Disposition:attachment; filename=$FILE#Cache-Control:public, max-age=31536000, immutable"
-curl -fsS --max-time 180 "$base/$FILE" -o "$dir/.verified.nc"
+  --meta "Content-Type:application/x-netcdf#Content-Disposition:attachment; filename=${FILE%_*}.nc#Cache-Control:public, max-age=31536000, immutable"
+curl -fsS --max-time 180 "$base/$FILE" -D "$dir/.verified.headers" -o "$dir/.verified.nc"
+grep -Fq "filename=${FILE%_*}.nc" "$dir/.verified.headers"
 [[ "$(sha256sum "$dir/.verified.nc" | cut -d' ' -f1)" == "$DIGEST" ]] || exit 65
 GOMAXPROCS=1 "$oss" cp "$dir/index.json" "oss://$IAPLACS_OSS_BUCKET/$key/index.json" -f \
   -e "$IAPLACS_OSS_ENDPOINT" --acl "${IAPLACS_OSS_OBJECT_ACL:-public-read}" \
   --meta 'Content-Type:application/json#Cache-Control:no-cache'
 curl -fsS --max-time 30 "$base/index.json" -o "$dir/.verified.json"
 cmp "$dir/index.json" "$dir/.verified.json"
-rm -f "$dir/$FILE" "$dir/index.json" "$dir/.verified.nc" "$dir/.verified.json"
+rm -f "$dir/$FILE" "$dir/index.json" "$dir/.verified.nc" "$dir/.verified.json" "$dir/.verified.headers"
 rmdir "$dir"
 REMOTE
 printf '%s\n' "$digest" > "$directory/.published-sha256.tmp"
