@@ -86,6 +86,11 @@ webp_count="$(find "$aviation_dir" -type f -name '*.webp' | wc -l | tr -d ' ')"
 }
 
 incoming="${asset_subdir}_${family}_${run_prefix}"
+if [[ -n "${NX_BATCH_DIR:-}" ]]; then
+	rsync -a --exclude='.*' --include='*/' --include='*.png' --include='*.webp' --include='*.json' --exclude='*' "$aviation_dir/" "${NX_BATCH_DIR%/*}/$asset_subdir.tmp/"
+	mv "${NX_BATCH_DIR%/*}/$asset_subdir.tmp" "$NX_BATCH_DIR/$asset_subdir"
+	exit 0
+fi
 ssh "$GITHUB_HOST" "rm -rf ~/incoming/$incoming && mkdir -p ~/incoming/$incoming"
 rsync -av --delete "$aviation_dir/" "$GITHUB_HOST:~/incoming/$incoming/"
 

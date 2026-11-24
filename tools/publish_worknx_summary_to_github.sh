@@ -180,6 +180,10 @@ echo "  webp_bytes=$webp_bytes"
 echo "  preview_bytes=$preview_bytes"
 echo "  run_prefix=$run_prefix"
 
+if [[ -n "${NX_BATCH_DIR:-}" && "${NX_BATCH_COMMIT:-0}" != 1 ]]; then
+	cp -p "$run_dir/$base" "$run_dir/$webp_base" "$run_dir/$preview_base" "$NX_BATCH_DIR/"
+	exit 0
+fi
 ssh "$GITHUB_HOST" "mkdir -p ~/incoming/${PUBLISH_FAMILY}_${run_prefix}"
 rsync -av "$run_dir/$base" "$run_dir/$webp_base" "$run_dir/$preview_base" "$run_dir/manifest_fragment.json" "$GITHUB_HOST:~/incoming/${PUBLISH_FAMILY}_${run_prefix}/"
 
@@ -188,6 +192,10 @@ remote_env_cmd=$(
 		"$run_prefix" "$base" "$webp_base" "$preview_base" "$repo_rel_dir" "$repo_rel_file" "$repo_rel_webp_file" "$run_time_bjt" "$valid_time_bjt" "$generated_at" "$size_after" "$webp_bytes" "$GIT_URL" "$REMOTE_SITE_REPO" "$GITHUB_KEY" "$GIT_USER_NAME" "$GIT_USER_EMAIL" "$IAPLACS_ASSET_FORCE_UPLOAD" "$PUBLISH_FAMILY" "$SOURCE_LABEL"
 )
 
+if [[ "${NX_BATCH_COMMIT:-0}" == 1 ]]; then
+	rsync -a --delete "$NX_BATCH_DIR/" "$GITHUB_HOST:~/incoming/nx_batch_$run_prefix/"
+	remote_env_cmd="NX_BATCH_COMMIT=1 $remote_env_cmd"
+fi
 ssh "$GITHUB_HOST" "$remote_env_cmd" <<'REMOTE'
 set -Eeuo pipefail
 
@@ -224,6 +232,7 @@ DEST="$SITE_REPO/${REPO_REL_DIR}"
 
 publish_oss_assets() {
 	if [ "${IAPLACS_OSS_ENABLED:-0}" != "1" ]; then
+		[[ "${NX_BATCH_COMMIT:-0}" != 1 ]] || { echo 'ERROR: batch requires OSS' >&2; exit 1; }
 		return
 	fi
 
@@ -257,6 +266,23 @@ publish_oss_assets() {
 	fi
 
 	first_relative=""
+	if [[ "${NX_BATCH_COMMIT:-0}" == 1 ]]; then
+		local batch="$HOME/incoming/nx_batch_$RUN_PREFIX" extension
+		for extension in png webp; do
+			GOMAXPROCS=1 "$ossutil_bin" cp "$batch/" "oss://${IAPLACS_OSS_BUCKET}/${prefix:+$prefix/}$REPO_REL_DIR/" \
+				-r -f -j 1 --parallel 1 --include "*.$extension" --disable-ignore-error \
+				--disable-dir-object -e "$IAPLACS_OSS_ENDPOINT" --meta "Cache-Control:no-cache#Content-Type:image/$extension" --acl "$object_acl"
+		done
+		curl -fsS --range 0-0 --max-time 30 -o /dev/null "$IAPLACS_ASSET_BASE_URL/$REPO_REL_DIR/$WEBP_BASE"
+		local sub sample
+		for sub in visibility radar supercooled; do
+			[[ -d "$batch/$sub" ]] || continue
+			sample="$(find "$batch/$sub" -type f -name '*.webp' -print -quit)"
+			[[ -n "$sample" ]] || exit 65
+			curl -fsS --range 0-0 --max-time 30 -o /dev/null "$IAPLACS_ASSET_BASE_URL/$REPO_REL_DIR/${sample#"$batch/"}"
+		done
+		return
+	fi
 	while IFS= read -r -d '' image; do
 		relative="${image#$SITE_REPO/}"
 		key="$relative"
@@ -309,6 +335,7 @@ publish_oss_assets() {
 }
 
 prune_oss_assets() {
+	[[ "${NX_BATCH_COMMIT:-0}" != 1 ]] || return 0
 	if [ "${IAPLACS_OSS_ENABLED:-0}" != "1" ]; then
 		return
 	fi
@@ -324,6 +351,10 @@ prune_oss_assets() {
 	fi
 }
 
+if [[ "${NX_BATCH_COMMIT:-0}" == 1 ]]; then
+	trap 'rm -rf -- "$HOME/incoming/nx_batch_$RUN_PREFIX"' EXIT
+	publish_oss_assets
+fi
 if command -v flock >/dev/null 2>&1; then
 	exec 8>"$HOME/.iaplacs-github-publish.lock"
 	if ! flock -w 600 8; then
@@ -346,6 +377,9 @@ exec /usr/bin/ssh -i "$GITHUB_KEY" -o IdentitiesOnly=yes -o StrictHostKeyCheckin
 EOF
 chmod 700 "$GIT_SSH_WRAPPER"
 trap 'rm -f "$GIT_SSH_WRAPPER"' EXIT
+if [[ "${NX_BATCH_COMMIT:-0}" == 1 ]]; then
+	trap 'rm -f "$GIT_SSH_WRAPPER"; rm -rf -- "$HOME/incoming/nx_batch_$RUN_PREFIX"' EXIT
+fi
 export GIT_SSH="$GIT_SSH_WRAPPER"
 
 if [ ! -d "$SITE_REPO/.git" ]; then
@@ -369,7 +403,11 @@ if [[ "$BASE" == *"_combined_overview_"* ]]; then
 	done
 fi
 rsync -av --include="$BASE" --include="$WEBP_BASE" --include="$PREVIEW_BASE" --include="manifest_fragment.json" --exclude='*' "$INCOMING/" "$DEST/"
-publish_oss_assets
+if [[ "${NX_BATCH_COMMIT:-0}" == 1 ]]; then
+	rsync -a "$HOME/incoming/nx_batch_$RUN_PREFIX/" "$DEST/"
+else
+	publish_oss_assets
+fi
 
 PYTHON_BIN="$(command -v python3 || command -v python)"
 if [ "${IAPLACS_OSS_ENABLED:-0}" = "1" ]; then
@@ -543,6 +581,12 @@ if [ ! -f "$CATALOG_BUILDER" ]; then
 	exit 1
 fi
 "$PYTHON_BIN" "$CATALOG_BUILDER"
+if [[ "${NX_BATCH_COMMIT:-0}" == 1 ]]; then
+	for product in visibility radar supercooled; do
+		manifest="$HOME/incoming/nx_batch_$RUN_PREFIX/$product/production_manifest.json"
+		[[ ! -f "$manifest" ]] || "$PYTHON_BIN" tools/check_diagnostic_catalog.py --catalog data/current/forecast-runs.json --manifest "$manifest" --family "$PUBLISH_FAMILY" --run "$RUN_PREFIX"
+	done
+fi
 
 git add data/current/manifest.json data/current/forecast-runs.json
 if git diff --cached --quiet; then

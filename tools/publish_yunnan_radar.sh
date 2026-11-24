@@ -67,6 +67,7 @@ if [[ -f "$receipt" && "$(<"$receipt")" == "$digest" ]]; then
 fi
 "$IAPLACS_SCRIPT_DIR/publish_airport_aviation_to_oss.sh" \
   --family "$family" --run-prefix "$run" --radar-dir "$output"
+[[ -z "${NX_BATCH_DIR:-}" ]] || exit 0
 printf '%s\n' "$digest" > "$receipt.tmp.$$"
 mv "$receipt.tmp.$$" "$receipt"
 echo "Radar $run: published quality-controlled native DBZ composite"

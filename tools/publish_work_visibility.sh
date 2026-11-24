@@ -114,6 +114,7 @@ fi
 publication_state uploading_catalog
 "$IAPLACS_SCRIPT_DIR/publish_airport_aviation_to_oss.sh" \
   --family "$family" --run-prefix "$run" --visibility-dir "$output"
+if [[ -n "${NX_BATCH_DIR:-}" ]]; then publication_state staged; exit 0; fi
 printf '%s\n' "$digest" > "$receipt.tmp.$$"
 mv "$receipt.tmp.$$" "$receipt"
 publication_state published

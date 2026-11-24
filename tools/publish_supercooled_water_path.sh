@@ -74,6 +74,7 @@ cp "$output/production_manifest.json" "$upload/"
 cp -a "$output/$generation" "$upload/"
 bash "$SCRIPT_PATH/publish_airport_aviation_to_oss.sh" \
   --family "$family" --run-prefix "$run" --supercooled-dir "$upload"
+[[ -z "${NX_BATCH_DIR:-}" ]] || exit 0
 printf '%s\n' "$digest" > "$receipt.tmp.$$"
 mv "$receipt.tmp.$$" "$receipt"
 echo "Supercooled $profile $run published"

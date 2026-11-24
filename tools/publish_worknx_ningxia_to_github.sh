@@ -144,6 +144,13 @@ fi
 for source in "${sources[@]}"; do
   source_dir="$(dirname "$source")"
   run_prefix="$(basename "$source_dir")"
+  if [[ "$PUBLISH_FAMILY" == worknx_summary ]]; then
+    batch_root="$(mktemp -d "$OUTPUT_ROOT/.batch.XXXXXXXX")"
+    trap 'rm -rf -- "$batch_root"' EXIT
+    export NX_BATCH_DIR="$batch_root/assets"
+    export STABILITY_SLEEP_SECONDS=0
+    mkdir "$NX_BATCH_DIR"
+  fi
   echo "Publishing $SERVICE_LABEL regional overview: $source"
   IAPLACS_WEBP_FORCE=1 \
     IAPLACS_PREVIEW_FORCE=1 \
@@ -226,8 +233,24 @@ for source in "${sources[@]}"; do
       --aviation-dir "$source_dir/aviation"
   fi
   if [[ "$PUBLISH_FAMILY" == "worknx_summary" ]]; then
-    "$IAPLACS_SCRIPT_DIR/publish_work_visibility.sh" --run "$run_prefix"
-    "$IAPLACS_SCRIPT_DIR/publish_yunnan_radar.sh" --profile ningxia --run "$run_prefix"
+    for entry in publish_work_visibility publish_yunnan_radar publish_supercooled_water_path; do
+      if ! bash "$IAPLACS_SCRIPT_DIR/$entry.sh" --profile ningxia --run "$run_prefix"; then
+        echo "WARNING: $entry $run_prefix deferred to the existing product audit" >&2
+      fi
+    done
+    NX_BATCH_COMMIT=1 WORK_NX_ROOT="$source_dir" PUBLISH_FAMILY="$PUBLISH_FAMILY" \
+      SOURCE_LABEL="$SERVICE_LABEL" SOURCE_IMAGE_GLOB="$(basename "$source")" \
+      MIN_FILE_AGE_SECONDS=0 STABILITY_SLEEP_SECONDS=0 "$PUBLISHER"
+    for product in visibility radar supercooled; do
+      manifest="$NX_BATCH_DIR/$product/production_manifest.json"
+      [[ -s "$manifest" ]] || continue
+      receipt="$source_dir/$product/.published-sha256"
+      sha256sum "$manifest" | cut -d' ' -f1 > "$receipt.tmp.$$"
+      mv "$receipt.tmp.$$" "$receipt"
+    done
+    rm -rf -- "$batch_root"
+    trap - EXIT
+    unset NX_BATCH_DIR
   elif [[ "$PUBLISH_FAMILY" == "workxj_summary" ]]; then
     "$IAPLACS_SCRIPT_DIR/publish_work_visibility.sh" --run "$run_prefix" --profile xinjiang
     "$IAPLACS_SCRIPT_DIR/publish_yunnan_radar.sh" --profile xinjiang --run "$run_prefix"

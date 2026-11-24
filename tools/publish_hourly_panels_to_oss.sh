@@ -158,6 +158,10 @@ if [[ -n "$extra_dir" ]]; then
 fi
 
 incoming="hourly_panels_${family}_${run_prefix}"
+if [[ -n "${NX_BATCH_DIR:-}" ]]; then
+	cp -p "$stage_dir/"*.webp "$NX_BATCH_DIR/"
+	exit 0
+fi
 ssh "$GITHUB_HOST" "rm -rf ~/incoming/$incoming && mkdir -p ~/incoming/$incoming"
 rsync -av "$stage_dir/" "$GITHUB_HOST:~/incoming/$incoming/"
 

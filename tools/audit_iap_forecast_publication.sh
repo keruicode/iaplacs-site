@@ -653,7 +653,9 @@ esac
 CATALOG_READY=0
 if fetch_public_catalog; then
   CATALOG_READY=1
-  prioritize_latest_visibility || { log "ERROR: latest visibility priority check failed"; ((ACTION_FAILURES += 1)); }
+  if [[ "$SERVICE" != ningxia ]]; then
+    prioritize_latest_visibility || { log "ERROR: latest visibility priority check failed"; ((ACTION_FAILURES += 1)); }
+  fi
 else
   log "public catalog unavailable; continue model discovery and retry next audit"
 fi

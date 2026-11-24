@@ -20,4 +20,14 @@ case "$family" in
   WORK_xj) service=xinjiang ;;
 esac
 printf '%s WRF hook service=%s run=%s job=%s\n' "$(date -Is)" "$service" "$run" "$SLURM_JOB_ID"
+if [[ "$service" == ningxia ]]; then
+  # The WRF allocation already exists. Never queue behind another region's audit.
+  tail -n 200 "$path/wrf/rsl.error.0000" | grep 'SUCCESS COMPLETE WRF' >/dev/null || exit 75
+  export PUBLISH_LOCK_WAIT_SECONDS=0
+  bash "$IAPLACS_SCRIPT_DIR/publish_worknx_ningxia_to_github.sh" --run "${run:0:8}_${run:8:2}"
+  if [[ -f "$root/config/ningxia-downloads.enabled" ]]; then
+    exec bash "$IAPLACS_SCRIPT_DIR/publish_ningxia_downloads.sh" --run "$run"
+  fi
+  exit 0
+fi
 exec bash "$IAPLACS_SCRIPT_DIR/run_website_cycle.sh" --service "$service"
